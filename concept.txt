@@ -1,0 +1,35 @@
+Final Goal
+	Domination
+
+Short Goal
+	Develop
+	Warpreparedness
+	Seize
+
+	
+------------------------------------------------
+
+xxx Population -> Manpower -> Worker ( Produce ) / Soldier ( Fight ) / Guard ( Protect )
+
+
+------------------------------------------------
+
+new concept about popu structure
+
+1. divide popu into diff career likes
+	FARMER    agriculture
+	WORKER    production
+	MERCHANT  commerce
+	OFFICER   tax, ...
+	SOLDIER   security
+	HOBO      security-
+	NOBLE     ...
+
+2.number of career population interact with resource in plots, just likes
+	when number of farmer is less than agriculture_current needs, farmer will increase
+	when farmer is enough than what city need, farmer will convert to noble
+
+    AGRICULTURE waste -> FARMER++
+    FARMER++    -> AGRICULTURE++
+    AGRICULTURE++ -> COMMERCE-, PRODUCTION-, ...
+

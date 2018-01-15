@@ -1,0 +1,392 @@
+local _PATH = (...):match('^(.*[%./])[^%.%/]+$') or ""
+
+local DEBUG_LOG = true
+
+------------------------------
+-- Behavior Node
+------------------------------
+
+BehaviorNodeType = 
+{
+	INVALID           = 0,
+
+	-------------------------
+	-- Composite Node
+	
+	-- Run all nodes in given sequence one by one until any node return true, default return false
+	SELECTOR          = 100,
+	
+	-- Run all nodes in random sequence one by one until any node return true, default return false
+	RANDOM_SELECTOR   = 101,
+	
+	-- Run all nodes in given sequence one by one, return false when any node return false, default return true
+	SEQUENCE          = 120,
+	
+	-- Run all nodes in given sequence one by one, 
+	--PARALLEL          = 130,	
+	
+	------------------------
+	
+	------------------------
+	-- Behaviour Node
+	
+	-- Execute the action, always return true
+	ACTION            = 210,
+	
+	-- Execute the action until condition return true or none condition, after that return true, default return false
+	CONDITION_ACTION  = 220,
+	
+	------------------------
+	
+	------------------------
+	-- Decorator Node
+	--
+	SUCCESSOR         = 310,
+	
+	FAILURE           = 320,
+	
+	NEGATE            = 330,	
+	
+	------------------------
+	
+	------------------------
+	-- Condition Node
+	
+	-- Return the result of condition
+	FILTER            = 410,
+}
+
+BehaviorNodeStatus = 
+{
+	IDLE      = 0,
+	RUNNING   = 1,
+	COMPLETED = 2,
+}
+
+BehaviorNode = class()
+
+function BehaviorNode:__init( type, desc )
+	self.type      = type	
+	self.desc      = desc
+	self.children  = {}
+	self.status    = BehaviorNodeStatus.IDLE
+	self.action    = nil
+	self.condition = nil
+	self.params    = nil
+end
+
+function BehaviorNode:SetActionNode( action )
+	self.type = BehaviorNodeType.ACTION
+	self.func = action
+end
+
+function BehaviorNode:SetConditionActionNode( condition, action )
+	self.type = BehaviorNodeType.CONDITION_ACTION
+	self.func = action
+	self.condition = condition
+end
+
+function BehaviorNode:SetFilterNode( filter )
+	self.type = BehaviorNodeType.FILTER
+	self.condition = filter
+end
+
+function BehaviorNode:AppendChild( child )
+	table.insert( self.children, child )
+end
+
+function BehaviorNode:GetFirstChild()
+	return self.children[1]
+end
+
+--[[
+	@usage
+		data = 
+		{
+			type = "RANDOM_SELECTOR", desc = "Root", children = 
+			{
+				--military
+				{ 
+					type = "CONDITION_ACTION", desc = "military", condition = function() print( "check military" ) end, action = function() print( "execute military" ) end, children = {},
+				},
+				--develop
+				{
+					type = "CONDITION_ACTION", desc = "develop", condition = function() print( "check develop" ) end, action = function() print( "execute develop" ) end, children = {},
+				},
+			},
+		}
+		node = BehaviorNode()
+		node:BuildTree( data )
+--]]
+function BehaviorNode:BuildTree( data )
+	if not data or not data.type then return end	
+	
+	-- Base information
+	--print( data.type, data.desc, data.condition, data.action )
+	self.type = BehaviorNodeType[string.upper(data.type)]
+	self.desc = data.desc
+
+	if not self.type then
+		error( "invalid tree node=" .. data.type )
+	end
+	
+	-- Extension
+	self.params = data.params
+	
+	-- Node type
+	if self.type == BehaviorNodeType.ACTION then
+		self.action = data.action		
+		if DEBUG_LOG and not self.action then print( "CONDITION is invalid" ) end
+	elseif self.type == BehaviorNodeType.CONDITION_ACTION then
+		self.action    = data.action		
+		self.condition = data.condition
+		if DEBUG_LOG and ( not self.condition or not self.action ) then print( "ACTION or CONDITION is invalid" ) end
+	elseif self.type == BehaviorNodeType.FILTER then
+		self.condition = data.condition
+		if DEBUG_LOG and not self.condition then print( "CONDITION is invalid" ) end
+	end
+	
+	-- Children nodes
+	--print( 'build node', self.type, self.desc )
+	if data.children then
+		for k, childData in ipairs( data.children ) do
+			local child = BehaviorNode()
+			child:BuildTree( childData )
+			self:AppendChild( child )
+			--print( 'append child', child.type, child.desc )
+		end
+	end
+end
+
+------------------------------
+-- Behavior
+------------------------------
+
+Behavior = class()
+
+local function Selector( behavior, node )
+	if DEBUG_LOG and node.desc then
+		print( "Selector=" .. ( node.desc or "" ) .. " nodes=" .. #node.children )		
+	end
+	for k, child in ipairs( node.children ) do
+		behavior:SetCurrentNode( node )
+		local fn = behavior.functions[child.type]
+		if fn and fn( behavior, child ) then return true end
+	end	
+	return false
+end
+local function RandomSelector( behavior, node )	
+	if DEBUG_LOG and node.desc then
+		print( "RandomSelector=" .. ( node.desc or "" ) .. " nodes=" .. #node.children )		
+	end
+	local children = behavior:Copy( node.children )
+	behavior:Shuffle( children )
+	for k, child in pairs( children ) do		
+		behavior:SetCurrentNode( node )
+		local fn = behavior.functions[child.type]
+		if fn and fn( behavior, child ) then return true end
+	end
+	return false
+end
+local function Sequence( behavior, node )
+	if DEBUG_LOG and node.desc then
+		print( "Sequence=" .. ( node.desc or "" ) .. " nodes=" .. #node.children )		
+	end
+	for k, child in pairs( node.children ) do		
+		behavior:SetCurrentNode( node )
+		local fn = behavior.functions[child.type]
+		if fn and fn( behavior, child ) == false then
+			return false
+		end
+	end
+	return true
+end
+--[[
+local function Parallel( behavior, node )
+	if DEBUG_LOG and node.desc thenprint( "Parallel" ) end
+	for k, child in pairs( node.children ) do
+		if behavior.functions[child.type]( behavior, child ) == false then return false end
+	end
+	return true
+end
+]]
+
+local function Action( behavior, node )
+	if DEBUG_LOG and node.desc then
+		print( "Action=" .. ( node.desc or "" ) .. " nodes=" .. #node.children )
+	end
+	behavior:SetCurrentNode( node )
+	if node.action then
+		if not node.action then
+			print( "No function for ACTION" )
+		end
+		if node.params then
+			node.action( node.params )
+		else
+			node.action()
+		end
+	end
+	return true
+end
+local function ConditionAction( behavior, node )
+	if DEBUG_LOG and node.desc then 
+		print( "ConditionAction=" .. ( node.desc or "" ) .. " nodes=" .. #node.children )		
+	end
+	behavior:SetCurrentNode( node )
+	if node.condition and node.condition() then	
+		if node.action then node.action( node.params ) end
+		return true
+	end
+	return false
+end
+
+local function Successor( behavior, node )
+	if DEBUG_LOG and node.desc then 
+		print( "Successor=" .. ( node.desc or "" ) .. " nodes=" .. #node.children )		
+	end
+	behavior:SetCurrentNode( node )
+	behavior:Run( node:GetFirstChild() )
+	return true
+end
+local function Failure( behavior, node )
+	if DEBUG_LOG and node.desc then 
+		print( "Failure=" .. ( node.desc or "" ) .. " nodes=" .. #node.children )		
+	end
+	behavior:SetCurrentNode( node )
+	behavior:Run( node:GetFirstChild() )
+	return false
+end
+local function Negate( behavior, node )
+	if DEBUG_LOG and node.desc then 
+		print( "Negate=" .. ( node.desc or "" ) .. " nodes=" .. #node.children )		
+	end
+	behavior:SetCurrentNode( node )	
+	return not behavior:Run( node:GetFirstChild() )
+end
+
+local function Filter( behavior, node )
+	if DEBUG_LOG and node.desc then 
+		print( "Filter=" .. ( node.desc or "" ) .. " nodes=" .. #node.children )		
+	end
+	behavior:SetCurrentNode( node )
+	return node.condition and node.condition( node.params )
+end
+
+function Behavior:__init( ... )	
+	self.functions = {}
+	self.functions[BehaviorNodeType.SELECTOR] = Selector
+	self.functions[BehaviorNodeType.RANDOM_SELECTOR] = RandomSelector
+	self.functions[BehaviorNodeType.SEQUENCE] = Sequence
+	--self.functions[BehaviorNodeType.PARALLEL] = Parallel
+	
+	self.functions[BehaviorNodeType.ACTION] = Action
+	self.functions[BehaviorNodeType.CONDITION_ACTION] = ConditionAction
+	
+	self.functions[BehaviorNodeType.SUCCESSOR] = Successor
+	self.functions[BehaviorNodeType.FAILURE] = Failure
+	self.functions[BehaviorNodeType.NEGATE] = Negate
+	
+	self.functions[BehaviorNodeType.FILTER] = Filter
+end
+
+function Behavior:SetCurrentNode( node )
+	self._checkNode = node
+end
+
+function Behavior:GetCurrentNode()
+	return self._checkNode
+end
+
+function Behavior:Run( node )
+	if not node then
+		error( "invalid behavior node" )
+		return false
+	end
+	
+	self:SetCurrentNode( node )
+	
+	if DEBUG_LOG and node.desc then print( "desc=", node.desc, " nodes=" .. #node.children ) end	
+	
+	local func = self.functions[node.type]
+	if func then return func( self, node ) end
+	
+	print( "Invalid Node Type=", node.type, func )
+	return false
+end
+
+function Behavior:Random( min, max )
+	return math.random( min, max )
+end
+
+function Behavior:Copy( sour )
+	local dest = {}
+	for k, v in pairs( sour ) do
+		rawset( dest, k, v )
+	end
+	return dest
+end
+
+function Behavior:Shuffle( list )
+	local length = #list
+	if length > 1 then
+		for index = 1, length do
+			local target = self:Random( 1, length - 1 )
+			list[index], list[target] = list[target], list[index]		
+		end
+	end
+end
+
+------------------------------
+-- Behavior Tree Sample
+------------------------------
+
+function Behavior_Test()
+	data1 = 
+	{
+		type = "SEQUENCE", children =
+		{
+			{ type = "FILTER", condition = function() print( "check1" ) return false end },
+			{ type = "ACTION", action = function() print( "act1" ) end },
+		}
+	}
+	data2 = 
+	{
+		type = "SEQUENCE", children =
+		{
+			{ type = "FILTER", condition = function() print( "check2" ) return true end },
+			{ type = "ACTION", action = function() print( "act2" ) end },
+		}
+	}
+	data3 = 
+	{
+		type = "SEQUENCE", children = {
+			data1,
+			data2,
+		},
+		--[[
+		output:
+		check1
+		]]
+	}
+	data4 = 
+	{
+		type = "SELECTOR", children = { 		
+			data1,
+			data2,
+		},
+		--[[
+		output:
+		check1
+		check2
+		act2
+		]]
+	}
+
+	local tree1 = BehaviorNode()
+	tree1:BuildTree( data3 )
+	local tree2 = BehaviorNode()
+	tree2:BuildTree( data4 )
+	bev = Behavior()
+	bev:Run( tree1 )
+	bev:Run( tree2 )
+end

@@ -1,0 +1,16 @@
+--[[
+
+]]
+
+CompaignAssetType = 
+{
+}
+
+CompaignAssetID = 
+{
+}
+
+CompaignAssetAttrib = 
+{
+	
+}

@@ -1,0 +1,117 @@
+PathDataType = 
+{
+	NODE_GETTER      = 1,
+	OFFSET_LIST      = 2,
+	WIDTH            = 3,
+	HEIGHT           = 4,
+	NODE_CHECKER     = 5,
+}
+
+PathConstant = 
+{
+	INVALID_WEIGHT = -10000,
+}
+
+PathFinder = class()
+
+function PathFinder:__init()
+	self.env = {}
+end
+
+function PathFinder:SetEnviroment( type, value )	
+	self.env[type] = value
+end
+
+function PathFinder:IsReady()
+	for _, index in pairs( PathDataType ) do
+		if self.env[index] == nil then
+			return false
+		end
+	end
+	return true
+end
+
+function PathFinder:FindPath( x1, y1, x2, y2 )
+	local node = self.env[PathDataType.NODE_GETTER]( x1, y1 )
+	local openList = { { x = x1, y = y1, ev = 0, weight = self.env[PathDataType.NODE_CHECKER]( node ), parent = nil } }
+	local closeList  = {}
+	local destination = nil
+	local maxDistance = 9999999
+	while #openList > 0 do
+		local cur = openList[1]
+		local x, y = cur.x, cur.y
+		table.remove( openList, 1 )
+
+		--InputUtil_Pause( "cur node: x=" .. x .. " y=" .. y .. " ev=" .. cur.ev )
+
+		if x == x2 and y == y2 then
+			--InputUtil_Pause( "Find destination" )
+			destination = cur
+			break
+		end
+		local needSort = false
+		for _, offset in ipairs( self.env[PathDataType.OFFSET_LIST] ) do
+			local tx, ty = x + offset.x, y + offset.y
+			if tx > 0 and ty > 0 and tx <= self.env[PathDataType.WIDTH] and ty <= self.env[PathDataType.HEIGHT] then
+				local index = ty * 100000 + tx
+				local node = self.env[PathDataType.NODE_GETTER]( tx, ty )
+				local weight = self.env[PathDataType.NODE_CHECKER]( node )
+				if weight > PathConstant.INVALID_WEIGHT then
+					local dis = math.abs( tx - x2 ) + math.abs( ty - y2 )
+					weight = math.abs( weight )
+					local ev = cur.ev + weight
+					local next = closeList[index]
+					if not next then
+						--print( "Add open", tx, ty, "weight=" .. weight, "ev=" .. ev )
+						next = { x = tx, y = ty, ev = ev, weight = weight, parent = cur, dis = dis }
+						closeList[index] = next
+						table.insert( openList, next )
+					elseif next.ev > ev then
+						--print( "Up short", tx, ty, "weight=" .. weight, "ev=" .. ev )
+						next.x      = tx
+						next.y      = ty
+						next.ev     = ev
+						next.weight = weight
+						next.parent = cur
+						next.node   = node
+						node.dis    = dis
+					end
+					needSort = true
+				end
+			end
+		end
+		if needSort == true then
+			--MathUtil_Dump( openList )
+			table.sort( openList, function ( l, r )
+				if l.dis < r.dis then return true end
+				if l.dis > r.dis then return false end
+				return l.ev < r.ev
+			end )
+			--print( "after sort" )
+			--MathUtil_Dump( openList )
+		end
+	end
+	local path = {}
+	while destination ~= nil do
+		--print( destination, destination.x, destination.y, destination.parent )
+		table.insert( path, { x = destination.x, y = destination.y, weight = destination.weight } )
+		destination = destination.parent
+	end
+	return path
+end
+
+-------------------------------------------------------------
+
+local _pathFinder = PathFinder()
+
+function PathFinder_SetEnviroment( type, value )
+	_pathFinder:SetEnviroment( type, value )
+end
+
+function PathFinder_FindPath( x1, y1, x2, y2 )
+	if not _pathFinder:IsReady() then
+		InputUtil_Pause( "Path finder not ready" )
+		return nil
+	end
+	return _pathFinder:FindPath( x1, y1, x2, y2 )
+end
