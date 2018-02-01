@@ -1,3 +1,7 @@
+------------------------------------------------
+
+[Goal]
+
 Final Goal
 	Domination
 
@@ -9,10 +13,7 @@ Short Goal
 	
 ------------------------------------------------
 
-xxx Population -> Manpower -> Worker ( Produce ) / Soldier ( Fight ) / Guard ( Protect )
-
-
-------------------------------------------------
+[Population]
 
 new concept about popu structure
 
@@ -32,4 +33,20 @@ new concept about popu structure
     AGRICULTURE waste -> FARMER++
     FARMER++    -> AGRICULTURE++
     AGRICULTURE++ -> COMMERCE-, PRODUCTION-, ...
+
+
+---------------------------------------------
+
+[City]
+
+	Security
+		Require: Army, Guard, Officer
+		Improve: Agr/Comm/Prod Limitation
+		
+	Development
+		Require: Plot, Resource
+		Improve: 
+
+
+---------------------------------------------
 

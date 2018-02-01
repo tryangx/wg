@@ -1,3 +1,9 @@
+-- Task 
+--
+--
+--
+--
+
 TaskAssetType = 
 {
 	BASE_ATTRIB = 1,
@@ -5,31 +11,50 @@ TaskAssetType =
 
 TaskAssetID = 
 {
-	TYPE         = 10,
-	ACTOR        = 11,
-	ACTOR_TYPE   = 12,
-	TARGET       = 13,
-	LOCATION     = 14,
-	PREREQUISITE = 15,
-	STATUS       = 20,
-	DURATION     = 21,
-	ELAPSED      = 22,
-	VALUES       = 23,
+	TYPE         = 10,	
+	STATUS       = 11,
+
+	ACTOR        = 12,
+	ACTOR_TYPE   = 13,
+	GROUP        = 14,
+	--location
+	DESTINATION  = 15,
+	--target
+	PARAMS       = 16,
+	--reserved
+	PREREQUISITE = 17,	
+
+	BEGIN_TIME   = 18,
+	END_TIME     = 19,
+	ON_THE_ROAD  = 20,
+
+	--remain time to finish the task
+	DURATION     = 30,
+	WORKLOAD     = 31,
+	
+	CONTRIBUTORS = 40,
 }
 
 TaskAssetAttrib = 
 {
-	type      = AssetAttrib_SetNumber ( { id = TaskAssetID.TYPE,       type = TaskAssetType.BASE_ATTRIB, enum = TaskType } ),
-	actor     = AssetAttrib_SetPointer( { id = TaskAssetID.ACTOR,      type = TaskAssetType.BASE_ATTRIB } ),
-	actortype = AssetAttrib_SetNumber ( { id = TaskAssetID.ACTOR_TYPE, type = TaskAssetType.BASE_ATTRIB } ),	
-	target    = AssetAttrib_SetPointer( { id = TaskAssetID.TARGET,     type = TaskAssetType.BASE_ATTRIB } ),	
-	location  = AssetAttrib_SetPointer( { id = TaskAssetID.LOCATION,   type = TaskAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
+	type         = AssetAttrib_SetNumber ( { id = TaskAssetID.TYPE,       type = TaskAssetType.BASE_ATTRIB, enum = TaskType } ),
+	status       = AssetAttrib_SetNumber ( { id = TaskAssetID.STATUS,     type = TaskAssetType.BASE_ATTRIB, enum = TaskStatus, default = TaskStatus.INITIALIZE } ),
+	
+	actor        = AssetAttrib_SetPointer( { id = TaskAssetID.ACTOR,      type = TaskAssetType.BASE_ATTRIB } ),
+	actortype    = AssetAttrib_SetNumber ( { id = TaskAssetID.ACTOR_TYPE, type = TaskAssetType.BASE_ATTRIB, enum = TaskActorType } ),
+	group        = AssetAttrib_SetPointer( { id = TaskAssetID.GROUP,      type = TaskAssetType.BASE_ATTRIB, setter = Entity_SetGroup } ),	
+	destination  = AssetAttrib_SetPointer( { id = TaskAssetID.DESTINATION,type = TaskAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
+	params       = AssetAttrib_SetList   ( { id = TaskAssetID.PARAMS,     type = TaskAssetType.BASE_ATTRIB } ),	
 	prerequisite = AssetAttrib_SetNumber ( { id = TaskAssetID.PREREQUISITE, type = TaskAssetType.BASE_ATTRIB } ),
+	
+	begtime      = AssetAttrib_SetNumber( { id = TaskAssetID.BEGIN_TIME,  type = TaskAssetType.BASE_ATTRIB } ),
+	endtime      = AssetAttrib_SetNumber( { id = TaskAssetID.END_TIME,    type = TaskAssetType.BASE_ATTRIB } ),
+	ontheroad    = AssetAttrib_SetNumber( { id = TaskAssetID.ON_THE_ROAD, type = TaskAssetType.BASE_ATTRIB } ),
 
-	status    = AssetAttrib_SetNumber ( { id = TaskAssetID.STATUS,     type = TaskAssetType.BASE_ATTRIB, enum = TaskStatus, default = TaskStatus.PREPARE } ),
-	duration  = AssetAttrib_SetPointer( { id = TaskAssetID.DURATION,   type = TaskAssetType.BASE_ATTRIB, default = 0 } ),	
-	elapsed   = AssetAttrib_SetPointer( { id = TaskAssetID.ELAPSED,    type = TaskAssetType.BASE_ATTRIB } ),	
-	values    = AssetAttrib_SetList   ( { id = TaskAssetID.VALUES,     type = TaskAssetType.BASE_ATTRIB } ),	
+	duration     = AssetAttrib_SetNumber ( { id = TaskAssetID.DURATION,   type = TaskAssetType.BASE_ATTRIB, default = 0 } ),
+	workload     = AssetAttrib_SetNumber ( { id = TaskAssetID.WORKLOAD,   type = TaskAssetType.BASE_ATTRIB, default = 0 } ),
+
+	contributors = AssetAttrib_SetList   ( { id = TaskAssetID.CONTRIBUTORS,  type = TaskAssetType.BASE_ATTRIB } ),
 }
 
 
@@ -42,26 +67,31 @@ function Task:__init( ... )
 	Entity_Init( self, EntityType.TASK, TaskAssetAttrib )
 end
 
+function Task:Remove()
+	local type = Asset_Get( self, TaskAssetID.TYPE )
+	--remove from all contributor
+	Asset_ForeachList( self, TaskAssetID.CONTRIBUTORS, function ( value, chara )
+		Asset_RemoveListItem( chara, CharaAssetID.TASKS, self )
+	end )
+end
+
 function Task:Load( data )
 	self.id = data.id
 end
 
-
--------------------------------------------
-
-function Task_InitActorType( task )
-	local type = Asset_Get( task, TaskAssetID.TYPE )
-	if type == TaskType.ESTABLISH_CORPS
-		or type == TaskType.REINFORCE_CORPS
-		or type == TaskType.DISMISS_CORPS
-		or type == TaskType.TRAIN_CORPS
-		or type == TaskType.UPGRADE_CORPS
-		or type == TaskType.DISPATCH_CORPS
-		or type == TaskType.HARASS_CITY
-		or type == TaskType.ATTACK_CITY
-		then
-		Asset_Set( task, TaskAssetID.ACTOR_TYPE, TaskActorType.CORPS )
+function Task:Contribute( actor, contribution )
+	local cur = Asset_GetListItem( self, TaskAssetID.CONTRIBUTORS, actor )
+	if not cur then
+		cur = contribution
 	else
-		Asset_Set( task, TaskAssetID.ACTOR_TYPE, TaskActorType.CHARA )
+		cur = cur + contribution
 	end
+	Asset_SetListItem( self, TaskAssetID.CONTRIBUTORS, actor, cur )
+	
+	Asset_Plus( self, TaskAssetID.WORKLOAD, contribution )
+end
+
+function Task:ToString()
+	local content = self.id .. " " .. self.name .. " " .. MathUtil_FindName( TaskType, Asset_Get( self, TaskAssetID.TYPE ) )
+	return content
 end

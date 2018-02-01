@@ -165,9 +165,13 @@ function MathUtil_Dump( source, depth, indent )
 			break
 		elseif type( v ) == "object" then
 			break
-		elseif type( v ) == "table" then			
+		elseif type( v ) == "table" or type( v ) == "object" then
 			if depth > 1 then
-				DumpWithTab( key .. "=", indent + 1 )
+				if type( key ) == "table" or type( key ) == "object" then
+					DumpWithTab( "[table]" .. "=", indent + 1 )
+				else
+					DumpWithTab( k .. "=", indent + 1 )
+				end				
 				MathUtil_Dump( v, depth - 1, indent + 1 )
 			else
 				DumpWithTab( k .. " is Table", indent + 1 )
@@ -657,6 +661,35 @@ function MathUtil_ConvertKeyToID( keyEnum, list )
 	if not list then return newList end
 	for k, v in pairs( list ) do
 		newList[keyEnum[k]] = v
+	end
+	return newList
+end
+
+-- Convert string in dictionary to id
+--[[
+	@usage
+		local enum = 
+		{
+			A = 1,
+			B = 2,
+		}
+		local list = 
+		{
+			"A",
+			"B",
+		}
+		list = MathUtil_ConvertDataStringToID( enum, list )
+		MathUtil_Dump( list )
+		--{
+		--  1 = 1,
+		--  2 = 2,
+		--}
+--]]
+
+function MathUtil_ConvertDataStringToID( keyEnum, list )
+	local newList = {}
+	for k, v in pairs( list ) do
+		newList[k] = keyEnum[v]
 	end
 	return newList
 end

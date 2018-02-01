@@ -18,6 +18,12 @@ local function pause()
 	return true
 end
 
+local bp = { type = "FILTER", condition = pause }
+
+local function TroopToString( troop )
+	return NIDString( troop ) .. ( troop._combatSide and ( troop._combatSide == CombatSide.ATTACKER and "-ATK" or "-DEF" ) or "" )
+end
+
 ----------------------------------------
 -- Setter funcitons
 
@@ -64,12 +70,8 @@ end
 
 local function IsAdvantageous()
 	local intense = 0
-	if _troop._combatSide == CombatSide.ATTACKER then
-		intense = _combat:GetStat( CombatSide.ALL, CombatStatistic.ATK_INTENSE )
-	elseif _troop._combatSide == CombatSide.DEFENDER then
-		intense = _combat:GetStat( CombatSide.ALL, CombatStatistic.DEF_INTENSE )
-	end
-
+	intense = _combat:GetStat( _troop._combatSide, CombatStatistic.COMBAT_INTENSE )
+	
 	local purpose
 	if _troop._combatSide == CombatSide.ATTACKER then 
 		if _combat:GetStatus( CombatSide.DEFENDER, CombatStatus.SURROUNDED ) == true then
@@ -83,12 +85,20 @@ local function IsAdvantageous()
 		purpose = Asset_Get( _combat, CombatAssetID.DEF_PURPOSE )
 	end
 
+	--attack when it's advantageous
 	if purpose == CombatPurpose.CONSERVATIVE then
-		return intense > 0.85
+		if intense > 0.85 then return true end
 	elseif purpose == CombatPurpose.MODERATE then
-		return intense > 0.75
+		if intense > 0.75 then return true end
 	elseif purpose == CombatPurpose.AGGRESSIVE then
-		return intense > 0.70
+		if intense > 0.70 then return true end
+	end
+
+	--small probability to attack
+	local rand = Random_GetInt_Sync( 1, 100 )
+	print( "atck intense=" .. intense * 50, rand )
+	if rand < intense * 50 then		
+		return true
 	end
 	return false
 end
@@ -357,12 +367,15 @@ end
 local function NeedMoveForward( ... )
 	local order = _troop._order
 	if order ~= CombatOrder.FORCED_ATTACK and order ~= CombatOrder.ATTACK then
+		--print( "order not atk", MathUtil_FindName( CombatOrder, order ) )
 		return false
 	end
 
 	local oppSide = _combat:GetOppSide( _troop._combatSide )
 	local frontGrid = _combat:GetFrontGrid( _troop )
-	if frontGrid == nil or frontGrid.side == oppSide then return false end
+	if frontGrid == nil or frontGrid.side == oppSide then		
+		return false
+	end
 	
 	local curGrid = _combat:GetGrid( _troop._x, _troop._y )
 
@@ -384,7 +397,7 @@ local function NeedMoveForward( ... )
 	elseif order == CombatOrder.SURVIVE then
 		if orgRatio <= 1 and soldierRatio <= 1 then return true end
 	end
-	--InputUtil_Pause( _troop.id, MathUtil_FindName( CombatSide, _troop._combatSide ), _troop._x, _troop._y )
+	--InputUtil_Pause( TroopToString(_troop), _troop._x, _troop._y, "move foward" )
 	return false
 end
 
@@ -647,6 +660,7 @@ local CombatTroopAI_Order =
 		{ type = "SEQUENCE", children = 
 			{
 				{ type = "FILTER", condition = IsCategory, params = { category = "MISSILE_UNIT" } },
+				--{ type = "FILTER", condition = function ( ... ) print( "missile unit defend" ) end },
 				{ type = "ACTION", action = SetTroopOrder, params = { order = "DEFEND" } },
 			}
 		},
@@ -677,6 +691,7 @@ local CombatTroopAI_Order =
 						},
 						{ type = "SEQUENCE", children = 
 							{
+								--{ type = "FILTER", condition = function ( ... ) InputUtil_Pause( TroopToString( _troop ), _troop,x, _troop.y, "default defend" ) end },
 								{ type = "ACTION", action = SetTroopOrder, params = { order = "DEFEND" } },
 							},
 						},

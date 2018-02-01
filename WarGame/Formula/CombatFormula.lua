@@ -29,9 +29,7 @@ function Combat_IsPrepared( troop )
 	elseif order == CombatOrder.SURVIVE then
 		ret = soliderRatio + orgRatio > 150 and soliderRatio > 70 and morale > 45
 	end
-	--if ret == false then
-		print( troop.name .. "," .. troop.id .. " Pre=" .. ( ret == true and "Y" or "N" ) .. " side=" .. MathUtil_FindName( CombatSide, troop._combatSide ) .. " sol=" .. soliderRatio .. " org=" .. orgRatio )
-	--end
+	if ret == false then print( troop.name .. "," .. troop.id .. " Pre=" .. ( ret == true and "Y" or "N" ) .. " side=" .. MathUtil_FindName( CombatSide, troop._combatSide ) .. " sol=" .. soldier .. "/" .. maxsoldier .. "(" .. soliderRatio .. "%) org=" .. orgRatio ) end
 	return ret
 end
 

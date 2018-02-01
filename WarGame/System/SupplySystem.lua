@@ -8,7 +8,6 @@
 
 local function SupplyCombat( combat )	
 	Asset_ForeachList( combat, CombatAssetID.TROOP_LIST, function ( troop )
-		InputUtil_Pause( "Supply guard" )
 		local corps = Asset_Get( troop, TroopAssetID.CORPS )
 		if corps then return end
 		local city = Asset_Get( troop, TroopAssetID.ENCAMPMENT )
@@ -70,7 +69,7 @@ function SupplySystem:Update()
 		Entity_Foreach( EntityType.COMBAT, SupplyCombat )
 	end
 
-	if day % 30 == 0 then
+	if day == 1 then
 		--Supply all corps
 		Entity_Foreach( EntityType.CORPS, SupplyCorps )
 	end

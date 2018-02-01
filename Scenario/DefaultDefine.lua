@@ -94,7 +94,7 @@ ResourceCondition =
 	NEAR_PLOT_TYPE           = 20,
 	NEAR_TERRAIN_TYPE        = 21,
 	NEAR_FEATURE_TYPE        = 22,
-	AWAY_FROM_PLOT_TYPE      = 23,
+	AWAY_FROM_CITY_TYPE      = 23,
 	AWAY_FROM_TERRAIN_TYPE   = 24,
 	AWAY_FROM_FEATURE_TYPE   = 25,
 }
@@ -301,7 +301,6 @@ CityPolicy =
 	DEV_PRODUCTION  = 12,
 
 	PATROL          = 20,
-	SERVICE         = 21,
 
 	RECRUIT         = 30,
 	CONSCRIPT       = 31,
@@ -390,7 +389,6 @@ CharaJob =
 CharaStatus = 
 {
 	PROPOSAL_CD       = 10,
-	EXECUTE_TASK      = 11,
 }
 
 ----------------------------------------------------------------------------------------
@@ -424,15 +422,15 @@ ConveyanceType =
 TroopCategory = 
 {
 	--Light footman, use long-range weapon like bow, crossbow
-	MISSILE_UNIT = 0,
+	MISSILE_UNIT = 1,
 	--Heavey footman, anti Cavalry
-	INFANTRY     = 1,	
+	INFANTRY     = 2,	
 	--footman with conveyance
-	CAVALRY      = 2,
+	CAVALRY      = 3,
 	--
-	SIEGE_WEAPON = 3,
+	SIEGE_WEAPON = 4,
 	--
-	ASSISTANT    = 4,
+	ASSISTANT    = 5,
 }
 
 TroopConsume = 
@@ -447,18 +445,6 @@ TroopRequirement =
 	MONEY    = 1,
 	MATERIAL = 2,
 	TECH     = 3,
-}
-
-TroopConstant = 
-{
-	NUMBER = 
-	{
-		--default maximum number of a troop
-		MAX_NUMBER = 1000,
-
-		--required minimum number of a troop
-		MIN_NUMBER = 200,
-	},
 }
 
 TroopStatus = 
@@ -512,9 +498,11 @@ ProposalType =
 	FRIENDLY        = 200,
 
 	ISSUE_POLICY    = 300,
-	EXECUTE_POLICY  = 301,
-	BUILD_CITY      = 310,
-	LEVY_TAX        = 311,
+	DEV_AGRICULTURE = 310,
+	DEV_COMMERCE    = 311,
+	DEV_PRODUCTION  = 312,
+	BUILD_CITY      = 320,
+	LEVY_TAX        = 321,
 
 	HIRE_CHARA      = 400,
 	PROMOTE_CHARA   = 401,
@@ -523,11 +511,11 @@ ProposalType =
 ProposalStatus = 
 {
 	SUBMITTED    = 1,
-	WAIT_RESPOND = 2,
-	PERMITTED    = 3,
-	REJECTED     = 4,
+	PERMITTED    = 2,
+	REJECTED     = 3,
 }
 
+--all proposal type should exist in TaskType or it'll occur error
 TaskType = 
 {
 	ESTABLISH_CORPS = 100,
@@ -542,9 +530,12 @@ TaskType =
 
 	FRIENDLY        = 200,
 
-	EXECUTE_POLICY  = 300,
-	BUILD_CITY      = 301,
-	LEVY_TAX        = 302,
+	ISSUE_POLICY    = 300,
+	DEV_AGRICULTURE = 310,
+	DEV_COMMERCE    = 311,
+	DEV_PRODUCTION  = 312,
+	BUILD_CITY      = 320,
+	LEVY_TAX        = 321,
 
 	HIRE_CHARA      = 400,
 	PROMOTE_CHARA   = 401,
@@ -552,15 +543,35 @@ TaskType =
 
 TaskStatus = 
 {
+	--initialized, default status
+	INITIALIZE     = 0,
+
+	--
 	PREPARE        = 1,
-	START          = 2,
-	ON_THE_WAY     = 3,
-	EXECUTING      = 4,
-	IDLE           = 5,
-	FINISHED       = 6,
-	REPLY          = 7,
-	END            = 8,	
-	CANCELED       = 9,
+
+	--approach to the destination location
+	ON_THE_WAY     = 2,
+
+	--executing as word
+	EXECUTING      = 3,
+
+	--suspend by some reason
+	SUSPENDED      = 4,
+
+	--finished
+	FINISHED       = 5,
+
+	--back to the reception
+	REPLY          = 6,
+	
+	--final status, need to remove
+	END            = 7,	
+
+	--canceled by some reason
+	CANCELED       = 8,
+
+	--out of time
+	FAILED         = 9,
 }
 
 TaskActorType = 
@@ -616,18 +627,25 @@ EventFlag =
 
 MeetingTopic =
 {
+	NONE                  = 0,
+
 	--enemy send corps to attack out territory
 	UNDER_ATTACK          = 1,
+	UNDER_HARASS          = 2,
+
+	MEETING_LOOP          = 10,
 
 	--agriculture, commerce, production
-	CITY_DEVELOPMENT      = 2,
-
-	POPULATION_MANAGEMENT = 3,
+	CITY_DEVELOPMENT      = 11,
 
 	--establish corps, reinforce corps
-	MILITARY_PREPARATION  = 4,
+	MILITARY_PREPARATION  = 12,	
 
-	MILITARY_PLAN         = 5,
+	--dipl
+	DIPLOMACY             = 13,
 
-	DIPLOMACY             = 6,
+	--harass, attack
+	MILITARY_PLAN         = 14,
+
+	MEETING_END           = 15,
 }

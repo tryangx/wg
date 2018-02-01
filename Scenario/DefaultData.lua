@@ -527,85 +527,6 @@ DefaultCharaGivenName =
 	]]
 }
 
---
--- Condition
---   politics
---   tactic
---   strategy
---[[
-DefaultProposalConditionData = 
-{
-	ESTABLISH_CORPS = 
-	{
-		strategy = 500,
-		tactic   = 100,
-	},
-	REINFORCE_CORPS = 
-	{
-		strategy = 100,
-		tactic   = 100,
-	},
-	DISMISS_CORPS   = 
-	{
-		politics = 500,
-		tactic   = 100,
-	},
-	TRAIN_CORPS     = 
-	{
-		tactic   = 100,
-		strategy = 100,
-	},
-	UPGRADE_CORPS   = 
-	{
-		politics = 100,
-		strategy = 100,
-	},
-	DISPATCH_CORPS  = 
-	{
-		politics = 400,
-		strategy = 200,
-	},
-
-	HARASS_CITY     = 
-	{
-		strategy = 300,
-		tactic   = 300,
-	},
-	ATTACK_CITY     =
-	{
-		strategy = 500,
-		tactic   = 500,
-	},
-
-	FRIENDLY        = 
-	{
-		politics = 500,
-	},
-
-	EXECUTE_POLICY  = 
-	{
-		politics = 500,
-	},
-	BUILD_CITY      = 
-	{
-		politics = 500,
-	},
-	LEVY_TAX        = 
-	{
-		politics = 500,
-	},
-	
-	HIRE_CHARA      = 
-	{
-		politics = 200,
-	},
-	PROMOTE_CHARA   = 
-	{
-		politics = 200,
-	},
-}
-]]
-
 -------------------------------------------------------
 --  Group government
 
@@ -653,6 +574,12 @@ PlotParams =
 	-- 360 * 100 means 1 agr support 100 popu
 	-- it relate with CityPopuStructureParams.POPU_PER_UNIT
 	FOOD_PER_AGRICULTURE = 360 * 100,
+}
+
+FoodParams = 
+{
+	--unit is 50 grams
+	CONSUME_PER_MAN = 10,
 }
 
 ----------------------------------------------
@@ -799,4 +726,77 @@ DefaultCityPopuStructureParams =
 
 		POPU_CONV_COND    = DefaultCityPopuConv,
 	}
+}
+
+
+--------------------------------------------
+--
+
+DefaultJobPromoteData = 
+{
+	OFFICER           = { contribution = 0, service = 0 },
+	CIVIAL_OFFICIAL   = { contribution = 100, service = 0 },
+	MILITARY_OFFICER  = { contribution = 100, service = 0 },
+	SPY               = { contribution = 0, service = 0, has_skill = { { 0 } }, },
+	TRADER            = { contribution = 0, service = 0, has_skill = { { 0 } }, },
+	BUILDER           = { contribution = 0, service = 0, has_skill = { { 0 } }, },
+	MISSIONARY        = { contribution = 0, service = 0, has_skill = { { 0 } }, },
+
+	ASSISTANT_MINISTER= { contribution = 1000, service = 720 },
+	DIPLOMATIC        = { contribution = 1000, service = 720 },
+	GENERAL           = { contribution = 1000, service = 720 },
+	CAPTAIN           = { contribution = 1000, service = 720 },
+	AGENT             = { contribution = 1000, service = 720 },
+	MERCHANT          = { contribution = 1000, service = 720 },
+	TECHNICIAN        = { contribution = 1000, service = 720 },
+	APOSTLE           = { contribution = 1000, service = 720 },
+		
+	IMPORTANT_JOB     = { contribution = 10000, service = 1800 },
+	PREMIER           = { contribution = 10000, service = 1800 },
+	CABINET_MINISTER  = { contribution = 10000, service = 1800 },
+	MARSHAL           = { contribution = 10000, service = 1800 },
+	ADMIRAL           = { contribution = 10000, service = 1800 },
+	SPYMASTER         = { contribution = 10000, service = 1800 },
+	ASSASSIN          = { contribution = 10000, service = 1800 },
+	MONOPOLY          = { contribution = 10000, service = 1800 },
+	SCIENTIST         = { contribution = 10000, service = 1800 },
+	INQUISITOR        = { contribution = 10000, service = 1800 },
+}
+
+DefaultCharaPromoteMethod = 
+{
+	OFFICER           = { "CIVIAL_OFFICIAL", "MILITARY_OFFICER" },
+	CIVIAL_OFFICIAL   = { "ASSISTANT_MINISTER", "DIPLOMATIC" },
+	MILITARY_OFFICER  = { "GENERAL", "CAPTAIN" },
+	SPY               = { "AGENT", "MILITARY_OFFICER" },
+	TRADER            = { "MERCHANT", "CIVIAL_OFFICIAL" },
+	BUILDER           = { "TECHNICIAN", "CIVIAL_OFFICIAL" },
+	MISSIONARY        = { "APOSTLE", "CIVIAL_OFFICIAL" },
+	
+	ASSISTANT_MINISTER= { "PREMIER", "CABINET_MINISTER" },
+	DIPLOMATIC        = { "PREMIER", "CABINET_MINISTER" },
+	GENERAL           = { "MARSHAL", },
+	CAPTAIN           = { "ADMIRAL", },
+	AGENT             = { "SPYMASTER", "ASSASSIN" },	
+	MERCHANT          = { "MONOPOLY", },	
+	TECHNICIAN        = { "SCIENTIST", },
+	APOSTLE           = { "INQUISITOR", },
+
+	PREMIER           = {},
+	CABINET_MINISTER  = {},
+	MARSHAL           = {},
+	ADMIRAL           = {},
+	SPYMASTER         = {},
+	ASSASSIN          = {},
+	MONOPOLY          = {},
+	SCIENTIST         = {},
+	INQUISITOR        = {},
+	
+	MAYOR             = {},
+	EMPEROR           = {},
+	KING              = {},
+	LORD              = {},
+	LEADER            = {},
+	CHIEF             = {},
+	PRESIDENT         = {},
 }

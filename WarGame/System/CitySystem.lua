@@ -1,3 +1,27 @@
+
+function City_DevelopByTask( task )
+	local id = nil
+	local type = Asset_Get( task, TaskAssetID.TYPE )
+	if type == TaskType.DEV_AGRICULTURE then
+		id = CityAssetID.AGRICULTURE
+	elseif type == TaskType.DEV_COMMERCE then
+		id = CityAssetID.COMMERCE
+	elseif type == TaskType.DEV_PRODUCTION then
+		id = CityAssetID.PRODUCTION
+	else
+		DBG_Warning( "dev_method_" .. type, "invalid devlopment method" )
+		return
+	end	
+	local city = Asset_Get( task, TaskAssetID.DESTINATION )
+	local workload = Asset_Get( task, TaskAssetID.WORKLOAD )
+	local inc = math.ceil( workload / 100 )
+	Asset_Plus( city, id, inc )
+
+	DBG_Warning( "city_develop_" .. id, city.name .. " dev " .. MathUtil_FindName( CityAssetID, id ) .. "+" .. inc .. "," .. workload )
+end
+
+----------------------------------------
+
 CityDevelopMethod = 
 {
 	{
@@ -72,10 +96,6 @@ CityDevelopMethod =
 
 -------------------------------------------------------
 
-local function City_GetPopuParams( city )
-	return GetScenarioData( "CITY_POPUSTRUCTURE_PARAMS" )[1]
-end
-
 -------------------------------------------------------
 
 --collet material
@@ -119,7 +139,7 @@ local function City_Harvest( city )
 	return income
 end
 
-local function City_Develop( city )
+local function City_DevelopByMethod( city )
 	local security = Asset_Get( city, CityAssetID.SECURITY )
 	local isSiege = Asset_GetListItem( city, CityAssetID.STATUSES, CityStatus.SIEGE )
 	local findMethod = nil
@@ -177,25 +197,6 @@ end
 --------------------------------------
 -- City Population Structure
 
-function City_NeedPopu( city, poputype )
-	local cityparams = City_GetPopuParams( city )
-	local needparam = cityparams.POPU_NEED_RATIO
-	local unitparam  = cityparams.POPU_PER_UNIT
-
-	if needparam[poputype] then
-		local popu   = Asset_Get( city, CityAssetID.POPULATION )
-		return math.floor( needparam[poputype] * popu )
-	end		
-	if poputype == "FARMER" then
-		return Asset_Get( city, CityAssetID.AGRICULTURE ) * unitparam[poputype]
-	elseif poputype == "WORKER" then
-		return Asset_Get( city, CityAssetID.PRODUCTION ) * unitparam[poputype]
-	elseif poputype == "MERCHANT" then
-		return Asset_Get( city, CityAssetID.COMMERCE ) * unitparam[poputype]
-	end
-	return 0
-end
-
 function City_InitPopuStructure( city )
 	local popu   = Asset_Get( city, CityAssetID.POPULATION )
 	local popustparams = City_GetPopuParams( city )
@@ -247,6 +248,7 @@ local function City_PopuConv( city )
 	local needparam = popustparams.POPU_NEED_RATIO
 	
 	Track_Reset()
+
 	local needlist = {}
 	for k, v  in pairs( CityPopu ) do
 		needlist[v] = City_NeedPopu( city, k )
@@ -382,6 +384,8 @@ end
 
 --------------------------------------
 
+--------------------------------------
+
 local function City_CheckFlag( city )	
 	--development evalution
 	local score = 0
@@ -406,7 +410,7 @@ local function City_CheckFlag( city )
 	local power = City_GetMilitaryPower( city )
 	Asset_ForeachList( city, CityAssetID.ADJACENTS, function( adjaCity )
 		local adjaGroup = Asset_Get( adjaCity, CityAssetID.GROUP )
-		if adjaGroup ~= group then
+		if adjaGroup ~= group and typeof( adjaCity ) == "table" then
 			local adjaPower = City_GetMilitaryPowerWithIntel( adjaCity, group )
 			if adjaPower > ( power + power + power ) then score = score + 1 end
 			if adjaPower > ( power + power ) then score = score + 1 end
@@ -451,11 +455,11 @@ function CitySystem:Update()
 			City_Event( city )
 		end
 
-		if day % 30 == 0 then
+		if day == 1 then
 			City_Produce( city )
 		end
 		
-		if day % 30 == 0 then
+		if day == 1 then
 			City_Tax( city )
 		end
 
@@ -468,14 +472,14 @@ function CitySystem:Update()
 		end		
 
 		if day % 10 == 0 then
-			City_Develop( city )
+			City_DevelopByMethod( city )
 		end
 
-		if day % 30 == 0 then
+		if day == 1 then
 			City_PopuConv( city )
 		end
 
-		if day % 30 == 0 then
+		if day == 1 then
 			City_PopuGrow( city )
 		end
 

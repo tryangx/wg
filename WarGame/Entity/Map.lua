@@ -75,7 +75,7 @@ function Map:__init()
 end
 
 function Map:CreateKey( x, y )
-	return self._size * ( y - 1 ) + x
+	return self._size * y + x
 end
 
 function Map:GetPlot( x, y )
@@ -165,7 +165,7 @@ function Map:MatchCondition( plot, condition )
 		return CheckNearPlot( 1, function( adjaplot )
 			return adjaplot:GetFeature() == PlotFeatureType[condition.value]
 		end )
-	elseif condition.type == ResourceCondition.AWAY_FROM_PLOT_TYPE then
+	elseif condition.type == ResourceCondition.AWAY_FROM_CITY_TYPE then
 		return CheckAwayFromPlot( 1, function( adjaplot )
 			return adjaplot:GetPlotType() == PlotType[condition.value]
 		end )
@@ -235,7 +235,7 @@ function Map:GeneratePlotResource( items )
 		local resource = ResourceTable_Get( item.id )
 		if resource then
 			local plotList = self:FindPlotSuitable( resource.conditions )
-			plotList = MathUtil_Shuffle_Sync( plotList, g_synRandomizer )
+			plotList = MathUtil_Shuffle_Sync( plotList )
 			for number = 1, #plotList do
 				if number > item.count then break end
 				local plot = plotList[number]

@@ -25,6 +25,8 @@ function Manager:__init( type, name, clz )
 	self._count = 0
 	
 	self._alloateId = 0
+
+	self._removeList = nil
 end
 
 function Manager:GetCount()
@@ -41,13 +43,24 @@ function Manager:GetData( id )
 	return self._datas[id]
 end
 
+function Manager:GetIndexData( index )
+	for _, data in pairs( self._datas ) do
+		if index > 1 then
+			index = index - 1
+		else
+			return data
+		end
+	end
+	return nil
+end
+
 function Manager:NewID()
 	self._alloateId = self._alloateId + 1
 	return self._alloateId
 end
 
 function Manager:Clear()
-	self._datas     = {}	
+	self._datas     = {}
 	self._count     = 0
 	self._alloateId = 0
 end
@@ -124,6 +137,10 @@ function Manager:NewData()
 end
 
 function Manager:AddData( id, data )
+	if self._removeList then
+		print( "Add data in Foreach() is not recommended!" )
+	end
+
 	if not self._datas[id] then
 		self._count = self._count + 1
 	end
@@ -134,6 +151,10 @@ end
 function Manager:RemoveData( id, fn )
 	if not self._datas[id] then
 		return false
+	end
+	if self._removeList then
+		DBG_Warning( "Remove In Foreach()", "Remove data(" .. self._type .. ") isn't recommended!" )
+		self._removeList[id] = self._datas[id]
 	end
 	if not fn or fn( self._datas[id] ) then
 		self._datas[id] = nil
@@ -153,13 +174,20 @@ function Manager:RemoveAllData( fn )
 end
 
 function Manager:ForeachData( fn )
+	self._removeList = {}
 	for k, data in pairs( self._datas ) do
 		fn( data )
 	end
+
+	--remove list
+	for id, data in pairs( self._removeList ) do
+		self._datas[id] = nil
+	end
+	self._removeList = nil
 end
 
 --Filter data by given function, return true means find the right data
-function Manager:FilterData( fn )
+function Manager:FindData( fn )
 	for k, data in pairs( self._datas ) do
 		if fn( data ) == true then
 			return data

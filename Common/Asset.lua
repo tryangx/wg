@@ -70,6 +70,7 @@ function AssetAttrib_SetList( params )
 		type       = params.type,
 		value_type = AssetAttribType.LIST,
 		setter     = params.setter,
+		changer    = params.changer,
 	}
 end
 
@@ -80,6 +81,7 @@ function AssetAttrib_SetPointerList( params )
 		type       = params.type,
 		value_type = AssetAttribType.POINTER_LIST,
 		setter     = params.setter,
+		changer    = params.changer,
 	}
 end
 
@@ -118,13 +120,13 @@ function AssetAttrib_SetTemporary( params )
 end
 
 ----------------------------------
--- Assert Attrib : List 
+-- Asset Attrib : List 
 ----------------------------------
 
 function Asset_GetList( entity, id )
 	if not id then error( "id is invalid" ) end
-	if type( entity ) ~= "table" then
-		print( "entity=", entity, "type=", typeof(entity), " or id=", id, " is invalid" )
+	if typeof( entity ) == "number" then
+		print( "entity=", entity, " is ", typeof(entity) )
 		return nil
 	end
 	local list = entity[id]
@@ -150,12 +152,12 @@ function Asset_GetListItem( entity, id, index )
 	return list and list[index] or nil
 end
 
-function Asset_GetListIndex( entity, id, item )
+function Asset_GetListIndex( entity, id, index )
 	local list = Asset_GetList( entity, id )
 	if not list then return nil end
-	for index, data in pairs( list ) do
-		if data == item then
-			return index
+	for idx, data in pairs( list ) do		
+		if idx == index then
+			return data
 		end
 	end
 	return nil
@@ -164,12 +166,11 @@ end
 --simply 
 function Asset_CopyDict( entity, id, source, fn )
 	if not source then return end
+	Asset_ClearList( entity, id )
 	local list = Asset_GetList( entity, id )
-	--clear
-	list = {}
-	for k, v in pairs( list ) do
+	for k, v in pairs( source ) do
 		list[k] = v
-	end	
+	end
 end
 
 -- list is just a list, not dictionary
@@ -195,12 +196,15 @@ function Asset_CopyList( entity, id, source, fn )
 		if setter then
 			value = attrib.setter( entity, id, value )
 		end
+		if attrib and attrib.changer then
+			attrib.changer( entity, id, value )
+		end
 		table.insert( list, value )
-	end
+	end	
 	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "copy list" ) end
 end
 
--- Use this to add item
+-- Use this to add item into the list
 function Asset_AppendList( entity, id, item )
 	if not item then return end
 	local list = Asset_GetList( entity, id )	
@@ -208,10 +212,14 @@ function Asset_AppendList( entity, id, item )
 	if attrib and attrib.setter and typeof( item ) == "number" then
 		item = attrib.setter( entity, id, item )
 	end
+	if attrib and attrib.changer then
+		attrib.changer( entity, id, item )
+	end
 	table.insert( list, item )
 	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "append item=", ( item or "" ) ) end
 end
 
+-- Use this to add item into the dictionary
 function Asset_SetListItem( entity, id, index, item )
 	local list = Asset_GetList( entity, id )
 	
@@ -219,25 +227,26 @@ function Asset_SetListItem( entity, id, index, item )
 	if attrib and attrib.setter and typeof( item ) == "number" then
 		item = attrib.setter( entity, id, item )
 	end
-	
+	if attrib and attrib.changer then
+		attrib.changer( entity, id, item )
+	end
 	--debug
 	entity[id][index] = item
 
-	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "set index=" .. index ) end	
+	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "set index=", index ) end	
 end
 
+-- Use this to remove item from the list
 function Asset_RemoveListItem( entity, id, item )
-	if not item then return end	
-	
-	if not id then error( "id is invalid" ) end
-	if type( entity ) ~= "table" then return end
+	if not item then error( "item invalid" ) return false end
+	if not id then error( "id invalid" ) end
+	if typeof( entity ) == "number" then error( "entity invalid" ) return false end
 	if not entity[id] then return false end
 
 	local list = entity[id]
 	for k, data in pairs( list ) do
 		if data == item then
-			if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "remove item=" .. k ) end
-			--list[k] = nil
+			if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "remove item=", k ) end
 			table.remove( list, k )
 			return true
 		end
@@ -245,18 +254,19 @@ function Asset_RemoveListItem( entity, id, item )
 	return false
 end
 
+-- Use this to remove item from the dictionary
 function Asset_RemoveIndexItem( entity, id, index )
 	if not id then error( "id is invalid" ) end
-	if type( entity ) ~= "table" then return end
+	if typeof( entity ) == "number" then return end
 	if not entity[id] then return end	
 
 	entity[id] = nil
-	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "remove index=" .. index ) end
+	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "remove index=", index ) end
 end
 
 function Asset_ClearList( entity, id )
 	if not id then error( "id is invalid" ) end
-	if type( entity ) ~= "table" then
+	if typeof( entity ) == "number" then
 		print( "entity=", entity, "type=", typeof(entity), " or id=", id, " is invalid" )
 		return
 	end
@@ -272,24 +282,60 @@ function Asset_ForeachList( entity, id, fn )
 	end
 end
 
---@return true/false
-function Asset_HasItem( entity, id, item )
+function Asset_FindList( entity, id, fn )
+	local list = Asset_GetList( entity, id )
+	if not list then return nil end
+	for k, item in pairs( list ) do
+		if fn( item, k ) == true then
+			return item
+		end
+	end
+	return nil
+end
+
+--[[
+	@return true/false
+--]]
+function Asset_HasItem( entity, id, item, name )
 	if not item then return false end
 	if not id then error( "id is invalid" ) end
-	if type( entity ) ~= "table" then return end
+	if typeof( entity ) == "number" then return end
 	if not entity[id] then entity[id] = {} return false end	
+	
 	local list = entity[id]
 	for k, data in pairs( list ) do
-		if k == item then
-			return true
+		if name then
+			if data[name] == item then return true end
+		else
+			if k == item then return true end
 		end
 	end
 	return false
 end
 
+function Asset_VerifyList( entity, id )
+	if not id then error( "id is invalid" ) end
+	if typeof( entity ) == "number" then return end
+
+	if not entity[id] then return false end
+	
+	local attrib = Entity_GetAssetAttrib( entity, id )
+	if not attrib or not attrib.setter then return false end
+
+	--print( "verifylist", entity.type, id )
+	local list = entity[id]
+	for k, value in pairs( list ) do
+		if typeof( value == "number" ) then
+			local ret = attrib.setter( entity, id, value )
+			--print( value, ret )
+			list[k] = ret
+		end
+	end
+end
+
 
 ----------------------------------
---	Assert Attrib : Pointer
+--	Asset Attrib : Pointer
 ----------------------------------
 
 function Asset_ConvertID2Pointer( entity, id, fn )
@@ -301,15 +347,37 @@ function Asset_ConvertID2Pointer( entity, id, fn )
 	end
 end
 
-
 ----------------------------------
---	Assert Attrib : All
+--	Asset Attrib : All
 ----------------------------------
 
+-- Use to reset pointer from number
+function Asset_VerifyData( entity, id )
+	if not entity then return end
+	if not id then error( "id is invalid" ) end
+	if typeof( entity ) == "number" then return end
+
+	local attrib = Entity_GetAssetAttrib( entity, id )
+	if attrib then
+		value = entity[id]
+		if typeof( value == "number" ) then
+			if attrib.setter and typeof( value ) == "number" then
+				local v = attrib.setter( entity, id, value )
+				if v == value then
+					print( "Entity verify data failed!" .." type=" .. entity.type .. " id=" .. id .. ", value=" .. value )
+				else
+					entity[id] = v
+				end
+			end
+		end
+	end
+end
+
+-- Most useful function, to set asset data
 function Asset_Set( entity, id, value )
 	if not entity then return end
 	if not id then error( "id is invalid" ) end
-	if type( entity ) ~= "table" then return end
+	if typeof( entity ) == "number" then return end
 	local attrib = Entity_GetAssetAttrib( entity, id )
 	if attrib then
 		if not value then
@@ -323,9 +391,17 @@ function Asset_Set( entity, id, value )
 			end
 		elseif attrib.value_type == AssetAttribType.POINTER then
 			if value == 0 then value = nil end
+		elseif attrib.value_type == AssetAttribType.LIST or attrib.value_type == AssetAttribType.POINTER_LIST then
+			if typeof( value ) == "number" then
+				error( "cann't set number to list" .." type=" .. entity.type .. " id=" .. id )
+			end
 		end
 		if attrib.setter and typeof( value ) == "number" then
-			value = attrib.setter( entity, id, value )
+			local v = attrib.setter( entity, id, value )
+			if v == value then
+				print( "Entity verify data failed!" .." type=" .. entity.type .. " id=" .. id .. ", value=" .. value )
+			end
+			value = v
 		end
 	end
 	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "set value=" .. ( typeof( value ) == "number" and value or "" ) ) end
@@ -336,7 +412,7 @@ end
 function Asset_Get( entity, id )
 	if not entity then return nil end
 	if not id then error( "id is invalid" ) end
-	if type( entity ) ~= "table" then return nil end
+	if typeof( entity ) == "number" then return nil end
 	local ret = entity[id]
 	if not ret then		
 		local attrib = Entity_GetAssetAttrib( entity, id )
@@ -359,7 +435,7 @@ end
 function Asset_Plus( entity, id, value )
 	if not entity then return end
 	if not id then error( "id is invalid" ) end
-	if type( entity ) ~= "table" then return nil end
+	if typeof( entity ) == "number" then return nil end
 	local ret = Asset_Get( entity, id )
 	if not ret then return end
 	Asset_Set( entity, id, ret + value )

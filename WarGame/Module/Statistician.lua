@@ -42,13 +42,14 @@ function Stat_Add( name, data, type )
 end
 
 function Stat_Dump( type )
+	print( "[STAT_DUMP]" )	
 	for t, list in pairs( _stats ) do
 		if not type or t == type then
 			for name, data in pairs( list ) do
 				--print( list, name, data, list[name] )
 				local dumper = list[name] and list[name]._DUMPER or nil
 				if t == StatType.LIST then
-					print( name .. ":" .. " cnt=" .. #data )--, dumper )
+					print( name .. ":" .. " cnt=" .. #data, dumper )
 					if dumper then
 						for _, item in ipairs( data ) do
 							dumper( item )
@@ -77,7 +78,7 @@ end
 function Stat_SetDumper( name, fn )
 	local type = _types[name]
 	if not type then
-		InputUtil_Pause( "Invalid name-type for=", name )
+		error( "Invalid name-type for=", name )		
 		return
 	end
 	local stats = Stat_Get( type, name )

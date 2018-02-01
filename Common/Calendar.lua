@@ -234,25 +234,34 @@ function Calendar:CalcDiffMonthByDate( dateValue )
 	return math.abs( totalMonth2 - totalMonth1 )
 end
 
-function Calendar:CalcDiffDayByDate( dateValue )
-	if not dateValue then return 0 end
-	local year, month, day, beforeChrist = self:ConvertFromDateValue( dateValue )
-	
+local function CalcDayDiffByDate( y1, m1, d1, b1, y2, m2, d2, b2 )
 	local diffDays = 0
 
-	if beforeChrist ~= self.beforeChrist then
+	if b2 ~= b1 then
 		if beforeChrist then
-			local totalDays1 = ( year - 1 ) * MONTH_IN_YEAR * DAY_IN_MONTH + ( MONTH_IN_YEAR - month ) * DAY_IN_MONTH + ( DAY_IN_MONTH - day )
-			local totalDays2 = ( self.year - 1 ) * MONTH_IN_YEAR * DAY_IN_MONTH + ( self.month - 1 ) * DAY_IN_MONTH + self.day			
+			local totalDays1 = ( y2 - 1 ) * MONTH_IN_YEAR * DAY_IN_MONTH + ( MONTH_IN_YEAR - m2 ) * DAY_IN_MONTH + ( DAY_IN_MONTH - d2 )
+			local totalDays2 = ( y1 - 1 ) * MONTH_IN_YEAR * DAY_IN_MONTH + ( m1 - 1 ) * DAY_IN_MONTH + d1
 			return totalDays1 + totalDays2
 		else
-			local totalDays1 = ( year - 1 ) * MONTH_IN_YEAR * DAY_IN_MONTH + ( month - 1 ) * DAY_IN_MONTH + day
-			local totalDays2 = ( self.year - 1 ) * MONTH_IN_YEAR * DAY_IN_MONTH + ( MONTH_IN_YEAR - self.month ) * DAY_IN_MONTH + ( DAY_IN_MONTH - self.day )
+			local totalDays1 = ( y2 - 1 ) * MONTH_IN_YEAR * DAY_IN_MONTH + ( m2 - 1 ) * DAY_IN_MONTH + d2
+			local totalDays2 = ( y1 - 1 ) * MONTH_IN_YEAR * DAY_IN_MONTH + ( MONTH_IN_YEAR - m1 ) * DAY_IN_MONTH + ( DAY_IN_MONTH - d1 )
 			return totalDays1 + totalDays2
 		end		
 	end
 	
-	local totalDays1 = ( year - 1 ) * MONTH_IN_YEAR * DAY_IN_MONTH + ( month - 1 ) * DAY_IN_MONTH + day
-	local totalDays2 = ( self.year - 1 ) * MONTH_IN_YEAR * DAY_IN_MONTH + ( self.month - 1 ) * DAY_IN_MONTH + self.day
+	local totalDays1 = ( y2 - 1 ) * MONTH_IN_YEAR * DAY_IN_MONTH + ( m2 - 1 ) * DAY_IN_MONTH + d2
+	local totalDays2 = ( y1 - 1 ) * MONTH_IN_YEAR * DAY_IN_MONTH + ( m1 - 1 ) * DAY_IN_MONTH + d1
 	return math.abs( totalDays2 - totalDays1 )
+end
+
+function Calendar:CalcDiffDayByDate( dateValue )
+	if not dateValue then return 0 end
+	local year, month, day, beforeChrist = self:ConvertFromDateValue( dateValue )
+	return CalcDayDiffByDate( self.year, self.month, self.day, self.beforeChrist, year, month, day, beforeChrist )
+end
+
+function Calendar:CalcDiffDayByDates( dateValue1, dateValue2 )
+	local year1, month1, day1, beforeChrist1 = self:ConvertFromDateValue( dateValue1 )
+	local year2, month2, day2, beforeChrist2 = self:ConvertFromDateValue( dateValue2 )
+	return CalcDayDiffByDate( year1, month1, day1, beforeChrist1, year2, month2, day2, beforeChrist2 )
 end

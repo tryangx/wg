@@ -4,9 +4,10 @@ function Group_FormulaInit()
 end
 
 ---------------------------------------
+
 function Group_GetCharaLimit( group )
 	if not group then return 0 end
 	local government = Asset_Get( group, GroupAssetID.GOVERNMENT )
-	print( government )
+	print( "gov=" .. MathUtil_FindName( GroupGovernment, government ) )
 	return GroupGovernmentData[government].CAPITAL_CHARA_LIMIT
 end

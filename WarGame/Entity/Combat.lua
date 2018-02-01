@@ -133,8 +133,15 @@ logUtility = LogUtility( "log/combat_test.log", LogWarningLevel.DEBUG, false )
 
 local function WriteLog( type, ... )
 	if type == CombatLog.DEBUG then return end
+	if type == CombatLog.MAP then return end
+	if type == CombatLog.DESC then return end
+	if type == CombatLog.INITIAL then return end
 	print( ... )
-	logUtility:WriteLog( ... )
+	--logUtility:WriteLog( ... )
+end
+
+local function DebugLog( ... )
+	WriteLog( CombatLog.DEBUG, ... )
 end
 
 local function TroopToString( troop )
@@ -458,7 +465,7 @@ function Combat:DrawBattlefield()
 	--if 1 then return end
 	if not self._currentField then return end
 
-	print( "Field=" .. self._currentField.name )
+	DebugLog( "Field=" .. self._currentField.name )
 
 	local battlefield = self._currentField
 	local content = "     "
@@ -503,22 +510,22 @@ function Combat:DumpStatistic()
 		self:DumpTroop( troop )
 	end )
 
-	print( "Type = " .. MathUtil_FindName( CombatType, Asset_Get( self, CombatAssetID.TYPE ) ) )
-	print( "Day  = " .. Asset_Get( self, CombatAssetID.DAY ) )
-	print( "Total VP = " .. Asset_Get( self, CombatAssetID.TOTAL_VP ) )
+	DebugLog( "Type = " .. MathUtil_FindName( CombatType, Asset_Get( self, CombatAssetID.TYPE ) ) )
+	DebugLog( "Day  = " .. Asset_Get( self, CombatAssetID.DAY ) )
+	DebugLog( "Total VP = " .. Asset_Get( self, CombatAssetID.TOTAL_VP ) )
 
 	function DumpStatus( side )
 		local list
 		if side == CombatSide.ATTACKER then
-			print( "ATK Status=" )
+			DebugLog( "ATK Status=" )
 			list = Asset_GetList( self, CombatAssetID.ATK_STATUS )
 		elseif side == CombatSide.DEFENDER then
-			print( "DEF Status=" )
+			DebugLog( "DEF Status=" )
 			list = Asset_GetList( self, CombatAssetID.DEF_STATUS )
 		end
 		if list then
 			for k, v in pairs( list ) do
-				print( "", k .. "=", v )
+				DebugLog( "", k .. "=", v )
 			end
 		end
 	end
@@ -527,22 +534,22 @@ function Combat:DumpStatistic()
 
 	for k, v in pairs( CombatStatistic ) do
 		if self._stat[CombatSide.ALL][v] ~= nil then
-			print( "Tot " .. k .. "=".. self._stat[CombatSide.ALL][v] )
+			DebugLog( "Tot " .. k .. "=".. self._stat[CombatSide.ALL][v] )
 		end
 	end
 	for k, v in pairs( CombatStatistic ) do
 		if self._stat[CombatSide.ATTACKER][v] ~= nil then			
-			print( "Att " .. k .. "=".. self._stat[CombatSide.ATTACKER][v] )
+			DebugLog( "Att " .. k .. "=".. self._stat[CombatSide.ATTACKER][v] )
 		end
 		if self._stat[CombatSide.DEFENDER][v] ~= nil then
-			print( "Def " .. k .. "=".. self._stat[CombatSide.DEFENDER][v] )
+			DebugLog( "Def " .. k .. "=".. self._stat[CombatSide.DEFENDER][v] )
 		end
 	end
 	for k, v in pairs( CombatStatistic ) do
 		if v >= CombatStatistic.ACCUMULATE_TYPE then
 			Asset_ForeachList( self, CombatAssetID.TROOP_LIST, function ( troop )
 				if self._stat[troop] and self._stat[troop][v] then
-					print( TroopToString( troop ) .. " " .. " " .. k .. "=" .. self._stat[troop][v] )
+					WriteLog( TroopToString( troop ) .. " " .. " " .. k .. "=" .. self._stat[troop][v] )
 				end
 			end )				
 		end
@@ -587,8 +594,9 @@ end
 
 function Combat:DumpTroop( troop )
 	--if 1 then return end
-	print( "side=" .. MathUtil_FindName( CombatSide, troop._combatSide ) )
+	DebugLog( "side=" .. MathUtil_FindName( CombatSide, troop._combatSide ) )
 	Entity_Dump( troop, function ( attrib )
+		if 1 then return false end
 		if attrib.id == TroopAssetID.ORGANIZATION then return true end
 		if attrib.id == TroopAssetID.MORALE then return true end
 		return attrib.type == TroopAssetType.COMBAT_ATTRIB and attrib.id <= TroopAssetID.ABILITY
@@ -714,7 +722,7 @@ function Combat:Embattle()
 				self:AddGridTroop( grid, troop )
 				troop._grid = grid
 
-				--WriteLog( CombatLog.INITIAL, "put", troop._x, troop._y, TroopToString( troop ), troop._combatSide, Asset_Get( troop, TroopAssetID.SOLDIER ) )				
+				WriteLog( CombatLog.INITIAL, "put", troop._x, troop._y, TroopToString( troop ), MathUtil_FindName( CombatSide, troop._combatSide ), Asset_Get( troop, TroopAssetID.SOLDIER ) )
 			end
 		end
 	end
@@ -751,7 +759,7 @@ function Combat:Prepare()
 	self:ClearReferenceStats()
 	Asset_ForeachList( self, CombatAssetID.TROOP_LIST, function ( troop )
 		troop._prepared = nil
-		if Combat_IsPrepared( troop ) then			
+		if Combat_IsPrepared( troop ) then
 			troop._prepared = true
 			troop._exposure = math.min( 100, troop._exposure + 20 )
 			self:SetStat( troop._combatSide, CombatStatistic.PREPARED, 1 )
@@ -839,12 +847,12 @@ function Combat:Prepare()
 			if cond.is_siege and ( combatType == CombatType.SIEGE_COMBAT or combatType == CombatType.CAMP_COMBAT ) then ret = false end
 			if cond.is_field and combatType == CombatType.FIELD_COMBAT then ret = false end
 			if ret == true then
-				print( "withdraw reason=" .. ( cond.reason and cond.reason or "" ) )
+				DebugLog( "withdraw reason=" .. ( cond.reason and cond.reason or "" ) )
 				--[[
-				print( "intense="..self:GetStat( side, CombatStatistic.COMBAT_INTENSE ) )
-				print( "mor="..self:GetStat( side, CombatStatistic.AVERAGE_MORALE ) )
-				print( "casulaty="..self:GetStat( side, CombatStatistic.CASUALTY_RATIO ) )
-				print( "foodsup="..self:GetStat( side, CombatStatistic.FOOD_SUPPLY_DAY ) )
+				DebugLog( "intense="..self:GetStat( side, CombatStatistic.COMBAT_INTENSE ) )
+				DebugLog( "mor="..self:GetStat( side, CombatStatistic.AVERAGE_MORALE ) )
+				DebugLog( "casulaty="..self:GetStat( side, CombatStatistic.CASUALTY_RATIO ) )
+				DebugLog( "foodsup="..self:GetStat( side, CombatStatistic.FOOD_SUPPLY_DAY ) )
 				]]
 				return ret
 			end
@@ -854,8 +862,8 @@ function Combat:Prepare()
 	if NeedWithdraw( CombatSide.ATTACKER, CombatPurposeParam.WITHDRAW[atkPurpose] ) then atkWithdraw = true end
 	if NeedWithdraw( CombatSide.DEFENDER, CombatPurposeParam.WITHDRAW[defPurpose] ) then defWithdraw = true end
 
-	print( "withdraw atk=", atkWithdraw, self:GetStat( CombatSide.ATTACKER, CombatStatistic.COMBAT_INTENSE ) )
-	print( "withdraw def=", defWithdraw, self:GetStat( CombatSide.DEFENDER, CombatStatistic.COMBAT_INTENSE ) )	
+	DebugLog( "withdraw atk=", atkWithdraw, self:GetStat( CombatSide.ATTACKER, CombatStatistic.COMBAT_INTENSE ) )
+	DebugLog( "withdraw def=", defWithdraw, self:GetStat( CombatSide.DEFENDER, CombatStatistic.COMBAT_INTENSE ) )	
 
 	if atkWithdraw ~= defWithdraw then
 		--one side decide to withdraw
@@ -941,7 +949,7 @@ function Combat:PrepareDefense()
 		if grid.isWall then
 			grid.defense = defenses[index]
 			--InputUtil_Pause( "add defense=", grid.defense, index, defenses[index] )
-			--print( index .. "=" .. defenses[index] )
+			--WriteLog( index .. "=" .. defenses[index] )
 			index = index + 1
 		end
 	end
@@ -961,7 +969,7 @@ function Combat:PrepareDefense()
 		Asset_Set( troop, TroopAssetID.ENCAMPMENT, city )
 		Asset_Set( troop, TroopAssetID.SOLDIER, numpertroop )
 		Asset_Set( troop, TroopAssetID.MAX_SOLDIER, numpertroop )
-		Asset_Set( troop, TroopAssetID.SOLDIER, math.ceil( numpertroop * security * 0.01 ) )
+		Asset_Set( troop, TroopAssetID.ORGANIZATION, math.ceil( numpertroop * security * 0.01 ) )
 		troop:LoadFromTable( guardTable )
 		troop._prepared = true
 		troop._exposure = math.min( 100, troop._exposure + 20 )
@@ -1068,8 +1076,8 @@ function Combat:NextStep( status )
 		local type = Asset_Get( self, CombatAssetID.TYPE )
 		if type == CombatType.SIEGE_COMBAT then
 			self._currentField = Asset_Get( self, CombatAssetID.DEFCAMPFIELD )
-			if result == CombatPrepareResult.ONLY_DEF_ACCEPTED then				
-				InputUtil_Pause( "atk declined, should we occured a field combat?" )
+			if result == CombatPrepareResult.ONLY_DEF_ACCEPTED then
+				print( "atk refused, should we occured a field combat?" )
 				return false
 			end			
 		else
@@ -1094,7 +1102,6 @@ function Combat:NextStep( status )
 		self:PrepareSide( CombatSide.ATTACKER )
 
 		self:AddStat( CombatSide.ALL, CombatStatistic.COMBAT_DAY, 1 )
-		print( "start combat=" .. MathUtil_FindName( CombatType, type ) )
 		--set ai enviroment
 		CombatAI_SetEnviroment( CombatAIEnviroment.COMBAT_INSTANCE, self )
 	elseif status == CombatStep.EMBATTLE then
@@ -1164,7 +1171,7 @@ function Combat:Feedback()
 		for _, grid in pairs( self._grids ) do
 			if grid.isWall == true then
 				Asset_SetListItem( city, CityAssetID.DEFENSES, grid.x, grid.defense )
-				print( "DEFENSE-" .. grid.x .. "=" .. grid.defense )
+				DebugLog( "DEFENSE-" .. grid.x .. "=" .. grid.defense )
 			end
 		end
 	end
@@ -1173,7 +1180,7 @@ end
 function Combat:UpdateRound()
 	--Timer go on
 	Asset_Plus( self, CombatAssetID.TIME, 1 )
-	--print( "#Day=" .. Asset_Get( self, CombatAssetID.DAY ), "Time=" .. Asset_Get( self, CombatAssetID.TIME ) )
+	--DebugLog( "#Day=" .. Asset_Get( self, CombatAssetID.DAY ), "Time=" .. Asset_Get( self, CombatAssetID.TIME ) )
 end
 
 function Combat:UpdateResult()
@@ -1377,7 +1384,7 @@ function Combat:UpdateAction( list )
 	end)
 
 	for _, task in  ipairs( self._tasks ) do
-		if self:IsTroopValid( task.troop ) then		
+		if self:IsTroopValid( task.troop ) then
 			self:DealAttack( task.troop, task.target, { type = task.type, weapon = task.weapon } )
 		end
 	end
@@ -1399,6 +1406,12 @@ local _positionOffsets =
 
 function Combat:CalcDistance( sour, dest )
 	--print( NIDString( sour ), NIDString( dest ) )
+	if not dest._x then
+		MathUtil_Dump( dest )
+	end
+	if not sour._x then
+		--MathUtil_Dump( sour )
+	end
 	return math.abs( sour._x - dest._x ) + math.abs( sour._y - dest._y )
 end
 
@@ -1525,11 +1538,11 @@ function Combat:FindNearbyTarget( troop )
 	for _, of in ipairs( _positionOffsets ) do
 		local grid = self:GetGrid( troop._x + of.x, troop._y + of.y )
 		local target = self:FindGridTarget( grid, troop._combatSide )		
-		if target then
+		if target and self:IsTroopValid( target ) then
+			--InputUtil_Pause( "find nearest target", TroopToString( troop ), troop._x, troop._y, grid.x, grid.y )
 			return target
 		end
-	end
-
+	end	
 	return nil
 end
 
@@ -1571,14 +1584,16 @@ function Combat:FindNearestTarget( troop )
 
 	local target = nil
 	local distance = 0
-	for _, tar in pairs( list ) do		
-		local dis = self:CalcDistance( troop, tar )
-		if target == nil then
-			target = tar
-			distance = dis
-		elseif dis < distance then
-			target = tar
-			distance = dis
+	for _, tar in pairs( list ) do
+		if self:IsTroopValid( tar ) then		
+			local dis = self:CalcDistance( troop, tar )
+			if target == nil then
+				target = tar
+				distance = dis
+			elseif dis < distance then
+				target = tar
+				distance = dis
+			end
 		end
 	end	
 
@@ -1604,7 +1619,6 @@ function Combat:FindSiegeTaget( troop )
 			end
 		end
 	end
-	--InputUtil_Pause( "check")
 	return nil
 end
 
@@ -1782,13 +1796,15 @@ function Combat:DealDamage( attacker, defender, params )
 	--count soldier
 	Asset_Set( defender, TroopAssetID.SOLDIER, defNumber - kill )
 
+	Stat_Add( "Combat@Kill Soldier", kill, StatType.ACCUMULATION )
+
 	--statistic
 	self:AddStat( defender._combatSide, CombatStatistic.DEAD, kill )
 	self:AddStat( attacker._combatSide, CombatStatistic.KILL, kill )
 	self:AddStat( attacker            , CombatStatistic.KILL, kill )
 
 	if testMode == true then
-		print( TroopToString( attacker ) .."=>" .. MathUtil_FindName( CombatTask, params.type ).."=>" ..  TroopToString( defender ).."=>" ..  " dmg=".."=>" ..  dmg..  " kill=".."=>" ..  kill .."=>" ..  " org=".."=>" .. math.max( 0, organization - reduceOrg ) )
+		WriteLog( TroopToString( attacker ) .."=>" .. MathUtil_FindName( CombatTask, params.type ).."=>" ..  TroopToString( defender ).."=>" ..  " dmg=".."=>" ..  dmg..  " kill=".."=>" ..  kill .."=>" ..  " org=".."=>" .. math.max( 0, organization - reduceOrg ) )
 	else
 		WriteLog( CombatLog.DESC, TroopToString( attacker ), MathUtil_FindName( CombatTask, params.type ), TroopToString( defender ), " dmg=".. dmg, " kill="..kill, " left=", defNumber - kill, " org=".. organization )
 	end
@@ -1806,10 +1822,10 @@ function Combat:DestroyDefense( atk, def, params )
 		if def.isWall == true then
 			if def.side == CombatSide.ATTACKER then
 				Asset_SetListItem( self, CombatAssetID.ATK_STATUS, CombatStatus.DEFENSE_BROKEN, true )
-				print( Asset_GetListItem( self, CombatAssetID.ATK_STATUS, CombatStatus.DEFENSE_BROKEN ) )
+				--print( Asset_GetListItem( self, CombatAssetID.ATK_STATUS, CombatStatus.DEFENSE_BROKEN ) )
 			elseif def.side == CombatSide.DEFENDER then
 				Asset_SetListItem( self, CombatAssetID.DEF_STATUS, CombatStatus.DEFENSE_BROKEN, true )
-				print( Asset_GetListItem( self, CombatAssetID.DEF_STATUS, CombatStatus.DEFENSE_BROKEN ) )
+				--print( Asset_GetListItem( self, CombatAssetID.DEF_STATUS, CombatStatus.DEFENSE_BROKEN ) )
 			end			
 			--InputUtil_Pause( "break def", def.side, def.x, def.y )
 			if Asset_Get( self, CombatAssetID.TYPE ) == CombatType.SIEGE_COMBAT then
@@ -1829,7 +1845,7 @@ function Combat:CalcAttack( atk, def, params )
 	if atk._grid then
 		params.isCrowd = atk._grid.soldier > atk._grid.depth
 		if params.isCrowd == true then
-			print( atk._grid.soldier, atk._grid.depth, #atk._grid.troops )
+			--print( atk._grid.soldier, atk._grid.depth, #atk._grid.troops )
 		end
 	end
 	params.prot = 0
@@ -1837,8 +1853,8 @@ function Combat:CalcAttack( atk, def, params )
 		params.prot = def._grid.defense > 0 and def._grid.prot or 0
 	end	
 	if atk._grid and def._grid and params.prot > 0 then
-		params.isHeightAdv    = ( atk._grid.height > def._grid.height * 2 )
-		params.isHeightDisadv = ( atk._grid.height * 2.5 < def._grid.height )
+		params.isHeightAdv    = ( atk._grid.height or 0 ) > ( def._grid.height or 0 ) * 2
+		params.isHeightDisadv = ( atk._grid.height or 0 ) * 2.5 < ( def._grid.height or 0 )
 	end
 	params.isTest = testMode
 	params.isAssit = def._target ~= nil and def._target ~= atk	
@@ -1850,7 +1866,7 @@ end
 function Combat:DealAttack( atk, def, params )
 	params.isTired      = atk._attacked
 	params.isSuppressed = atk._defended
-	
+
 	--WriteLog( CombatLog.DESC, MathUtil_FindName( CombatTask, params.type ), TroopToString( atk ) .. " vs " .. TroopToString( def ) )
 	if params.type == CombatTask.DESTROY_DEFENSE then
 		self:DestroyDefense( atk, def, params )
@@ -1892,8 +1908,7 @@ function Combat:ProcessAction( task )
 		return
 	end
 	task.troop._target = task.target
-	table.insert( self._tasks, task )
-	--InputUtil_Pause( "attack task" .. #self._matchups[task.target] )
+	table.insert( self._tasks, task )	
 end
 
 function Combat:Flee( troop )
@@ -1938,7 +1953,7 @@ function Combat:MoveTo( troop, x, y, type )
 		end
 	end
 	
-	--WriteLog( CombatLog.DESC, TroopToString( troop ) .. " Move ("..troop._x..","..troop._y..")->" .. "("..tx..","..ty..")", MathUtil_FindName( CombatTask, type ) )
+	WriteLog( CombatLog.DESC, TroopToString( troop ) .. " Move ("..troop._x..","..troop._y..")->" .. "("..tx..","..ty..")", MathUtil_FindName( CombatTask, type ) )
 	
 	local curGrid = self:GetGrid( troop._x, troop._y )
 	local nextGrid = self:GetGrid( tx, ty )	
@@ -2034,14 +2049,14 @@ function Combat:TestDamage()
 			--if tab.category == TroopCategory.CAVALRY then
 			--if tab.id == 302 then
 			if true then
-				local atk = System_Get( SystemType.CORPS_ESTABLISHMENT ):EstablishTroopByTable( tab, number )
+				local atk = Corps_EstablishTroopByTable( tab, number )
 				table.insert( atklist, atk )
 				TroopTable_ListAbility( atk )
 			end
 
 			--if tab.category == TroopCategory.CAVALRY then
 			if true then
-				local def = System_Get( SystemType.CORPS_ESTABLISHMENT ):EstablishTroopByTable( tab, number )
+				local def = Corps_EstablishTroopByTable( tab, number )
 				table.insert( deflist, def )
 			end
 		end
@@ -2051,14 +2066,17 @@ function Combat:TestDamage()
 		--Asset_Set( atk, TroopAssetID.SOLDIER, number )
 		for _, def in ipairs( deflist ) do
 			Asset_Set( def, TroopAssetID.SOLDIER, number )
+			Asset_Set( def, TroopAssetID.MAX_SOLDIER, number )
 			Asset_Set( def, TroopAssetID.ORGANIZATION, org )
 			self:Attack( atk, def, { type = CombatTask.FIGHT } )
 			
 			Asset_Set( def, TroopAssetID.SOLDIER, number )
+			Asset_Set( def, TroopAssetID.MAX_SOLDIER, number )
 			Asset_Set( def, TroopAssetID.ORGANIZATION, org )
 			self:Attack( atk, def, { type = CombatTask.SHOOT } )
 
 			Asset_Set( def, TroopAssetID.SOLDIER, number )
+			Asset_Set( def, TroopAssetID.MAX_SOLDIER, number )
 			Asset_Set( def, TroopAssetID.ORGANIZATION, org )
 			self:Attack( atk, def, { type = CombatTask.CHARGE } )
 		end	

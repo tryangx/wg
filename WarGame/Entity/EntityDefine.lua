@@ -36,7 +36,6 @@ function Entity_SetCity( entity, id, value )
 end
 
 function Entity_SetChara( entity, id, value )
-	print( "setchara=", value)
 	return Entity_Get( EntityType.CHARA, value ) or value
 end
 
@@ -57,7 +56,6 @@ function Entity_SetTech( entity, id, value )
 end
 
 function Entity_SetPlot( entity, id, value )
-	InputUtil_Pause( "Dsfafds" )
 	return Entity_Get( EntityType.PLOT, value ) or value
 end
 
@@ -89,3 +87,4 @@ require "Entity/Route"
 require "Entity/Proposal"
 require "Entity/Task"
 require "Entity/Event"
+require "Entity/Meeting"

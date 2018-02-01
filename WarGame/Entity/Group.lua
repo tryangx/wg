@@ -92,6 +92,40 @@ function Group:VerifyData()
 		if not corps or type( corps ) == "number" then return end
 		Asset_Set( corps, CorpsAssetID.GROUP, group )
 	end )
+
+	--verify chara
+	Asset_ForeachList( self, GroupAssetID.CHARA_LIST, function( chara )
+		--check job
+		local job = Asset_Get( chara, CharaAssetID.JOB )
+		if job == CharaJob.NONE then
+			job = CharaJob.OFFICER
+			if chara == Asset_Get( self, GroupAssetID.LEADER ) then
+				error( "Leader's job is invalid" )
+			else
+				Asset_Set( chara, job )
+				CRR_Tolerate( chara.name .. " job correct to " .. MathUtil_FindName( CharaJob, job ) )
+			end
+		end
+
+		--check location and home
+		local home = Asset_Get( chara, CharaAssetID.HOME )		
+		if not home then
+			Asset_Set( chara, CharaAssetID.HOME, Asset_Get( self, GroupAssetID.CAPITAL ) )
+			CRR_Tolerate( chara.name .. " home correct to " .. Asset_Get( chara, CharaAssetID.HOME ) )
+		end
+		local loc = Asset_Get( chara, CharaAssetID.LOCATION )
+		if not loc then
+			Asset_Set( chara, CharaAssetID.HOME, Asset_Get( chara, CharaAssetID.HOME ) )
+			CRR_Tolerate( chara.name .. " loc correct to " .. Asset_Get( chara, CharaAssetID.HOME ) )
+		end
+
+		--check group
+		if Asset_Get( chara, CharaAssetID.GROUP ) ~= self then
+			Asset_Set( chara, CharaAssetID.GROUP, self )
+		end
+	end)
+
+	--generate the superior and subordinates	
 end
 
 function Group:Update( ... )	

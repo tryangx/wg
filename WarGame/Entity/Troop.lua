@@ -19,8 +19,6 @@ TroopAssetID =
 
 	-------------------------------
 	--growth
-	--  loyality: low loyality troop maybe surrender in COMBAT, easy to flee in COMBAT, betray in REBELLION, increase by time
-	LOYALITY     = 200,
 	LEVEL        = 201,
 	EXP          = 202,
 	MORALE       = 203,
@@ -28,11 +26,12 @@ TroopAssetID =
 	CONVEYANCE   = 205,
 	MAX_SOLDIER  = 206,
 	TIRENESS     = 210,
-	HONOR        = 211, --TBD, kill how many soldier?
-	GLORY        = 212, --TBD, kill how many troop?
+	TRAINING     = 211,
+	HONOR        = 212, --TBD, kill how many soldier?
+	GLORY        = 213, --TBD, kill how many troop?	
 
-	SKILLS       = 210,
-	STATUSES     = 211,
+	SKILLS       = 220,
+	STATUSES     = 221,
 
 	--Combat
 	SOLDIER      = 300,
@@ -51,7 +50,6 @@ TroopAssetAttrib =
 	tabledata    = AssetAttrib_SetPointer( { id = TroopAssetID.TABLEDATA,     type = TroopAssetType.BASE_ATTRIB, setter = Table_SetTroop } ),
 	
 	--growth
-	loyality     = AssetAttrib_SetNumber ( { id = TroopAssetID.LOYALITY,      type = TroopAssetType.GROWTH_ATTRIB, min = 0, max = 10000 } ),
 	level        = AssetAttrib_SetNumber ( { id = TroopAssetID.LEVEL,         type = TroopAssetType.GROWTH_ATTRIB, min = 0, max = 10 } ),
 	exp          = AssetAttrib_SetNumber ( { id = TroopAssetID.EXP,           type = TroopAssetType.GROWTH_ATTRIB, min = 0, max = 9999 } ),
 	morale       = AssetAttrib_SetNumber ( { id = TroopAssetID.MORALE,        type = TroopAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),
@@ -59,6 +57,7 @@ TroopAssetAttrib =
 	maxsoldier   = AssetAttrib_SetNumber ( { id = TroopAssetID.MAX_SOLDIER,   type = TroopAssetType.GROWTH_ATTRIB, min = 0 } ),
 	conveyance   = AssetAttrib_SetNumber ( { id = TroopAssetID.CONVEYANCE,    type = TroopAssetType.GROWTH_ATTRIB, enum = CONVEYANCEType } ),
 	tireness     = AssetAttrib_SetNumber ( { id = TroopAssetID.TIRENESS,      type = TroopAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),
+	training     = AssetAttrib_SetNumber ( { id = TroopAssetID.TRAINING,      type = TroopAssetType.GROWTH_ATTRIB, min = 0, max = 200 } ),
 	honor        = AssetAttrib_SetNumber ( { id = TroopAssetID.HONOR,         type = TroopAssetType.GROWTH_ATTRIB, } ),
 	glory        = AssetAttrib_SetNumber ( { id = TroopAssetID.GLORY,         type = TroopAssetType.GROWTH_ATTRIB, } ),
 	
@@ -104,8 +103,9 @@ end
 function Troop:TestGenerate()
 	Asset_Set( self, TroopAssetID.CORPS, nil )
 	Asset_Set( self, TroopAssetID.LEADER, nil )
-	Asset_Set( self, TroopAssetID.POTENTIAL, Random_GetInt( TroopAssetAttrib.potential.min, TroopAssetAttrib.potential.max ) )
+	Asset_Set( self, TroopAssetID.POTENTIAL, Random_GetInt( TroopAssetAttrib.potential.min, TroopAssetAttrib.potential.max ) )	
 	Asset_Set( self, TroopAssetID.SOLDIER, Random_GetInt( 1, 4 ) * 500 )
+	Asset_Set( self, TroopAssetID.MAX_SOLDIER, Asset_Get( self, TroopAssetID.SOLDIER ) )
 	
 	Asset_Set( self, TroopAssetID.LEVEL, 0 )
 	Asset_Set( self, TroopAssetID.EXP, 0 )

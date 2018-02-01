@@ -63,8 +63,8 @@ function TroopTable_Foreach( fn )
 	_troopTableMng:ForeachData( fn )
 end
 
-function TroopTable_Filter( fn )
-	return _troopTableMng:FilterData( fn )
+function TroopTable_Find( fn )
+	return _troopTableMng:FindData( fn )
 end
 
 function TroopTable_ListAbility( troop )

@@ -53,12 +53,12 @@ PlotAssetAttrib =
 	population = AssetAttrib_SetNumber ( { id = PlotAssetID.POPULATION,  type = PlotAssetType.PROPERTY_ATTRIB } ),
 	road       = AssetAttrib_SetNumber ( { id = PlotAssetID.ROAD,        type = PlotAssetType.PROPERTY_ATTRIB } ),
 
-	agriculture = AssetAttrib_SetNumber ( { id = PlotAssetID.AGRICULTURE,     type = PlotAssetType.GROWTH_ATTRIB, min = 0 } ),
-	commerce = AssetAttrib_SetNumber ( { id = PlotAssetID.COMMERCE,        type = PlotAssetType.GROWTH_ATTRIB, min = 0 } ),
-	production = AssetAttrib_SetNumber ( { id = PlotAssetID.PRODUCTION,      type = PlotAssetType.GROWTH_ATTRIB, min = 0 } ),
+	agriculture    = AssetAttrib_SetNumber ( { id = PlotAssetID.AGRICULTURE,     type = PlotAssetType.GROWTH_ATTRIB, min = 0 } ),
+	commerce       = AssetAttrib_SetNumber ( { id = PlotAssetID.COMMERCE,        type = PlotAssetType.GROWTH_ATTRIB, min = 0 } ),
+	production     = AssetAttrib_SetNumber ( { id = PlotAssetID.PRODUCTION,      type = PlotAssetType.GROWTH_ATTRIB, min = 0 } ),
 	maxAgriculture = AssetAttrib_SetNumber ( { id = PlotAssetID.MAX_AGRICULTURE, type = PlotAssetType.GROWTH_ATTRIB, min = 0 } ),
-	maxCommerce = AssetAttrib_SetNumber ( { id = PlotAssetID.MAX_COMMERCE,    type = PlotAssetType.GROWTH_ATTRIB, min = 0 } ),
-	maxProduction = AssetAttrib_SetNumber ( { id = PlotAssetID.MAX_PRODUCTION,  type = PlotAssetType.GROWTH_ATTRIB, min = 0 } ),
+	maxCommerce    = AssetAttrib_SetNumber ( { id = PlotAssetID.MAX_COMMERCE,    type = PlotAssetType.GROWTH_ATTRIB, min = 0 } ),
+	maxProduction  = AssetAttrib_SetNumber ( { id = PlotAssetID.MAX_PRODUCTION,  type = PlotAssetType.GROWTH_ATTRIB, min = 0 } ),
 }
 
 
@@ -90,6 +90,7 @@ function Plot:GetFeature()
 end
 
 function Plot:InitGrowth( params )	
+	--1st, calculate all development indexs depends on plots and resources
 	local table = Asset_Get( self, PlotAssetID.TEMPLATE )
 	if table then
 		--table:Dump()
@@ -119,13 +120,13 @@ function Plot:InitGrowth( params )
 		end
 	end
 
-	--growth attribs
+	--2nd, determine the current development indexs by any method
 	local min, max = 30, 60
 	Asset_Set( self, PlotAssetID.AGRICULTURE, math.ceil( Random_GetInt_Sync( min, max ) * 0.01 * Asset_Get( self, PlotAssetID.MAX_AGRICULTURE ) ) )
 	Asset_Set( self, PlotAssetID.COMMERCE,    math.ceil( Random_GetInt_Sync( min, max ) * 0.01 * Asset_Get( self, PlotAssetID.MAX_COMMERCE ) ) )
 	Asset_Set( self, PlotAssetID.PRODUCTION,  math.ceil( Random_GetInt_Sync( min, max ) * 0.01 * Asset_Get( self, PlotAssetID.MAX_PRODUCTION ) ) )
 	
-	--population
+	--3rd, determine the population of each career in the population struction depends on the development indexs
 	local agr = Asset_Get( self, PlotAssetID.AGRICULTURE )
 	local foodOutput = agr * PlotParams.FOOD_PER_AGRICULTURE
 	local supportPopu = foodOutput / GlobalTime.TIME_PER_YEAR

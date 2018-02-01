@@ -1,6 +1,6 @@
 function String_ToStr( data, item )
 	if not data then
-		return "--"
+		return "[??]"
 	end
-	return data[item] or "--"
+	return data[item] or "[??]"
 end

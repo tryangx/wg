@@ -1,3 +1,5 @@
+--Formula
+require "Formula/Formula"
 --Table
 require "Table/TableDefine"
 --Data
@@ -8,8 +10,6 @@ require "System/SystemDefine"
 require "Module/ModuleDefine"
 --AI
 require "AI/AI"
---Formula
-require "Formula/Formula"
 
 --Local gamedata, not framework
 require "GameData"
@@ -25,7 +25,11 @@ function WarGame:Init()
 
 	-- Set asset watcher
 	AssetAttrib_SetWatcher( function( entity, id, operation )
-		if entity.type == EntityType.PLOT then
+		if entity.type == EntityType.CHARA then
+			if id == CharaAssetID.LOCATION then
+				--InputUtil_Pause( entity.name, operation )
+			end
+		elseif entity.type == EntityType.PLOT then
 			if id > 300 then
 				--print( MathUtil_FindName( EntityType, entity.type )..entity.id.."(".. MathUtil_FindName( PlotAssetID, id )..")"..id.."." .. MathUtil_FindName( PlotAssetID, id ) .. " " ..( operation or "unkown" ) )
 			end
@@ -42,7 +46,9 @@ function WarGame:Init()
 
 	--------------------------------------
 	-- Initialize table
-	local date = GetScenarioData( "BASE_DATA" )
+	Scenario_InitData()
+
+	local date = Scenario_GetData( "BASE_DATA" )
 
 	g_calendar:SetDate( date.start_date.year, date.start_date.month, date.start_date.day, date.start_date.year < 0 and true or false )
 
@@ -64,36 +70,37 @@ function WarGame:Init()
 	Entity_Setup( EntityType.PROPOSAL, Proposal )
 	Entity_Setup( EntityType.TASK,   Task )
 	Entity_Setup( EntityType.EVENT,  Event )
+	Entity_Setup( EntityType.MEETING,Meeting )
 	--Entity_Setup( EntityType.WEAPON, Weapon )
 
-	Entity_Load( EntityType.GROUP, GetScenarioData( "GROUP_DATA" ) )
-	Entity_Load( EntityType.CITY,  GetScenarioData( "CITY_DATA" ) )
-	Entity_Load( EntityType.CHARA, GetScenarioData( "CHARA_DATA" ) )
-	Entity_Load( EntityType.CORPS, GetScenarioData( "CORPS_DATA" ) )
-	--Entity_Load( EntityType.WEAPON, GetScenarioData( "WEAPON_DATA" ) )
-	Entity_Load( EntityType.EVENT, GetScenarioData( "EVENT_DATA" ) )
+	Entity_Load( EntityType.GROUP, Scenario_GetData( "GROUP_DATA" ), EntityType )
+	Entity_Load( EntityType.CITY,  Scenario_GetData( "CITY_DATA" ), EntityType )
+	Entity_Load( EntityType.CHARA, Scenario_GetData( "CHARA_DATA" ), EntityType )
+	Entity_Load( EntityType.CORPS, Scenario_GetData( "CORPS_DATA" ), EntityType )
+	--Entity_Load( EntityType.WEAPON, Scenario_GetData( "WEAPON_DATA" ), EntityType )
+	Entity_Load( EntityType.EVENT, Scenario_GetData( "EVENT_DATA" ), EntityType )
 
-	DistrictTable_Load    ( GetScenarioData( "DISTRICT_DATA" ) )
-	PlotTable_Load        ( GetScenarioData( "PLOT_TABLE_DATA" ) )
-	ResourceTable_Load    ( GetScenarioData( "RESOURCE_DATA" ) )
-	TroopTable_Load       ( GetScenarioData( "TROOP_DATA" ) )
-	TacticTable_Load      ( GetScenarioData( "TACTIC_DATA" ) )
-	BattlefieldTable_Load ( GetScenarioData( "BATTLEFIELD_DATA" ) )
-	WeaponTable_Load      ( GetScenarioData( "WEAPON_DATA" ) )
+	DistrictTable_Load    ( Scenario_GetData( "DISTRICT_DATA" ), EntityType )
+	PlotTable_Load        ( Scenario_GetData( "PLOT_TABLE_DATA" ), EntityType )
+	ResourceTable_Load    ( Scenario_GetData( "RESOURCE_DATA" ), EntityType)
+	TroopTable_Load       ( Scenario_GetData( "TROOP_DATA" ), EntityType )
+	TacticTable_Load      ( Scenario_GetData( "TACTIC_DATA" ), EntityType )
+	BattlefieldTable_Load ( Scenario_GetData( "BATTLEFIELD_DATA" ), EntityType )
+	WeaponTable_Load      ( Scenario_GetData( "WEAPON_DATA" ), EntityType )
 
 	--init weapon pointers
 	TroopTable_Init()
 
 	-- Generate map
 	if true then	
-		print( "generate map......" )	
-		g_map:Generate( GetScenarioData( "MAP_DATA" ) )	
+		print( "#Generate map......" )	
+		g_map:Generate( Scenario_GetData( "MAP_DATA" ) )	
 		g_map:AllocateToCity()
 	end
 
 	-- Initialize City & Plots
 	if true then
-		print( "init cities( plots )......" )
+		print( "#Init cities( plots )......" )
 		Entity_Foreach( EntityType.CITY, function ( city )
 			city:InitPlots()
 			city:InitPopu()
@@ -101,7 +108,7 @@ function WarGame:Init()
 	end
 
 	-- Initliaze Pointer
-	print( "update pointer......" )
+	print( "#Update pointer......" )
 	for k, v in pairs( EntityType ) do
 		print( "Update Entity Pointer=" .. MathUtil_FindName( EntityType, v ) )
 		Entity_Foreach( v, function ( entity )
@@ -116,11 +123,11 @@ function WarGame:Init()
 
 	if true then
 		--should wait after adjacent-city pointers initialized
-		print( "Generate Route......" )
+		print( "#Generate Route......" )
 		Route_Make()
 	end
 
-	print( "verify data......")
+	print( "#Verify data......")
 	for k, v in pairs( EntityType ) do
 		print( "Entity=" .. MathUtil_FindName( EntityType, v ) )
 		Entity_Foreach( v, function ( entity )
@@ -136,16 +143,16 @@ function WarGame:Init()
 	System_Add( CitySystem() )
 	System_Add( GroupSystem() )
 	System_Add( CorpsSystem() )	
-	System_Add( MarchSystem() )
+	System_Add( MoveSystem() )
 	System_Add( WarfareSystem() )	
 	System_Add( CharaCreatorSystem() )
 	System_Add( ConsumeSystem() )
 	System_Add( SupplySystem() )
 	System_Add( LogisticsSystem() )
 	System_Add( IntelSystem() )
-	System_Add( ProposalSystem() )
 	System_Add( TaskSystem() )
 	System_Add( EventSystem() )
+	System_Add( MeetingSystem() )
 	System_Start()
 
 	--init fomula
@@ -165,7 +172,7 @@ function WarGame:Init()
 	city:Test()
 	Entity_UpdateAttribPointer( city )
 	Entity_Dump( city )
-	System_Get( SystemType.CORPS_SYS ):EstablishCorpsInCity( city )
+	Corps_EstablishInCity( city )
 	Entity_Dump( city )	
 	--]]
 
@@ -174,14 +181,18 @@ function WarGame:Init()
 	if false then
 		local city = Entity_Get( EntityType.CITY, 100 )
 		local from = Entity_Get( EntityType.CITY, 101 )
+		local atkcorps = Corps_EstablishTest( { numoftroop = 10, siege = true, encampment = from } )
+		local defcorps = Corps_EstablishTest( { numoftroop = 4, encampment = city } )		
+		Asset_AppendList( city, CityAssetID.CORPS_LIST, defcorps )
+
+		--set combat
 		local combat = Entity_New( EntityType.COMBAT )
-		local atkcorps = System_Get( SystemType.CORPS_SYS ):EstablishTestCorps( { numoftroop = 10, siege = true, encampment = from } )
 		combat:AddCorps( atkcorps, CombatSide.ATTACKER )
-		local defcorps = System_Get( SystemType.CORPS_SYS ):EstablishTestCorps( { numoftroop = 4, encampment = city } )
-		combat:AddCorps( defcorps, CombatSide.DEFENDER )		
+		combat:AddCorps( defcorps, CombatSide.DEFENDER )
+		
 		Asset_Set( combat, CombatAssetID.CITY, city )
-		Asset_AppendList( city, CityAssetID.CORPS_LIST, defcorps )	
-		local testSiege = false--true
+
+		local testSiege = true--true
 		if testSiege == true then
 			Asset_Set( combat, CombatAssetID.TYPE, CombatType.SIEGE_COMBAT )
 			Asset_Set( combat, CombatAssetID.BATTLEFIELD, BattlefieldTable_Get( 100 ) )
@@ -193,10 +204,11 @@ function WarGame:Init()
 			Asset_Set( combat, CombatAssetID.ATKCAMPFIELD, BattlefieldTable_Get( 200 ) )
 			Asset_Set( combat, CombatAssetID.DEFCAMPFIELD, BattlefieldTable_Get( 200 ) )
 		end			
-		--NEUTRALIZE, AGGRESSIVE
+		--in siege combat, if attacker purpose not aggressive, they won't attack
 		Asset_Set( combat, CombatAssetID.ATK_PURPOSE, CombatPurpose.AGGRESSIVE )
 		Asset_Set( combat, CombatAssetID.DEF_PURPOSE, CombatPurpose.CONSERVATIVE )
-		System_Get( SystemType.WARFARE_SYS ):AddCombat( combat )	
+		System_Get( SystemType.WARFARE_SYS ):AddCombat( combat )
+
 		--=combat:TestDamage()
 		--Entity_Dump( combat )
 		--[[]]		
@@ -209,7 +221,7 @@ end
 function WarGame:Start()
 	self:Init()
 	
-	local city = Entity_Get( EntityType.CITY, 1000 )
+	local city = Entity_Get( EntityType.CITY, 100 )
 	city:TrackData()
 
 	while Game_IsRunning()  do
@@ -217,9 +229,13 @@ function WarGame:Start()
 		Game_NextTurn()
 	end
 
-	city:TrackData( true )
-	city:DumpGrowthAttrs()
-	city:DumpProperty()
+	--city:TrackData( true )
+	--city:DumpGrowthAttrs()
+	--city:DumpProperty()
 
 	Stat_Dump()
+
+	Track_HistoryDump( nil, function( key, data )
+		print( key, g_calendar:CreateDateDescByValue( data.time ), data.data )
+	end )
 end

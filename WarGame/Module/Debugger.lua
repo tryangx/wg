@@ -13,8 +13,14 @@ local _logs = {}
 
 local _watchers = {}
 
+local _warnings = {}
+
 function DBG_SetLevel( lv )
 	_level = lv or DBGLevel.IMPORTANT
+end
+
+function DBG_Error( content )
+	print( content )
 end
 
 -- print "content" when "cond" is valid ( true or not nil )
@@ -27,7 +33,7 @@ end
 --      DBG_Trace( cond, "warning", DBGLevel.FATAL )
 --
 --
-function DBG_Trace( cond, content, lv )
+function DBG_Trace( content, cond, lv )
 	if not lv then lv = DBGLevel.IMPORTANT end	
 	if not cond or cond == false then
 		if lv >= _level then
@@ -38,12 +44,19 @@ function DBG_Trace( cond, content, lv )
 			end
 		end
 
-		table.insert( _logs, "[TRACE]" .. content )
+		table.insert( _logs, "[DBG]" .. content )
 	end
 end
 
+-- print content once
+function DBG_Warning( key, content )
+	if _warnings[key] then return end
+	_warnings[key] = 1
+	print( "[WRN]" .. key .."-->".. content )
+end
+
 --
--- print "content" when key is switch on
+-- print content when key is switch on, default switch is off
 --
 -- @usage
 --		DBG_Set
@@ -61,13 +74,13 @@ function DBG_Watch( key, content, lv )
 		print( content )
 	end
 	if lv > DBGLevel.NORMAL then
-		table.insert( _logs, "[WATCH]" .. content )
+		table.insert( _logs, "[WTH]" .. content )
 	end
 end
 
 function DBG_SetWatcher( key, lv )
 	if MathUtil_FindName( DBGLevel, lv ) == "" then
-		InputUtil_Pause( "wrong key=" .. key )
+		InputUtil_Pause( "wrong key-->" .. key )
 	end
 	_watchers[key] = lv
 end

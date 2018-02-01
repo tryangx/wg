@@ -71,6 +71,7 @@ CityAssetID =
 
 	INSTRUCTION     = 320,
 	POLICY          = 321,
+	TASKS           = 322,
 }
 
 local function City_InitPolicy()
@@ -119,6 +120,7 @@ CityAssetAttrib =
 
 	instruction = AssetAttrib_SetNumber( { id = CityAssetID.INSTRUCTION,    type = CityAssetType.PROPERTY_ATTRIB } ),
 	policy      = AssetAttrib_SetData  ( { id = CityAssetID.POLICY,         type = CityAssetType.PROPERTY_ATTRIB, initer = City_InitPolicy } ),
+	tasks       = AssetAttrib_SetPointerList( { id = CityAssetID.TASKS,     type = CityAssetType.PROPERTY_ATTRIB } ),
 }
 
 -------------------------------------------
@@ -129,6 +131,7 @@ function City:__init( ... )
 	Entity_Init( self, EntityType.CITY, CityAssetAttrib )
 end
 
+--[[
 function City:Test()
 	self.name = "Test City"
 
@@ -155,8 +158,14 @@ function City:Test()
 	Asset_Set( self, CityAssetID.MONEY,    100000 )
 	Asset_Set( self, CityAssetID.MATERIAL, 100000 )	
 end
+]]
 
 function City:Load( data )
+	--for test
+	if not data.food then
+		data.food = 10000000
+	end
+
 	self.id = data.id
 	self.name = data.name
 
@@ -179,10 +188,13 @@ function City:Load( data )
 	Asset_CopyList( self, CityAssetID.DEFENSES,  data.defenses )
 
 	if not data.trooptables then
-		Asset_CopyList( self, CityAssetID.TROOPTABLE_LIST, { 20, 21 } )
+		Asset_CopyList( self, CityAssetID.TROOPTABLE_LIST, { 100, 200, 300 } )
 	else
 		Asset_CopyList( self, CityAssetID.TROOPTABLE_LIST, data.trooptables)
 	end
+
+	--need to load more
+	--InputUtil_Pause( self.name, "init food=" .. Asset_Get( self, CityAssetID.FOOD ))
 end
 
 ------------------------------------------
@@ -194,7 +206,7 @@ function City:TrackData( dump )
 	Track_Data( "satisfaction", Asset_Get( self, CityAssetID.SATISFACTION ) )
 
 	Track_Data( "agri", Asset_Get( self, CityAssetID.AGRICULTURE ) )
-	Track_Data( "rpod", Asset_Get( self, CityAssetID.PRODUCTION ) )
+	Track_Data( "prod", Asset_Get( self, CityAssetID.PRODUCTION ) )
 	Track_Data( "comm", Asset_Get( self, CityAssetID.COMMERCE ) )
 
 	for k, v  in pairs( CityPopu ) do
@@ -268,15 +280,19 @@ function City:VerifyData()
 
 	print( self.name, "popu=" .. Asset_Get( self, CityAssetID.POPULATION ) )
 
-	Asset_ForeachList( self, CityAssetID.OFFICER_LIST, function( chara )
-		Asset_Set( chara, CharaAssetID.HOME, city )
-		Asset_Set( chara, CharaAssetID.LOCATION, city )
-	end )
-	
 	Asset_ForeachList( self, CityAssetID.CORPS_LIST, function( corps )
 		Asset_Set( corps, CorpsAssetID.ENCAMPMENT, city )
 		Asset_Set( corps, CorpsAssetID.LOCATION, city )
 	end )
+
+	Asset_ForeachList( self, CityAssetID.CHARA_LIST, function( chara )
+		Asset_Set( chara, CharaAssetID.HOME, city )
+		Asset_Set( chara, CharaAssetID.LOCATION, city )
+	end )
+
+	Asset_VerifyList( self, CityAssetID.ADJACENTS )
+
+	self:ElectExecutive()
 end
 
 function City:Starvation()
@@ -298,6 +314,23 @@ function City:GetPopu( citypopu )
 	return data[citypopu]
 end
 
+
+--type from enum CityOfficer
+function City:GetOfficer( type )	
+	return Asset_GetListItem( self, CityAssetID.OFFICER_LIST, type )
+end
+
+-------------------------------------------
+--checker
+
+function City:IsCapital()
+	local group = Asset_Get( self, CityAssetID.GROUP )
+	if not group then return false end
+	return Asset_Get( group, GroupAssetID.CAPITAL ) == self
+end
+
+-------------------------------------------
+
 function City:ReducePopu( poputype, number )
 	local cur = Asset_GetListItem( self, CityAssetID.POPU_STRUCTURE, poputype )
 	if cur < number then return false end
@@ -307,13 +340,8 @@ end
 
 -------------------------------------------
 
---type from enum CityOfficer
-function City:GetOfficer( type )	
-	return Asset_GetListItem( self, CityAssetID.OFFICER_LIST, type )
-end
-
 function City:FilterAdjaCities( filter )
-	local list = {}
+	local list = {}	
 	Asset_ForeachList( self, CityAssetID.ADJACENTS, function ( adja )
 		if filter( adja ) == true then
 			table.insert( list, adja )
@@ -346,6 +374,19 @@ function City:GetNumOfFreeCorps()
 	return freeCorps
 end
 
+function City:FindFreeCorps()
+	local list = {}
+	Asset_ForeachList( self, CityAssetID.CORPS_LIST, function ( corps )
+		if Asset_Get( corps, CorpsAssetID.LOCATION ) == Asset_Get( corps, CorpsAssetID.ENCAMPMENT ) then
+			local ret = Asset_GetListItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )
+			if not ret or ret ~= true then
+				table.insert( list, corps )
+			end
+		end
+	end)
+	return list
+end
+
 function City:FindHarassCityTargets()
 	local group = Asset_Get( self, CityAssetID.GROUP )
 	local selfPower = City_GetMilitaryPower( self )
@@ -359,27 +400,77 @@ end
 function City:FindAttackCityTargets()
 	local group = Asset_Get( self, CityAssetID.GROUP )
 	local selfPower = City_GetMilitaryPower( self )
-	return self:FilterAdjaCities( function ( adja )
+	return self:FilterAdjaCities( function ( adja )		
 		local adjaGroup = Asset_Get( adja, CityAssetID.GROUP )
-		if adjaGroup == group then return false end
-		local adjaPower = City_GetMilitaryPowerWithIntel( adja, group )
-		if adjaPower + adjaPower > selfPower then return false end
+		if adjaGroup == group then print( "same group") return false end		
+		local adjaPower = City_GetMilitaryPowerWithIntel( adja, group )	
+		if adjaPower > selfPower then
+			return false
+		end
 		return true
 	end )
 end
 
 --------------------------------------------
 
-function City:Update()
-	--set executive
-	local exeutive = self:GetOfficer( CityOfficer.EXECUTIVE )
-	if not exeutive then
+function City:CorpsJoin( corps )
+	--[[
+	--allot food
+	local reservedfood = Corps_GetConsumeFood( corps ) * 30
+	local food = Asset_Get( self, CityAssetID.FOOD )
+	reservedfood = math.min( food, reservedfood )
+	Asset_Set( corps, CorpsAssetID.FOOD, reservedfood )
+	food = food - reservedfood
+	Asset_Set( self, CityAssetID.FOOD )
+	]]
+
+	--insert trooplist
+	Asset_AppendList( self, CityAssetID.CORPS_LIST, corps )
+
+	--insert charalist
+	Asset_ForeachList( corps, CorpsAssetID.OFFICER_LIST, function ( chara )
+		Asset_AppendList( self, CityAssetID.CHARA_LIST, chara )
+	end)
+end
+
+function City:CorpsLeave( corps )
+	--remove from trooplist
+	Asset_RemoveListItem( self, CityAssetID.CORPS_LIST, corps )
+
+	--remove charalist
+	Asset_ForeachList( corps, CorpsAssetID.OFFICER_LIST, function ( chara )
+		Asset_RemoveListItem( self, CityAssetID.CHARA_LIST,   chara )
+		Asset_RemoveListItem( self, CityAssetID.OFFICER_LIST, chara )
+	end)
+end
+
+--------------------------------------------
+
+function City:ElectExecutive()
+	local executive = self:GetOfficer( CityOfficer.EXECUTIVE )
+	if not executive then
 		--find a leader from officer
-		exeutive = Random_GetListData( self, CityAssetID.CHARA_LIST )
-		DBG_Trace( exeutive, "city=" .. self.name .. " no exeutive" )
-		if exeutive then
-			Asset_SetListItem( self, CityAssetID.OFFICER_LIST, CityOfficer.EXECUTIVE, exeutive )
-			CRR_Tolerate( "city=" .. self.name .. " set default exeutive=" .. exeutive.name )
+		executive = Random_GetListData( self, CityAssetID.CHARA_LIST )		
+		DBG_Trace( "city=" .. self.name .. " no executive", executive )
+		if executive then
+			Asset_SetListItem( self, CityAssetID.OFFICER_LIST, CityOfficer.EXECUTIVE, executive )
+			CRR_Tolerate( "city=" .. self.name .. " set default executive=" .. executive.name )			
 		end
+	end
+end
+
+function City:Update()
+	--no executive? find one
+	self:ElectExecutive()
+
+	local day = g_calendar:GetDay()
+	if day == 1 then
+		System_Get( SystemType.MEETING_SYS ):HoldMeeting( self, MeetingTopic.NONE )
+	end
+
+	--print( self.name, "food=" .. Asset_Get( self, CityAssetID.FOOD ))
+
+	if day == 1 then
+		Track_HistoryRecord( self.name .. "_soldier", City_GetSoldier( self ), g_calendar:GetDateValue() )
 	end
 end

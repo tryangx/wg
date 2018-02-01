@@ -136,14 +136,20 @@ function BehaviorNode:BuildTree( data )
 	-- Node type
 	if self.type == BehaviorNodeType.ACTION then
 		self.action = data.action		
-		if DEBUG_LOG and not self.action then print( "CONDITION is invalid" ) end
+		if DEBUG_LOG and not self.action then
+			print( "ACTION is invalid", self.type )
+		end
 	elseif self.type == BehaviorNodeType.CONDITION_ACTION then
 		self.action    = data.action		
 		self.condition = data.condition
-		if DEBUG_LOG and ( not self.condition or not self.action ) then print( "ACTION or CONDITION is invalid" ) end
+		if DEBUG_LOG and ( not self.condition or not self.action ) then
+			print( "ACTION or CONDITION is invalid" )
+		end
 	elseif self.type == BehaviorNodeType.FILTER then
 		self.condition = data.condition
-		if DEBUG_LOG and not self.condition then print( "CONDITION is invalid" ) end
+		if DEBUG_LOG and not self.condition then
+			print( "CONDITION is invalid", self.type )
+		end
 	end
 	
 	-- Children nodes
@@ -190,7 +196,7 @@ local function RandomSelector( behavior, node )
 end
 local function Sequence( behavior, node )
 	if DEBUG_LOG and node.desc then
-		print( "Sequence=" .. ( node.desc or "" ) .. " nodes=" .. #node.children )		
+		--print( "Sequence=" .. ( node.desc or "" ) .. " nodes=" .. #node.children )
 	end
 	for k, child in pairs( node.children ) do		
 		behavior:SetCurrentNode( node )

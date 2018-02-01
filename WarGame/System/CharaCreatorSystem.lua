@@ -80,8 +80,8 @@ function CharaCreatorSystem:Start()
 	self.numberOfCharas = 0	
 
 	--initialize name datas
-	self.familyNames = GetScenarioData( "CHARA_FAMILYNAME_DATA" )
-	self.givenNames  = GetScenarioData( "CHARA_GIVENNAME_DATA" )
+	self.familyNames = Scenario_GetData( "CHARA_FAMILYNAME_DATA" )
+	self.givenNames  = Scenario_GetData( "CHARA_GIVENNAME_DATA" )
 	
 	self.freeHistoricCharas = {}
 	--find out free historic chara

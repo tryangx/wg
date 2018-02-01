@@ -7,9 +7,9 @@ function PlotTable:Load( data )
 	self.feature = PlotFeatureType[data.feature]
 
 	self.bonuses = {}
-	Table_CalculateBonuses( self.bonuses, GetScenarioData( "PLOT_BONUS_DATA" )[self.type] )
-	Table_CalculateBonuses( self.bonuses, GetScenarioData( "PLOT_TERRAIN_DATA" )[self.terrain] )
-	Table_CalculateBonuses( self.bonuses, GetScenarioData( "PLOT_FEATURE_DATA" )[self.feature] )
+	Table_CalculateBonuses( self.bonuses, Scenario_GetData( "PLOT_BONUS_DATA" )[self.type] )
+	Table_CalculateBonuses( self.bonuses, Scenario_GetData( "PLOT_TERRAIN_DATA" )[self.terrain] )
+	Table_CalculateBonuses( self.bonuses, Scenario_GetData( "PLOT_FEATURE_DATA" )[self.feature] )
 end
 
 function PlotTable:Dump()

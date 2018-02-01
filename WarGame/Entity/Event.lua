@@ -15,6 +15,7 @@ EventAssetAttrib =
 {
 	type     = AssetAttrib_SetNumber( { id = EventAssetID.TYPE,       type = EventAssetType.BASE_ATTRIB, enum = EventType } ),
 	target   = AssetAttrib_SetNumber( { id = EventAssetID.TARGET,     type = EventAssetType.BASE_ATTRIB, default = "NONE" } ),
+
 	trigger  = AssetAttrib_SetList  ( { id = EventAssetID.TRIGGER,    type = EventAssetType.BASE_ATTRIB } ),
 	effects  = AssetAttrib_SetList  ( { id = EventAssetID.EFFECTS,    type = EventAssetType.BASE_ATTRIB } ),
 }

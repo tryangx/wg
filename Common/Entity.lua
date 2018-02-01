@@ -63,7 +63,7 @@ function Entity_Setup( type, clz )
 end
 
 -- Load entities from given datas, old entities will be cleared
-function Entity_Load( type, datas )
+function Entity_Load( type, datas, enum )
 	if not _entityManager[type] then
 		error( "no manager, you should call Entity_Setup() first." )
 		return
@@ -71,7 +71,7 @@ function Entity_Load( type, datas )
 	local mng = _entityManager[type]
 	mng:Clear()
 	local number = mng:LoadFromData( datas )
-	print( "Load ["..type.."] Entity = " .. number .. "/" .. mng:GetCount() )
+	print( "Load [".. ( enum and MathUtil_FindName( enum , type ) or type ).."] Entity = " .. number .. "/" .. mng:GetCount() )
 end
 
 function Entity_Get( type, id )
@@ -97,6 +97,16 @@ local function Entity_GetManager( type )
 	return _entityManager[type]
 end
 
+function Entity_Number( type )
+	local mng = Entity_GetManager( type )
+	return mng:GetCount()
+end
+
+function Entity_GetIndex( type, index )
+	local mng = Entity_GetManager( type )
+	return mng:GetIndexData( index )
+end
+
 function Entity_Get( type, id )
 	local mng = Entity_GetManager( type )
 	return mng:GetData( id )
@@ -112,8 +122,10 @@ function Entity_Add( entity )
 	return mng:AddData( entity.id, entity )
 end
 
+--!!! Don't remove entity in Entity_Foreach() or Entity_Find()
 function Entity_Remove( entity )
 	local mng = Entity_GetManager( entity.type )
+	if entity.Remove then entity:Remove() end
 	return mng:RemoveData( entity.id )
 end
 
@@ -135,9 +147,9 @@ function Entity_Foreach( type, fn )
 	end )
 end
 
-function Entity_Filter( type, fn )
+function Entity_Find( type, fn )
 	local mng = Entity_GetManager( type )
-	return mng:FilterData( function ( entity )
+	return mng:FindData( function ( entity )
 		if fn( entity ) == true then
 			return true
 		end
@@ -214,6 +226,13 @@ function Entity_UpdateAttribPointer( entity )
 	for k, attrib in pairs( attribs ) do
 		if attrib.setter then
 			if attrib.value_type == AssetAttribType.POINTER then
+				Asset_VerifyData( entity, attrib.id )
+			elseif attrib.value_type == AssetAttribType.POINTER_LIST then
+				Asset_VerifyList( entity, attrib.id )
+			end
+		end
+			--[[
+			if attrib.value_type == AssetAttribType.POINTER then
 				local value = Asset_Get( entity, attrib.id )
 				if typeof( value ) == "number" then
 					Asset_Set( entity, attrib.id, value )
@@ -226,7 +245,7 @@ function Entity_UpdateAttribPointer( entity )
 					end
 				end
 			end
-		end
+			]]
 	end
 end
 
@@ -268,7 +287,9 @@ function Entity_Dump( entity, fn )
 						for itemName, itemValue in pairs( item ) do
 							content = content .. itemName .. "=" .. itemValue .. ", "
 						end
-					else					
+					elseif typeof( item ) == "boolean" then
+						content = content .. ( item == true and "true" or "false" ) .. ", "
+					else
 						content = content .. item .. ", "
 					end
 				end )
@@ -302,7 +323,7 @@ function Entity_Dump( entity, fn )
 					if value.name or value.id then
 						print( name .. " = " .. ( value.name or "-" ) .. ( value.id or "-" ) )
 					else
-						print( name .. " = " .. value )
+						print( name .. " = ", value )
 					end
 				end
 			end

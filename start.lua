@@ -11,5 +11,4 @@ require "Main"
 
 ---------------------------------------------
 
-_game = WarGame()
-_game:Start()
+WarGame():Start()

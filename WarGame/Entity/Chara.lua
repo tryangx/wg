@@ -3,15 +3,20 @@ CharaAssetType =
 	BASE_ATTRIB   = 1,
 	ACTION_ATTRIB = 2,
 	GROWTH_ATTRIB = 3,
+	RELATION_ATTRIB = 4,
 }
 
 CharaAssetID = 
 {
-	--base
+	--
 	AGE             = 102,
+	--when did he born
 	BIRTH           = 103,
+	--how many days he left
 	LIFE            = 104,
+	--male/female/sth else?
 	GENDER          = 105,
+	--is historic or fictional
 	ORIGIN          = 106,
 	GROUP           = 110,
 	JOB             = 111,
@@ -20,6 +25,7 @@ CharaAssetID =
 	CORPS           = 122,
 	TROOP           = 123,
 	STATUSES        = 130,
+	TASKS           = 131,
 
 	--action
 	POLITICS        = 200,
@@ -39,8 +45,14 @@ CharaAssetID =
 	CONTRIBUTION    = 304,
 	LEVEL           = 305,
 	EXP             = 306,
+	SERVICE_DAY     = 307,
 	SKILLS          = 311,
-	PURPOSE         = 321,	
+	PURPOSE         = 321,
+
+	--relationship
+	SUPERIOR        = 401,
+	SUBORDINATES    = 402,
+
 }
 
 CharaAssetAttrib = 
@@ -58,6 +70,7 @@ CharaAssetAttrib =
 	corps      = AssetAttrib_SetPointer( { id = CharaAssetID.CORPS,      type = CharaAssetType.BASE_ATTRIB, setter = Entity_SetCorps } ),
 	troop      = AssetAttrib_SetPointer( { id = CharaAssetID.TROOP,      type = CharaAssetType.BASE_ATTRIB, setter = Entity_SetTroop } ),
 	statuses   = AssetAttrib_SetList   ( { id = CharaAssetID.STATUSES,   type = CityAssetType.BASE_ATTRIB } ),
+	tasks      = AssetAttrib_SetPointerList( { id = CharaAssetID.TASKS,  type = CityAssetType.BASE_ATTRIB } ),
 
 	--action
 	politics     = AssetAttrib_SetNumber( { id = CharaAssetID.POLITICS,        type = CharaAssetType.ACTION_ATTRIB, min = 0, max = 9999 } ),
@@ -70,13 +83,17 @@ CharaAssetAttrib =
 	tactic_tal   = AssetAttrib_SetNumber( { id = CharaAssetID.TACTIC_TALENT,   type = CharaAssetType.ACTION_ATTRIB, min = 0, max = 100 } ),
 	tactic_lim   = AssetAttrib_SetNumber( { id = CharaAssetID.TACTIC_LIMIT,  type = CharaAssetType.ACTION_ATTRIB, min = 0, max = 9999 } ),
 
-	grade        = AssetAttrib_SetNumber     ( { id = CharaAssetID.GRADE,     type = CharaAssetType.GROWTH_ATTRIB, enum = CharaGrade, default = CharaGrade.NORMAL } ),
-	potential    = AssetAttrib_SetNumber     ( { id = CharaAssetID.POTENTIAL, type = CharaAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),
-	loyality     = AssetAttrib_SetNumber     ( { id = CharaAssetID.LOYALITY,  type = CharaAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),
-	contribution = AssetAttrib_SetNumber     ( { id = CharaAssetID.CONTRIBUTION,  type = CharaAssetType.GROWTH_ATTRIB, min = 0 } ),
-	level        = AssetAttrib_SetNumber     ( { id = CharaAssetID.LEVEL,     type = CharaAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),
-	exp          = AssetAttrib_SetNumber     ( { id = CharaAssetID.EXP,       type = CharaAssetType.GROWTH_ATTRIB, min = 0, max = 9999 } ),
-	skills       = AssetAttrib_SetPointerList( { id = CharaAssetID.SKILLS,    type = CharaAssetType.GROWTH_ATTRIB, setter = Entity_SetSkill } ),
+	grade        = AssetAttrib_SetNumber     ( { id = CharaAssetID.GRADE,        type = CharaAssetType.GROWTH_ATTRIB, enum = CharaGrade, default = CharaGrade.NORMAL } ),
+	potential    = AssetAttrib_SetNumber     ( { id = CharaAssetID.POTENTIAL,    type = CharaAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),
+	loyality     = AssetAttrib_SetNumber     ( { id = CharaAssetID.LOYALITY,     type = CharaAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),
+	contribution = AssetAttrib_SetNumber     ( { id = CharaAssetID.CONTRIBUTION, type = CharaAssetType.GROWTH_ATTRIB, min = 0 } ),
+	level        = AssetAttrib_SetNumber     ( { id = CharaAssetID.LEVEL,        type = CharaAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),
+	exp          = AssetAttrib_SetNumber     ( { id = CharaAssetID.EXP,          type = CharaAssetType.GROWTH_ATTRIB, min = 0, max = 9999 } ),
+	service_day  = AssetAttrib_SetNumber     ( { id = CharaAssetID.SERVICE_DAY,  type = CharaAssetType.GROWTH_ATTRIB } ),
+	skills       = AssetAttrib_SetPointerList( { id = CharaAssetID.SKILLS,       type = CharaAssetType.GROWTH_ATTRIB, setter = Entity_SetSkill } ),
+
+	superior     = AssetAttrib_SetPointer    ( { id = CharaAssetID.SUPERIOR,     type = CharaAssetType.RELATION_ATTRIB } ),
+	subdordinate = AssetAttrib_SetPointerList( { id = CharaAssetID.SUBORDINATES, type = CharaAssetType.RELATION_ATTRIB } ),
 }
 
 
@@ -87,6 +104,12 @@ Chara = class()
 
 function Chara:__init()
 	Entity_Init( self, EntityType.CHARA, CharaAssetAttrib )
+end
+
+function Chara:Remove()
+	Asset_Foreach( self, CharaAssetID.TASKS, function ( task )
+		Asset_RemoveIndexItem( task, TaskAssetID.CONTRIBUTORS, self )
+	end)
 end
 
 function Chara:Load( data )
@@ -145,12 +168,14 @@ function Chara:VerifyData()
 	end
 end
 
-function Chara:Update()
+function Chara:Update( elapsed )
 	local proposalcd = Asset_GetListItem( self, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD )
 	if proposalcd and proposalcd > 0 then
 		proposalcd = proposalcd - 1
 		Asset_SetListItem( self, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD, proposalcd )
 	end
+
+	Asset_Plus( self, CharaAssetID.SERVICE_DAY, elapsed )
 end
 
 

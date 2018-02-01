@@ -420,3 +420,16 @@ DefaultFormationData =
 		},
 	},
 }
+
+--------------------------------------------
+
+DefaultCorpsParams = 
+{
+	MAX_TROOP_NUMBER = 20,
+	REQ_TROOP_NUMBER = 8,
+}
+
+DefaultTroopParams = 
+{
+	MIN_TROOP_SOLDIER = 100,
+}

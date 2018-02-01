@@ -15,11 +15,11 @@ CorpsAssetID =
 	ENCAMPMENT     = 111,
 	STATUSES       = 112,
 	TEMPLATE       = 120,
+	MOVEMENT       = 121,
+	TASKS          = 130,
 
 	FOOD           = 200,
 	MATERIAL       = 201,
-	
-	TRAINING       = 300,
 }
 
 local function Corps_SetTroop( entity, id, value )
@@ -30,21 +30,31 @@ local function Corps_SetTroop( entity, id, value )
 	return troop
 end
 
+local function Corps_RecalMovement( entity, id, value )
+	--recalculate movement
+	local movement = Asset_Get( entity, CorpsAssetID.MOVEMENT )
+	local troopmove = Asset_Get( value, TroopAssetID.MOVEMENT )
+	if troopmove < movement or movement == 0 then
+		Asset_Set( entity, CorpsAssetID.MOVEMENT, troopmove )
+	end
+end
+
 CorpsAssetAttrib =
 {
 	group      = AssetAttrib_SetPointer    ( { id = CorpsAssetID.GROUP,         type = CorpsAssetType.BASE_ATTRIB, setter = Entity_SetGroup } ),
 	leader     = AssetAttrib_SetPointer    ( { id = CorpsAssetID.LEADER,        type = CorpsAssetType.BASE_ATTRIB, setter = Entity_SetChara } ),
-	troops     = AssetAttrib_SetPointerList( { id = CorpsAssetID.TROOP_LIST,    type = CorpsAssetType.BASE_ATTRIB, setter = Corps_SetTroop } ),	
+	troops     = AssetAttrib_SetPointerList( { id = CorpsAssetID.TROOP_LIST,    type = CorpsAssetType.BASE_ATTRIB, setter = Corps_SetTroop, changer = Corps_RecalMovement } ),	
 	officers   = AssetAttrib_SetPointerList( { id = CorpsAssetID.OFFICER_LIST,  type = CorpsAssetType.BASE_ATTRIB, setter = Entity_SetChara } ),
 	location   = AssetAttrib_SetPointer    ( { id = CorpsAssetID.LOCATION,      type = CorpsAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
 	encampment = AssetAttrib_SetPointer    ( { id = CorpsAssetID.ENCAMPMENT,    type = CorpsAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),	
 	template   = AssetAttrib_SetPointer    ( { id = CorpsAssetID.TEMPLATE,      type = CorpsAssetType.BASE_ATTRIB } ),
+	movement   = AssetAttrib_SetNumber     ( { id = CorpsAssetID.MOVEMENT,      type = CorpsAssetType.BASE_ATTRIB, default = 0 } ),
+
 	statuses   = AssetAttrib_SetPointerList( { id = CorpsAssetID.STATUSES,      type = CorpsAssetType.BASE_ATTRIB } ),
+	tasks      = AssetAttrib_SetPointerList( { id = CorpsAssetID.TASKS,         type = CorpsAssetType.BASE_ATTRIB } ),
 
 	food       = AssetAttrib_SetNumber     ( { id = CorpsAssetID.FOOD,          type = CorpsAssetType.PROPERTY_ATTRIB, default = 0 } ),
 	material   = AssetAttrib_SetNumber     ( { id = CorpsAssetID.MATERIAL,      type = CorpsAssetType.PROPERTY_ATTRIB, default = 0 } ),
-
-	training   = AssetAttrib_SetNumber     ( { id = CorpsAssetID.TRAINING,      type = CorpsAssetType.GROWTH_ATTRIB, default = 0 } ),
 }
 
 
@@ -66,9 +76,28 @@ function Corps:Load( data )
 	Asset_Set( self, CorpsAssetID.TROOP_LIST, data.troops )
 	Asset_Set( self, CorpsAssetID.LOCATION,   data.location )
 	Asset_Set( self, CorpsAssetID.ENCAMPMENT, data.encampment )
-
-	Asset_Set( self, CorpsAssetID.TRAINING,   data.training )
 end
+
+function Corps:GetTraining()
+	local total = 0
+	local number = 0
+	Asset_ForeachList( self, CorpsAssetID.TROOP_LIST, function ( troop )
+		total = total + Asset_Get( troop, TroopAssetID.TRAINING )
+		number = number + 1
+	end )
+	total = math.ceil( total / number )
+	return total
+end
+
+function Corps:GetSoldier()
+	local number = 0
+	Asset_ForeachList( self, CorpsAssetID.TROOP_LIST, function ( troop )
+		number = number + Asset_Get( troop, TroopAssetID.SOLDIER )
+	end )
+	return number
+end
+
+---------------------------------------------
 
 function Corps:Breif()
 	local number = 0
@@ -101,6 +130,14 @@ function Corps:ConsumeFood()
 end
 
 function Corps:Update( ... )
+end
+
+-------------------------------------------
+
+function Corps:IsAtHome()
+	local location   = Asset_Get( self, CorpsAssetID.LOCATION )
+	local encampment = Asset_Get( self, CorpsAssetID.ENCAMPMENT )
+	return location == encampment
 end
 
 -------------------------------------------
