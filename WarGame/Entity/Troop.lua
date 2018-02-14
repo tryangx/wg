@@ -133,6 +133,7 @@ function Troop:ConsumeFood( food )
 	--print( self.id, self.name, "consume food=", food )
 	local value = Asset_GetListItem( self, TroopAssetID.STATUSES, TroopStatus.STARVATION )
 	if not value or value == 0 then return end
+	
 	value = math.floor( value * 0.5 )
 	Asset_SetListItem( self, TroopAssetID.STATUSES, TroopStatus.STARVATION, value )	
 end

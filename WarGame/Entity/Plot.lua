@@ -142,7 +142,7 @@ function Plot:InitGrowth( params )
 	--InputUtil_Pause( "agr=" .. agr, "plotpopu="..popu )
 end
 
-function Plot:Update( elapsedTime )	
+function Plot:Update()	
 	if 1 then return end
 
 	local city = Asset_Get( self, PlotAssetID.CITY )

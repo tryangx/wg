@@ -629,7 +629,7 @@ local CombatTroopAI_CheckStatus =
 		{ type = "SEQUENCE", children = 
 			{
 				{ type = "FILTER", condition = NeedFlee },
-				{ type = "FILTER", condition = CanFlee },
+				--{ type = "FILTER", condition = CanFlee },
 				{ type = "ACTION", action = SetTroopStatus, params = { type = "_flee", value = true } },
 			},
 		},
@@ -730,16 +730,16 @@ local CombatAI_CheckCombatStatus =
 
 local _behavior = Behavior()
 
-_checkCombatAI = BehaviorNode()
+_checkCombatAI = BehaviorNode( true )
 _checkCombatAI:BuildTree( CombatAI_CheckCombatStatus )
 
-local _determineMoveAI = BehaviorNode()
+local _determineMoveAI = BehaviorNode( true )
 _determineMoveAI:BuildTree( CombatTroopAI_DetermineMovement )
 
-local _determineAttackAI = BehaviorNode()
+local _determineAttackAI = BehaviorNode( true )
 _determineAttackAI:BuildTree( CombatTroopAI_DetermineAttack )
 
-local _checkTroopStatusAI = BehaviorNode()
+local _checkTroopStatusAI = BehaviorNode( true )
 _checkTroopStatusAI:BuildTree( CombatTroopAI_CheckStatus )
 
 local _orderTroopAI = BehaviorNode()

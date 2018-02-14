@@ -284,10 +284,11 @@ end
 
 function Corps_AttackCity( corps, city )
 	return Warefare_SiegeCombatOccur( corps, city )
+	--Message_Post( MessageType.FIELD_COMBAT_TRIGGER, { plot = curplot, atk = actor, def = otherActor } )
 end
 
 function Corps_HarassCity( corps, city )
-	return Warefare_FieldCombatOccur( corps, city )
+	return Warefare_HarassCombatOccur( corps, city )
 end
 
 --------------------------------------------------
@@ -329,7 +330,7 @@ function Corps_EstablishTest( params )
 		Asset_AppendList( corps, CorpsAssetID.TROOP_LIST, troop )
 	end
 
-	Asset_Set( corps, CorpsAssetID.FOOD, Corps_GetConsumeFood( corps ) * 30 )
+	Asset_Set( corps, CorpsAssetID.FOOD, corps:GetConsumeFood() * 30 )
 
 	return corps
 end

@@ -6,7 +6,7 @@ local _city  = nil
 local _group = nil
 
 local _meeting = nil
-local _topic = nil
+local _topic   = nil
 
 local _registers = {}
 
@@ -34,6 +34,7 @@ local function SubmitProposal( params )
 	Asset_Set( proposal, ProposalAssetID.TYPE,        ProposalType[params.type] )
 	Asset_Set( proposal, ProposalAssetID.PROPOSER,    _chara )
 	Asset_Set( proposal, ProposalAssetID.ACTOR,       actor )
+	Asset_Set( proposal, ProposalAssetID.LOCATION,    _city )
 	Asset_Set( proposal, ProposalAssetID.DESTINATION, _city )
 	Asset_Set( proposal, ProposalAssetID.TIME,        g_calendar:GetDateValue() )
 
@@ -42,8 +43,14 @@ local function SubmitProposal( params )
 		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "CITY_POLICY", _registers["POLICY"] )
 	elseif params.type == "PROMOTE_CHARA" then
 		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "job", _registers["JOB"] )
-	elseif params.type == "HARASS_CITY" or params.type == "ATTACK_CITY" then
+	elseif params.type == "HARASS_CITY" or params.type == "ATTACK_CITY" then		
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
+	elseif params.type == "INTERCEPT" then
+		local enemyCorps = _registers["TARGET_CORPS"]
+		local city = Asset_Get( enemyCorps, CorpsAssetID.LOCATION )
+		Asset_Set( proposal, ProposalAssetID.DESTINATION, city )
+		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
+		--InputUtil_Pause( "inter", _city.name, city.name, enemyCorps.name )
 	elseif params.type == "REINFORCE_CORPS"
 		or params.type == "DISMISS_CORPS"
 		or params.type == "TRAIN_CORPS"
@@ -52,10 +59,12 @@ local function SubmitProposal( params )
 		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "corps", _registers["CORPS"] )
 	end
 
-	--InputUtil_Pause( "Submit proposal=" .. proposal:ToString() )
+	--print( "Submit proposal=" .. proposal:ToString() )
 
 	Asset_SetListItem( _chara, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD, Random_GetInt_Sync( 30, 50 ) )
 end
+
+----------------------------------------
 
 local function IsCityInstruction( params )
 	local citydata = Asset_Get( _city, CityAssetID.INSTRUCTION )
@@ -63,8 +72,21 @@ local function IsCityInstruction( params )
 end
 
 local function CheckTopic( params )
-	if not _topic or _topic == MeetingTopic.NONE then return true end	
-	return params.topic == MeetingTopic[_topic]
+	if not _topic or _topic == MeetingTopic.NONE then
+		InputUtil_Pause( "topic pass", _topic )
+		return false
+	end
+	return MeetingTopic[params.topic] == _topic
+end
+
+local function IsProposalCD()
+	local proposalcd = Asset_GetListItem( _chara, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD )
+	return proposalcd and proposalcd > 0 or false
+end
+
+local function HasCityStatus( params )
+	local ret = Asset_GetListItem( _city, CityAssetID.STATUSES, CityStatus[params.status] )
+	return ret == true
 end
 
 ----------------------------------------
@@ -145,17 +167,29 @@ end
 
 local function CanHarassCity()	
 	if 1 then return false end
+
 	--check free corps
 	local list = _city:FindFreeCorps()
 	if #list == 0 then return false end
 
-	--find target
+	--check & find target
 	local cities = _city:FindHarassCityTargets()
 	local number = #cities
 	if number == 0 then return false end
 
-	_registers["ACTOR"] = list[Random_GetInt_Sync( 1, #list )]
-	_registers["TARGET_CITY"] = cities[Random_GetInt_Sync( 1, number )]
+	local corps = list[Random_GetInt_Sync( 1, #list )]
+	local destcity = cities[Random_GetInt_Sync( 1, number )]
+
+	--check food
+	local food = Asset_Get( _city, CityAssetID.FOOD )
+	local needfood = Corps_CalcNeedFood( corps, destcity )	
+	if food > needfood  then
+		print( _city.name, "food not enough," .. corps.name .. " need ", needfood .. "/" .. food )
+		return false
+	end
+
+	_registers["ACTOR"] = corps
+	_registers["TARGET_CITY"] = destcity
 
 	return true
 end
@@ -163,17 +197,58 @@ end
 local function CanAttackCity()
 	--check free corps
 	local list = _city:FindFreeCorps()
-	if #list == 0 then return false end
+	if #list == 0 then
+		local numofcorps = Asset_GetListSize( _city, CityAssetID.CORPS_LIST )
+		--print( _city.name, "has corps=" .. numofcorps )
+		return false
+	end
 	
 	local cities = _city:FindAttackCityTargets()
 	local number = #cities
 	if number == 0 then return false end
 
-	_registers["ACTOR"] = list[Random_GetInt_Sync( 1, #list )]
-	_registers["TARGET_CITY"] = cities[Random_GetInt_Sync( 1, number )]
+	local corps = list[Random_GetInt_Sync( 1, #list )]
+	local destcity = cities[Random_GetInt_Sync( 1, number )]
+
+	--check food
+	local food = Asset_Get( _city, CityAssetID.FOOD )
+	local needfood = Corps_CalcNeedFood( corps, destcity )
+	--print( _city.name, corps.name, "food=" .. needfood .."/"..food )
+	if food < needfood then
+		print( _city.name, "food not enough," .. corps.name .. " need ", needfood .. "/" .. food )
+		return false
+	end
+
+	_registers["ACTOR"] = corps
+	_registers["TARGET_CITY"] = destcity
 
 	return true
 end
+
+local function CanIntercept()
+	local list = _city:FindFreeCorps()
+	if #list == 0 then return false end
+
+	local target = Asset_Get( _meeting, MeetingAssetID.TARGET )
+	local destcity = Asset_Get( target, CorpsAssetID.LOCATION )
+	local corps = list[Random_GetInt_Sync( 1, #list )]
+
+	--check food
+	local food = Asset_Get( _city, CityAssetID.FOOD )
+	local needfood = Corps_CalcNeedFood( corps, destcity )
+	if food > needfood  then
+		print( _city.name, "food not enough," .. corps.name .. " need ", needfood .. "/" .. food )
+		return false
+	end
+
+	_registers["TARGET_CORPS"] = target
+	_registers["TARGET_CITY"]  = destcity
+	_registers["ACTOR"]  = corps
+
+	return true
+end
+
+------------------------------
 
 --[[
 	FRIENDLY        = 200,
@@ -221,15 +296,8 @@ local _MilitaryProposals =
 		},
 	},
 }
-local CombatAI_SubmitMilitaryProposal =
-{
-	type = "SEQUENCE", children = 
-	{
-		{ type = "FILTER", condition = CheckTopic, params = { topic = "MILITARY_PREPARATION" } },
-		{ type = "RANDOM_SELECTOR", children = _MilitaryProposals },
-	}
-}
 
+----------------------------------------
 
 local function CanExecutePolicy()
 	local policy = Asset_Get( _city, CityAssetID.POLICY )
@@ -407,23 +475,29 @@ local _DevelopmentProposals =
 	},
 }
 
+
+local CombatAI_SubmitMilitaryProposal =
+{
+	type = "SEQUENCE", desc = "submit military", children = 
+	{
+		{ type = "FILTER", condition = CheckTopic, params = { topic = "MILITARY_PREPARATION" } },
+		{ type = "RANDOM_SELECTOR", children = _MilitaryProposals },
+	}
+}
+
 local CombatAI_SubmitDevelopProposal =
 {
-	type = "SEQUENCE", children = 
+	type = "SEQUENCE", desc = "submit development", children = 
 	{
 		{ type = "FILTER", condition = CheckTopic, params = { topic = "CITY_DEVELOPMENT" } },
 		{ type = "RANDOM_SELECTOR", children = _DevelopmentProposals },	
 	}
 }
 
-local function IsProposalCD()
-	local proposalcd = Asset_GetListItem( _chara, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD )
-	return proposalcd and proposalcd > 0 or false
-end
-
+--Main entrance to submit proposal
 local CombatAI_SubmitProposal = 
 {
-	type = "SELECTOR", children = 
+	type = "SELECTOR", desc = "entrance", children = 
 	{
 		--check CD
 		{ type = "SEQUENCE", children = 
@@ -431,8 +505,27 @@ local CombatAI_SubmitProposal =
 				{ type = "FILTER", condition = IsProposalCD },
 			},
 		},
+
 		-----------------------------
-		--status priority		
+		--at war
+		{ type = "SEQUENCE", children = 
+			{
+				{ type = "FILTER", condition = CheckTopic, params = { topic = "UNDER_HARASS" } },
+				{ type = "FILTER", condition = CanIntercept },
+				{ type = "ACTION", action = SubmitProposal, params = { type = "INTERCEPT" } },
+			},
+		},
+
+		{ type = "SEQUENCE", children = 
+			{
+				{ type = "FILTER", condition = CheckTopic, params = { topic = "UNDER_ATTACK" } },
+				{ type = "FILTER", condition = CanIntercept },
+				{ type = "ACTION", action = SubmitProposal, params = { type = "INTERCEPT" } },
+			},
+		},		
+
+		-----------------------------
+		--status priority
 		{ type = "SEQUENCE", children = 
 			{
 				{ type = "FILTER", condition = HasCityStatus, params = { status = "MILITARY_DANGER" } },
@@ -462,6 +555,8 @@ local CombatAI_SubmitProposal =
 			}
 		},
 		-----------------------------
+
+		-----------------------------
 		--default
 		{ type = "RANDOM_SELECTOR", children = 
 			{
@@ -469,6 +564,7 @@ local CombatAI_SubmitProposal =
 				CombatAI_SubmitDevelopProposal,
 			}
 		}
+		-----------------------------
 	},
 }
 
@@ -481,11 +577,11 @@ local CombatAI_MeetingProposal = CombatAI_SubmitProposal
 local _behavior = Behavior()
 
 --personal proposal 
-_charaSubmitProposal = BehaviorNode()
+_charaSubmitProposal = BehaviorNode( true )
 _charaSubmitProposal:BuildTree( CombatAI_SubmitProposal )
 
 --submit proposal in meeting
-_charaMeetingProposal = BehaviorNode()
+_charaMeetingProposal = BehaviorNode( true )
 _charaMeetingProposal:BuildTree( CombatAI_MeetingProposal )
 
 local function Init( params )
@@ -496,11 +592,11 @@ local function Init( params )
 	_group = Asset_Get( _chara, CharaAssetID.GROUP )
 
 	_meeting = params.meeting	
-	if _meeting then
+	if _meeting then				
 		_topic = Asset_Get( _meeting, MeetingAssetID.TOPIC )
 	else
 		_topic = nil
-	end	
+	end
 	if typeof( _chara ) == "number" then
 		return false
 	end

@@ -16,9 +16,17 @@ local _initTask =
 	end,
 
 	HARASS_CITY     = function ( task )
+		Intel_Post( IntelType.HARASS_CITY, Asset_Get( task, TaskAssetID.LOCATION ), { actor = Asset_Get( task, TaskAssetID.ACTOR ) } )
 		Asset_Set( task, TaskAssetID.DURATION, NORMAL_TASK_INIT_DURATION )
 	end,
 	ATTACK_CITY     = function ( task )
+		Intel_Post( IntelType.ATTACK_CITY, Asset_Get( task, TaskAssetID.LOCATION ), { actor = Asset_Get( task, TaskAssetID.ACTOR ) } )
+		Asset_Set( task, TaskAssetID.DURATION, NORMAL_TASK_INIT_DURATION )
+	end,
+	INTERCEPT       = function ( task )
+		InputUtil_EnablePause( false )
+		Stat_Add( "Intercept@" .. Asset_Get( task, TaskAssetID.GROUP ).name, 1, StatType.TIMES )
+		--InputUtil_Pause( Asset_Get( task, TaskAssetID.ACTOR ).name, "intercept" )
 		Asset_Set( task, TaskAssetID.DURATION, NORMAL_TASK_INIT_DURATION )
 	end,
 
@@ -63,12 +71,13 @@ local _executeTask =
 		local city = Asset_Get( task, TaskAssetID.DESTINATION )
 		local corps = Asset_Get( task, TaskAssetID.ACTOR )
 		local combat = Corps_AttackCity( corps, city )
-		print( combat )
 		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.SUSPENDED )
 		Asset_SetListItem( task, TaskAssetID.PARAMS, "combat", combat.id )
 		return true
 	end,
-
+	INTERCEPT       = function ( task )
+		--back
+	end,
 
 	DEV_AGRICULTURE = City_DevelopByTask,
 	DEV_COMMERCE    = City_DevelopByTask,
@@ -124,14 +133,14 @@ function Task_CharaReceive( task, chara )
 	local inx = 1
 	local cur = opens[inx]
 	while cur do
-		--DBG_Warning( "issue task", "issue task to " .. cur.name )
 		Asset_SetListItem( task, TaskAssetID.CONTRIBUTORS, cur, 0 )
+		Asset_SetListItem( cur, CharaAssetID.STATUSES, CharaStatus.IN_TASK, true )
 		Asset_AppendList( cur, CharaAssetID.TASKS, task )
 		Asset_ForeachList( cur, CharaAssetID.SUBORDINATES, function( subordinate )
 			table.insert( opens, subordinate )
 		end )
 		inx = inx + 1
-		cur = opens[inx]
+		cur = opens[inx]		
 	end
 end
 
@@ -146,7 +155,7 @@ function Task_Issue( task )
 	local actor = Asset_Get( task, TaskAssetID.ACTOR )
 	local type = Asset_Get( task, TaskAssetID.TYPE )
 	--InputUtil_Pause( "issue task to " .. actor.name, MathUtil_FindName( TaskType, type ) )	
-	if type == TaskType.HARASS_CITY or type == TaskType.ATTACK_CITY then
+	if type == TaskType.HARASS_CITY or type == TaskType.ATTACK_CITY or type == TaskType.INTERCEPT then
 		--Move_SetWatchActor( actor )
 
 		Asset_Set( task, TaskAssetID.ACTOR_TYPE, TaskActorType.CORPS )
@@ -178,19 +187,32 @@ function Task_Do( task, actor )
 end
 
 local function Task_End( task )
+	local actor = Asset_Get( task, TaskAssetID.ACTOR )
+	local actorType = Asset_Get( task, TaskAssetID.ACTOR_TYPE )
+	if actorType == TaskActorType.CHARA then
+		Asset_SetListItem( actor, CharaAssetID.STATUSES, CharaStatus.IN_TASK, nil )
+	elseif actorType == TaskActorType.CORPS then
+		Asset_SetListItem( actor, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK, nil )
+	end	
+
 	Asset_Set( task, TaskAssetID.END_TIME, g_calendar:GetDateValue() )
 
-	Stat_Add( "TaskEnd", { id = task.id, type = Asset_Get( task, TaskAssetID.TYPE ), group = Asset_Get( task, TaskAssetID.GROUP ),
-		--begt = Asset_Get( task, TaskAssetID.BEGIN_TIME ), endt = Asset_Get( task, TaskAssetID.END_TIME ),
-		day = g_calendar:CalcDiffDayByDates( Asset_Get( task, TaskAssetID.END_TIME ), Asset_Get( task, TaskAssetID.BEGIN_TIME ) ) }, StatType.LIST )
-	Entity_Remove( task )
+	if 1 then
+		Stat_Add( "Task@End", { id = task.id, type = Asset_Get( task, TaskAssetID.TYPE ), dest = Asset_Get( task, TaskAssetID.DESTINATION ), group = Asset_Get( task, TaskAssetID.GROUP ),
+			--begt = Asset_Get( task, TaskAssetID.BEGIN_TIME ), endt = Asset_Get( task, TaskAssetID.END_TIME ),
+			day = g_calendar:CalcDiffDayByDates( Asset_Get( task, TaskAssetID.END_TIME ), Asset_Get( task, TaskAssetID.BEGIN_TIME ) ) }, StatType.LIST )
+		Entity_Remove( task )
 
-	Stat_SetDumper( "TaskEnd", function ( data )
-		print( "Task End=" .. MathUtil_FindName( TaskType, data.type ), 
-			--"beg=" .. g_calendar:CreateDateDescByValue( data.begt ), "end=" .. g_calendar:CreateDateDescByValue( data.endt ),
-			"day=" .. data.day, "id=" .. data.id, "group=" .. ( group and group.name or "[??]" ) )
-	end)
+		Stat_SetDumper( "Task@End", function ( data )
+			print( "Task End=" .. StringUtil_Abbreviate( MathUtil_FindName( TaskType, data.type ), 16 ),  "dest=" .. StringUtil_Abbreviate( data.dest.name, 8 ),
+				--"beg=" .. g_calendar:CreateDateDescByValue( data.begt ), "end=" .. g_calendar:CreateDateDescByValue( data.endt ),
+				"day=" .. data.day, "id=" .. data.id, "group=" .. ( data.group and data.group.name or "[??]" ) )
+		end )
+	end
 
+	if 1 then
+		Stat_Add( "TaskType@" .. MathUtil_FindName( TaskType, Asset_Get( task, TaskAssetID.TYPE ) ), 1, StatType.TIMES )
+	end
 	return true
 end
 
@@ -201,7 +223,7 @@ local function Task_Replay( task )
 	--bonus to contributor
 	Asset_ForeachList( task, TaskAssetID.CONTRIBUTORS, function( value, actor )
 		Asset_Plus( actor, CharaAssetID.CONTRIBUTION, value )
-		print( actor.name, "contribute", value, Asset_Get( actor, CharaAssetID.CONTRIBUTION ) )		
+		--print( actor.name, "contribute", value, Asset_Get( actor, CharaAssetID.CONTRIBUTION ) )		
 	end )
 
 	Asset_Set( task, TaskAssetID.STATUS, TaskStatus.END )
@@ -215,7 +237,11 @@ local function Task_Cancel( task )
 		--recycle resource
 	end
 
-	Stat_Add( "Task Failed", { id = task.id, type = Asset_Get( task, TaskAssetID.TYPE ) }, StatType.LIST )
+	Stat_Add( "Task@Cancel", { id = task.id, type = Asset_Get( task, TaskAssetID.TYPE ) }, StatType.LIST )
+	Stat_SetDumper( "Task@Cancel", function ( data )
+		print( "Task Cancel=" .. StringUtil_Abbreviate( MathUtil_FindName( TaskType, data.type ), 16 ) )
+	end )
+
 	Entity_Remove( task )
 	return true
 end
@@ -232,7 +258,7 @@ local function Task_Finish( task )
 		elseif actorType == TaskActorType.CORPS then
 			--InputUtil_Pause( actor.name, "need backhome", Asset_Get( actor, CorpsAssetID.ENCAMPMENT ).name )
 			System_Get( SystemType.MOVE_SYS ):CorpsMove( Asset_Get( task, TaskAssetID.ACTOR ), Asset_Get( actor, CorpsAssetID.ENCAMPMENT ) )
-		end		
+		end	
 		return true
 	end
 
@@ -282,7 +308,17 @@ local function Task_Prepare( task )
 		end
 		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.ON_THE_WAY )	
 		return true
+	else
+		local type = Asset_Get( task, TaskAssetID.TYPE )
+		if type == TaskType.INTERCEPT then		
+			--InputUtil_Pause( Asset_Get( task, TaskAssetID.ACTOR ).name, "Arrive destination" )		
+		end
 	end
+
+	--local delta = g_calendar:CalcDiffDayByDates( g_calendar:GetDateValue(), Asset_Get( task, TaskAssetID.BEGIN_TIME ) )
+	--print( delta )
+	--InputUtil_Pause( g_calendar:CreateDesc( true, true ), g_calendar:CreateDateDescByValue( Asset_Get( task, TaskAssetID.BEGIN_TIME ) ) )
+	--Stat_Add( "Task@Prepare_Time", delta, StatType.ACCUMULATION )
 
 	Asset_Set( task, TaskAssetID.STATUS, TaskStatus.EXECUTING )
 	return false
@@ -300,16 +336,17 @@ local function Task_Init( task )
 		--DBG_Warning( "task no function", ( name or type ) .. " no prepare function, use default operation" )
 	end
 
-	if type == TaskType.HARASS_CITY or type == TaskType.ATTACK_CITY then
+	local actorType = Asset_Get( task, TaskAssetID.ACTOR_TYPE )
+	if actorType == TaskActorType.CORPS then
+		--corps carry food		
 		local corps = Asset_Get( task, TaskAssetID.ACTOR )
-		local foodNeed = Corps_GetConsumeFood( corps ) * 30
-		local foodConsume = foodNeed - Asset_Get( corps, CorpsAssetID.FOOD )
 		local city = Asset_Get( task, TaskAssetID.DESTINATION )
-		local foodInCity = Asset_Get( city, CityAssetID.FOOD )
-		foodConsume = math.min( foodConsume, foodInCity )		
-		Asset_Reduce( city, CityAssetID.FOOD, foodInCity )
-		Asset_Plus( corps, CorpsAssetID.FOOD, foodConsume )
-		print( "food need=" .. foodNeed, " consume=" .. foodConsume, " cityfood=" .. foodInCity - foodConsume )
+		if Supply_CorpsCarryFood( corps, city ) == false then
+			--cancel task
+			Asset_Set( task, TaskAssetID.DURATION, 0 )
+			Asset_Set( task, TaskAssetID.STATUS, TaskStatus.CANCELED )
+			return true
+		end
 	end
 
 	Asset_Set( task, TaskAssetID.STATUS, TaskStatus.PREPARE )
@@ -318,19 +355,22 @@ local function Task_Init( task )
 end
 
 --INITIALIZE -> PREPARE -> ON_THE_WAY -> EXECUTING -> FINISHED -> REPLY -> END
-local function Task_Update( task, elpased )
+local function Task_Update( task )
 	--reduce
-	if not elapsed then elapsed = 1 end	
-	Asset_Reduce( task, TaskAssetID.DURATION, elapsed )
+	Asset_Reduce( task, TaskAssetID.DURATION, g_elapsed )
 	local cur = Asset_Get( task , TaskAssetID.DURATION )	
-	if cur > 0 then return true end
+	if cur > 0 then
+		return true
+	end
 
 	local status = Asset_Get( task, TaskAssetID.STATUS )
 	local type = Asset_Get( task, TaskAssetID.TYPE )
 	
 	if type == TaskType.ATTACK_CITY then
-	print( "task_update_" .. MathUtil_FindName( TaskType, type ), "task=" .. task.id .. " status=" .. MathUtil_FindName( TaskStatus, status ) )
-end
+		--print( "task_update_" .. MathUtil_FindName( TaskType, type ), "task=" .. task.id .. " status=" .. MathUtil_FindName( TaskStatus, status ) )
+	elseif type == TaskType.INTERCEPT then
+		--InputUtil_Pause( "update intercept" )
+	end
 
 	local ret = false
 	if status == TaskStatus.INITIALIZE then
@@ -340,7 +380,7 @@ end
 	elseif status == TaskStatus.ON_THE_WAY then
 		ret = Task_Ontheway( task )
 	elseif status == TaskStatus.EXECUTING then
-		ret = Task_Execute( task, elpased )
+		ret = Task_Execute( task )
 	elseif status == TaskStatus.FINISHED then
 		ret = Task_Finish( task )
 	elseif status == TaskStatus.REPLY then

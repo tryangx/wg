@@ -11,11 +11,13 @@ ProposalAssetID =
 	--who will execute the task by proposal
 	ACTOR       = 12,	
 	--where submit the proposal
-	DESTINATION = 13,
+	LOCATION    = 13,
+	--where to execute the task
+	DESTINATION = 14,
 	--reserved
-	PARAMS      = 14,
+	PARAMS      = 15,
 	--superior
-	SUPERIOR    = 15,
+	SUPERIOR    = 16,
 
 	STATUS      = 21,
 	TIME        = 22,
@@ -28,6 +30,7 @@ ProposalAssetAttrib =
 	actor     = AssetAttrib_SetPointer( { id = ProposalAssetID.ACTOR,      type = ProposalAssetType.BASE_ATTRIB } ),
 	superior  = AssetAttrib_SetPointer( { id = ProposalAssetID.SUPERIOR,   type = ProposalAssetType.BASE_ATTRIB, setter = Entity_SetChara } ),
 	params    = AssetAttrib_SetList   ( { id = ProposalAssetID.PARAMS,     type = ProposalAssetType.BASE_ATTRIB } ),
+	location  = AssetAttrib_SetPointer( { id = ProposalAssetID.LOCATION,   type = ProposalAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
 	destination = AssetAttrib_SetPointer( { id = ProposalAssetID.DESTINATION,type = ProposalAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
 	status    = AssetAttrib_SetNumber ( { id = ProposalAssetID.STATUS,     type = ProposalAssetType.BASE_ATTRIB, default = ProposalStatus.SUBMITTED } ),
 	time      = AssetAttrib_SetNumber ( { id = ProposalAssetID.TIME,       type = ProposalAssetType.BASE_ATTRIB } ),

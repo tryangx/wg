@@ -16,6 +16,7 @@ CorpsAssetID =
 	STATUSES       = 112,
 	TEMPLATE       = 120,
 	MOVEMENT       = 121,
+
 	TASKS          = 130,
 
 	FOOD           = 200,
@@ -78,6 +79,26 @@ function Corps:Load( data )
 	Asset_Set( self, CorpsAssetID.ENCAMPMENT, data.encampment )
 end
 
+-------------------------------------------
+
+function Corps:Breif()
+	local number = 0
+	Asset_ForeachList( self, CorpsAssetID.TROOP_LIST, function( troop )
+		print( troop )
+		number = number + Asset_Get( troop, TroopAssetID.SOLDIER )
+	end)
+	return self.name .. "[" .. self.id ..  "] Num=" .. number
+end
+
+function Corps:DumpMaintain()
+	local food = Asset_Get( self, CorpsAssetID.FOOD )
+	local consume = self:GetConsumeFood()
+	local foodDays = math.ceil( food / consume )
+	print( self.name, "food supply=" .. foodDays .. "Days" )
+end
+
+-------------------------------------------
+
 function Corps:GetTraining()
 	local total = 0
 	local number = 0
@@ -89,6 +110,9 @@ function Corps:GetTraining()
 	return total
 end
 
+
+---------------------------------------------
+-- Getter
 function Corps:GetSoldier()
 	local number = 0
 	Asset_ForeachList( self, CorpsAssetID.TROOP_LIST, function ( troop )
@@ -97,42 +121,32 @@ function Corps:GetSoldier()
 	return number
 end
 
----------------------------------------------
-
-function Corps:Breif()
-	local number = 0
+function Corps:GetConsumeFood()
+	local foodConsume = 0
 	Asset_ForeachList( self, CorpsAssetID.TROOP_LIST, function( troop )
-		print( troop )
-		number = number + Asset_Get( troop, TroopAssetID.SOLDIER )
+		local soldier = Asset_Get( troop, TroopAssetID.SOLDIER )
+		local table = Asset_Get( troop, TroopAssetID.TABLEDATA )
+		foodConsume = foodConsume + soldier * table.consume.FOOD
 	end)
-	return self.name .. "[" .. self.id ..  "] Num=" .. number
+	return foodConsume
 end
 
-function Corps:Starvation()
+function Corps:GetFoodCapacity()
+	local foodCapacity = 0
 	Asset_ForeachList( self, CorpsAssetID.TROOP_LIST, function( troop )
-		troop:Starvation()
+		local soldier = Asset_Get( troop, TroopAssetID.SOLDIER )
+		local table = Asset_Get( troop, TroopAssetID.TABLEDATA )
+		foodCapacity = foodCapacity + soldier * table.capacity.FOOD
 	end)
+	return foodCapacity
 end
 
-function Corps:ConsumeFood()
-	local foodConsume = Corps_GetConsumeFood( self )
-	local food = Asset_Get( self, CorpsAssetID.FOOD )
-	if food >= foodConsume then
-		Asset_ForeachList( self, CorpsAssetID.TROOP_LIST, function( troop )
-			troop:ConsumeFood()
-		end)
-		Asset_Set( self, CorpsAssetID.FOOD, food - foodConsume )
-		return foodConsume
-	end
-	Asset_Set( self, CorpsAssetID.FOOD, 0 )
-	self:Starvation()
-	return food
-end
-
-function Corps:Update( ... )
+function Corps:GetNeedFood( )
+	-- body
 end
 
 -------------------------------------------
+-- 
 
 function Corps:IsAtHome()
 	local location   = Asset_Get( self, CorpsAssetID.LOCATION )
@@ -140,14 +154,40 @@ function Corps:IsAtHome()
 	return location == encampment
 end
 
+---------------------------------------------
+
+function Corps:Update( ... )
+end
+
 -------------------------------------------
 
-function Corps_GetConsumeFood( corps )
-	local foodConsume = 0
-	Asset_ForeachList( corps, CorpsAssetID.TROOP_LIST, function( troop )
-		local soldier = Asset_Get( troop, TroopAssetID.SOLDIER )
-		local table = Asset_Get( troop, TroopAssetID.TABLEDATA )
-		foodConsume = foodConsume + soldier * table.consume.FOOD
+-------------------------------------------
+-- handler
+
+function Corps:Starvation()
+	Asset_ForeachList( self, CorpsAssetID.TROOP_LIST, function( troop )
+		troop:Starvation()
 	end)
-	return foodConsume
+end
+
+--consume carried food
+function Corps:ConsumeFood( consume )
+	local foodConsume = self:GetConsumeFood()
+	local food = Asset_Get( self, CorpsAssetID.FOOD )
+	if food >= foodConsume then
+		Asset_ForeachList( self, CorpsAssetID.TROOP_LIST, function( troop )
+			troop:ConsumeFood()
+		end)
+		Asset_Set( self, CorpsAssetID.FOOD, food - foodConsume )		
+		--self:DumpMaintain()
+		--InputUtil_Pause( self.name, "consume=" .. foodConsume, "left=" .. food - foodConsume )
+		Stat_Add( "ConsumeFood@Corps_" .. self.id, foodConsume, StatType.ACCUMULATION )
+		return foodConsume
+	end
+
+	--starvation
+	Asset_Set( self, CorpsAssetID.FOOD, 0 )
+	self:Starvation()
+
+	return food
 end

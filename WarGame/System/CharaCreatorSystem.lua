@@ -93,7 +93,7 @@ function CharaCreatorSystem:Start()
 	print( "free chara=" .. #self.freeHistoricCharas )
 end
 
-function CharaCreatorSystem:Update( elapsedTime )
+function CharaCreatorSystem:Update()
 end
 
 

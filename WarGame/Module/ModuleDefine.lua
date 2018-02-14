@@ -3,8 +3,4 @@
 --
 
 require "Module/GameMapDrawer"
-require "Module/Statistician"
-require "Module/Tracker"
-require "Module/Corrector"
-require "Module/Debugger"
 require "Module/Router"

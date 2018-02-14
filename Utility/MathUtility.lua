@@ -130,7 +130,7 @@ function MathUtil_Dump( source, depth, indent )
 		--print( str )
 	end
 
-	if not source then
+	if not source or typeof( source ) ~= "table" then
 		print( "Dump source is invalid!" )
 		return
 	end

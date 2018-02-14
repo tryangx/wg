@@ -126,9 +126,7 @@ function Manager:LoadFromData( datas )
 end
 
 function Manager:NewData()
-	if not self._clz() then
-		return nil
-	end
+	if not self._clz then error( "no class-object for manager" ) return nil end
 	local newId = self:NewID()
 	local newData = self._clz()
 	newData.id = newId	
@@ -138,7 +136,7 @@ end
 
 function Manager:AddData( id, data )
 	if self._removeList then
-		print( "Add data in Foreach() is not recommended!" )
+		print( "Add data in Foreach() is not recommended! type=" .. self._type )
 	end
 
 	if not self._datas[id] then

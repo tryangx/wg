@@ -1,15 +1,32 @@
 --------------------------------------------------------------
 -- Supply
---	 Supply corps from Encampment City
---   Supply guard from Combat Occur 
+--   #Concept
+--     1. Corps don't consume food in Encampment
+--     2. Corps will carry food when leave encampment
 --
-
 --------------------------------------------------------------
 
-local function SupplyCombat( combat )	
+
+function Supply_CorpsCarryFood( corps, destcity )
+	local loc =  Asset_Get( corps, CorpsAssetID.LOCATION )
+	local foodNeeded = Corps_CalcNeedFood( corps, destcity )
+	local foodInCity = Asset_Get( loc, CityAssetID.FOOD )
+	--InputUtil_Pause( "carry food need=" .. foodNeeded, " cityhas=" .. foodInCity )
+	if foodInCity < foodNeeded then return false end
+	Asset_Set( loc, CityAssetID.FOOD, foodInCity - foodNeeded )
+	Asset_Plus( corps, CorpsAssetID.FOOD, foodNeeded )
+	--corps:DumpMaintain()
+	--InputUtil_Pause( corps.name, "carry food from", loc.name, "need=" .. foodNeeded, " cityfood=" .. foodInCity - foodNeeded )
+	return true
+end
+
+--[[
+--discard this concept
+local function Supply_ConsumeFoodInCombat( combat )
 	Asset_ForeachList( combat, CombatAssetID.TROOP_LIST, function ( troop )
 		local corps = Asset_Get( troop, TroopAssetID.CORPS )
 		if corps then return end
+
 		local city = Asset_Get( troop, TroopAssetID.ENCAMPMENT )
 		if not city then return end
 
@@ -25,29 +42,39 @@ local function SupplyCombat( combat )
 		end
 	end )
 end
+]]
 
-local function SupplyCorps( corps )
-	--consume
-	local consume = corps:ConsumeFood()
-	print( "Corps=" .. corps.id .. " consume food=" .. consume )
 
+--
+local function Supply_CorpsConsumeFood( corps )
+	local foodConsume = corps:ConsumeFood()
+	if corps:IsAtHome() then
+		--don't consume food in encampment		
+		return
+	else
+		--consume carried food
+		corps:ConsumeFood()
+	end	
+end
+
+--
+local function Supply_CorpsGainFood( corps )
 	--supply
-	local city = Asset_Get( corps, CorpsAssetID.ENCAMPMENT )
+	local city = Asset_Get( corps, CorpsAssetID.ENCAMPMENT )	
+	if not city then return end
 
-	--InputUtil_Pause( "Supply corps", corps.id, city )
-	if not city then return end	
-
-	--Just teleport the food from city to corps now,
-	--Maybe I can make it complex and reality in the future
-	local need = 0
 	local food = Asset_Get( city, CityAssetID.FOOD )
-	if food > 0 then
-		need = math.min( food, Corps_GetConsumeFood( corps ) )
-		Asset_Plus( Corps, CorpsAssetID.FOOD, need )
-		food = food - need
-		Asset_Set( city, CityAssetID.FOOD, food )		
-	end
-	print( "Corps=" .. corps.id .. " supply food=" .. Asset_Get( corps, CorpsAssetID.FOOD ) .. "+" .. need, " fromcity=" .. city.name .. "=" .. food )
+	if food <= 0 then return end
+	local need = math.min( food, corps:GetFoodCapacity() )
+
+	--print( "Corps=" .. corps.id .. " supply food=" .. Asset_Get( corps, CorpsAssetID.FOOD ) .. "+" .. need, " fromcity=" .. city.name .. "=" .. food )
+	--InputUtil_Pause( "Supply corps", corps.id, city )
+	
+	Asset_Plus( corps, CorpsAssetID.FOOD, need )
+	Asset_Set( city, CityAssetID.FOOD, food - need )
+
+	Stat_Add( "Supply@Corps_" .. corps.id, need, StatType.ACCUMULATION )
+	--corps:DumpMaintain()
 end
 
 --------------------------------------------------------------
@@ -64,13 +91,15 @@ end
 function SupplySystem:Update()
 	local day = g_calendar:GetDay()
 
+	Entity_Foreach( EntityType.CORPS, Supply_CorpsConsumeFood )
+
 	if day % 10 == 0 then
-		--Supply all troop in combat without corps
-		Entity_Foreach( EntityType.COMBAT, SupplyCombat )
+		--Supply all corps
+		Entity_Foreach( EntityType.CORPS, Supply_CorpsGainFood )
 	end
 
-	if day == 1 then
-		--Supply all corps
-		Entity_Foreach( EntityType.CORPS, SupplyCorps )
+	if day % 10 == 0 then
+		--Supply all troop in combat without corps
+		--Entity_Foreach( EntityType.COMBAT, Supply_ConsumeFoodInCombat )
 	end
 end

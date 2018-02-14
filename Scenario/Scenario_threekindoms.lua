@@ -647,6 +647,7 @@ RTK_WeaponTable =
 	[51] = { name = "ram",       level = "5", dmg = "FORTIFIED", range = "CLOSE",   power = 50, accuracy = 100, duration = 20, },
 }
 
+
 ---------------------------------
 -- Melee / Shoot / Charge / Siege / Armor
 --	

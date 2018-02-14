@@ -14,11 +14,22 @@ local _trackerHis = {}
 
 ----------------------------------------------
 
-function Track_HistoryRecord( name, data, time )
+--We can use below functions to track the history data changed
+--@usage
+--    Track_HistoryRecord( "money", { rmb = 1000 date = "2018-1-1" } )
+--    Track_HistoryRecord( "money", { rmb = 1500 date = "2018-2-1" } )
+--    Track_HistoryDump( "money", function( name, data )
+--      print( name .. "=" .. data.rmb .. " date=" .. data.date )
+--    end
+--    
+--    -- money=1000 date=2018-1-1
+--    -- money=1500 date=2018-2-1
+--
+function Track_HistoryRecord( name, datas )
 	if not _trackerHis[name] then
 		_trackerHis[name] = {}
 	end
-	table.insert( _trackerHis[name], { time = time, data = data } )
+	table.insert( _trackerHis[name], datas )
 end
 
 function Track_HistoryDump( name, fn )
@@ -63,7 +74,7 @@ function Track_Dump()
 	for k, v in pairs( _trackerCaches ) do
 		local delta = v.current - v.init
 		if delta ~= 0 then
-			local content = HelperUtil_AbbreviateString( k, 10 ) .. "= " .. v.init .. "->" .. v.current .. ( delta >= 0 and " +" or " " ) .. delta .. "(" .. ( math.ceil( delta * 100 / v.init ) ) .. "%)"
+			local content = StringUtil_Abbreviate( k, 10 ) .. "= " .. v.init .. "->" .. v.current .. ( delta >= 0 and " +" or " " ) .. delta .. "(" .. ( math.ceil( delta * 100 / v.init ) ) .. "%)"
 			if v.need then
 				content = content .. " ==>" ..  v.need
 			end

@@ -1,11 +1,17 @@
 
 StatType = 
 {
+	--DEST is just description, no else
 	DESC         = 1,
+	--TIMER only accumulation the called times
 	TIMES        = 2,
+	--DATA can use dumper to display
 	DATA         = 3,
+	--VALUE always is numberic
 	VALUE        = 4,
+	--LIST will records all datas in call
 	LIST         = 5,
+	--ACCUMULATION will accumulate all data in call
 	ACCUMULATION = 6,
 }
 
@@ -22,6 +28,11 @@ local function Stat_Get( type, name )
 	return _stats[type][name], type
 end
 
+--useful statistic function
+--@usage
+--  Stat_Add( "Item", { type = "FOOD", id = 100 }, StatType.LIST )
+--  Stat_Add( "Bonus", Asset_Get( combat, CombatAssetID.TIME ), StatType.ACCUMULATION )
+--  Stat_Add( "Times", "standup", StatType.TIMES )
 function Stat_Add( name, data, type )
 	local stats
 	stats, type = Stat_Get( type, name )
@@ -42,11 +53,19 @@ function Stat_Add( name, data, type )
 end
 
 function Stat_Dump( type )
-	print( "[STAT_DUMP]" )	
+	print( "####STAT_DUMP####" )
+	--output
 	for t, list in pairs( _stats ) do
 		if not type or t == type then
+			print( "" )
+			print( "#" .. MathUtil_FindName( StatType, t ) )
+			local namelist = {}
 			for name, data in pairs( list ) do
-				--print( list, name, data, list[name] )
+				table.insert( namelist, name )
+			end
+			table.sort( namelist )
+			for _, name in ipairs( namelist ) do				
+				local data = list[name]
 				local dumper = list[name] and list[name]._DUMPER or nil
 				if t == StatType.LIST then
 					print( name .. ":" .. " cnt=" .. #data, dumper )
@@ -73,12 +92,13 @@ function Stat_Dump( type )
 			end
 		end
 	end
+	print( "####END_DUMP####" )	
 end
 
 function Stat_SetDumper( name, fn )
 	local type = _types[name]
 	if not type then
-		error( "Invalid name-type for=", name )		
+		error( "Invalid name-type for=", name )	
 		return
 	end
 	local stats = Stat_Get( type, name )

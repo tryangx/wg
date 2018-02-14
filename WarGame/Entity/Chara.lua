@@ -168,14 +168,14 @@ function Chara:VerifyData()
 	end
 end
 
-function Chara:Update( elapsed )
+function Chara:Update()
 	local proposalcd = Asset_GetListItem( self, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD )
 	if proposalcd and proposalcd > 0 then
 		proposalcd = proposalcd - 1
 		Asset_SetListItem( self, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD, proposalcd )
 	end
 
-	Asset_Plus( self, CharaAssetID.SERVICE_DAY, elapsed )
+	Asset_Plus( self, CharaAssetID.SERVICE_DAY, g_elapsed )
 end
 
 

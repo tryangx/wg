@@ -51,10 +51,11 @@ CombatAssetID =
 	ATK_STATUS    = 11,
 	DEF_STATUS    = 12,
 
-	CITY          = 100,
-	BATTLEFIELD   = 101,
-	ATKCAMPFIELD  = 102,
-	DEFCAMPFIELD  = 103,
+	PLOT           = 100,
+	CITY           = 101,
+	BATTLEFIELD    = 102,
+	ATKCAMPFIELD   = 103,
+	DEFCAMPFIELD   = 104,
 	ATK_CORPS_LIST = 110,
 	DEF_CORPS_LIST = 111,
 	TROOP_LIST    = 112,
@@ -80,6 +81,7 @@ CombatAssetAttrib =
 	atkstatuses = AssetAttrib_SetList       ( { id = CombatAssetID.ATK_STATUS,      type = CombatAssetType.BASE_ATTRIB } ),
 	defstatuses = AssetAttrib_SetList       ( { id = CombatAssetID.DEF_STATUS,      type = CombatAssetType.BASE_ATTRIB } ),
 
+	plot        = AssetAttrib_SetPointer    ( { id = CombatAssetID.PLOT,            type = CombatAssetType.BASE_ATTRIB, setter = Entity_SetPlot } ),
 	city        = AssetAttrib_SetPointer    ( { id = CombatAssetID.CITY,            type = CombatAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
 	battlefield = AssetAttrib_SetPointer    ( { id = CombatAssetID.BATTLEFIELD,     type = CombatAssetType.BASE_ATTRIB, setter = Table_SetBattlefield } ),
 	atkcampfield= AssetAttrib_SetPointer    ( { id = CombatAssetID.ATKCAMPFIELD,    type = CombatAssetType.BASE_ATTRIB, setter = Table_SetBattlefield } ),
@@ -273,9 +275,6 @@ function Combat:__init( ... )
 	--maybe in batltefield / camp field
 	self._currentField = nil
 
-	--
-	self._defense = 0
-
 	--grids
 	self._grids = {}
 
@@ -284,6 +283,17 @@ function Combat:__init( ... )
 	self._stat[CombatSide.ALL] = {}	
 	self._stat[CombatSide.ATTACKER] = {}
 	self._stat[CombatSide.DEFENDER] = {}
+end
+
+function Combat:Remove()
+	self._currentField = nil
+	self._grids = nil
+	self._movements = nil
+
+	self._stat[CombatSide.ALL] = nil
+	self._stat[CombatSide.ATTACKER] = nil
+	self._stat[CombatSide.DEFENDER] = nil	
+	self._stat = nil
 end
 
 --Add single troop into Combat
@@ -295,7 +305,7 @@ function Combat:AddTroop( troop, side )
 
 	--default order
 	if side == CombatSide.ATTACKER then
-		troop._order = CombatOrder.ATTACK
+		troop._order = CombatOrder.ATTACK		
 	elseif side == CombatSide.DEFENDER then
 		troop._order = CombatOrder.DEFEND
 	end
@@ -333,6 +343,8 @@ function Combat:AddCorps( corps, side )
 	Asset_ForeachList( corps, CorpsAssetID.TROOP_LIST, function( troop )
 		self:AddTroop( troop, side )
 	end )
+
+	Asset_SetListItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_COMBAT, true )
 end
 
 function Combat:RemoveTroop( troop, isNeutralized )
@@ -386,6 +398,8 @@ function Combat:RemoveCorps( corps )
 	Asset_ForeachList( corps, CorpsAssetID.TROOP_LIST, function( troop )
 		self:TroopLeave( troop )
 	end )
+
+	Asset_SetListItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_COMBAT, nil )
 end
 
 
@@ -458,6 +472,22 @@ function Combat:GetBackGrid( troop )
 	return self:GetGrid( troop._x + ox, troop._y - oy )
 end
 
+function Combat:GetGroupName( side )
+	local corps
+	if side == CombatSide.ATTACKER then
+		corps = Asset_GetListByIndex( self, CombatAssetID.ATK_CORPS_LIST, 1 )
+	elseif side == CombatSide.DEFENDER then
+		corps = Asset_GetListByIndex( self, CombatAssetID.DEF_CORPS_LIST, 1 )
+	end
+	local group = corps and Asset_Get( corps, CorpsAssetID.GROUP ) or nil
+	return group and group.name or "[UNKNOWN]"
+end
+
+function Combat:GetCorpsGroupName( corps )
+	local group = corps and Asset_Get( corps, CorpsAssetID.GROUP ) or nil
+	return group and group.name or "[UNKNOWN]"
+end
+
 -----------------------------------------------------
 -- Debug & Statistics
 
@@ -487,9 +517,9 @@ function Combat:DrawBattlefield()
 			end
 			local troopDesc
 			if side == CombatSide.ATTACKER then
-				troopDesc = "A_" .. HelperUtil_AbbreviateString( numoftroop, 2 ) .. " "
+				troopDesc = "A_" .. StringUtil_Abbreviate( numoftroop, 2 ) .. " "
 			elseif side == CombatSide.DEFENDER then
-				troopDesc = "D_" .. HelperUtil_AbbreviateString( numoftroop, 2 ) .. " "
+				troopDesc = "D_" .. StringUtil_Abbreviate( numoftroop, 2 ) .. " "
 			else
 				troopDesc = string.rep( " ", 5 )
 			end
@@ -847,13 +877,11 @@ function Combat:Prepare()
 			if cond.is_siege and ( combatType == CombatType.SIEGE_COMBAT or combatType == CombatType.CAMP_COMBAT ) then ret = false end
 			if cond.is_field and combatType == CombatType.FIELD_COMBAT then ret = false end
 			if ret == true then
-				DebugLog( "withdraw reason=" .. ( cond.reason and cond.reason or "" ) )
-				--[[
+				DebugLog( "withdraw reason=" .. ( cond.reason and cond.reason or "" ) )				
 				DebugLog( "intense="..self:GetStat( side, CombatStatistic.COMBAT_INTENSE ) )
 				DebugLog( "mor="..self:GetStat( side, CombatStatistic.AVERAGE_MORALE ) )
 				DebugLog( "casulaty="..self:GetStat( side, CombatStatistic.CASUALTY_RATIO ) )
 				DebugLog( "foodsup="..self:GetStat( side, CombatStatistic.FOOD_SUPPLY_DAY ) )
-				]]
 				return ret
 			end
 		end
@@ -879,7 +907,7 @@ function Combat:Prepare()
 				Asset_AppendList( self, CombatAssetID.PRISONER, { side = oppSide, prisoner = troop } )				
 			end )
 		end
-		InputUtil_Pause( "withdraw atk=", atkWithdraw, " def", defWithdraw )
+		print( "withdraw atk=", atkWithdraw, " def", defWithdraw )
 		Asset_Set( self, CombatAssetID.RESULT, defWithdraw == true and CombatResult.STRATEGIC_VICTORY or CombatResult.STRATEGIC_LOSE )
 		Asset_Set( self, CombatAssetID.WINNER, defWithdraw == true and CombatSide.ATTACKER or CombatSide.DEFENDER )
 		return defWithdraw == true and CombatPrepareResult.ONLY_ATK_ACCEPTED or CombatPrepareResult.ONLY_DEF_ACCEPTED
@@ -1059,7 +1087,7 @@ function Combat:NextStep( status )
 		local result = self:Prepare()
 		if result == CombatPrepareResult.BOTH_DECLINED then
 			if Asset_Get( self, CombatAssetID.RESULT ) == CombatResult.DRAW then
-				InputUtil_Pause( "both withdraw" )
+				print( "both withdraw" )
 			else
 				self:AddStat( CombatSide.ALL, CombatStatistic.REST_DAY, 1 )
 				--InputUtil_Pause( "Rest a day=".. Asset_Get( self, CombatAssetID.DAY ) )
@@ -1068,7 +1096,7 @@ function Combat:NextStep( status )
 		end
 		--one side withdraw
 		if Asset_Get( self, CombatAssetID.RESULT ) ~= CombatResult.UNKNOWN then
-			InputUtil_Pause( "One side withdraw" )
+			print( "One side withdraw" )
 			return false
 		end
 
@@ -1351,6 +1379,8 @@ function Combat:UpdateMovement( list )
 	for _, task in ipairs( self._movements ) do
 		self:ExecuteMovement( task )
 	end	
+
+	self._movements = nil
 end
 
 function Combat:UpdateAction( list )
@@ -1653,18 +1683,7 @@ function Combat:Reform( troop )
 	self:AddStat( troop._combatSide, CombatStatistic.RESTORE_ORG, org )
 end
 
-function Combat:Regroup( troop )
-	--restore organization
-	local level = Asset_Get( troop, TroopAssetID.LEVEL )
-	local org = Asset_Get( troop, TroopAssetID.ORGANIZATION )
-	local soldier = Asset_Get( troop, TroopAssetID.SOLDIER )
-	org = math.min( soldier, math.ceil( org + soldier * ( level + 10 ) * 0.01 ) )
-	Asset_Set( troop, TroopAssetID.ORGANIZATION, org )
-	self:AddStat( troop._combatSide, CombatStatistic.RESTORE_ORG, org )
-end
-
 function Combat:Defend( troop )
-	--self:Regroup( troop )
 end
 
 function Combat:Surrounded( troop )
@@ -1796,7 +1815,13 @@ function Combat:DealDamage( attacker, defender, params )
 	--count soldier
 	Asset_Set( defender, TroopAssetID.SOLDIER, defNumber - kill )
 
-	Stat_Add( "Combat@Kill Soldier", kill, StatType.ACCUMULATION )
+	-----------------------------------------
+	-- Damage( Kill ) Statistic	
+	local corps = Asset_Get( attacker, TroopAssetID.CORPS )
+	Stat_Add( "Combat@" .. self:GetCorpsGroupName( corps ) .. "_KILL", kill, StatType.ACCUMULATION )	
+	Stat_Add( "Combat@" .. self.id .. "_KILL", kill, StatType.ACCUMULATION )
+	Stat_Add( "Combat@Kill", kill, StatType.ACCUMULATION )
+	-----------------------------------------
 
 	--statistic
 	self:AddStat( defender._combatSide, CombatStatistic.DEAD, kill )
@@ -1924,7 +1949,9 @@ function Combat:Flee( troop )
 			troop._captured = true
 			local oppSide = self:GetOppSide( troop._combatSide )
 			Asset_AppendList( self, CombatAssetID.PRISONER, { side = oppSide, prisoner = troop } )
-			InputUtil_Pause( TroopToString( troop ), "captured" )
+			print( TroopToString( troop ), "captured" )
+			Stat_Add( "Combat@Capture_Troop", nil, StatType.TIMES )
+			Stat_Add( "Combat@Capture_Soldier", Asset_Get( troop, TroopAssetID.SOLDIER ), StatType.ACCUMULATION )
 			return
 		end
 	end

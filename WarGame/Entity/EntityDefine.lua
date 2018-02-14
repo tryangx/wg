@@ -22,9 +22,12 @@ EntityType =
 
 	---------------------
 
-	PROPOSAL = 300,
-	TASK     = 301,
-	MEETING  = 302,
+	MESSAGE  = 300,
+	PROPOSAL = 301,
+	TASK     = 302,
+	MEETING  = 303,
+	MOVE     = 304,
+	INTEL    = 305,
 }
 
 function Entity_SetGroup( entity, id, value )
@@ -84,7 +87,10 @@ require "Entity/Map"
 require "Entity/Combat"
 require "Entity/Route"
 
+require "Entity/Intel"
+require "Entity/Message"
 require "Entity/Proposal"
 require "Entity/Task"
 require "Entity/Event"
 require "Entity/Meeting"
+require "Entity/Move"

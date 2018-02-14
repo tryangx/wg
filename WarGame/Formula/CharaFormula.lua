@@ -1,7 +1,7 @@
 function Chara_GetLimitByGroup( group )
 	if not group then return 0 end
 	local government = Asset_Get( group, GroupAssetID.GOVERNMENT )
-	print( "gov=" .. MathUtil_FindName( GroupGovernment, government ) )
+	--print( "gov=" .. MathUtil_FindName( GroupGovernment, government ) )
 	return GroupGovernmentData[government].CAPITAL_CHARA_LIMIT
 end
 

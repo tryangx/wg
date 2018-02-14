@@ -9,6 +9,7 @@ MeetingAssetID =
 	TOPIC        = 2,
 	SUPERIOR     = 3,
 	PARTICIPANTS = 4,
+	TARGET       = 5,
 }
 
 MeetingAssetAttrib = 
@@ -16,8 +17,8 @@ MeetingAssetAttrib =
 	loc      = AssetAttrib_SetPointer( { id = MeetingAssetID.LOCATION,    type = MeetingAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
 	topic    = AssetAttrib_SetNumber ( { id = MeetingAssetID.TOPIC,       type = MeetingAssetType.BASE_ATTRIB, enum = MeetingTopic, default = MeetingTopic.NONE } ),
 	superior = AssetAttrib_SetPointer( { id = MeetingAssetID.SUPERIOR,    type = MeetingAssetType.BASE_ATTRIB, setter = Entity_SetChara } ),
-	
 	participants = AssetAttrib_SetPointerList( { id = MeetingAssetID.PARTICIPANTS, type = MeetingAssetType.BASE_ATTRIB, setter = Entity_SetChara } ),
+	target   = AssetAttrib_SetPointer( { id = MeetingAssetID.TARGET,      type = MeetingAssetType.BASE_ATTRIB } ),
 }
 
 

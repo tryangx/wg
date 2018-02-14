@@ -352,8 +352,8 @@ end
 
 -------------------------------------------
 
-function Map:Update( elapsedTime )
+function Map:Update()
 	Asset_ForeachList( self, MapAssetID.PLOTS, function ( plot )
-		plot:Update( elapsedTime )
+		plot:Update()
 	end )
 end

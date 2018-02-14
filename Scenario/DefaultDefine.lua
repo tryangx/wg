@@ -389,6 +389,8 @@ CharaJob =
 CharaStatus = 
 {
 	PROPOSAL_CD       = 10,
+
+	IN_TASK           = 20,
 }
 
 ----------------------------------------------------------------------------------------
@@ -490,10 +492,11 @@ ProposalType =
 	DISMISS_CORPS   = 102,
 	TRAIN_CORPS     = 103,
 	UPGRADE_CORPS   = 104,
-	DISPATCH_CORPS  = 105,
+	DISPATCH_CORPS  = 105,	
 
 	HARASS_CITY     = 110,
 	ATTACK_CITY     = 111,
+	INTERCEPT       = 120,
 
 	FRIENDLY        = 200,
 
@@ -527,6 +530,7 @@ TaskType =
 
 	HARASS_CITY     = 110,
 	ATTACK_CITY     = 111,
+	INTERCEPT       = 120,
 
 	FRIENDLY        = 200,
 
@@ -649,3 +653,55 @@ MeetingTopic =
 
 	MEETING_END           = 15,
 }
+
+------------------------------
+--All system should depend on messages and process with them
+MessageType = 
+{
+	CORPS_MOVE            = 90,
+	CORPS_ATTACK          = 91,
+
+	----------------------------------
+	-- Combat Relative
+	FIELD_COMBAT_TRIGGER  = 101,
+	SIEGE_COMBAT_TRIGGER  = 102,
+
+	COMBAT_OCCURED        = 110,
+	FIELD_COMBAT_OCCURED  = 111,
+	SIEGE_COMBAT_OCCURED  = 112,
+
+	COMBAT_END            = 120,
+	FIELD_COMBAT_END      = 121,
+	SIEGE_COMBAT_END      = 122,
+
+	COMBAT_REMOVE         = 130,
+	----------------------------------
+
+	----------------------------------
+	CITY_HOLD_MEETING     = 200,
+	----------------------------------
+}
+
+------------------------------
+
+IntelType = 
+{
+	HARASS_CITY   = 10,
+	ATTACK_CITY   = 11,
+}
+
+------------------------------
+
+MoveRole = 
+{
+	CHARA = 1,
+	CORPS = 2,
+}
+
+MoveStatus = 
+{
+	MOVING  = 0,
+	SUSPEND = 1,
+	STOP    = 2,
+}
+

@@ -1,3 +1,39 @@
+local _routes = {}
+
+function Route_QueryPath( city1, city2 )
+	local id1 = city1.id
+	local id2 = city2.id
+	local key = id1 .. "_" .. id2
+	if _routes[key] then
+		return _routes[key]
+	end
+	local route = Entity_Find( EntityType.ROUTE, function( route )
+		local from = Asset_Get( route, RouteAssetID.FROM_CITY )
+		local to = Asset_Get( route, RouteAssetID.TO_CITY )
+		if ( from == city1 and to == city2 ) or ( from == city2 and to == city1 ) then
+			return true
+		end
+	end )
+	_routes[key] = route
+	return route
+end
+
+--from city to city, should modify to plot to plot
+function Route_QueryPathDistance( city1, city2 )
+	local route = Route_QueryPath( city1, city2 )
+	if not route then
+		InputUtil_Pause( "no route", city1.name, city2.name )
+		return 0
+	end
+
+	local dur = 0
+	Asset_ForeachList( route, RouteAssetID.NODES, function ( plot )
+		dur = dur + Asset_Get( plot, PlotAssetID.ROAD )
+	end )
+	return dur
+end
+
+
 function Route_Make()
 	Entity_Foreach( EntityType.CITY, function ( city )			
 		Asset_ForeachList( city, CityAssetID.ADJACENTS, function( adjaCity )
@@ -97,24 +133,4 @@ function Route_MakeBetweenCity( fromCity, toCity )
 		return weight
 	end )
 	return PathFinder_FindPath( cx, cy, tx, ty )
-end
-
-local _routes = {}
-
-function Route_QueryPath( city1, city2 )
-	local id1 = city1.id
-	local id2 = city2.id
-	local key = id1 .. "_" .. id2
-	if _routes[key] then
-		return _routes[key]
-	end
-	local route = Entity_Find( EntityType.ROUTE, function( route )
-		local from = Asset_Get( route, RouteAssetID.FROM_CITY )
-		local to = Asset_Get( route, RouteAssetID.TO_CITY )
-		if ( from == city1 and to == city2 ) or ( from == city2 and to == city1 ) then
-			return true
-		end
-	end )
-	_routes[key] = route
-	return route
 end

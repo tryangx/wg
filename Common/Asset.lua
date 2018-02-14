@@ -136,7 +136,7 @@ function Asset_GetList( entity, id )
 			entity[id] = {}
 			list = entity[id]
 		else
-			InputUtil_Pause( "what's wrong?", entity.type, id )
+			error( "what's wrong?", entity.type, id )
 		end
 	end
 	return list
@@ -147,15 +147,15 @@ function Asset_GetListSize( entity, id )
 	return list and #list or 0
 end
 
-function Asset_GetListItem( entity, id, index )
+function Asset_GetListItem( entity, id, name )
 	local list = Asset_GetList( entity, id )
-	return list and list[index] or nil
+	return list and list[name] or nil
 end
 
-function Asset_GetListIndex( entity, id, index )
+function Asset_GetListByIndex( entity, id, index )
 	local list = Asset_GetList( entity, id )
 	if not list then return nil end
-	for idx, data in pairs( list ) do		
+	for idx, data in pairs( list ) do
 		if idx == index then
 			return data
 		end
@@ -433,13 +433,14 @@ end
 -- 
 --
 function Asset_Plus( entity, id, value )
-	if not entity then return end
-	if not id then error( "id is invalid" ) end
-	if typeof( entity ) == "number" then return nil end
+	if not entity then return false end
+	if not id then error( "id is invalid" ) return false end
+	if typeof( entity ) == "number" then return false end
 	local ret = Asset_Get( entity, id )
-	if not ret then return end
+	if not ret then return false end	
 	Asset_Set( entity, id, ret + value )
 	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "plus value=" .. ret .. "+" ..value.."->" .. entity[id] ) end
+	return true
 end
 
 
@@ -447,7 +448,7 @@ end
 -- 
 --
 function Asset_Reduce( entity, id, value )
-	Asset_Plus( entity, id, -value )
+	return Asset_Plus( entity, id, -value )
 end
 
 

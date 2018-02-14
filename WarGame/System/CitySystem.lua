@@ -175,22 +175,22 @@ local function City_DevelopByMethod( city )
 		local cur = Asset_Get( city, CityAssetID.AGRICULTURE )
 		local max = Asset_Get( city, CityAssetID.MAX_AGRICULTURE )
 		Asset_Set( city, CityAssetID.AGRICULTURE, math.min( max, cur + findMethod.agr ) )
-		Stat_Add( "Agr Times", city.id, StatType.TIMES )
-		Stat_Add( "Agr Inc", findMethod.agr, StatType.ACCUMULATION )
+		Stat_Add( "Dev@Agr_times", city.id, StatType.TIMES )
+		Stat_Add( "Dev@Agr_Inc", findMethod.agr, StatType.ACCUMULATION )
 	end
 	if findMethod.comm and findMethod.comm > 0 then
 		local cur = Asset_Get( city, CityAssetID.COMMERCE )
 		local max = Asset_Get( city, CityAssetID.MAX_COMMERCE )
 		Asset_Set( city, CityAssetID.COMMERCE, math.min( max, cur + findMethod.comm ) )
-		Stat_Add( "Comm Times", city.id, StatType.TIMES )
-		Stat_Add( "Comm Inc", findMethod.comm, StatType.ACCUMULATION )
+		Stat_Add( "Dev@Comm_Times", city.id, StatType.TIMES )
+		Stat_Add( "Dev@Comm_Inc", findMethod.comm, StatType.ACCUMULATION )
 	end
 	if findMethod.prod and findMethod.prod > 0 then
 		local cur = Asset_Get( city, CityAssetID.PRODUCTION )
 		local max = Asset_Get( city, CityAssetID.MAX_PRODUCTION )
 		Asset_Set( city, CityAssetID.PRODUCTION, math.min( max, cur + findMethod.prod ) )
-		Stat_Add( "Prod Times", city.id, StatType.TIMES )
-		Stat_Add( "Prod Inc", findMethod.prod, StatType.ACCUMULATION )
+		Stat_Add( "Dev@Prod_Times", city.id, StatType.TIMES )
+		Stat_Add( "Dev@Prod_Inc", findMethod.prod, StatType.ACCUMULATION )
 	end
 end
 
@@ -408,6 +408,7 @@ local function City_CheckFlag( city )
 	local score = 0
 	local group = Asset_Get( city, CityAssetID.GROUP )
 	local power = City_GetMilitaryPower( city )
+	if power == 0 then score = 4 end
 	Asset_ForeachList( city, CityAssetID.ADJACENTS, function( adjaCity )
 		local adjaGroup = Asset_Get( adjaCity, CityAssetID.GROUP )
 		if adjaGroup ~= group and typeof( adjaCity ) == "table" then
@@ -420,6 +421,13 @@ local function City_CheckFlag( city )
 	end )
 	Asset_SetListItem( city, CityAssetID.STATUSES, CityStatus.MILITARY_WEAK,   score > 3 )
 	Asset_SetListItem( city, CityAssetID.STATUSES, CityStatus.MILITARY_DANGER, score > 6 )
+
+	--debug flag
+	Asset_ForeachList( city, CityAssetID.STATUSES, function ( value, status )
+		if value == true then
+			print( city.name .. "_" .. MathUtil_FindName( CityStatus, status ) .. "=", value )
+		end
+	end)
 end
 
 --------------------------------------

@@ -125,6 +125,7 @@ end
 --!!! Don't remove entity in Entity_Foreach() or Entity_Find()
 function Entity_Remove( entity )
 	local mng = Entity_GetManager( entity.type )
+	if not mng then return false end
 	if entity.Remove then entity:Remove() end
 	return mng:RemoveData( entity.id )
 end
@@ -275,7 +276,7 @@ function Entity_Dump( entity, fn )
 	local indent = "    "
 	for k, attrib in pairs( list ) do
 		if not fn or fn( attrib ) then
-			local name = indent .. HelperUtil_TrimString( attrib.name, 12 )
+			local name = indent .. StringUtil_Trim( attrib.name, 12 )
 			
 			--list 
 			if attrib.value_type == AssetAttribType.LIST then
@@ -289,8 +290,8 @@ function Entity_Dump( entity, fn )
 						end
 					elseif typeof( item ) == "boolean" then
 						content = content .. ( item == true and "true" or "false" ) .. ", "
-					else
-						content = content .. item .. ", "
+					elseif typeof( item ) == "object" then
+						content = content .. "[obj], "
 					end
 				end )
 				print( name .. " = " .. number .. " { " .. content .. " }" )		

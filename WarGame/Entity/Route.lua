@@ -38,12 +38,12 @@ end
 
 --------------------------------------------
 
-function Route:FindNext( cur, destination )
+function Route:FindNext( cur, city )
 	local cx = Asset_Get( cur, PlotAssetID.X )
 	local cy = Asset_Get( cur, PlotAssetID.Y )
 	--[[
 	print( "cur  =", Asset_Get( cur, PlotAssetID.X ), ",", Asset_Get( cur, PlotAssetID.Y ) )
-	print( "dest =", Asset_Get( destination, CityAssetID.X ), ",", Asset_Get( destination, CityAssetID.Y ) )	
+	print( "dest =", Asset_Get( city, CityAssetID.X ), ",", Asset_Get( city, CityAssetID.Y ) )	
 	print( "from =", Asset_Get( Asset_Get( self, RouteAssetID.FROM_CITY ), CityAssetID.X ), ",", Asset_Get( Asset_Get( self, RouteAssetID.FROM_CITY ), CityAssetID.Y ) )	
 	print( "to   =", Asset_Get( Asset_Get( self, RouteAssetID.TO_CITY ), CityAssetID.X ), ",", Asset_Get( Asset_Get( self, RouteAssetID.TO_CITY ), CityAssetID.Y ) )	
 	--]]
@@ -52,18 +52,18 @@ function Route:FindNext( cur, destination )
 		--if cx == node.x and cy == node.y then
 		--print( "check  =", Asset_Get( node, PlotAssetID.X ), ",", Asset_Get( node, PlotAssetID.Y ), index )
 		if node == cur then
-			if Asset_Get( self, RouteAssetID.TO_CITY ) == destination then				
-				next = Asset_GetListIndex( self, RouteAssetID.NODES, index + 1 )
-				--print( "find prev=", Asset_Get( next, PlotAssetID.X ), ",", Asset_Get( next, PlotAssetID.Y ) )
+			if Asset_Get( self, RouteAssetID.TO_CITY ) == city then				
+				next = Asset_GetListItem( self, RouteAssetID.NODES, index + 1 )
+				--InputUtil_Pause( "find prev=", Asset_Get( next, PlotAssetID.X ), ",", Asset_Get( next, PlotAssetID.Y ) )
 			else
-				next = Asset_GetListIndex( self, RouteAssetID.NODES, index - 1 )
-				--print( "find next=", Asset_Get( next, PlotAssetID.X ), ",", Asset_Get( next, PlotAssetID.Y ) )
+				next = Asset_GetListItem( self, RouteAssetID.NODES, index - 1 )
+				--InputUtil_Pause( "find next=", Asset_Get( next, PlotAssetID.X ), ",", Asset_Get( next, PlotAssetID.Y ) )
 			end
 			return true
 		end
 		return false
 	end )
-	--print( destination, cur, next )	
+	--print( city, cur, next )	
 	--print( "next =", Asset_Get( next, PlotAssetID.X ), ",", Asset_Get( next, PlotAssetID.Y ) )
 	return next
 end

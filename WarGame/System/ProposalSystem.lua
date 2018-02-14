@@ -1,6 +1,0 @@
---
---
--- Proposal Procedure
---   SUBMITTED --> PERMITTED --> REJECTED
---	
---

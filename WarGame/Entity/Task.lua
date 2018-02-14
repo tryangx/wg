@@ -18,11 +18,12 @@ TaskAssetID =
 	ACTOR_TYPE   = 13,
 	GROUP        = 14,
 	--location
-	DESTINATION  = 15,
+	LOCATION     = 15,
+	DESTINATION  = 16,
 	--target
-	PARAMS       = 16,
+	PARAMS       = 17,
 	--reserved
-	PREREQUISITE = 17,	
+	PREREQUISITE = 18,
 
 	BEGIN_TIME   = 18,
 	END_TIME     = 19,
@@ -43,6 +44,7 @@ TaskAssetAttrib =
 	actor        = AssetAttrib_SetPointer( { id = TaskAssetID.ACTOR,      type = TaskAssetType.BASE_ATTRIB } ),
 	actortype    = AssetAttrib_SetNumber ( { id = TaskAssetID.ACTOR_TYPE, type = TaskAssetType.BASE_ATTRIB, enum = TaskActorType } ),
 	group        = AssetAttrib_SetPointer( { id = TaskAssetID.GROUP,      type = TaskAssetType.BASE_ATTRIB, setter = Entity_SetGroup } ),	
+	location     = AssetAttrib_SetPointer( { id = TaskAssetID.LOCATION,   type = TaskAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
 	destination  = AssetAttrib_SetPointer( { id = TaskAssetID.DESTINATION,type = TaskAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
 	params       = AssetAttrib_SetList   ( { id = TaskAssetID.PARAMS,     type = TaskAssetType.BASE_ATTRIB } ),	
 	prerequisite = AssetAttrib_SetNumber ( { id = TaskAssetID.PREREQUISITE, type = TaskAssetType.BASE_ATTRIB } ),

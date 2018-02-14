@@ -11,10 +11,12 @@
 g_turnIdx  = 1
 
 --maximum end time, always is daily
-g_turnEnd  = 360 * 1
+g_turnEnd  = 360 * 2
 
 --every step update in main(), always is daily
 g_turnStep = 1
+
+g_elapsed = 1
 
 -------------------------
 -- Game 
@@ -31,7 +33,7 @@ function Game_IsRunning()
 end
 
 function Game_NextTurn()
-	print( "Turn=" .. g_turnIdx .. " Date=" .. g_calendar:CreateDesc( true ) )
+	--print( "Turn=" .. g_turnIdx .. " Date=" .. g_calendar:CreateDesc( true ) )
 
 	--map
 	g_map:Update( g_turnStep )

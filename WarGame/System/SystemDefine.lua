@@ -1,3 +1,4 @@
+require "System/MessageSystem"
 require "System/CharaSystem"
 require "System/CorpsSystem"
 require "System/CitySystem"
@@ -16,6 +17,8 @@ require "System/MeetingSystem"
 --System running sequence as follow
 SystemType =
 {
+	MESSAGE_SYS       = 1,
+
 	CHARA_SYS         = 100,
 	CITY_SYS          = 101,
 	GROUP_SYS         = 102,

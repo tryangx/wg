@@ -9,3 +9,8 @@ require "Entity"
 require "System"
 require "Cache"
 require "Global"
+
+require "Statistician"
+require "Tracker"
+require "Corrector"
+require "Debugger"

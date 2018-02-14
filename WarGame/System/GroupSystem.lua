@@ -1,3 +1,8 @@
+function Group_IsAtWar( group1, group2 )
+	if group1 == group2 then return false end
+	--simply all is enemy
+	return true
+end
 
 
 -----------------------------------------

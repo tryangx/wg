@@ -1,6 +1,6 @@
 local _PATH = (...):match('^(.*[%./])[^%.%/]+$') or ""
 
-local DEBUG_LOG = true
+local DEBUG_LOG = false
 
 ------------------------------
 -- Behavior Node
@@ -65,11 +65,12 @@ BehaviorNodeStatus =
 
 BehaviorNode = class()
 
-function BehaviorNode:__init( type, desc )
+function BehaviorNode:__init( root, type, desc )
 	self.type      = type	
 	self.desc      = desc
+	self.root      = root
 	self.children  = {}
-	self.status    = BehaviorNodeStatus.IDLE
+	self.status    = BehaviorNodeStatus.IDLE	
 	self.action    = nil
 	self.condition = nil
 	self.params    = nil
@@ -115,7 +116,7 @@ end
 				},
 			},
 		}
-		node = BehaviorNode()
+		node = BehaviorNode( true )
 		node:BuildTree( data )
 --]]
 function BehaviorNode:BuildTree( data )
@@ -137,18 +138,21 @@ function BehaviorNode:BuildTree( data )
 	if self.type == BehaviorNodeType.ACTION then
 		self.action = data.action		
 		if DEBUG_LOG and not self.action then
-			print( "ACTION is invalid", self.type )
+			print( "ACTION function is invalid", self.type )
+			return false
 		end
 	elseif self.type == BehaviorNodeType.CONDITION_ACTION then
 		self.action    = data.action		
 		self.condition = data.condition
 		if DEBUG_LOG and ( not self.condition or not self.action ) then
-			print( "ACTION or CONDITION is invalid" )
+			print	( "ACTION or CONDITION function is invalid" )
+			return false
 		end
 	elseif self.type == BehaviorNodeType.FILTER then
 		self.condition = data.condition
 		if DEBUG_LOG and not self.condition then
-			print( "CONDITION is invalid", self.type )
+			print( "CONDITION function is invalid", self.type )
+			return false
 		end
 	end
 	
@@ -157,9 +161,16 @@ function BehaviorNode:BuildTree( data )
 	if data.children then
 		for k, childData in ipairs( data.children ) do
 			local child = BehaviorNode()
-			child:BuildTree( childData )
-			self:AppendChild( child )
-			--print( 'append child', child.type, child.desc )
+			if child:BuildTree( childData ) == false then
+				if self.root == true then
+					MathUtil_Dump( data )
+					error( "Build tree failed!" )					
+				end
+				return false
+			else
+				self:AppendChild( child )
+				--print( 'append child', child.type, child.desc )
+			end
 		end
 	end
 end
@@ -311,7 +322,7 @@ function Behavior:Run( node )
 	
 	self:SetCurrentNode( node )
 	
-	if DEBUG_LOG and node.desc then print( "desc=", node.desc, " nodes=" .. #node.children ) end	
+	--if DEBUG_LOG and node.desc then print( "desc=", node.desc, " nodes=" .. #node.children ) end	
 	
 	local func = self.functions[node.type]
 	if func then return func( self, node ) end
@@ -388,9 +399,9 @@ function Behavior_Test()
 		]]
 	}
 
-	local tree1 = BehaviorNode()
+	local tree1 = BehaviorNode( true )
 	tree1:BuildTree( data3 )
-	local tree2 = BehaviorNode()
+	local tree2 = BehaviorNode( true )
 	tree2:BuildTree( data4 )
 	bev = Behavior()
 	bev:Run( tree1 )

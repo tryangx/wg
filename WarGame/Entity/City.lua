@@ -229,10 +229,10 @@ function City:DumpPopu()
 		local cur = value .. "(".. math.ceil( value * 100 / popu ) .."%)"
 		local need = City_NeedPopu( self, MathUtil_FindName( CityPopu, type ) )
 		local req = "->" .. need .. "("..math.ceil( value * 100 / need ) .. "%)"
-		print( HelperUtil_AbbreviateString( MathUtil_FindName( CityPopu, type ), 8 ) .." = " .. cur .. " " .. req )
+		print( StringUtil_Abbreviate( MathUtil_FindName( CityPopu, type ), 8 ) .." = " .. cur .. " " .. req )
 	end )
 	City_GetSupportPopu( self )
-	print( HelperUtil_AbbreviateString( "POPU", 8 ) .. " = " .. Asset_Get( self, CityAssetID.POPULATION ) )
+	print( StringUtil_Abbreviate( "POPU", 8 ) .. " = " .. Asset_Get( self, CityAssetID.POPULATION ) )
 end
 
 function City:DumpPlots()
@@ -293,12 +293,6 @@ function City:VerifyData()
 	Asset_VerifyList( self, CityAssetID.ADJACENTS )
 
 	self:ElectExecutive()
-end
-
-function City:Starvation()
-	local cur = Asset_GetListItem( self, CityAssetID.STATUSES, CityStatus.STARVATION )
-	if not cur then cur = 1 end
-	Asset_SetListItem( self, CityAssetID.STATUSES, cur + 1 )
 end
 
 -------------------------------------------
@@ -392,8 +386,7 @@ function City:FindHarassCityTargets()
 	local selfPower = City_GetMilitaryPower( self )
 	return self:FilterAdjaCities( function ( adja )
 		local adjaGroup = Asset_Get( adja, CityAssetID.GROUP )
-		if adjaGroup == group then return false end
-		return true
+		return Group_IsAtWar( adjaGroup, group )
 	end )
 end
 
@@ -403,10 +396,9 @@ function City:FindAttackCityTargets()
 	return self:FilterAdjaCities( function ( adja )		
 		local adjaGroup = Asset_Get( adja, CityAssetID.GROUP )
 		if adjaGroup == group then print( "same group") return false end		
+		if Group_IsAtWar( adjaGroup, group ) == false then return false end
 		local adjaPower = City_GetMilitaryPowerWithIntel( adja, group )	
-		if adjaPower > selfPower then
-			return false
-		end
+		--if adjaPower > selfPower then return false end
 		return true
 	end )
 end
@@ -416,7 +408,7 @@ end
 function City:CorpsJoin( corps )
 	--[[
 	--allot food
-	local reservedfood = Corps_GetConsumeFood( corps ) * 30
+	local reservedfood = corps:GetConsumeFood() * 30
 	local food = Asset_Get( self, CityAssetID.FOOD )
 	reservedfood = math.min( food, reservedfood )
 	Asset_Set( corps, CorpsAssetID.FOOD, reservedfood )
@@ -465,12 +457,35 @@ function City:Update()
 
 	local day = g_calendar:GetDay()
 	if day == 1 then
-		System_Get( SystemType.MEETING_SYS ):HoldMeeting( self, MeetingTopic.NONE )
+		--Message_Post( MessageType.CITY_HOLD_MEETING, { city = self } )
+		Meeting_Hold( self )
 	end
 
 	--print( self.name, "food=" .. Asset_Get( self, CityAssetID.FOOD ))
 
 	if day == 1 then
-		Track_HistoryRecord( self.name .. "_soldier", City_GetSoldier( self ), g_calendar:GetDateValue() )
+		--Track_HistoryRecord( "soldier", { name = self.name, soldier = City_GetSoldier( self ), date = g_calendar:GetDateValue() } )
+		--Track_HistoryRecord( "dev", { name = self.name, agr = Asset_Get( self, CityAssetID.AGRICULTURE ), comm = Asset_Get( self, CityAssetID.COMMERCE ), prod = Asset_Get( self, CityAssetID.PRODUCTION ), date = g_calendar:GetDateValue() } )
 	end
 end
+
+--------------------------------------------
+
+function City:Starvation()
+	local cur = Asset_GetListItem( self, CityAssetID.STATUSES, CityStatus.STARVATION )
+	if not cur then cur = 1 end
+	Asset_SetListItem( self, CityAssetID.STATUSES, cur + 1 )
+end
+
+--[[
+function City:ConsumeFood( consume )
+	local food = Asset_Get( city, CityAssetID.FOOD )
+	if food < consume then
+		--not enough
+		return false
+	end
+	Asset_Set( city, CityAssetID.FOOD, food - consume )
+	--print( city.name, "consume food=" .. consume, "remain=" .. food - consume )
+	return true
+end
+]]
