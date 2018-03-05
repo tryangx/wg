@@ -472,7 +472,7 @@ function Combat:GetBackGrid( troop )
 	return self:GetGrid( troop._x + ox, troop._y - oy )
 end
 
-function Combat:GetGroupName( side )
+function Combat:GetGroup( side )
 	local corps
 	if side == CombatSide.ATTACKER then
 		corps = Asset_GetListByIndex( self, CombatAssetID.ATK_CORPS_LIST, 1 )
@@ -480,7 +480,7 @@ function Combat:GetGroupName( side )
 		corps = Asset_GetListByIndex( self, CombatAssetID.DEF_CORPS_LIST, 1 )
 	end
 	local group = corps and Asset_Get( corps, CorpsAssetID.GROUP ) or nil
-	return group and group.name or "[UNKNOWN]"
+	return group
 end
 
 function Combat:GetCorpsGroupName( corps )

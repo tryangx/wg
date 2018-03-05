@@ -188,9 +188,9 @@ function WarfareSystem:UpdateCombat( combat )
 
 	combat:Dump()
 	print( "CombatResult=" .. MathUtil_FindName( CombatResult, result ) )
-	local type = Asset_Get( combat, CombatAssetID.TYPE )
+	local type   = Asset_Get( combat, CombatAssetID.TYPE )
 	local winner = Asset_Get( combat, CombatAssetID.WINNER )
-	local loc = Asset_Get( combat, CombatAssetID.CITY )
+	local city   = Asset_Get( combat, CombatAssetID.CITY )
 
 	if type == CombatType.SIEGE_COMBAT then	
 		if winner == CombatSide.ATTACKER then
@@ -204,6 +204,12 @@ function WarfareSystem:UpdateCombat( combat )
 			Stat_Add( "Combat@Result_" .. combat.id, "Siege Draw", StatType.DESC )
 		end
 		Message_Post( MessageType.SIEGE_COMBAT_END, { combat = combat } )
+
+		--Seize city
+		if winner == CombatSide.ATTACKER then			
+			local group = combat:GetGroup( winner )
+			Group_SeizeCity( group, city )
+		end
 	elseif type == CombatType.FIELD_COMBAT then
 		if winner == CombatSide.ATTACKER then
 			Stat_Add( "Combat@Field_Atk_Win", nil, StatType.TIMES )
