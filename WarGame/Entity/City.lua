@@ -63,7 +63,8 @@ CityAssetID =
 	CHARA_LIST      = 300,
 	OFFICER_LIST    = 301,	
 	CORPS_LIST      = 302,
-	CONSTR_LIST     = 303,	
+	CONSTR_LIST     = 303,
+	PRISONER_LIST   = 304,
 
 	GUARD           = 310,
 	DEFENSES        = 311,	
@@ -109,6 +110,7 @@ CityAssetAttrib =
 	satisfaction = AssetAttrib_SetNumber( { id = CityAssetID.SATISFACTION,  type = CityAssetType.GROWTH_ATTRIB,  min = 0, max = 100, default = 50 } ),
 
 	charas     = AssetAttrib_SetPointerList( { id = CityAssetID.CHARA_LIST,   type = CityAssetType.PROPERTY_ATTRIB, setter = Entity_SetChara } ),
+	prisoner   = AssetAttrib_SetPointerList( { id = CityAssetID.PRISONER_LIST,type = CityAssetType.PROPERTY_ATTRIB, setter = Entity_SetChara } ),
 	officers   = AssetAttrib_SetPointerList( { id = CityAssetID.OFFICER_LIST, type = CityAssetType.PROPERTY_ATTRIB, setter = Entity_SetChara } ),
 	corps      = AssetAttrib_SetPointerList( { id = CityAssetID.CORPS_LIST,   type = CityAssetType.PROPERTY_ATTRIB, setter = Entity_SetCorps } ),
 	constrs    = AssetAttrib_SetPointerList( { id = CityAssetID.CONSTR_LIST,  type = CityAssetType.PROPERTY_ATTRIB, setter = Entity_SetConstruction } ),

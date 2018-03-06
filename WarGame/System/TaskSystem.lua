@@ -102,6 +102,32 @@ local _executeTask =
 	end,
 }
 
+
+local function CorpsBackEncampmemt( task )
+
+end
+
+local function CorpsEnterCity( task )
+	local actor = Asset_Get( task, TaskAssetID.ACTOR )
+	if actor:IsAtHome() == false then
+		--move		
+		local actorType = Asset_Get( task, TaskAssetID.ACTOR_TYPE )
+		if actorType == TaskActorType.CHARA then
+			System_Get( SystemType.MOVE_SYS ):CharaMove( Asset_Get( task, TaskAssetID.ACTOR ), Asset_Get( actor, CharaAssetID.HOME ) )
+		elseif actorType == TaskActorType.CORPS then
+			--InputUtil_Pause( actor.name, "need backhome", Asset_Get( actor, CorpsAssetID.ENCAMPMENT ).name )
+			System_Get( SystemType.MOVE_SYS ):CorpsMove( Asset_Get( task, TaskAssetID.ACTOR ), Asset_Get( actor, CorpsAssetID.ENCAMPMENT ) )
+		end	
+		return true
+	end
+end
+
+local _finishTask = 
+{
+	ATTACK_CITY = CorpsEnterCity,
+	HARASS_CITY = CorpsBackEncampmemt,	
+}
+
 local _workloads = 
 {
 }
@@ -249,17 +275,13 @@ end
 local function Task_Finish( task )
 	Asset_Set( task, TaskAssetID.STATUS, TaskStatus.REPLY )
 
-	local actor = Asset_Get( task, TaskAssetID.ACTOR )
-	if actor:IsAtHome() == false then
-		--move		
-		local actorType = Asset_Get( task, TaskAssetID.ACTOR_TYPE )
-		if actorType == TaskActorType.CHARA then
-			System_Get( SystemType.MOVE_SYS ):CharaMove( Asset_Get( task, TaskAssetID.ACTOR ), Asset_Get( actor, CharaAssetID.HOME ) )
-		elseif actorType == TaskActorType.CORPS then
-			--InputUtil_Pause( actor.name, "need backhome", Asset_Get( actor, CorpsAssetID.ENCAMPMENT ).name )
-			System_Get( SystemType.MOVE_SYS ):CorpsMove( Asset_Get( task, TaskAssetID.ACTOR ), Asset_Get( actor, CorpsAssetID.ENCAMPMENT ) )
-		end	
-		return true
+	local type = Asset_Get( task, TaskAssetID.TYPE )
+	local name = MathUtil_FindName( TaskType, type )
+	local fn = _finishTask[name]
+	if fn then
+		if fn( task ) then return false end
+	else
+		DBG_Warning( "task_" .. name .. "_no_func", "no finish function" )
 	end
 
 	return false
@@ -284,7 +306,7 @@ local function Task_Execute( task )
 	if fn then
 		if fn( task ) then return false end
 	else
-		DBG_Warning( "task_" .. name .. "_no_func", "no finish function" )
+		DBG_Warning( "task_" .. name .. "_no_func", "no execute function" )
 	end
 	Asset_Set( task, TaskAssetID.STATUS, TaskStatus.FINISHED )
 	return false
