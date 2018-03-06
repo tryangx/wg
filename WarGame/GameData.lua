@@ -11,11 +11,12 @@
 g_turnIdx  = 1
 
 --maximum end time, always is daily
-g_turnEnd  = 360 * 2
+g_turnEnd  = 360 * 1
 
 --every step update in main(), always is daily
 g_turnStep = 1
 
+--elapsed in last update
 g_elapsed = 1
 
 -------------------------

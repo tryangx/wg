@@ -13,6 +13,7 @@ require "System/SupplySystem"
 require "System/TaskSystem"
 require "System/EventSystem"
 require "System/MeetingSystem"
+require "System/DiplomacySystem"
 
 --System running sequence as follow
 SystemType =
@@ -25,6 +26,7 @@ SystemType =
 	CORPS_SYS         = 103,
 	MOVE_SYS          = 110,
 	WARFARE_SYS       = 111,
+	DIPLOMACY_SYS     = 112,
 
 	CHARA_CREATOR_SYS = 300,	
 	CONSUME_SYS       = 301,

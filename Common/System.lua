@@ -12,9 +12,10 @@ function System_Add( sys )
 end
 
 function System_Update( elpasedTime )
+	g_elapsed = elpasedTime
 	_manager:ForeachData( function( sys )
 		--InputUtil_Pause( MathUtil_FindName( SystemType, sys.type ) )
-		sys:Update( elpasedTime )
+		sys:Update()
 	end )
 end
 

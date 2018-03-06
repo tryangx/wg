@@ -12,7 +12,8 @@ EntityType =
 	TECH   = 21,
 	WEAPON = 22,
 
-	EVENT  = 30,
+	EVENT    = 30,
+	RELATION = 31,
 
 	COMBAT = 100,
 
@@ -87,6 +88,7 @@ require "Entity/Map"
 require "Entity/Combat"
 require "Entity/Route"
 
+require "Entity/Relation"
 require "Entity/Intel"
 require "Entity/Message"
 require "Entity/Proposal"

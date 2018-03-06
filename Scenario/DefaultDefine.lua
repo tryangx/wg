@@ -705,3 +705,31 @@ MoveStatus =
 	STOP    = 2,
 }
 
+------------------------------
+
+RelationOpinion = 
+{
+	TRUST      = 1,
+	WAS_AT_WAR = 2,
+	AT_WAR     = 10,
+	NO_WAR     = 11,
+	TRADE      = 12,
+	PROTECT    = 13,
+	ALLY       = 14,
+}
+
+RelationPact = 
+{
+	AT_WAR   = 10,
+	NO_WAR   = 11,
+	TRADE    = 12,
+	PROTECT  = 13,
+	ALLY     = 14,
+}
+
+DiplomacyMethod = 
+{
+	FRIENDLY      = 1,
+	DECLARE_WAR   = 2,
+	REQUEST_TRADE = 3,
+}

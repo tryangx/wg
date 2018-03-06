@@ -134,10 +134,10 @@ function CharaSystem:Start()
 	DBG_SetWatcher( "chara_proposal", DBGLevel.NORMAL )
 end
 
-function CharaSystem:Update( elapsed )
+function CharaSystem:Update()
 	local day   = g_calendar:GetDay()
 	Entity_Foreach( EntityType.CHARA, function ( chara )
-		chara:Update( elapsed )
+		chara:Update()
 
 		Chara_ExecuteTask( chara )
 		

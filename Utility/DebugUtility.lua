@@ -1,10 +1,10 @@
 require "LogUtility"
 
-local enableDebug = false
+local enableDebug = true
 local DebugLog = nil
 
 local function Debug_GetLog()
- 	if not DebugLog then DebugLog = LogUtility( "log/debug_" .. g_gameId .. ".log", LogWarningLevel.LOG, true ) end
+	if not DebugLog then DebugLog = LogUtility( "debug_" .. g_gameId .. ".log", LogWarningLevel.LOG, true ) end
  	return DebugLog
 end
 

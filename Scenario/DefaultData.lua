@@ -800,3 +800,24 @@ DefaultCharaPromoteMethod =
 	CHIEF             = {},
 	PRESIDENT         = {},
 }
+
+--------------------------------------------------------
+-- Relation
+
+DefaultRelationOpinion =
+{
+	TRUST      = { increment = -1,  def = 500, min = -500,   max = 1000 },
+	WAS_AT_WAR = { increment = 1,   def = 0,   min = -1000,  max = 0   },
+	AT_WAR     = { increment = 1,   def = 0,   min = -1000,  max = 0   },
+	NO_WAR     = { increment = -1,  def = 0,   min = 0,      max = 500  },	
+	TRADE      = { increment = -1,  def = 0,   min = 200,    max = 500  },
+	PROTECT    = { increment = -1,  def = 0,   min = 300,    max = 500  },
+	ALLY       = { increment = -1,  def = 0,   min = 600,    max = 1000 },	
+}
+
+DefaultDiplomacyCond = 
+{
+	FRIENDLY      = { attitude = 0, },
+	DECLARE_WAR   = { attitude = 0, },
+	REQUEST_TRADE = { attitude = 0, },
+}

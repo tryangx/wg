@@ -178,10 +178,12 @@ function Manager:ForeachData( fn )
 	end
 
 	--remove list
-	for id, data in pairs( self._removeList ) do
-		self._datas[id] = nil
+	if self._removeList then
+		for id, data in pairs( self._removeList ) do
+			self._datas[id] = nil
+		end
+		self._removeList = nil
 	end
-	self._removeList = nil
 end
 
 --Filter data by given function, return true means find the right data

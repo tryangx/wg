@@ -38,6 +38,8 @@ function LogUtility:SetLogLevel( level )
 end
 
 function LogUtility:WriteContent( content, level )
+	if self.isPrintLog == true and self.logLevel and self.logLevel <= level then print( content ) end
+
 	if level <= LogWarningLevel.DEBUG then
 		content = "[DEBUG] " .. content
 	elseif level <= LogWarningLevel.LOG then
@@ -48,7 +50,6 @@ function LogUtility:WriteContent( content, level )
 		content = "[ERROR] " .. content
 	end
 	--print( self.isPrintLog, self.logLevel, level )
-	if self.isPrintLog == true and self.logLevel and self.logLevel <= level then print( content ) end
 	
 	self.fileUtility:WriteContent( content .. "\n" )
 	table.insert( self.logs, content )

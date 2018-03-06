@@ -1,7 +1,0 @@
-require "Formula/CombatFormula"
-require "Formula/CityFormula"
-require "Formula/GroupFormula"
-require "Formula/TaskFormula"
-require "Formula/CharaFormula"
-require "Formula/CorpsFormula"
-require "Formula/MoveFormula"

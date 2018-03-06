@@ -406,12 +406,12 @@ end
 function TaskSystem:Start()
 end
 
-function TaskSystem:Update( elapsed )
+function TaskSystem:Update()
 	--print( "Task Running=" .. Entity_Number( EntityType.TASK ) )
 	Entity_Foreach( EntityType.TASK, function( task )
 		local ret = false
 		while ret == false do
-			ret = Task_Update( task, elpased )
+			ret = Task_Update( task )
 		end
 	end )
 end

@@ -41,6 +41,8 @@ ScenarioData =
 	CHARA_PROMOTE_DATA   = DefaultJobPromoteData,
 	CHARA_PROMOTE_METHOD = DefaultCharaPromoteMethod,
 
+	RELATION_OPINION  = DefaultRelationOpinion,
+
 	--Params
 	CITY_POPUSTRUCTURE_PARAMS = DefaultCityPopuStructureParams,
 	CORPS_PARAMS              = DefaultCorpsParams,
@@ -91,6 +93,10 @@ function Scenario_InitData()
 	for id, method in pairs( _Scenario.CHARA_PROMOTE_METHOD ) do
 		_Scenario.CHARA_PROMOTE_METHOD[id] = MathUtil_ConvertDataStringToID( CharaJob, method )
 	end
+
+	_Scenario.RELATION_OPINION = MathUtil_ConvertKeyToID( RelationOpinion, _Scenario.RELATION_OPINION )
+
+	--MathUtil_Dump( Scenario_GetData( "RELATION_OPINION" ) )
 end
 
 

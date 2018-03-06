@@ -130,3 +130,70 @@ end
 
 function Group:Update( ... )	
 end
+
+
+function Group:LoseCity( city )
+	--remove city from list
+	Asset_RemoveListItem( self, GroupAssetID.CITY_LIST, city )
+
+	--is capital?
+	if Asset_Get( self, GroupAssetID.CAPITAL ) == city then
+		--find new capital
+		local newCapital
+		local highLv = 0
+		Asset_ForeachList( self, GroupAssetID.CITY_LIST, function ( tarCity )
+			local lv = Asset_Get( tarCity, CityAssetID.LEVEL )
+			if lv > highLv or not newCapital then
+				newCapital = tarCity
+				highLv = lv
+			end
+		end )
+		if newCapital then
+			Asset_Set( self, GroupAssetID.CAPITAL, newCapital )
+		end
+	end
+end
+
+function Group:OccupyCity( city )
+	--remove from old group
+	local oldGroup = Asset_Get( city, CityAssetID.GROUP )
+	if oldGroup ~= group then
+		Gropu_LoseCity( oldGroup, city )
+	end
+
+	--append to group
+	Asset_AppendList( self, GroupAssetID.CITY_LIST, city )
+
+	--for all list
+	Asset_ForeachList( city, CityAssetID.CHARA_LIST, function ( chara )
+		if chara:IsAtHome() then
+			--capture
+
+		else
+
+		end
+	end)
+end
+
+function Group:LoseChara( chara )
+	Asset_RemoveListItem( self, GroupAssetID.CHARA_LIST, chara )
+end
+
+---------------------------------------
+
+function Group_FormulaInit()
+	GroupGovernmentData = MathUtil_ConvertKey2ID( GroupGovernmentData, GroupGovernment )
+	MathUtil_Dump( newDatas )
+end
+
+---------------------------------------
+
+function Group_GetCharaLimit( group )
+	if not group then return 0 end
+	local numofcities = Asset_GetListSize( group, GroupAssetID.CITY_LIST )
+	local government = Asset_Get( group, GroupAssetID.GOVERNMENT )
+--	print( "gov=" .. MathUtil_FindName( GroupGovernment, government ) )
+	return GroupGovernmentData[government].CAPITAL_CHARA_LIMIT
+end
+
+---------------------------------------

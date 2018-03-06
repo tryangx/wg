@@ -1,5 +1,3 @@
---Formula
-require "Formula/Formula"
 --Table
 require "Table/TableDefine"
 --Data
@@ -71,6 +69,7 @@ function WarGame:Init()
 	Entity_Setup( EntityType.PROPOSAL, Proposal )
 	Entity_Setup( EntityType.TASK,     Task )
 	Entity_Setup( EntityType.EVENT,    Event )
+	Entity_Setup( EntityType.RELATION, Relation )
 	Entity_Setup( EntityType.MEETING,  Meeting )
 	Entity_Setup( EntityType.MOVE,     Move )
 	Entity_Setup( EntityType.INTEL,    Intel )
@@ -157,6 +156,7 @@ function WarGame:Init()
 	System_Add( TaskSystem() )
 	System_Add( EventSystem() )
 	System_Add( MeetingSystem() )
+	System_Add( DiplomacySystem() )
 	System_Start()
 
 	--init fomula

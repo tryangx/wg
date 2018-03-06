@@ -53,12 +53,12 @@ function Stat_Add( name, data, type )
 end
 
 function Stat_Dump( type )
-	print( "####STAT_DUMP####" )
+	Debug_Log( "####STAT_DUMP####" )
 	--output
 	for t, list in pairs( _stats ) do
 		if not type or t == type then
-			print( "" )
-			print( "#" .. MathUtil_FindName( StatType, t ) )
+			Debug_Log( "" )
+			Debug_Log( "#" .. MathUtil_FindName( StatType, t ) )
 			local namelist = {}
 			for name, data in pairs( list ) do
 				table.insert( namelist, name )
@@ -68,31 +68,31 @@ function Stat_Dump( type )
 				local data = list[name]
 				local dumper = list[name] and list[name]._DUMPER or nil
 				if t == StatType.LIST then
-					print( name .. ":" .. " cnt=" .. #data, dumper )
+					Debug_Log( name .. ":" .. " cnt=" .. #data, dumper )
 					if dumper then
 						for _, item in ipairs( data ) do
 							dumper( item )
 						end
 					end
 				elseif t == StatType.DESC then
-					print( name .. "=" .. data.desc )
+					Debug_Log( name .. "=" .. data.desc )
 				elseif t == StatType.TIMES  then
-					print( name .. "=" .. data.times )
+					Debug_Log( name .. "=" .. data.times )
 				elseif t == StatType.DATA then
 					if dumper then
 						dumper( name, data )
 					else
-						print( name .. "=" .. data.data )
+						Debug_Log( name .. "=" .. data.data )
 					end
 				elseif t == StatType.VALUE then
-					print( name .. "=" .. data.value )
+					Debug_Log( name .. "=" .. data.value )
 				elseif t == StatType.ACCUMULATION then
-					print( name .. "=" .. data.accumulation )
+					Debug_Log( name .. "=" .. data.accumulation )
 				end
 			end
 		end
 	end
-	print( "####END_DUMP####" )	
+	Debug_Log( "####END_DUMP####" )	
 end
 
 function Stat_SetDumper( name, fn )

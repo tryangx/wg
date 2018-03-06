@@ -143,9 +143,7 @@ end
 
 function Entity_Foreach( type, fn )
 	local mng = Entity_GetManager( type )
-	mng:ForeachData( function ( entity )
-		fn( entity )
-	end )
+	mng:ForeachData( fn )
 end
 
 function Entity_Find( type, fn )
