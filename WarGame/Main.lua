@@ -14,9 +14,7 @@ require "GameData"
 
 ------------------------------
 
-WarGame = class()
-
-function WarGame:Init()
+function Game_Init()
 	-- Initialize random generator
 	Random_SetSeed( g_gameSeed )
 	Random_SetSeed_Unsync( g_unsyncSeed )
@@ -112,11 +110,10 @@ function WarGame:Init()
 	-- Initliaze Pointer
 	print( "#Update pointer......" )
 	for k, v in pairs( EntityType ) do
-		print( "Update Entity Pointer=" .. MathUtil_FindName( EntityType, v ) )
+		--print( "Update Entity Pointer=" .. MathUtil_FindName( EntityType, v ) )
 		Entity_Foreach( v, function ( entity )
 			Entity_UpdateAttribPointer( entity )
-			if v == EntityType.GROUP
-			--or v == EntityType.CITY 
+			if v == EntityType.GROUP --or v == EntityType.CITY 
 			then
 			--Entity_Dump( entity )
 			end
@@ -131,9 +128,9 @@ function WarGame:Init()
 
 	print( "#Verify data......")
 	for k, v in pairs( EntityType ) do
-		print( "Entity=" .. MathUtil_FindName( EntityType, v ) )
+		--print( "Entity=" .. MathUtil_FindName( EntityType, v ) )
 		Entity_Foreach( v, function ( entity )
-			Entity_VerifyData( entity )
+			--Entity_VerifyData( entity )
 		end )
 	end
 
@@ -157,18 +154,21 @@ function WarGame:Init()
 	System_Add( EventSystem() )
 	System_Add( MeetingSystem() )
 	System_Add( DiplomacySystem() )
+	System_Add( GoalSystem() )
 	System_Start()
 
 	--init fomula
 	Group_FormulaInit()
 
-	--test chara sys
-	--local chara = System_Get( SystemType.CHARA_CREATOR_SYS ):GenerateFictionalChara()
-	--Entity_Dump( chara )
-
 	Entity_Foreach( EntityType.CITY, function( data )
 		--Entity_Dump( data )
 	end )
+end
+
+function Game_Test()
+	--test chara sys
+	--local chara = System_Get( SystemType.CHARA_CREATOR_SYS ):GenerateFictionalChara()
+	--Entity_Dump( chara )
 
 	--[[
 	--test establish corps
@@ -218,13 +218,11 @@ function WarGame:Init()
 		--[[]]		
 	end
 
---[[
-	]]
+	--check route
+	--Route_Verify()
 end
 
-function WarGame:Start()
-	self:Init()
-	
+local function Game_MainLoop()
 	local city = Entity_Get( EntityType.CITY, 100 )
 	city:TrackData()
 
@@ -246,4 +244,14 @@ function WarGame:Start()
 			print( key, g_calendar:CreateDateDescByValue( data.date ), data.name .. "=" .. data.agr .. "/" .. data.comm .. "/" .. data.prod )
 		end
 	end )
+
+	print( "winner=", g_winner and g_winner.name or "[NONE]" )
+end
+
+function Game_Start()
+	Game_Init()
+
+	Game_Test()
+	
+	Game_MainLoop()
 end

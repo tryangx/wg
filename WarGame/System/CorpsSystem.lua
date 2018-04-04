@@ -1,3 +1,24 @@
+function Corps_Join( corps, city )	
+	--remove from old city
+	local encampment = Asset_Get( corps, CorpsAssetID.ENCAMPMENT )
+
+	if encampment == city then return end
+
+	if encampment then
+		encampment:CorpsLeave( corps )
+	end
+
+	if city then
+		city:CorpsJoin( corps )
+	end
+
+	Asset_ForeachList( corps, CorpsAssetID.OFFICER_LIST, function ( chara )
+		Chara_Join( chara, city )
+	end )
+end
+
+---------------------------------------
+
 local function Corps_QueryRequirementResource( city )
 	local resources = {}
 	for _, type in pairs( TroopRequirement ) do
@@ -24,7 +45,7 @@ local function Corps_ChooseCorpsTemplate( city, purpose )
 		return
 	end
 	local template = Random_GetTable_Sync( datas, "prob" )
-	print( "template", template )
+	--print( "template", template )
 	return template
 end
 
@@ -140,7 +161,7 @@ local function Corps_EstablishTroop( city, corps, numberOfReqTroop, soldierPerTr
 		Asset_Set( troop, TroopAssetID.CORPS, corps )
 		Asset_AppendList( corps, CorpsAssetID.TROOP_LIST, troop )
 
-		print( "Add troop ", troopTable.name, soldierPerTroop )
+		--print( "Add troop ", troopTable.name, soldierPerTroop )
 		return true
 	end
 
@@ -267,19 +288,8 @@ function Corps_Train( corps, city )
 	--InputUtil_Pause( "train corps", corps:GetTraining() )
 end
 
-function Corps_Dispatch( corps, city )	
-	--remove from old city
-	local encampment = Asset_Get( corps, CorpsAssetID.ENCAMPMENT )
-
-	if encampment == city then return end
-
-	if encampment then
-		encampment:CorpsLeave( corps )
-	end
-
-	if city then
-		city:CorpsJoin( corps )
-	end
+function Corps_Dispatch( corps, city )
+	Corps_Join( corps, city )
 end
 
 function Corps_AttackCity( corps, city )

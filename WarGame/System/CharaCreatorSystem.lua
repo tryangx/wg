@@ -90,7 +90,7 @@ function CharaCreatorSystem:Start()
 			table.insert( self.freeHistoricCharas, chara )
 		end
 	end )
-	print( "free chara=" .. #self.freeHistoricCharas )
+	print( "Free historic chara=" .. #self.freeHistoricCharas )
 end
 
 function CharaCreatorSystem:Update()

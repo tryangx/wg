@@ -6,11 +6,16 @@
 --
 --------------------------------------------------------------
 
-
--- data structure: { id, relation }
-local _groupRelations = {}
+function Dipl_IsAtWar( red, blue )
+	if 1 then return true end
+	local relation = System_Get( SystemType.DIPLOMACY_SYS ):GetRelation( red, blue )
+	return relation and relation:GetPact( RelationPact.AT_WAR )
+end
 
 --------------------------------------------------------------
+
+-- data structure: [group] = relation
+local _groupRelations = {}
 
 DiplomacySystem = class()
 

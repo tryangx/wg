@@ -55,7 +55,7 @@ function Move:Load( data )
 	--to do
 end
 
-function Move:IsReachNext()
+function Move:IsArrived()
 	return Asset_Get( self, MoveAssetID.PROGRESS ) >= Asset_Get( self, MoveAssetID.DURATION )
 end
 
@@ -63,7 +63,7 @@ end
 
 --return days
 function Move_CalcCorpsMoveDuration( corps, from, to )
-	local distance = Route_QueryPathDistance( from, to )
+	local distance = Route_CalcCityDistance( from, to )
 	local movement = Asset_Get( corps, CorpsAssetID.MOVEMENT )
 	return math.ceil( distance / movement )
 end

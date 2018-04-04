@@ -32,6 +32,8 @@ function PathFinder:IsReady()
 end
 
 function PathFinder:FindPath( x1, y1, x2, y2 )
+	if self:IsReady() == false then return {} end
+
 	local node = self.env[PathDataType.NODE_GETTER]( x1, y1 )
 	local openList = { { x = x1, y = y1, ev = 0, weight = self.env[PathDataType.NODE_CHECKER]( node ), parent = nil } }
 	local closeList  = {}
@@ -66,6 +68,7 @@ function PathFinder:FindPath( x1, y1, x2, y2 )
 						next = { x = tx, y = ty, ev = ev, weight = weight, parent = cur, dis = dis }
 						closeList[index] = next
 						table.insert( openList, next )
+						needSort = true
 					elseif next.ev > ev then
 						--print( "Up short", tx, ty, "weight=" .. weight, "ev=" .. ev )
 						next.x      = tx
@@ -75,17 +78,17 @@ function PathFinder:FindPath( x1, y1, x2, y2 )
 						next.parent = cur
 						next.node   = node
 						node.dis    = dis
-					end
-					needSort = true
+						needSort = true
+					end					
 				end
 			end
 		end
 		if needSort == true then
 			--MathUtil_Dump( openList )
 			table.sort( openList, function ( l, r )
-				if l.dis < r.dis then return true end
-				if l.dis > r.dis then return false end
-				return l.ev < r.ev
+				if l.ev < r.ev then return true end
+				if l.ev > r.ev then return false end
+				return l.dis < r.dis
 			end )
 			--print( "after sort" )
 			--MathUtil_Dump( openList )
@@ -100,7 +103,7 @@ function PathFinder:FindPath( x1, y1, x2, y2 )
 	return path
 end
 
--------------------------------------------------------------
+-------------------------------------
 
 local _pathFinder = PathFinder()
 

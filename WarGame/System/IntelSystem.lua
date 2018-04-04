@@ -8,7 +8,7 @@ function Intel_Post( inteltype, city, params )
 	local curGroup = Asset_Get( city, CityAssetID.GROUP )
 	Entity_Foreach( EntityType.GROUP, function ( group )
 		if group == curGroup then return end
-		local dur = Route_QueryPathDistance( Asset_Get( group, GroupAssetID.CAPITAL ), city )
+		local dur = Route_CalcCityDistance( Asset_Get( group, GroupAssetID.CAPITAL ), city )
 		dur = math.ceil( dur * 0.1 )
 		--InputUtil_Pause( "intel to " .. group.name, "need dur=" .. dur )
 		Asset_SetListItem( intel, IntelAssetID.SPYS_DURATION, group, dur )

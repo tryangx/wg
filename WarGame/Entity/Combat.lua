@@ -138,7 +138,7 @@ local function WriteLog( type, ... )
 	if type == CombatLog.MAP then return end
 	if type == CombatLog.DESC then return end
 	if type == CombatLog.INITIAL then return end
-	print( ... )
+	--print( ... )
 	--logUtility:WriteLog( ... )
 end
 
@@ -486,6 +486,20 @@ end
 function Combat:GetCorpsGroupName( corps )
 	local group = corps and Asset_Get( corps, CorpsAssetID.GROUP ) or nil
 	return group and group.name or "[UNKNOWN]"
+end
+
+function Combat:GetGroupName( side )
+	local group = self:GetGroup( side )
+	return group and group.name or "[UNKNOWN]"
+end
+
+function Combat:GetCorpsList( side )
+	if side == CombatSide.ATTACKER then
+		return Asset_GetList( self, CombatAssetID.ATK_CORPS_LIST )
+	elseif side == CombatSide.DEFENDER then
+		return Asset_GetList( self, CombatAssetID.DEF_CORPS_LIST )
+	end
+	return nil
 end
 
 -----------------------------------------------------

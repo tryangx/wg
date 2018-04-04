@@ -1,3 +1,14 @@
+function Chara_Join( chara, city )
+	local oldHome = Asset_Get( chara, CharaAssetID.HOME )
+	if oldHome == city then return end
+
+	if oldHome then
+		oldHome:CharaLeave( chara )
+	end
+
+	city:CharaJoin( chara )
+end
+
 -------------------------------
 -- Hire chara relative
 

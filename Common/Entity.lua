@@ -197,8 +197,8 @@ end
 function Entity_Init( entity, type, attribs )
 	local mng = Entity_GetManager( type )
 	entity.type = type
-	entity.id   = mng:NewID()
-	Entity_SetAssetAttrib( entity, attribs )	
+	entity.id   = 1
+	Entity_SetAssetAttrib( entity, attribs )
 end
 
 function Entity_InitAttrib( entity )

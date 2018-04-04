@@ -10,30 +10,32 @@ ProposalAssetID =
 	PROPOSER    = 11,	
 	--who will execute the task by proposal
 	ACTOR       = 12,	
-	--where submit the proposal
-	LOCATION    = 13,
-	--where to execute the task
-	DESTINATION = 14,
-	--reserved
-	PARAMS      = 15,
 	--superior
-	SUPERIOR    = 16,
-
+	SUPERIOR    = 13,
+	--where submit the proposal	
+	LOCATION    = 14,
+	--where to execute the task
+	DESTINATION = 15,
+	--reserved
+	PARAMS      = 16,
+	--reserved, proposal 
 	STATUS      = 21,
+	--reserved, time when submit the proposal
 	TIME        = 22,
 }
 
 ProposalAssetAttrib = 
 {
-	type      = AssetAttrib_SetNumber ( { id = ProposalAssetID.TYPE,       type = ProposalAssetType.BASE_ATTRIB, enum = ProposalType } ),
-	proposer  = AssetAttrib_SetPointer( { id = ProposalAssetID.PROPOSER,   type = ProposalAssetType.BASE_ATTRIB, setter = Entity_SetChara } ),
-	actor     = AssetAttrib_SetPointer( { id = ProposalAssetID.ACTOR,      type = ProposalAssetType.BASE_ATTRIB } ),
-	superior  = AssetAttrib_SetPointer( { id = ProposalAssetID.SUPERIOR,   type = ProposalAssetType.BASE_ATTRIB, setter = Entity_SetChara } ),
-	params    = AssetAttrib_SetList   ( { id = ProposalAssetID.PARAMS,     type = ProposalAssetType.BASE_ATTRIB } ),
-	location  = AssetAttrib_SetPointer( { id = ProposalAssetID.LOCATION,   type = ProposalAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
+	type      = AssetAttrib_SetNumber   ( { id = ProposalAssetID.TYPE,       type = ProposalAssetType.BASE_ATTRIB, enum = ProposalType } ),
+	proposer  = AssetAttrib_SetPointer  ( { id = ProposalAssetID.PROPOSER,   type = ProposalAssetType.BASE_ATTRIB, setter = Entity_SetChara } ),
+	actor     = AssetAttrib_SetPointer  ( { id = ProposalAssetID.ACTOR,      type = ProposalAssetType.BASE_ATTRIB } ),
+	superior  = AssetAttrib_SetPointer  ( { id = ProposalAssetID.SUPERIOR,   type = ProposalAssetType.BASE_ATTRIB, setter = Entity_SetChara } ),
+	location  = AssetAttrib_SetPointer  ( { id = ProposalAssetID.LOCATION,   type = ProposalAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
 	destination = AssetAttrib_SetPointer( { id = ProposalAssetID.DESTINATION,type = ProposalAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
-	status    = AssetAttrib_SetNumber ( { id = ProposalAssetID.STATUS,     type = ProposalAssetType.BASE_ATTRIB, default = ProposalStatus.SUBMITTED } ),
-	time      = AssetAttrib_SetNumber ( { id = ProposalAssetID.TIME,       type = ProposalAssetType.BASE_ATTRIB } ),
+	params    = AssetAttrib_SetList     ( { id = ProposalAssetID.PARAMS,     type = ProposalAssetType.BASE_ATTRIB } ),
+	
+	status    = AssetAttrib_SetNumber   ( { id = ProposalAssetID.STATUS,     type = ProposalAssetType.BASE_ATTRIB, default = ProposalStatus.SUBMITTED } ),
+	time      = AssetAttrib_SetNumber   ( { id = ProposalAssetID.TIME,       type = ProposalAssetType.BASE_ATTRIB } ),
 }
 
 -------------------------------------------

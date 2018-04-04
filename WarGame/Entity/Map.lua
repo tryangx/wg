@@ -284,7 +284,10 @@ function Map:AllocateToCity()
 	--   15 14 13
 	--
 	local maxDistance = 3
-	local settlement = {}	
+	local settlement = {}
+
+	local width  = Asset_Get( self, MapAssetID.WIDTH )
+	local height = Asset_Get( self, MapAssetID.HEIGHT )
 	
 	function AddPlotToCity( plot, city, plots )
 		local x = Asset_Get( plot, PlotAssetID.X )
@@ -311,6 +314,10 @@ function Map:AllocateToCity()
 		local x = Asset_Get( city, CityAssetID.X )
 		local y = Asset_Get( city, CityAssetID.Y )
 
+		if x <= 0 or x > width or y <= 0 or y > height then
+			error( "invalid city coordinate=" .. city.name )
+		end 
+
 		--allocate adjacent plot to the city
 		local leftPlot = Asset_Get( city, CityAssetID.LEVEL ) - 1
 		
@@ -331,6 +338,7 @@ function Map:AllocateToCity()
 			if plot then
 			settlement[plot] = maxDistance * 2
 			--set city center
+			print( city.name, "cplot=" .. plot:ToString() )
 			Asset_Set( city, CityAssetID.CENTER_PLOT, plot )
 			AddPlotToCity( plot, city, plots, settlement[plot] )
 			--set other plots		

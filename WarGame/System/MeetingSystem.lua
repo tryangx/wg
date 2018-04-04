@@ -1,23 +1,6 @@
 local function Proposal_Execute( proposal )
-	local task = Entity_New( EntityType.TASK )
-
-	--convert proposal type into task type
-	local typeName = MathUtil_FindName( ProposalType, Asset_Get( proposal, ProposalAssetID.TYPE ) )
-	local taskType = TaskType[typeName]	
-	Asset_Set( task, TaskAssetID.TYPE, taskType )
-
-	--copy same data
-	Asset_Set( task, TaskAssetID.ACTOR, Asset_Get( proposal, ProposalAssetID.ACTOR ) )	
-	Asset_Set( task, TaskAssetID.LOCATION, Asset_Get( proposal, ProposalAssetID.LOCATION ) )
-	Asset_Set( task, TaskAssetID.DESTINATION, Asset_Get( proposal, ProposalAssetID.DESTINATION ) )
-
-	Asset_CopyDict( task, TaskAssetID.PARAMS, Asset_Get( proposal, ProposalAssetID.PARAMS ) )
-
-	if taskType == TaskType.PROMOTE_CHARA then
-	end
-
 	--issue task include initializing actortype, issue task to every subordinates
-	Task_Issue( task )
+	Task_IssueByProposal( proposal )
 
 	--remove proposal
 	Entity_Remove( proposal )
@@ -74,9 +57,10 @@ local function Meeting_Update( meeting )
 
 		--submit proposals
 		local freeParticiants = 0
-		Asset_FindList( meeting, MeetingAssetID.PARTICIPANTS, function ( chara )			
+		Asset_FindListItem( meeting, MeetingAssetID.PARTICIPANTS, function ( chara )			
 			if Asset_GetListSize( chara, CharaAssetID.TASKS ) > 0 then return end			
 			freeParticiants = freeParticiants + 1
+			Stat_Add( "Proposal@Try_Times", nil, StatType.TIMES )
 			if CharaAI_SubmitMeetingProposal( chara, meeting ) then
 				--print( chara.name, "submit")
 				numofproposer = numofproposer - 1
@@ -86,6 +70,7 @@ local function Meeting_Update( meeting )
 		if freeParticiants == 0 then
 			Stat_Add( "Meeting@End_Times", nil, StatType.TIMES )
 			--print( "end meeting" )
+			return
 		end
 
 		--update proposals
@@ -105,11 +90,13 @@ local function Meeting_Update( meeting )
 		--simply to the next topic
 		topic = topic + 1
 	end
+
+	--Stat_Add( "Meeting@End_Times", nil, StatType.TIMES )
 end
 
 function Meeting_Hold( city, topic, target )
 	if not topic then topic = MeetingTopic.NONE end
-	local executive = city:GetOfficer( CityOfficer.EXECUTIVE )
+	local executive = city:GetOfficer( CityOfficer.CHIEF_EXECUTIVE )
 	if topic == MeetingTopic.UNDER_HARASS or topic == MeetingTopic.UNDER_ATTACK then		
 		--find highest rank		
 		local highestRank = CharaJob.NONE
@@ -142,13 +129,22 @@ function Meeting_Hold( city, topic, target )
 	--find participants
 	local participants = {}
 	Asset_ForeachList( city, CityAssetID.CHARA_LIST, function ( chara )
-		if Asset_GetListSize( chara, CharaAssetID.TASKS ) > 0 then return end
-		if chara:IsAtHome() == false then return end
+		--print( chara.name, "task=" .. Asset_GetListSize( chara, CharaAssetID.TASKS ) )
+		if chara:IsBusy() == true then
+			--print( chara.name, " is busy" )
+			return
+		end
+		if chara:IsAtHome() == false then
+			--print( chara.name, " isn't at home" )
+			return
+		end
 		table.insert( participants, chara )
-	end)
+	end )
 	participants = MathUtil_Shuffle_Sync( participants )
 	--InputUtil_Pause( meeting, MeetingAssetID.PARTICIPANTS, #participants )
 	Asset_CopyList( meeting, MeetingAssetID.PARTICIPANTS, participants )
+
+	--print( "hold meeting in=" .. city.name, "chara=" .. Asset_GetListSize( city, CityAssetID.CHARA_LIST ), #participants )
 
 	Stat_Add( "Meeting@Hold_Times", 1, StatType.TIMES )
 end

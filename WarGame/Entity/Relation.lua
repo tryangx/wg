@@ -46,3 +46,7 @@ function Relation:Update()
 	end)
 	Asset_Set( self, RelationAssetID.ATTITUDE, attitude )
 end
+
+function Relation:GetPact( type )
+	return Asset_GetListItem( self, RelationAssetID.PACT_LIST, type )
+end

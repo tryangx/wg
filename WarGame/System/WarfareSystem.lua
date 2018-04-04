@@ -208,9 +208,16 @@ function WarfareSystem:UpdateCombat( combat )
 		Message_Post( MessageType.SIEGE_COMBAT_END, { combat = combat } )
 
 		--Seize city
-		if winner == CombatSide.ATTACKER then			
+		if winner == CombatSide.ATTACKER then
 			local group = combat:GetGroup( winner )
-			Group_SeizeCity( group, city )
+			if group then group:OccupyCity( city ) end
+			
+			local corpsList = combat:GetCorpsList( winner )
+			for _, corps in ipairs( corpsList ) do
+				Corps_Join( corps, city )
+			end
+
+			InputUtil_Pause( "occupy city")
 		end
 	elseif type == CombatType.FIELD_COMBAT then
 		if winner == CombatSide.ATTACKER then

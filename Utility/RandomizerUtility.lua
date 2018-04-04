@@ -106,3 +106,9 @@ function Random_GetListData( entity, id )
 	if number == 0 then return nil end
 	return Asset_GetListItem( entity, id, Random_GetInt_Sync( 1, number ) )
 end
+
+function Random_GetListItem( list )
+	local number = #list
+	if number == 0 then return nil end
+	return list[Random_GetInt_Sync( 1, number )]
+end

@@ -14,6 +14,7 @@ require "System/TaskSystem"
 require "System/EventSystem"
 require "System/MeetingSystem"
 require "System/DiplomacySystem"
+require "System/GoalSystem"
 
 --System running sequence as follow
 SystemType =
@@ -36,4 +37,5 @@ SystemType =
 	TASK_SYS          = 306,
 	EVENT_SYS         = 307,
 	MEETING_SYS       = 308,
+	GOAL_SYS          = 309,
 }

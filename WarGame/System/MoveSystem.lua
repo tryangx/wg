@@ -15,14 +15,25 @@ local _encounters = {}
 
 ------------------------------------------------
 
+function Move_IsMoving( actor )
+	return System_Get( SystemType.MOVE_SYS ):IsMoving( actor )
+end
+
+function Move_Chara( chara, dest )
+	System_Get( SystemType.MOVE_SYS ):CharaMove( actor, Asset_Get( actor, CharaAssetID.HOME ) )
+end
+
+function Move_Corps( chara, dest )
+	System_Get( SystemType.MOVE_SYS ):CorpsMove( actor, Asset_Get( actor, CorpsAssetID.ENCAMPMENT ) )
+end
+
+------------------------------------------------
+
+--Add moving actor into plot's actor list
 local function Move_AddToPlot( move )
 	local curplot = Asset_Get( move, MoveAssetID.CUR_PLOT )
-	if not curplot then
-		return false
-	end
-	if not _plots[curplot] then
-		_plots[curplot] = {}
-	end
+	if not curplot then return false end
+	if not _plots[curplot] then _plots[curplot] = {} end
 	table.insert( _plots[curplot], move )
 end
 
@@ -42,12 +53,13 @@ local function Move_CheckEncounter( move )
 			local otherActor = Asset_Get( other, MoveAssetID.ACTOR )
 			local othGroup = Asset_Get( otherActor, CorpsAssetID.GROUP )
 			--InputUtil_Pause( "encounter check", othGroup.name, curGroup.name )
-			if Group_IsAtWar( curGroup, othGroup ) then
+			if Dipl_IsAtWar( curGroup, othGroup ) then
 				--encounter, actually we should send a message to other system, but now, we call Combat by myself							
 				isEncounter = true
 				_actions[k] = nil
 				Asset_Set( move, MoveAssetID.STATUS, MoveStatus.SUSPEND )
 				Asset_Set( other, MoveAssetID.STATUS, MoveStatus.SUSPEND )
+
 				Message_Post( MessageType.FIELD_COMBAT_TRIGGER, { plot = curplot, atk = actor, def = otherActor } )
 				--InputUtil_Pause( "encounter" )
 				break
@@ -65,7 +77,8 @@ local function Move_MoveToNext( move )
 	local curplot  = Asset_Get( move, MoveAssetID.CUR_PLOT )
 	local nextplot = Asset_Get( move, MoveAssetID.NEXT_PLOT )
 	local tocity   = Asset_Get( move, MoveAssetID.TO_CITY )	
-	local routeplot = route:FindNext( nextplot, tocity )
+	local toplot   = Asset_Get( toCity, CityAssetID.CENTER_PLOT )
+	local routeplot = route:FindNext( nextplot, toplot )
 	--print( "cur  =", Asset_Get( curplot, PlotAssetID.X ), ",", Asset_Get( curplot, PlotAssetID.Y ) )
 	--print( route, curplot, nextplot, toCity, routeplot )	
 	--print( "next =", Asset_Get( routeplot, PlotAssetID.X ), ",", Asset_Get( routeplot, PlotAssetID.Y ) )
@@ -91,9 +104,7 @@ end
 local function Move_DoAction( move )
 	if Asset_Get( move, MoveAssetID.STATUS ) ~= MoveStatus.MOVING then return end
 
-	if Move_MoveToNext( move ) == true then
-		return false
-	end
+	if Move_MoveToNext( move ) == true then return false end
 	
 	--reach the destination
 	Asset_Set( move, MoveAssetID.END_TIME, g_calendar:GetDateValue() )
@@ -106,6 +117,9 @@ local function Move_DoAction( move )
 	elseif role == MoveRole.CHARA then
 		Asset_Set( Asset_Get( move, MoveAssetID.ACTOR ), CharaAssetID.LOCATION, Asset_Get( move, MoveAssetID.TO_CITY ) )
 	end
+
+	Message_Post( MessageType.ARRIVE_DESTINATION, { actor = Asset_Get( move, MoveAssetID.ACTOR ), destination = Asset_Get( mvoe, MoveAssetID.DEST_PLOT ) } )
+
 	return true
 end
 
@@ -116,6 +130,7 @@ local function Move_Update( move )
 	--move on
 	local actor = Asset_Get( move, MoveAssetID.ACTOR )
 	local role = Asset_Get( move, MoveAssetID.ROLE )
+	
 	local movement
 	if role == MoveRole.CORPS then
 		movement = Asset_Get( actor, CorpsAssetID.MOVEMENT )
@@ -124,13 +139,12 @@ local function Move_Update( move )
 	end
 	Asset_Plus( move, MoveAssetID.PROGRESS, movement )
 	
-	if move:IsReachNext() then
+	if move:IsArrived() then
 		table.insert( _actions, move )
-	else
-		Move_AddToPlot( move )
+		return
 	end
 	
-	return false
+	Move_AddToPlot( move )
 end
 
 ------------------------------------------------
@@ -167,7 +181,8 @@ function MoveSystem:Update()
 	--do actions
 	for _, move in ipairs( _actions ) do
 		if move and Move_DoAction( move ) == true then
-			self._actors[Asset_Get( move, MoveAssetID.ACTOR )] = nil
+			local actor = Asset_Get( move, MoveAssetID.ACTOR )
+			self._actors[actor] = nil
 			Entity_Remove( move )
 		end
 	end
@@ -175,8 +190,12 @@ function MoveSystem:Update()
 	--print( "move has", Entity_Number( EntityType.MOVE ) )
 end
 
-function MoveSystem:MoveP2P( actor, from, to , type )
+function MoveSystem:IsMoving( actor )
+	return self._actors[actor] ~= nil
+end
 
+function MoveSystem:MoveP2P( actor, from, to , type )
+	
 end
 
 function MoveSystem:MoveC2C( actor, fromCity, toCity, type )
@@ -211,14 +230,14 @@ function MoveSystem:MoveC2C( actor, fromCity, toCity, type )
 	--if type == MoveRole.CORPS then InputUtil_Pause( actor.name, "move from=" .. fromCity.name, "to=" .. toCity.name ) end
 end
 
-function MoveSystem:Move( actor, fromCity, toCity, type )
-	self:MoveC2C( actor, fromCity, toCity, type )
-end
-
 function MoveSystem:CorpsMove( actor, destination )	
-	self:Move( actor, Asset_Get( actor, CorpsAssetID.LOCATION ), destination, MoveRole.CORPS )
+	local loc = Asset_Get( actor, CorpsAssetID.LOCATION )
+	if loc == destination then return end
+	self:MoveC2C( actor, loc, destination, MoveRole.CORPS )
 end
 
 function MoveSystem:CharaMove( actor, destination )
-	self:Move( actor, Asset_Get( actor, CharaAssetID.LOCATION ), destination, MoveRole.CHARA )
+	local loc = Asset_Get( actor, CharaAssetID.LOCATION )
+	if loc == destination then return end
+	self:MoveC2C( actor, loc, destination, MoveRole.CHARA )
 end

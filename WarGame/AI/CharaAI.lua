@@ -60,6 +60,7 @@ local function SubmitProposal( params )
 	end
 
 	--print( "Submit proposal=" .. proposal:ToString() )
+	Stat_Add( "Proposal@Submit_Times", 1, StatType.TIMES )
 
 	Asset_SetListItem( _chara, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD, Random_GetInt_Sync( 30, 50 ) )
 end
@@ -118,7 +119,7 @@ end
 
 local function CanReinforceCorps()
 	local findCorps = nil
-	Asset_FindList( _city, CityAssetID.CORPS_LIST, function ( corps )
+	Asset_FindListItem( _city, CityAssetID.CORPS_LIST, function ( corps )
 		if corps:IsAtHome() == false then return false end
 		--print( "check corps", Asset_GetListSize( corps, CorpsAssetID.TROOP_LIST ), Scenario_GetData( "CORPS_PARAMS" ).REQ_TROOP_NUMBER )
 		if Asset_GetListSize( corps, CorpsAssetID.TROOP_LIST ) < Scenario_GetData( "CORPS_PARAMS" ).REQ_TROOP_NUMBER then
@@ -144,7 +145,7 @@ end
 
 local function CanTrainCorps()
 	local findCorps = nil
-	Asset_FindList( _city, CityAssetID.CORPS_LIST, function ( corps )
+	Asset_FindListItem( _city, CityAssetID.CORPS_LIST, function ( corps )
 		if corps:IsAtHome() == false then return false end
 		if corps:GetTraining() < 50 then
 			findCorps = corps
@@ -181,12 +182,7 @@ local function CanHarassCity()
 	local destcity = cities[Random_GetInt_Sync( 1, number )]
 
 	--check food
-	local food = Asset_Get( _city, CityAssetID.FOOD )
-	local needfood = Corps_CalcNeedFood( corps, destcity )	
-	if food > needfood  then
-		print( _city.name, "food not enough," .. corps.name .. " need ", needfood .. "/" .. food )
-		return false
-	end
+	if Supply_CorpsHasEnoughFood( _city, destcity, corps ) == false then return false end
 
 	_registers["ACTOR"] = corps
 	_registers["TARGET_CITY"] = destcity
@@ -211,13 +207,7 @@ local function CanAttackCity()
 	local destcity = cities[Random_GetInt_Sync( 1, number )]
 
 	--check food
-	local food = Asset_Get( _city, CityAssetID.FOOD )
-	local needfood = Corps_CalcNeedFood( corps, destcity )
-	--print( _city.name, corps.name, "food=" .. needfood .."/"..food )
-	if food < needfood then
-		print( _city.name, "food not enough," .. corps.name .. " need ", needfood .. "/" .. food )
-		return false
-	end
+	if Supply_CorpsHasEnoughFood( _city, destcity, corps ) == false then return false end
 
 	_registers["ACTOR"] = corps
 	_registers["TARGET_CITY"] = destcity
@@ -234,12 +224,7 @@ local function CanIntercept()
 	local corps = list[Random_GetInt_Sync( 1, #list )]
 
 	--check food
-	local food = Asset_Get( _city, CityAssetID.FOOD )
-	local needfood = Corps_CalcNeedFood( corps, destcity )
-	if food > needfood  then
-		print( _city.name, "food not enough," .. corps.name .. " need ", needfood .. "/" .. food )
-		return false
-	end
+	if Supply_CorpsHasEnoughFood( _city, destcity, corps ) == false then return false end
 
 	_registers["TARGET_CORPS"] = target
 	_registers["TARGET_CITY"]  = destcity
@@ -247,55 +232,6 @@ local function CanIntercept()
 
 	return true
 end
-
-------------------------------
-
---[[
-	FRIENDLY        = 200,
---]]
-local _MilitaryProposals = 
-{
-	{ type = "SEQUENCE", children = 
-		{
-			{ type = "FILTER", condition = CanEstablishCorps },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "ESTABLISH_CORPS" } },
-		},
-	},
-	{ type = "SEQUENCE", children = 
-		{
-			{ type = "FILTER", condition = CanReinforceCorps },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "REINFORCE_CORPS" } },
-		},
-	},
-	{ type = "SEQUENCE", children = 
-		{
-			{ type = "FILTER", condition = CanTrainCorps },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "TRAIN_CORPS" } },
-		},
-	},
-	{ type = "SEQUENCE", children = 
-		{
-			{ type = "FILTER", condition = CanDispatchCorps },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "DISPATCH_CORPS" } },
-		},
-	},
-	--[[
-	DISMISS_CORPS   = 102,
-	UPGRADE_CORPS   = 104,
-	]]
-	{ type = "SEQUENCE", children = 
-		{
-			{ type = "FILTER", condition = CanHarassCity },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "HARASS_CITY" } },
-		},
-	},
-	{ type = "SEQUENCE", children = 
-		{
-			{ type = "FILTER", condition = CanAttackCity },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "ATTACK_CITY" } },
-		},
-	},
-}
 
 ----------------------------------------
 
@@ -312,7 +248,7 @@ local function CanIssuePolicy()
 	local policy = Asset_Get( _city, CityAssetID.POLICY )
 	if policy.type ~= CityPolicy.NONE then return false end
 
-	if _city:GetOfficer( CityOfficer.EXECUTIVE ) ~= _chara then return false end
+	if _city:GetOfficer( CityOfficer.CHIEF_EXECUTIVE ) ~= _chara then return false end
 
 	return true
 end
@@ -324,6 +260,9 @@ local function CanLevyTax()
 	return false
 end
 
+local function CanAssignChara()
+
+end
 local function CanHireChara()
 	local limit
 	if _group then 
@@ -358,6 +297,10 @@ local function CanDevelop( params )
 	--InputUtil_Pause( "Check " .. MathUtil_FindName( CityAssetID, id ), cur, need )	
 	return cur < need
 end
+
+
+------------------------------
+-- AI
 
 --[[
 local CombatAI_SelectPolicy = 
@@ -429,6 +372,77 @@ local CombatAI_SelectPolicy =
 }
 ]]
 
+local _ChiefHR = 
+{
+	{ type = "SEQUENCE", children = 
+		{
+			{ type = "FILTER", condition = CanHireChara },
+			{ type = "ACTION", action = SubmitProposal, params = { type = "HIRE_CHARA" } },
+		},
+	},	
+	{ type = "SEQUENCE", children = 
+		{
+			{ type = "FILTER", condition = CanPromoteChara },
+			{ type = "ACTION", action = SubmitProposal, params = { type = "PROMOTE_CHARA" } },
+		},
+	},
+}
+
+local _ChiefExecutive = 
+{
+	{ type = "SEQUENCE", children = 
+		{
+			{ type = "FILTER", condition = CanAssignChara },
+			{ type = "ACTION", action = SubmitProposal, params = { type = "ASSIGN_CHARA" } },
+		},
+	},
+}
+
+
+local _MilitaryProposals = 
+{
+	{ type = "SEQUENCE", children = 
+		{
+			{ type = "FILTER", condition = CanEstablishCorps },
+			{ type = "ACTION", action = SubmitProposal, params = { type = "ESTABLISH_CORPS" } },
+		},
+	},
+	{ type = "SEQUENCE", children = 
+		{
+			{ type = "FILTER", condition = CanReinforceCorps },
+			{ type = "ACTION", action = SubmitProposal, params = { type = "REINFORCE_CORPS" } },
+		},
+	},
+	{ type = "SEQUENCE", children = 
+		{
+			{ type = "FILTER", condition = CanTrainCorps },
+			{ type = "ACTION", action = SubmitProposal, params = { type = "TRAIN_CORPS" } },
+		},
+	},
+	{ type = "SEQUENCE", children = 
+		{
+			{ type = "FILTER", condition = CanDispatchCorps },
+			{ type = "ACTION", action = SubmitProposal, params = { type = "DISPATCH_CORPS" } },
+		},
+	},
+	--[[
+	DISMISS_CORPS   = 102,
+	UPGRADE_CORPS   = 104,
+	]]
+	{ type = "SEQUENCE", children = 
+		{
+			{ type = "FILTER", condition = CanHarassCity },
+			{ type = "ACTION", action = SubmitProposal, params = { type = "HARASS_CITY" } },
+		},
+	},
+	{ type = "SEQUENCE", children = 
+		{
+			{ type = "FILTER", condition = CanAttackCity },
+			{ type = "ACTION", action = SubmitProposal, params = { type = "ATTACK_CITY" } },
+		},
+	},
+}
+
 local _DevelopmentProposals = 
 {
 	{ type = "SEQUENCE", children = 
@@ -461,20 +475,7 @@ local _DevelopmentProposals =
 			{ type = "ACTION", action = SubmitProposal, params = { type = "LEVY_TAX" } },
 		},
 	},
-	{ type = "SEQUENCE", children = 
-		{
-			{ type = "FILTER", condition = CanHireChara },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "HIRE_CHARA" } },
-		},
-	},
-	{ type = "SEQUENCE", children = 
-		{
-			{ type = "FILTER", condition = CanPromoteChara },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "PROMOTE_CHARA" } },
-		},
-	},
 }
-
 
 local CombatAI_SubmitMilitaryProposal =
 {
@@ -485,7 +486,8 @@ local CombatAI_SubmitMilitaryProposal =
 	}
 }
 
-local CombatAI_SubmitDevelopProposal =
+local CombatAI_SubmitDevelopProposal = {}
+local CombatAI_SubmitDevelopProposal1 = 
 {
 	type = "SEQUENCE", desc = "submit development", children = 
 	{
@@ -522,7 +524,8 @@ local CombatAI_SubmitProposal =
 				{ type = "FILTER", condition = CanIntercept },
 				{ type = "ACTION", action = SubmitProposal, params = { type = "INTERCEPT" } },
 			},
-		},		
+		},
+		-----------------------------
 
 		-----------------------------
 		--status priority
@@ -587,7 +590,7 @@ _charaMeetingProposal:BuildTree( CombatAI_MeetingProposal )
 local function Init( params )
 	_registers = {}
 
-	_chara = params.chara	
+	_chara = params.chara
 	_city  = Asset_Get( _chara, CharaAssetID.HOME )
 	_group = Asset_Get( _chara, CharaAssetID.GROUP )
 

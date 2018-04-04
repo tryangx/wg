@@ -11,7 +11,7 @@
 g_turnIdx  = 1
 
 --maximum end time, always is daily
-g_turnEnd  = 360 * 1
+g_turnEnd  = 360 * 5
 
 --every step update in main(), always is daily
 g_turnStep = 1
@@ -27,6 +27,11 @@ g_calendar = Calendar()
 
 --Map
 g_map = Map()
+
+
+-------------------------
+
+g_winner = nil
 
 
 function Game_IsRunning()

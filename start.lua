@@ -20,4 +20,4 @@ require "Main"
 
 ---------------------------------------------
 
-WarGame():Start()
+Game_Start()

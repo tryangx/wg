@@ -171,8 +171,7 @@ end
 function Chara:Update()
 	local proposalcd = Asset_GetListItem( self, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD )
 	if proposalcd and proposalcd > 0 then
-		proposalcd = proposalcd - 1
-		Asset_SetListItem( self, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD, proposalcd )
+		Asset_SetListItem( self, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD, proposalcd - 1 )
 	end
 
 	Asset_Plus( self, CharaAssetID.SERVICE_DAY, g_elapsed )
@@ -185,6 +184,10 @@ function Chara:IsAtHome()
 	local location = Asset_Get( self, CharaAssetID.LOCATION )
 	local home     = Asset_Get( self, CharaAssetID.HOME )	
 	return home == location
+end
+
+function Chara:IsBusy()
+	return Asset_GetListItem( self, CharaAssetID.STATUSES, CharaStatus.IN_TASK ) ~= nil
 end
 
 -------------------------------------------

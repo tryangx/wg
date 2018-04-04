@@ -175,24 +175,45 @@ CHUHAN_CharaData =
 
 CHUHAN_CityData = 
 {
+
 	[100] = 
 	{
-		name = "Guan Zhong",
-		coordinate = { x = 60, y = 6 },
+		name = "Xian Yan",
+		coordinate = { x = 42, y = 6 },
 		level = 10,
 		charas = { 100, 101, 102, 103 },		
-		adjacents = { 200 },
+		adjacents = { 101, 200 },
+		defenses = { 15000, 10000, 15000 },
+	},
+	[101] = 
+	{
+		name = "Guan Zhong",
+		coordinate = { x = 36, y = 12 },
+		level = 10,
+		charas = { 100, 101, 102, 103 },		
+		adjacents = { 100 },
 		defenses = { 15000, 10000, 15000 },
 	},
 	[200] = 
 	{
 		name = "Peng Chen",
-		coordinate = { x = 66, y = 6 },
+		coordinate = { x = 48, y = 12 },
 		level = 10,
 		charas = { 200, 201, 202, 203 },
 		adjacents = { 100 },
 		defenses = { 15000, 10000, 15000 },
 	},
+	--[[
+	[201] = 
+	{
+		name = "Kuai Ji",
+		coordinate = { x = 54, y = 18 },
+		level = 10,
+		charas = { 200, 201, 202, 203 },
+		adjacents = { 200 },
+		defenses = { 15000, 10000, 15000 },
+	},
+	]]
 }
 
 CHUHAN_GroupData =

@@ -580,7 +580,7 @@ local function NeedFlee()
 
 	if ret == true then
 		_combat:DumpTroop( _troop )
-		print( NIDString( _troop ), _troop._combatSide, " flee=", ret, "ratio=" .. soldierRatio, "mor=" .. morale )
+		--print( NIDString( _troop ), _troop._combatSide, " flee=", ret, "ratio=" .. soldierRatio, "mor=" .. morale )
 	end
 	return ret
 end

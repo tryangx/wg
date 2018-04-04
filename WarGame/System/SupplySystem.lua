@@ -6,6 +6,12 @@
 --
 --------------------------------------------------------------
 
+ function Supply_CorpsHasEnoughFood( fromcity, destcity, corps )
+	local food = Asset_Get( fromcity, CityAssetID.FOOD )
+	local needfood = Corps_CalcNeedFood( corps, destcity )
+	if FeatureOption.FOOD_SUPPLY == 0 then return true end
+	return food >= needfood
+end
 
 function Supply_CorpsCarryFood( corps, destcity )
 	local loc =  Asset_Get( corps, CorpsAssetID.LOCATION )

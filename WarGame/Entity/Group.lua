@@ -132,12 +132,14 @@ function Group:Update( ... )
 end
 
 
-function Group:LoseCity( city )
+function Group:LoseCity( city, toCity )
 	--remove city from list
 	Asset_RemoveListItem( self, GroupAssetID.CITY_LIST, city )
 
-	--is capital?
-	if Asset_Get( self, GroupAssetID.CAPITAL ) == city then
+	--is capital?	
+	local capital = Asset_Get( self, GroupAssetID.CAPITAL )	
+	if not toCity then toCity = capital end
+	if capital == city then
 		--find new capital
 		local newCapital
 		local highLv = 0
@@ -151,28 +153,68 @@ function Group:LoseCity( city )
 		if newCapital then
 			Asset_Set( self, GroupAssetID.CAPITAL, newCapital )
 		end
+		toCity = Random_GetListItem( city:FindNearbyFriendCities() )
 	end
+
+	--for all chara list
+	Asset_ForeachList( city, CityAssetID.CHARA_LIST, function( chara )		
+		if chara:IsAtHome() or not toCity then
+			--captured
+			Asset_AppendList( city, CityAssetID.PRISONER_LIST, chara )
+		else
+			--set home to nearby city
+			toCity:CharaJoin( chara )
+		end
+	end )
+	--clear list
+	Asset_ClearList( city, CityAssetID.CHARA_LIST )
+	Asset_ClearList( city, CityAssetID.OFFICER_LIST )
+
+	--corps retreat
+	local reserve = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.SOLDIER )
+	Asset_ForeachList( city, CityAssetID.CORPS_LIST, function( corps )
+		if corps:IsAtHome() then
+			--dismiss corps
+			local soldier = corps:GetSoldier()
+			--put soldier into reserve
+			reserve = reserve + soldier
+		else
+			--retreat to nearby city
+			toCity:CorpsJoin( corps )
+		end
+	end )
+	Asset_ClearList( city, CityAssetID.CORPS_LIST )
+	Asset_SetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.SOLDIER, reserve )
 end
 
 function Group:OccupyCity( city )
-	--remove from old group
 	local oldGroup = Asset_Get( city, CityAssetID.GROUP )
-	if oldGroup ~= group then
-		Gropu_LoseCity( oldGroup, city )
+	if oldGroup == self then return end
+
+	--rescue prisoner
+	local rescueList = {}
+	Asset_ForeachList( city, CityAssetID.PRISONER_LIST, function( chara )
+		if Asset_Get( chara, CharaAssetID.GROUP ) == group then
+			Asset_AppendList( city, CityAssetID.CHARA_LIST, chara )
+			table.insert( rescueList, chara )
+		end
+	end )
+	for _, chara in ipairs( rescueList ) do
+		Asset_RemoveListItem( city, CityAssetID.PRISONER_LIST, chara )
 	end
+
+	--remove city from last owner
+	if oldGroup then oldGroup:LoseCity( city ) end
+
+	--broken some constructions?
+	Asset_ForeachList( city, CityAssetID.CONSTR_LIST, function ( constr )
+		--to do
+	end )
+
+	--other things to do in the future
 
 	--append to group
 	Asset_AppendList( self, GroupAssetID.CITY_LIST, city )
-
-	--for all list
-	Asset_ForeachList( city, CityAssetID.CHARA_LIST, function ( chara )
-		if chara:IsAtHome() then
-			--capture
-
-		else
-
-		end
-	end)
 end
 
 function Group:LoseChara( chara )
@@ -183,7 +225,6 @@ end
 
 function Group_FormulaInit()
 	GroupGovernmentData = MathUtil_ConvertKey2ID( GroupGovernmentData, GroupGovernment )
-	MathUtil_Dump( newDatas )
 end
 
 ---------------------------------------

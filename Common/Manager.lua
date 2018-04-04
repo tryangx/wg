@@ -129,7 +129,7 @@ function Manager:NewData()
 	if not self._clz then error( "no class-object for manager" ) return nil end
 	local newId = self:NewID()
 	local newData = self._clz()
-	newData.id = newId	
+	newData.id = newId
 	self:AddData( newId, newData )	
 	return newData
 end

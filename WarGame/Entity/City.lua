@@ -194,9 +194,10 @@ function City:Load( data )
 	else
 		Asset_CopyList( self, CityAssetID.TROOPTABLE_LIST, data.trooptables)
 	end
+end
 
-	--need to load more
-	--InputUtil_Pause( self.name, "init food=" .. Asset_Get( self, CityAssetID.FOOD ))
+function City:ToString()
+	return self.name .. "(" .. Asset_Get( self, CityAssetID.CENTER_PLOT ):ToString() ..  ")"
 end
 
 ------------------------------------------
@@ -280,7 +281,7 @@ end
 function City:VerifyData()
 	local city = self
 
-	print( self.name, "popu=" .. Asset_Get( self, CityAssetID.POPULATION ) )
+	--print( self.name, "popu=" .. Asset_Get( self, CityAssetID.POPULATION ) )
 
 	Asset_ForeachList( self, CityAssetID.CORPS_LIST, function( corps )
 		Asset_Set( corps, CorpsAssetID.ENCAMPMENT, city )
@@ -388,7 +389,7 @@ function City:FindHarassCityTargets()
 	local selfPower = City_GetMilitaryPower( self )
 	return self:FilterAdjaCities( function ( adja )
 		local adjaGroup = Asset_Get( adja, CityAssetID.GROUP )
-		return Group_IsAtWar( adjaGroup, group )
+		return Dipl_IsAtWar( adjaGroup, group )
 	end )
 end
 
@@ -397,17 +398,46 @@ function City:FindAttackCityTargets()
 	local selfPower = City_GetMilitaryPower( self )
 	return self:FilterAdjaCities( function ( adja )		
 		local adjaGroup = Asset_Get( adja, CityAssetID.GROUP )
-		if adjaGroup == group then print( "same group") return false end		
-		if Group_IsAtWar( adjaGroup, group ) == false then return false end
+		if adjaGroup == group then print( "same group") return false end
+		if Dipl_IsAtWar( adjaGroup, group ) == false then return false end
 		local adjaPower = City_GetMilitaryPowerWithIntel( adja, group )	
 		--if adjaPower > selfPower then return false end
 		return true
 	end )
 end
 
---------------------------------------------
+function City:FindNearbyFriendCities()
+	local group = Asset_Get( self, CityAssetID.GROUP )
+	return self:FilterAdjaCities( function ( adja )		
+		local adjaGroup = Asset_Get( adja, CityAssetID.GROUP )
+		return adjaGroup == group
+	end )
+end
 
+--------------------------------------------
+-- Chra relative
+
+--character join into city, but no means he is there
+function City:CharaJoin( chara )
+	Asset_Set( chara, CharaAssetID.HOME, self )
+
+	Asset_AppendList( self, CityAssetID.CHARA_LIST, chara )
+
+	print( chara.name, "join city=", self.name )
+end
+
+function City:CharaLeave( chara )
+	Asset_Set( chara, CharaAssetID.HOME, nil )
+
+	Asset_RemoveListItem( self, CityAssetID.CHARA_LIST, chara )
+end
+
+--------------------------------------------
+-- Corps relative
+
+--corps join into city, but no means reach there
 function City:CorpsJoin( corps )
+	Asset_Set( corps, CorpsAssetID.ENCAMPMENT, self )
 	--[[
 	--allot food
 	local reservedfood = corps:GetConsumeFood() * 30
@@ -425,9 +455,13 @@ function City:CorpsJoin( corps )
 	Asset_ForeachList( corps, CorpsAssetID.OFFICER_LIST, function ( chara )
 		Asset_AppendList( self, CityAssetID.CHARA_LIST, chara )
 	end)
+
+	print( corps.name, "join city=", self.name )
 end
 
 function City:CorpsLeave( corps )
+	Asset_Set( corps, CorpsAssetID.ENCAMPMENT, nil )
+
 	--remove from trooplist
 	Asset_RemoveListItem( self, CityAssetID.CORPS_LIST, corps )
 
@@ -445,7 +479,7 @@ function City:ElectExecutive()
 	if not executive then
 		--find a leader from officer
 		executive = Random_GetListData( self, CityAssetID.CHARA_LIST )		
-		DBG_Trace( "city=" .. self.name .. " no executive", executive )
+		--DBG_Trace( "city=" .. self.name .. " no executive, num_chara=" .. Asset_GetListSize( self, CityAssetID.CHARA_LIST ) )
 		if executive then
 			Asset_SetListItem( self, CityAssetID.OFFICER_LIST, CityOfficer.EXECUTIVE, executive )
 			CRR_Tolerate( "city=" .. self.name .. " set default executive=" .. executive.name )			

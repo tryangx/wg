@@ -282,7 +282,7 @@ function Asset_ForeachList( entity, id, fn )
 	end
 end
 
-function Asset_FindList( entity, id, fn )
+function Asset_FindListItem( entity, id, fn )
 	local list = Asset_GetList( entity, id )
 	if not list then return nil end
 	for k, item in pairs( list ) do
@@ -437,7 +437,7 @@ function Asset_Plus( entity, id, value )
 	if not id then error( "id is invalid" ) return false end
 	if typeof( entity ) == "number" then return false end
 	local ret = Asset_Get( entity, id )
-	if not ret then return false end	
+	if not ret then return false end
 	Asset_Set( entity, id, ret + value )
 	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "plus value=" .. ret .. "+" ..value.."->" .. entity[id] ) end
 	return true

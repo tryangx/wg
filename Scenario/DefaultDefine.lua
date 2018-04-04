@@ -217,10 +217,16 @@ GroupGovernment =
 
 CityOfficer = 
 {
-	EXECUTIVE = 10,
-	COMMANDER = 11,
-	ADJUTANT  = 20,
-	STAFF     = 21,
+	--All city
+	CHIEF_EXECUTIVE  = 10,
+	CHIEF_MILITARY   = 11,
+	CHIEF_STAFF      = 12,
+	CHIEF_HR         = 13,
+	CHIEF_AFFAIRS    = 14,
+	
+	--Only in capital
+	CHIEF_DIPLOMATIC = 20,
+	CHIEF_TECHNICIAN = 21,
 }
 
 --[[
@@ -509,6 +515,7 @@ ProposalType =
 
 	HIRE_CHARA      = 400,
 	PROMOTE_CHARA   = 401,
+	ASSIGN_CHARA    = 402,
 }
 
 ProposalStatus = 
@@ -543,45 +550,34 @@ TaskType =
 
 	HIRE_CHARA      = 400,
 	PROMOTE_CHARA   = 401,
-}
-
-TaskStatus = 
-{
-	--initialized, default status
-	INITIALIZE     = 0,
-
-	--
-	PREPARE        = 1,
-
-	--approach to the destination location
-	ON_THE_WAY     = 2,
-
-	--executing as word
-	EXECUTING      = 3,
-
-	--suspend by some reason
-	SUSPENDED      = 4,
-
-	--finished
-	FINISHED       = 5,
-
-	--back to the reception
-	REPLY          = 6,
-	
-	--final status, need to remove
-	END            = 7,	
-
-	--canceled by some reason
-	CANCELED       = 8,
-
-	--out of time
-	FAILED         = 9,
+	ASSIGN_CHARA    = 402,
 }
 
 TaskActorType = 
 {
 	CHARA    = 1,
 	CORPS    = 2,
+}
+
+TaskStep = 
+{
+	--some task needs time to prepare, like establish corps, attack city, etc.
+	PREPARE = 1,
+
+	--when arrive the destination, task can be execute
+	EXECUTE = 2,
+
+	--after task succeed or failed, task should be reply
+	FINISH  = 3,
+}
+
+TaskStatus = 
+{
+	WAITING    = 0,
+	RUNNING    = 1,
+	SUCCEED    = 2,
+	FAILED     = 3,
+	END        = 4,
 }
 
 ------------------------------
@@ -658,7 +654,9 @@ MeetingTopic =
 --All system should depend on messages and process with them
 MessageType = 
 {
-	CORPS_MOVE            = 90,
+	--actor, destination
+	ARRIVE_DESTINATION    = 80,	
+
 	CORPS_ATTACK          = 91,
 
 	----------------------------------
@@ -732,4 +730,11 @@ DiplomacyMethod =
 	FRIENDLY      = 1,
 	DECLARE_WAR   = 2,
 	REQUEST_TRADE = 3,
+}
+
+------------------------------
+
+FeatureOption =
+{
+	FOOD_SUPPLY = 0,
 }

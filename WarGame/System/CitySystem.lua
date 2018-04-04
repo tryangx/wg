@@ -231,7 +231,7 @@ function City_InitPopuStructure( city )
 		--InputUtil_Pause( k, v, nums[v], Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, v ) )
 	end
 
-	city:DumpPopu()
+	--city:DumpPopu()
 end
 
 local function City_PopuConv( city )
@@ -425,7 +425,7 @@ local function City_CheckFlag( city )
 	--debug flag
 	Asset_ForeachList( city, CityAssetID.STATUSES, function ( value, status )
 		if value == true then
-			print( city.name .. "_" .. MathUtil_FindName( CityStatus, status ) .. "=", value )
+			--print( city.name .. "_" .. MathUtil_FindName( CityStatus, status ) .. "=", value )
 		end
 	end)
 end

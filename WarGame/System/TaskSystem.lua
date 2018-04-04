@@ -6,12 +6,33 @@ local DEFAULT_WORKLOAD           = 30
 
 local _removeTask
 
+local _moveWatcher = {}
+
 ---------------------------------------------------
 -- Task Content Function
 
-local _initTask = 
+--reserved
+local function carryfood()
+	local actorType = Asset_Get( task, TaskAssetID.ACTOR_TYPE )
+	if actorType == TaskActorType.CORPS then
+		--corps carry food		
+		local corps = Asset_Get( task, TaskAssetID.ACTOR )
+		local city = Asset_Get( task, TaskAssetID.DESTINATION )
+		if Supply_CorpsCarryFood( corps, city ) == false then
+			--cancel task
+			Asset_Set( task, TaskAssetID.DURATION, 0 )
+			Asset_Set( task, TaskAssetID.STATUS, TaskStatus.CANCELED )
+			return true
+		end
+	end
+
+	Asset_Set( task, TaskAssetID.STATUS, TaskStatus.PREPARE )
+end
+
+--[[]]
+local _prepareTask = 
 {
-	ESTABLISH_CORPS = function( task )	
+	ESTABLISH_CORPS = function( task )
 		Asset_Set( task, TaskAssetID.DURATION, NORMAL_TASK_INIT_DURATION )
 	end,
 
@@ -24,13 +45,8 @@ local _initTask =
 		Asset_Set( task, TaskAssetID.DURATION, NORMAL_TASK_INIT_DURATION )
 	end,
 	INTERCEPT       = function ( task )
-		InputUtil_EnablePause( false )
-		Stat_Add( "Intercept@" .. Asset_Get( task, TaskAssetID.GROUP ).name, 1, StatType.TIMES )
+		--Stat_Add( "Intercept@" .. Asset_Get( task, TaskAssetID.GROUP ).name, 1, StatType.TIMES )
 		--InputUtil_Pause( Asset_Get( task, TaskAssetID.ACTOR ).name, "intercept" )
-		Asset_Set( task, TaskAssetID.DURATION, NORMAL_TASK_INIT_DURATION )
-	end,
-
-	HIRE_CHARA = function ( task )
 		Asset_Set( task, TaskAssetID.DURATION, NORMAL_TASK_INIT_DURATION )
 	end,
 }
@@ -102,30 +118,8 @@ local _executeTask =
 	end,
 }
 
-
-local function CorpsBackEncampmemt( task )
-
-end
-
-local function CorpsEnterCity( task )
-	local actor = Asset_Get( task, TaskAssetID.ACTOR )
-	if actor:IsAtHome() == false then
-		--move		
-		local actorType = Asset_Get( task, TaskAssetID.ACTOR_TYPE )
-		if actorType == TaskActorType.CHARA then
-			System_Get( SystemType.MOVE_SYS ):CharaMove( Asset_Get( task, TaskAssetID.ACTOR ), Asset_Get( actor, CharaAssetID.HOME ) )
-		elseif actorType == TaskActorType.CORPS then
-			--InputUtil_Pause( actor.name, "need backhome", Asset_Get( actor, CorpsAssetID.ENCAMPMENT ).name )
-			System_Get( SystemType.MOVE_SYS ):CorpsMove( Asset_Get( task, TaskAssetID.ACTOR ), Asset_Get( actor, CorpsAssetID.ENCAMPMENT ) )
-		end	
-		return true
-	end
-end
-
 local _finishTask = 
 {
-	ATTACK_CITY = CorpsEnterCity,
-	HARASS_CITY = CorpsBackEncampmemt,	
 }
 
 local _workloads = 
@@ -146,6 +140,28 @@ local function Task_IsArriveDestination( task )
 	local destination = Asset_Get( task, TaskAssetID.DESTINATION )
 	--print( actor.name,  loc.name, destination.name )
 	return loc == destination
+end
+
+local function Task_IsAtHome( task )
+	local actor = Asset_Get( task, TaskAssetID.ACTOR )	
+	local actorType = Asset_Get( task, TaskAssetID.ACTOR_TYPE )
+	if actorType == TaskActorType.CHARA then
+		return actor:IsAtHome()
+	elseif actorType == TaskActorType.CORPS then
+		return actor:IsAtHome()
+	end
+	return false
+end
+
+local function Task_BackHome( task )
+	if Task_IsAtHome( task ) == false then
+		local actorType = Asset_Get( task, TaskAssetID.ACTOR_TYPE )		
+		if actorType == TaskActorType.CHARA then
+			Move_Chara( actor, Asset_Get( actor, CharaAssetID.HOME ) )
+		elseif actorType == TaskActorType.CORPS then
+			Move_Corps( actor, Asset_Get( actor, CorpsAssetID.ENCAMPMENT ) )
+		end
+	end
 end
 
 ---------------------------------------------------
@@ -177,26 +193,38 @@ function Task_CorpsReceive( task, corps )
 	Asset_SetListItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK, true )
 end
 
-function Task_Issue( task )	
+function Task_IssueByProposal( proposal )	
+	local task = Entity_New( EntityType.TASK )
+
+	--convert proposal type into task type
+	local typeName = MathUtil_FindName( ProposalType, Asset_Get( proposal, ProposalAssetID.TYPE ) )
+	local taskType = TaskType[typeName]
+	Asset_Set( task, TaskAssetID.TYPE, taskType )
+
+	--copy same data
+	Asset_Set( task, TaskAssetID.ACTOR, Asset_Get( proposal, ProposalAssetID.ACTOR ) )	
+	Asset_Set( task, TaskAssetID.LOCATION, Asset_Get( proposal, ProposalAssetID.LOCATION ) )
+	Asset_Set( task, TaskAssetID.DESTINATION, Asset_Get( proposal, ProposalAssetID.DESTINATION ) )
+	Asset_CopyDict( task, TaskAssetID.PARAMS, Asset_Get( proposal, ProposalAssetID.PARAMS ) )
+
 	local actor = Asset_Get( task, TaskAssetID.ACTOR )
 	local type = Asset_Get( task, TaskAssetID.TYPE )
-	--InputUtil_Pause( "issue task to " .. actor.name, MathUtil_FindName( TaskType, type ) )	
-	if type == TaskType.HARASS_CITY or type == TaskType.ATTACK_CITY or type == TaskType.INTERCEPT then
-		--Move_SetWatchActor( actor )
 
+	if type == TaskType.HARASS_CITY or type == TaskType.ATTACK_CITY or type == TaskType.INTERCEPT then
 		Asset_Set( task, TaskAssetID.ACTOR_TYPE, TaskActorType.CORPS )
 		Asset_Set( task, TaskAssetID.GROUP, Asset_Get( actor, CorpsAssetID.GROUP ) )
 		Task_CorpsReceive( task, actor )
 	else
 		Asset_Set( task, TaskAssetID.ACTOR_TYPE, TaskActorType.CHARA )
 		Asset_Set( task, TaskAssetID.GROUP, Asset_Get( actor, CharaAssetID.GROUP ) )
-
 		--issue task to every attenders managed by the actor	
 		Task_CharaReceive( task, actor )
 	end
 
 	Asset_Set( task, TaskAssetID.BEGIN_TIME, g_calendar:GetDateValue() )
 	Asset_Set( task, TaskAssetID.DURATION, DEFAULT_TASK_INIT_DURATION )
+
+	print( "issue task--" .. task:ToString() )
 end
 
 function Task_Do( task, actor )
@@ -239,6 +267,7 @@ local function Task_End( task )
 	if 1 then
 		Stat_Add( "TaskType@" .. MathUtil_FindName( TaskType, Asset_Get( task, TaskAssetID.TYPE ) ), 1, StatType.TIMES )
 	end
+
 	return true
 end
 
@@ -256,6 +285,10 @@ local function Task_Replay( task )
 
 	return false
 end
+
+
+--[[
+
 
 local function Task_Cancel( task )
 	local type = Asset_Get( task, TaskAssetID.TYPE )
@@ -321,13 +354,7 @@ end
 
 local function Task_Prepare( task )
 	if Task_IsArriveDestination( task ) == false then		
-		--move
-		local actorType = Asset_Get( task, TaskAssetID.ACTOR_TYPE )
-		if actorType == TaskActorType.CHARA then
-			System_Get( SystemType.MOVE_SYS ):CharaMove( Asset_Get( task, TaskAssetID.ACTOR ), Asset_Get( task, TaskAssetID.DESTINATION ) )
-		elseif actorType == TaskActorType.CORPS then
-			System_Get( SystemType.MOVE_SYS ):CorpsMove( Asset_Get( task, TaskAssetID.ACTOR ), Asset_Get( task, TaskAssetID.DESTINATION ) )
-		end
+		
 		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.ON_THE_WAY )	
 		return true
 	else
@@ -346,75 +373,89 @@ local function Task_Prepare( task )
 	return false
 end
 
-local function Task_Init( task )
+]]
+
+local function Task_Finish( task )
+	--can execute the task
 	local type = Asset_Get( task, TaskAssetID.TYPE )
-	local name = MathUtil_FindName( TaskType, type )
-	
-	local fn = _initTask[name]
+	local fn = _finishTask[type]
+	if fn then
+		fn( task )
+	end
+
+	--default go back home
+	Task_BackHome( task )
+
+	Task_End( task )
+end
+
+local function Task_Execute( task )
+	--not arrive the destination
+	if Task_IsArriveDestination( task ) == false then
+		if Move_IsMoving( Asset_Get( task, TaskAssetID.ACTOR ) ) == false then
+			--move
+			local actorType = Asset_Get( task, TaskAssetID.ACTOR_TYPE )
+			if actorType == TaskActorType.CHARA then
+				Move_Chara( actor, Asset_Get( actor, CharaAssetID.HOME ) )
+			elseif actorType == TaskActorType.CORPS then
+				Move_Corps( actor, Asset_Get( actor, CorpsAssetID.ENCAMPMENT ) )
+			end
+		end
+		return
+	end
+
+	--can execute the task
+	local type = Asset_Get( task, TaskAssetID.TYPE )
+	local fn = _executeTask[type]
 	if fn then
 		fn( task )
 	else
-		Asset_Set( task, TaskAssetID.DURATION, NORMAL_TASK_INIT_DURATION )
-		--DBG_Warning( "task no function", ( name or type ) .. " no prepare function, use default operation" )
+		DBG_Warning( "task_" .. name .. "_no_func", "no execute function" )
 	end
-
-	local actorType = Asset_Get( task, TaskAssetID.ACTOR_TYPE )
-	if actorType == TaskActorType.CORPS then
-		--corps carry food		
-		local corps = Asset_Get( task, TaskAssetID.ACTOR )
-		local city = Asset_Get( task, TaskAssetID.DESTINATION )
-		if Supply_CorpsCarryFood( corps, city ) == false then
-			--cancel task
-			Asset_Set( task, TaskAssetID.DURATION, 0 )
-			Asset_Set( task, TaskAssetID.STATUS, TaskStatus.CANCELED )
-			return true
-		end
-	end
-
-	Asset_Set( task, TaskAssetID.STATUS, TaskStatus.PREPARE )
-
-	return false
 end
 
---INITIALIZE -> PREPARE -> ON_THE_WAY -> EXECUTING -> FINISHED -> REPLY -> END
-local function Task_Update( task )
-	--reduce
-	Asset_Reduce( task, TaskAssetID.DURATION, g_elapsed )
-	local cur = Asset_Get( task , TaskAssetID.DURATION )	
-	if cur > 0 then
-		return true
-	end
-
+local function Task_Prepare( task )
 	local status = Asset_Get( task, TaskAssetID.STATUS )
+	if status == TaskStatus.RUNNING then return end
+
 	local type = Asset_Get( task, TaskAssetID.TYPE )
+	local fn = _prepareTask[type]
+	if fn then fn( task ) end
+
+	Asset_Set( task, TaskAssetID.STATUS, TaskStatus.RUNNING )
+end
+
+local function Task_Update( task )
+	local type = Asset_Get( task, TaskAssetID.TYPE )	
+	local step = Scenario_GetData( "TASK_STEP_DATA" )[type]	
+	if not step then return end
 	
-	if type == TaskType.ATTACK_CITY then
-		--print( "task_update_" .. MathUtil_FindName( TaskType, type ), "task=" .. task.id .. " status=" .. MathUtil_FindName( TaskStatus, status ) )
-	elseif type == TaskType.INTERCEPT then
-		--InputUtil_Pause( "update intercept" )
+	local stepIndex = Asset_Get( task, TaskAssetID.STEP )
+	local taskStep = step[stepIndex]
+	if not taskStep then
+		return
+	elseif taskStep == TaskStep.PREPARE then
+		Task_Prepare( task )
+	elseif taskStep == TaskStep.EXECUTE then
+		Task_Execute( task )
+	elseif taskStep == TaskStep.FINISH then
+		Task_Finish( task )
 	end
 
-	local ret = false
-	if status == TaskStatus.INITIALIZE then
-		ret = Task_Init( task )
-	elseif status == TaskStatus.PREPARE then
-		ret = Task_Prepare( task )
-	elseif status == TaskStatus.ON_THE_WAY then
-		ret = Task_Ontheway( task )
-	elseif status == TaskStatus.EXECUTING then
-		ret = Task_Execute( task )
-	elseif status == TaskStatus.FINISHED then
-		ret = Task_Finish( task )
-	elseif status == TaskStatus.REPLY then
-		ret = Task_Replay( task )
-	elseif status == TaskStatus.END or status == TaskStatus.FAILED then
-		ret = Task_End( task )
-	elseif status == TaskStatus.SUSPENDED then
-		ret = Task_Suspend( task )
-	elseif status == TaskStatus.CANCELED then
-		ret = Task_Cancel( task )
+	task:ElpasedTime( g_elapsed )
+
+	if task:IsStepFinished() == true then
+		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WAITING )
+		Asset_Plus( task, TaskAssetID.STEP, 1 )
+		print( task:ToString() .. " to next step=" .. MathUtil_FindName( TaskStep, Asset_Get( task, TaskAssetID.STEP ) ) )
+		Task_Update( task )
+	else
+		--print( task:ToString() .. " update=" .. Asset_Get( task, TaskAssetID.DURATION ) )
 	end
-	return ret
+end
+
+local function Task_Move2Destination( msg )
+	Asset_GetListItem( msg, MessageAssetID.PARAMS, "actor" )
 end
 
 -------------------------------------------
@@ -426,6 +467,10 @@ function TaskSystem:__init()
 end
 
 function TaskSystem:Start()
+	Message_Handle( SystemType.TASK_SYS, MessageType.ARRIVE_DESTINATION, Task_Move2Destination )
+
+	_prepareTask = MathUtil_ConvertKeyToID( TaskType, _prepareTask )
+	_executeTask = MathUtil_ConvertKeyToID( TaskType, _executeTask )
 end
 
 function TaskSystem:Update()

@@ -33,6 +33,15 @@ function MathUtil_Clamp( value, min, max, default )
 end
 
 
+--only list, no dict
+function MathUtil_Reverse( list )
+	local newList = {}
+	for k = #list, 1, -1 do
+		table.insert( newList, list[k] )
+	end
+	return newList
+end
+
 --[[
 	Shuffle Table
 	
@@ -40,6 +49,7 @@ end
 		MathUtil_Shuffle( { 1, 3, 5 } ) -- { 3, 5, 1 }
 ]]
 function MathUtil_Shuffle_Sync( source, desc )	
+	if not source then return end
 	local length = #source
 	if length > 1 then
 		for i = 1, length do			
@@ -131,7 +141,7 @@ function MathUtil_Dump( source, depth, indent )
 	end
 
 	if not source or typeof( source ) ~= "table" then
-		print( "Dump source is invalid!" )
+		print( "Dump source is invalid!", typeof(source) )
 		return
 	end
 	if indent > depth then

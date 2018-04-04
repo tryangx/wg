@@ -802,6 +802,34 @@ DefaultCharaPromoteMethod =
 }
 
 --------------------------------------------------------
+-- Task
+
+DefaultTaskSteps = 
+{
+	ESTABLISH_CORPS = { "PREPARE", "EXECUTE", "FINISH" },
+	REINFORCE_CORPS = { "PREPARE", "EXECUTE", "FINISH" },
+	DISMISS_CORPS   = { "EXECUTE", "FINISH" },
+	TRAIN_CORPS     = { "EXECUTE", "FINISH" },
+	UPGRADE_CORPS   = { "EXECUTE", "FINISH" },
+	DISPATCH_CORPS  = { "EXECUTE", "FINISH" },
+
+	HARASS_CITY     = { "PREPARE", "EXECUTE", "FINISH" },
+	ATTACK_CITY     = { "PREPARE", "EXECUTE", "FINISH" },
+	INTERCEPT       = { "PREPARE", "EXECUTE", "FINISH" },
+
+	FRIENDLY        = { "EXECUTE", "FINISH" },
+
+	DEV_AGRICULTURE = { "EXECUTE", "FINISH" },
+	DEV_COMMERCE    = { "EXECUTE", "FINISH" },
+	DEV_PRODUCTION  = { "EXECUTE", "FINISH" },
+	BUILD_CITY      = { "EXECUTE", "FINISH" },
+	LEVY_TAX        = { "EXECUTE", "FINISH" },
+
+	HIRE_CHARA      = { "EXECUTE", "FINISH" },
+	PROMOTE_CHARA   = { "EXECUTE", "FINISH" },
+}
+
+--------------------------------------------------------
 -- Relation
 
 DefaultRelationOpinion =

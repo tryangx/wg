@@ -70,6 +70,10 @@ function Plot:__init( ... )
 	Entity_Init( self, EntityType.PLOT, PlotAssetAttrib )
 end
 
+function Plot:ToString()
+	return self.id .. "(" .. Asset_Get( self, PlotAssetID.X ) .. "," .. Asset_Get( self, PlotAssetID.Y ) .. ")"
+end
+
 function Plot:InitName()
 	self.name = MathUtil_FindName( PlotType, self:GetPlotType() ) .. "_" .. MathUtil_FindName( PlotTerrainType, self:GetTerrain() ) .. "_" .. MathUtil_FindName( PlotFeatureType, self:GetFeature() )
 end
