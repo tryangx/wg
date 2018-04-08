@@ -15,11 +15,13 @@ require "System/EventSystem"
 require "System/MeetingSystem"
 require "System/DiplomacySystem"
 require "System/GoalSystem"
+require "System/ReportSystem"
 
 --System running sequence as follow
 SystemType =
 {
 	MESSAGE_SYS       = 1,
+	REPORT_SYS        = 2,
 
 	CHARA_SYS         = 100,
 	CITY_SYS          = 101,
@@ -33,9 +35,9 @@ SystemType =
 	CONSUME_SYS       = 301,
 	SUPPLY_SYS        = 302,
 	LOGISTICS_SYS     = 303,
-	INTEL_SYS         = 304,
-	TASK_SYS          = 306,
-	EVENT_SYS         = 307,
-	MEETING_SYS       = 308,
-	GOAL_SYS          = 309,
+	INTEL_SYS         = 304,	
+	EVENT_SYS         = 305,
+	MEETING_SYS       = 306,
+	TASK_SYS          = 307,
+	GOAL_SYS          = 308,
 }

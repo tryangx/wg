@@ -12,7 +12,6 @@ local function Proposal_Respond( proposal )
 		InputUtil_Pause( "Invalid proposal location" )
 		return
 	end
-	local superior = Asset_Get( proposal, ProposalAssetID.SUPERIOR )
 	local isAccepted = true
 	if isAccepted == true then
 		Proposal_Execute( proposal )
@@ -34,7 +33,7 @@ local function Meeting_Update( meeting )
 	local topic = Asset_Get( meeting, MeetingAssetID.TOPIC )
 	local begTopic, endTopic
 	if topic == MeetingTopic.NONE then		
-		begTopic = MeetingTopic.CITY_DEVELOPMENT
+		begTopic = MeetingTopic.MEETING_LOOP
 		endTopic = MeetingTopic.MEETING_END
 		topic = begTopic		
 	else
@@ -46,8 +45,9 @@ local function Meeting_Update( meeting )
 	end
 
 	local city = Asset_Get( meeting, MeetingAssetID.LOCATION )
+	local superior = Asset_Get( meeting, MeetingAssetID.SUPERIOR )
 
-	while topic < endTopic do	
+	while topic < endTopic do
 		Asset_Set( meeting, MeetingAssetID.TOPIC, topic )
 
 		--clear all proposals
@@ -68,7 +68,9 @@ local function Meeting_Update( meeting )
 			return numofproposer <= 0
 		end )
 		if freeParticiants == 0 then
-			Stat_Add( "Meeting@End_Times", nil, StatType.TIMES )
+			--let superior submit proposal
+			CharaAI_SubmitMeetingProposal( superior, meeting )
+			--Stat_Add( "Meeting@Cancel_Times", nil, StatType.TIMES )
 			--print( "end meeting" )
 			return
 		end
@@ -79,7 +81,6 @@ local function Meeting_Update( meeting )
 			local index =  Random_GetInt_Sync( 1, numofproposal )
 			local proposal = Entity_GetIndex( EntityType.PROPOSAL, index )
 			--print( "update proposal" .. MathUtil_FindName( ProposalType, Asset_Get( proposal, ProposalAssetID.TYPE ) ) )
-			Asset_Set( proposal, ProposalAssetID.SUPERIOR, Asset_Get( meeting, MeetingAssetID.SUPERIOR ) )
 			Proposal_Respond( proposal )
 		end
 
@@ -96,7 +97,7 @@ end
 
 function Meeting_Hold( city, topic, target )
 	if not topic then topic = MeetingTopic.NONE end
-	local executive = city:GetOfficer( CityOfficer.CHIEF_EXECUTIVE )
+	local executive = city:GetOfficer( CityJob.CHIEF_EXECUTIVE )
 	if topic == MeetingTopic.UNDER_HARASS or topic == MeetingTopic.UNDER_ATTACK then		
 		--find highest rank		
 		local highestRank = CharaJob.NONE

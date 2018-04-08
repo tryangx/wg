@@ -175,13 +175,12 @@ CHUHAN_CharaData =
 
 CHUHAN_CityData = 
 {
-
 	[100] = 
 	{
 		name = "Xian Yan",
 		coordinate = { x = 42, y = 6 },
 		level = 10,
-		charas = { 100, 101, 102, 103 },		
+		charas = {},
 		adjacents = { 101, 200 },
 		defenses = { 15000, 10000, 15000 },
 	},
@@ -224,7 +223,7 @@ CHUHAN_GroupData =
 		goals = { { type="DOMINATION_TERRIORITY", target = 100 } },
 		leader = 100,
 		capital = 100,
-		cities = { 100 },		
+		cities = { 101 },		
 		charas = { 100, 101, 102, 103 },
 		troops = {},
 		corps = {},
@@ -507,13 +506,5 @@ CHUHAN_EventData =
 		type     = EventType.DISEASE,
 		target   = "CHARA",
 		triggers = { { NO_EVT_CD = -1 }, },
-	},
-}
-
-CHUHAN_PolicyData = 
-{
-	[100] = 
-	{
-
 	},
 }

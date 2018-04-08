@@ -7,16 +7,19 @@
 
 local _manager = Manager( 1, "System", System )
 
+local _list = {}
+
 function System_Add( sys )
 	_manager:AddData( sys.type, sys )
+	table.insert( _list, sys )
 end
 
 function System_Update( elpasedTime )
 	g_elapsed = elpasedTime
-	_manager:ForeachData( function( sys )
+	for _, sys in ipairs( _list ) do
 		--InputUtil_Pause( MathUtil_FindName( SystemType, sys.type ) )
 		sys:Update()
-	end )
+	end
 end
 
 function System_Setup( sys, type )

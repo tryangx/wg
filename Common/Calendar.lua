@@ -125,9 +125,9 @@ end
 function Calendar:CreateDateDesc( year, month, day, beforeChrist, byDay, byMonth )
 	local content = ( beforeChrist == false and "BC " or "AD " )
 	if byDay then
-		content = content .. year .. "Y" .. month .. "M" .. day .. "D"
+		content = content .. year .. "Y" .. ( month < 10 and "0" .. month or month ) .. "M" .. ( day < 10 and "0" .. day or day ) .. "D"
 	elseif byMonth then
-		content = content .. year .. "Y" .. month .. "M"
+		content = content .. year .. "Y" .. ( month < 10 and "0" .. month or month )  .. "M"
 	else
 		content = content .. year .. "Y" 
 	end

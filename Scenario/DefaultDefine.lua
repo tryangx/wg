@@ -215,18 +215,34 @@ GroupGovernment =
 --
 ----------------------------------------------------------------------------------------
 
-CityOfficer = 
+CityJob = 
 {
+	NONE             = 0,
 	--All city
-	CHIEF_EXECUTIVE  = 10,
-	CHIEF_MILITARY   = 11,
+	CHIEF_EXECUTIVE  = 1,
+
+	POSITION_BEGIN   = 10,
+	CHIEF_COMMANDER  = 11,
 	CHIEF_STAFF      = 12,
 	CHIEF_HR         = 13,
 	CHIEF_AFFAIRS    = 14,
-	
-	--Only in capital
-	CHIEF_DIPLOMATIC = 20,
-	CHIEF_TECHNICIAN = 21,
+	POSITION_END     = 15,
+	CHIEF_DIPLOMATIC = 15,
+	CHIEF_TECHNICIAN = 16,
+	CAPITAL_POSITION_END = 17,
+}
+
+CityPlan = 
+{
+	NONE       = 0,
+	HR         = 1,
+	AFFAIRS    = 2,
+	COMMANDER  = 3,
+	STAFF      = 4,
+	DIPLOMATIC = 5,
+	TECHNICIAN = 6,
+
+	ALL        = 10,
 }
 
 --[[
@@ -276,8 +292,6 @@ CityPopu =
 --Default Value: true / false / nil
 CityStatus = 
 {
-	CAPITAL            = 1,
-
 	SIEGE              = 20,
 	STARVATION         = 21,
 
@@ -296,21 +310,6 @@ CityInstruction =
 	MILITARY_PRIORITY    = 1,
 
 	DEVELOPMENT_PRIORITY = 2,
-}
-
-CityPolicy = 
-{
-	NONE            = 0,
-
-	DEV_AGRICULTURE = 10,
-	DEV_COMMERCE    = 11,
-	DEV_PRODUCTION  = 12,
-
-	PATROL          = 20,
-
-	RECRUIT         = 30,
-	CONSCRIPT       = 31,
-	CALL_VOLUNTEER  = 32,	
 }
 
 ----------------------------------------------------------------------------------------
@@ -482,15 +481,6 @@ CorpsPurpose =
 --
 ----------------------------------------------------------------------------------------
 
-ProposalCategory = 
-{
-	MILITARY    = 1,
-	DIPLOMACY   = 2,
-	CITYAFFAIR  = 3,
-	HRAFFAIR    = 4,
-	TRICK       = 5, --reserved
-}
-
 ProposalType = 
 {
 	ESTABLISH_CORPS = 100,
@@ -506,7 +496,6 @@ ProposalType =
 
 	FRIENDLY        = 200,
 
-	ISSUE_POLICY    = 300,
 	DEV_AGRICULTURE = 310,
 	DEV_COMMERCE    = 311,
 	DEV_PRODUCTION  = 312,
@@ -515,7 +504,6 @@ ProposalType =
 
 	HIRE_CHARA      = 400,
 	PROMOTE_CHARA   = 401,
-	ASSIGN_CHARA    = 402,
 }
 
 ProposalStatus = 
@@ -541,7 +529,6 @@ TaskType =
 
 	FRIENDLY        = 200,
 
-	ISSUE_POLICY    = 300,
 	DEV_AGRICULTURE = 310,
 	DEV_COMMERCE    = 311,
 	DEV_PRODUCTION  = 312,
@@ -550,7 +537,6 @@ TaskType =
 
 	HIRE_CHARA      = 400,
 	PROMOTE_CHARA   = 401,
-	ASSIGN_CHARA    = 402,
 }
 
 TaskActorType = 
@@ -569,6 +555,8 @@ TaskStep =
 
 	--after task succeed or failed, task should be reply
 	FINISH  = 3,
+
+	REPLY   = 4,
 }
 
 TaskStatus = 
@@ -633,21 +621,31 @@ MeetingTopic =
 	UNDER_ATTACK          = 1,
 	UNDER_HARASS          = 2,
 
-	MEETING_LOOP          = 10,
+	---------------------------------
+	MEETING_LOOP          = 11,
+
+	--CHIEF_EXECUTIVE       = 10,
+
+	--research
+	TECHNICIAN            = 11,
+
+	--declare war, sign pact
+	DIPLOMATIC            = 12,
+
+	--hire, encourage
+	HR                    = 13,
 
 	--agriculture, commerce, production
-	CITY_DEVELOPMENT      = 11,
+	AFFAIRS               = 14,
 
 	--establish corps, reinforce corps
-	MILITARY_PREPARATION  = 12,	
-
-	--dipl
-	DIPLOMACY             = 13,
+	COMMANDER             = 15,	
 
 	--harass, attack
-	MILITARY_PLAN         = 14,
+	STRATEGY              = 16,
 
-	MEETING_END           = 15,
+	MEETING_END           = 17,
+	---------------------------------
 }
 
 ------------------------------

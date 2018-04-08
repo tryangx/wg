@@ -1,3 +1,9 @@
+--Get corps support limitation in city
+function Corps_GetLimityByCity( city )
+	local limit = 1
+	return limit
+end
+
 function Corps_Join( corps, city )	
 	--remove from old city
 	local encampment = Asset_Get( corps, CorpsAssetID.ENCAMPMENT )
@@ -227,7 +233,7 @@ function Corps_EstablishInCity( city, purpose, leader, troopNumber )
 
 	--set group and name
 	local group = Asset_Get( city, CityAssetID.GROUP )	
-	Asset_Set( corps, CorpsAssetID.GROUP,      group )	
+	Asset_Set( corps, CorpsAssetID.GROUP, group )	
 	if group then
 		corps.name = group.name .. " Corps"
 	else

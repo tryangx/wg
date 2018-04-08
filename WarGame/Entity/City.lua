@@ -19,7 +19,6 @@
 		HOBO     	Security-
 
 	Task
-		Policy
 		Build
 		Levy Tax
 		Hire
@@ -71,17 +70,8 @@ CityAssetID =
 	TROOPTABLE_LIST = 312,
 
 	INSTRUCTION     = 320,
-	POLICY          = 321,
-	TASKS           = 322,
+	PLANS           = 321,
 }
-
-local function City_InitPolicy()
-	local policy = {}
-	policy.type     = CityPolicy.NONE
-	policy.duration = 0
-	policy.progress = 0
-	return policy
-end
 
 CityAssetAttrib = 
 {
@@ -121,8 +111,7 @@ CityAssetAttrib =
 	trooptables = AssetAttrib_SetPointerList( { id = CityAssetID.TROOPTABLE_LIST, type = CityAssetType.PROPERTY_ATTRIB, setter = Table_SetTroop } ),
 
 	instruction = AssetAttrib_SetNumber( { id = CityAssetID.INSTRUCTION,    type = CityAssetType.PROPERTY_ATTRIB } ),
-	policy      = AssetAttrib_SetData  ( { id = CityAssetID.POLICY,         type = CityAssetType.PROPERTY_ATTRIB, initer = City_InitPolicy } ),
-	tasks       = AssetAttrib_SetPointerList( { id = CityAssetID.TASKS,     type = CityAssetType.PROPERTY_ATTRIB } ),
+	plans       = AssetAttrib_SetList  ( { id = CityAssetID.PLANS,          type = CityAssetType.PROPERTY_ATTRIB } ),
 }
 
 -------------------------------------------
@@ -312,9 +301,21 @@ function City:GetPopu( citypopu )
 end
 
 
---type from enum CityOfficer
+--type from enum CityJob
 function City:GetOfficer( type )	
 	return Asset_GetListItem( self, CityAssetID.OFFICER_LIST, type )
+end
+
+function City:GetCharaJob( chara )
+	local findJob = CityJob.NONE
+	Asset_FindListItem( self, CityAssetID.OFFICER_LIST, function ( officer, job )		
+		if officer == chara then
+			--InputUtil_Pause( "checker", officer.name, chara.name, job )
+			findJob = job
+			return true
+		end
+	end )
+	return findJob
 end
 
 -------------------------------------------
@@ -324,6 +325,11 @@ function City:IsCapital()
 	local group = Asset_Get( self, CityAssetID.GROUP )
 	if not group then return false end
 	return Asset_Get( group, GroupAssetID.CAPITAL ) == self
+end
+
+function City:IsCharaOfficer( type, chara )
+	if not type or not chara then return false end
+	return self:GetOfficer( type ) == chara
 end
 
 -------------------------------------------
@@ -369,6 +375,34 @@ function City:GetNumOfFreeCorps()
 		end
 	end)
 	return freeCorps
+end
+
+function City:GetNumOfOfficerSlot()
+	local endPos = self:IsCapital() and CityJob.CAPITAL_POSITION_END or CityJob.POSITION_END
+	return endPos - CityJob.POSITION_BEGIN
+end
+
+function City:FindVacancyOfficerPositions()
+	local posList = {}
+	local endPos = self:IsCapital() and CityJob.CAPITAL_POSITION_END or CityJob.POSITION_END
+	for pos = CityJob.POSITION_BEGIN + 1, endPos do
+		local officer = self:GetOfficer( pos )
+		if not officer then
+			table.insert( posList, pos )
+		end
+	end
+	return posList
+end
+
+--return list of characters not chara in any officer position
+function City:FindNonOfficerCharas()
+	local charaList = {}
+	Asset_ForeachList( self, CityAssetID.CHARA_LIST, function( chara )
+		if Asset_HasItem( self, CityAssetID.OFFICER_LIST, chara ) == false then
+			table.insert( charaList, chara )
+		end
+	end )
+	return charaList
 end
 
 function City:FindFreeCorps()
@@ -473,29 +507,74 @@ function City:CorpsLeave( corps )
 end
 
 --------------------------------------------
-
+-- Character relative
 function City:ElectExecutive()
-	local executive = self:GetOfficer( CityOfficer.EXECUTIVE )
+	local executive = self:GetOfficer( CityJob.CHIEF_EXECUTIVE )
 	if not executive then
 		--find a leader from officer
-		executive = Random_GetListData( self, CityAssetID.CHARA_LIST )		
+		Asset_FindListItem( self, CityAssetID.CHARA_LIST, function ( chara )
+			if not executive or Asset_Get( executive, CharaAssetID.JOB ) < Asset_Get( chara, CharaAssetID.JOB ) then
+				executive = chara
+			end
+		end )
+		--executive = Random_GetListData( self, CityAssetID.CHARA_LIST )		
 		--DBG_Trace( "city=" .. self.name .. " no executive, num_chara=" .. Asset_GetListSize( self, CityAssetID.CHARA_LIST ) )
 		if executive then
-			Asset_SetListItem( self, CityAssetID.OFFICER_LIST, CityOfficer.EXECUTIVE, executive )
-			CRR_Tolerate( "city=" .. self.name .. " set default executive=" .. executive.name )			
+			Asset_SetListItem( self, CityAssetID.OFFICER_LIST, CityJob.CHIEF_EXECUTIVE, executive )
+			CRR_Tolerate( "city=" .. self.name .. " set default executive=" .. executive.name )
+			--InputUtil_Pause( "select chief executive=" .. executive.name )
 		end
 	end
 end
 
+function City:AssignVacancyOfficer()
+	local posList = self:FindVacancyOfficerPositions()
+	if #posList ~= 0 then
+		local charaList = self:FindNonOfficerCharas()
+		if #charaList == 0 then return false end
+
+		function FindSuitChara( pos, list )
+			--no skill, todo
+			return 1
+		end
+
+		for _, pos in ipairs( posList ) do
+			local charaInx = FindSuitChara( pos, charaList )
+			local chara = charaList[charaInx]
+			self:SetOfficer( chara, pos )
+			
+			table.remove( charaList, charaInx )
+			if #charaList == 0 then break end
+		end
+		--InputUtil_Pause( "assign vacancy")
+		return
+	end
+
+	--find better one, todo
+	--local numOfSlot = self:GetNumOfOfficerSlot()
+	return
+end
+
+function City:SetOfficer( chara, position )
+	local old = Asset_GetListItem( self, CityAssetID.OFFICER_LIST, position )
+	if old then
+		InputUtil_Pause( "Old Officer=" .. old.name )
+	end
+	Asset_SetListItem( self, CityAssetID.OFFICER_LIST, position, chara )
+	print( "Assign " .. chara.name .. "-->" .. MathUtil_FindName( CityJob, position ) )
+end
+
+--------------------------------------------
+
 function City:Update()
+	local day = g_calendar:GetDay()
+
 	--no executive? find one
 	self:ElectExecutive()
 
-	local day = g_calendar:GetDay()
-	if day == 1 then
-		--Message_Post( MessageType.CITY_HOLD_MEETING, { city = self } )
-		Meeting_Hold( self )
-	end
+	if day == 1 then self:AssignVacancyOfficer() end
+
+	if day == 1 then Meeting_Hold( self ) end
 
 	--print( self.name, "food=" .. Asset_Get( self, CityAssetID.FOOD ))
 
@@ -525,7 +604,6 @@ function City:ConsumeFood( consume )
 	return true
 end
 ]]
-
 
 --------------------------------------------
 
@@ -560,12 +638,6 @@ end
 function City_GetMilitaryPowerWithIntel( city, fromGroup )
 	local power = City_GetMilitaryPower( city )
 	return power
-end
-
---Get corps support limitation in city
-function City_GetCorpsLimit( city )
-	local limit = 1
-	return limit
 end
 
 --function City_GetCity

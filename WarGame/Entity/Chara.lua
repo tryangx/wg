@@ -168,15 +168,15 @@ function Chara:VerifyData()
 	end
 end
 
-function Chara:Update()
-	local proposalcd = Asset_GetListItem( self, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD )
-	if proposalcd and proposalcd > 0 then
-		Asset_SetListItem( self, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD, proposalcd - 1 )
-	end
 
-	Asset_Plus( self, CharaAssetID.SERVICE_DAY, g_elapsed )
+function Chara:ToString( type )
+	local content = "[" .. self.name .. "@" .. Asset_Get( self, CharaAssetID.LOCATION ).name .. "]"
+	if type == "JOB" then
+		local home = Asset_Get( self, CharaAssetID.HOME )
+		content = content .. "job=" .. MathUtil_FindName( CityJob, city:GetCharaJob( self ) )
+	end	
+	return content
 end
-
 
 -------------------------------------------
 
@@ -206,4 +206,15 @@ function Chara_GetLimitByCity( city )
 	local ret = math.ceil( lv / 4 ) + 1
 	DBG_Warning( "chara_limit_bycity", ret )
 	return ret
+end
+
+-------------------------------------------
+
+function Chara:Update()
+	local proposalcd = Asset_GetListItem( self, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD )
+	if proposalcd and proposalcd > 0 then
+		Asset_SetListItem( self, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD, proposalcd - 1 )
+	end
+
+	Asset_Plus( self, CharaAssetID.SERVICE_DAY, g_elapsed )
 end

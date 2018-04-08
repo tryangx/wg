@@ -70,15 +70,15 @@ end
 function Group:VerifyData()
 	local group = self
 
-	local capital = Asset_Get( city, GroupAssetID.CAPITAL )
-	if capital then
+	local capital = Asset_Get( self, GroupAssetID.CAPITAL )
+	if capital and typeof( capital ) ~= "number" then		
 		Asset_Set( capital, CityAssetID.STATUSES, CityStatus.CAPITAL, true )
 	end
 
 	--city belong the group
 	Asset_ForeachList( self, GroupAssetID.CITY_LIST, function( city )
 		if not city or type( city ) == "number" then return end
-		Asset_Set( city, CityAssetID.GROUP, group )	
+		Asset_Set( city, CityAssetID.GROUP, group )
 	end )
 	
 	--chara belongs to the group
@@ -229,12 +229,5 @@ end
 
 ---------------------------------------
 
-function Group_GetCharaLimit( group )
-	if not group then return 0 end
-	local numofcities = Asset_GetListSize( group, GroupAssetID.CITY_LIST )
-	local government = Asset_Get( group, GroupAssetID.GOVERNMENT )
---	print( "gov=" .. MathUtil_FindName( GroupGovernment, government ) )
-	return GroupGovernmentData[government].CAPITAL_CHARA_LIMIT
-end
 
 ---------------------------------------

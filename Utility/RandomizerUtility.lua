@@ -101,6 +101,12 @@ function Random_GetTable_Sync( list, probName )
 	return nil
 end
 
+function Random_GetDictData( entity, id )
+	local list = Asset_GetListFromDict( entity, id )
+	if #list then return nil end
+	return list[Random_GetInt_Sync( 1, #list )]
+end
+
 function Random_GetListData( entity, id )
 	local number = Asset_GetListSize( entity, id )
 	if number == 0 then return nil end

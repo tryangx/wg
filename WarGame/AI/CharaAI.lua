@@ -1,7 +1,7 @@
 ----------------------------------------
 -- Enviroment & Variables
 
-local _chara = nil
+local _proposer = nil
 local _city  = nil
 local _group = nil
 
@@ -27,22 +27,23 @@ local function SubmitProposal( params )
 	--check actor
 	local actor = _registers["ACTOR"]
 	if not actor then
-		actor = _chara
+		actor = _proposer
 	end
 
 	local proposal = Entity_New( EntityType.PROPOSAL )
 	Asset_Set( proposal, ProposalAssetID.TYPE,        ProposalType[params.type] )
-	Asset_Set( proposal, ProposalAssetID.PROPOSER,    _chara )
-	Asset_Set( proposal, ProposalAssetID.ACTOR,       actor )
+	Asset_Set( proposal, ProposalAssetID.PROPOSER,    _proposer )	
 	Asset_Set( proposal, ProposalAssetID.LOCATION,    _city )
 	Asset_Set( proposal, ProposalAssetID.DESTINATION, _city )
 	Asset_Set( proposal, ProposalAssetID.TIME,        g_calendar:GetDateValue() )
+	Asset_Set( proposal, ProposalAssetID.ACTOR,       actor )
 
-	if params.type == "ISSUE_POLICY" then
-		--MathUtil_Dump( Asset_GetList( proposal, ProposalAssetID.PARAMS ) )
-		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "CITY_POLICY", _registers["POLICY"] )
-	elseif params.type == "PROMOTE_CHARA" then
+	if params.type == "PROMOTE_CHARA" then
 		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "job", _registers["JOB"] )
+		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.HR )
+	elseif params.type == "HIRE_CHARA" then
+		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.HR )
+	
 	elseif params.type == "HARASS_CITY" or params.type == "ATTACK_CITY" then		
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
 	elseif params.type == "INTERCEPT" then
@@ -51,18 +52,28 @@ local function SubmitProposal( params )
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, city )
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
 		--InputUtil_Pause( "inter", _city.name, city.name, enemyCorps.name )
+	
 	elseif params.type == "REINFORCE_CORPS"
 		or params.type == "DISMISS_CORPS"
 		or params.type == "TRAIN_CORPS"
 		or params.type == "UPGRADE_CORPS"
 		or params.type == "DISPATCH_CORPS" then
 		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "corps", _registers["CORPS"] )
+		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.COMMANDER )
+
+	elseif params.type == "DEV_AGRICULTURE" or params.type == "DEV_COMMERCE" or params.type == "DEV_PRODUCTION" 
+		or params.type == "BUILD_CITY" or params.type == "LEVY_TAX" then
+		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.AFFAIRS )
+
+	elseif params.type == "COLLECT_INTEL" then
+	elseif params.type == "RESEARCH" then
+	elseif params.type == "" then
 	end
 
-	--print( "Submit proposal=" .. proposal:ToString() )
+	--InputUtil_Pause( "Submit proposal=" .. proposal:ToString() )
 	Stat_Add( "Proposal@Submit_Times", 1, StatType.TIMES )
 
-	Asset_SetListItem( _chara, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD, Random_GetInt_Sync( 30, 50 ) )
+	Asset_SetListItem( _proposer, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD, Random_GetInt_Sync( 30, 50 ) )
 end
 
 ----------------------------------------
@@ -72,7 +83,7 @@ local function IsCityInstruction( params )
 	return citydata == CityInstruction[params.instruction]
 end
 
-local function CheckTopic( params )
+local function IsTopic( params )
 	if not _topic or _topic == MeetingTopic.NONE then
 		InputUtil_Pause( "topic pass", _topic )
 		return false
@@ -81,7 +92,7 @@ local function CheckTopic( params )
 end
 
 local function IsProposalCD()
-	local proposalcd = Asset_GetListItem( _chara, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD )
+	local proposalcd = Asset_GetListItem( _proposer, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD )
 	return proposalcd and proposalcd > 0 or false
 end
 
@@ -90,13 +101,19 @@ local function HasCityStatus( params )
 	return ret == true
 end
 
+local function CanSubmitPlan( params )
+	if IsTopic( params ) == false then return false end
+	if true then return true end
+	return _city:IsCharaOfficer( CityJob.CHIEF_EXECUTIVE, _proposer ) == true or _city:IsCharaOfficer( params.position, _proposer )
+end
+
 ----------------------------------------
 
 local function CanEstablishCorps()
-	--print( "limit=" .. City_GetCorpsLimit( _city ), "corps=" .. Asset_GetListSize( _city, CityAssetID.CORPS_LIST ) )
+	--print( "limit=" .. Corps_GetLimityByCity( _city ), "corps=" .. Asset_GetListSize( _city, CityAssetID.CORPS_LIST ) )
 
 	--check corps limitation
-	if City_GetCorpsLimit( _city ) <= Asset_GetListSize( _city, CityAssetID.CORPS_LIST ) then
+	if Corps_GetLimityByCity( _city ) <= Asset_GetListSize( _city, CityAssetID.CORPS_LIST ) then
 		--print( "corps limit, cann't est corps" )
 		return false
 	end
@@ -235,24 +252,6 @@ end
 
 ----------------------------------------
 
-local function CanExecutePolicy()
-	local policy = Asset_Get( _city, CityAssetID.POLICY )
-	--is policy valid
-	if policy.type == CityPolicy.NONE then return false end
-	--is policy finished
-	if policy.progress == 0 then return false end
-	return true
-end
-
-local function CanIssuePolicy()
-	local policy = Asset_Get( _city, CityAssetID.POLICY )
-	if policy.type ~= CityPolicy.NONE then return false end
-
-	if _city:GetOfficer( CityOfficer.CHIEF_EXECUTIVE ) ~= _chara then return false end
-
-	return true
-end
-
 local function CanBuildCity()
 	return false
 end
@@ -260,17 +259,8 @@ local function CanLevyTax()
 	return false
 end
 
-local function CanAssignChara()
-
-end
 local function CanHireChara()
 	local limit
-	if _group then 
-		limit = Chara_GetLimitByGroup( _group )
-		if limit > 0 and limit <= Asset_GetListSize( _group, GroupAssetID.CHARA_LIST ) then
-			return false
-		end
-	end
 	if _city then
 		limit = Chara_GetLimitByCity( _city )
 		if limit > 0 and limit <= Asset_GetListSize( _city, CityAssetID.CHARA_LIST ) then
@@ -280,10 +270,10 @@ local function CanHireChara()
 	return true
 end
 local function CanPromoteChara()
-	local job = Chara_FindPromoteJob( _chara )
+	local job = Chara_FindPromoteJob( _proposer )
 	if job then
 		_registers["JOB"]   = job
-		_registers["ACTOR"] = _chara
+		_registers["ACTOR"] = _proposer
 		--InputUtil_Pause( "promote=" .. MathUtil_FindName( CharaJob, job ) )
 		return true
 	end
@@ -302,77 +292,7 @@ end
 ------------------------------
 -- AI
 
---[[
-local CombatAI_SelectPolicy = 
-{
-	type = "RANDOM_SELECTOR", children = 
-	{
-		{ type = "FILTER", condition = function ()
-			if CanDevelop( CityAssetID.AGRICULTURE ) then
-				_registers["POLICY"] = CityPolicy.DEV_AGRICULTURE
-				return true
-			end
-			return false
-		end
-		},
-
-		{ type = "FILTER", condition = function ()
-			if CanDevelop( CityAssetID.COMMERCE ) then
-				_registers["POLICY"] = CityPolicy.DEV_COMMERCE
-				return true
-			end
-			return false
-		end
-		},
-
-		{ type = "FILTER", condition = function ()
-			if CanDevelop( CityAssetID.PRODUCTION ) then
-				_registers["POLICY"] = CityPolicy.DEV_PRODUCTION
-				return true
-			end
-			return false
-		end
-		},
-
-		--PATROL
-		{ type = "FILTER", condition = function ()
-			local attrib = Entity_GetAssetAttrib( _city, CityAssetID.SECURITY )
-			if Asset_Get( _city, CityAssetID.SECURITY ) < attrib.max * 0.5 then
-				_registers["POLICY"] = CityPolicy.PATROL
-				return true
-			end
-			return false
-		end
-		},
-
-		--RECRUIT
-		{ type = "FILTER", condition = function ()
-			local soldier = Asset_GetListItem( _city, CityAssetID.POPU_STRUCTURE, CityPopu.SOLDIER )
-			local need = City_NeedPopu( _city, "SOLDIER" )
-			if Asset_Get( _city, CityAssetID.SATISFACTION ) < attrib.max * 0.5 then
-				_registers["POLICY"] = CityPolicy.RECRUIT
-				return true
-			end
-			return false
-		end
-		},
-		--CONSCRIPT
-		{ type = "FILTER", condition = function ()
-			--only at war
-			return false
-		end
-		},
-		--CALL_VOLUNTEER
-		{ type = "FILTER", condition = function ()
-			--only guerrilla
-			return false
-		end
-		},
-	},
-}
-]]
-
-local _ChiefHR = 
+local _HRPlans = 
 {
 	{ type = "SEQUENCE", children = 
 		{
@@ -386,20 +306,13 @@ local _ChiefHR =
 			{ type = "ACTION", action = SubmitProposal, params = { type = "PROMOTE_CHARA" } },
 		},
 	},
+
+		--HIRE NEW CHAR
+		--ENCOURGAE CHARA
+		--SUPERVISE CHARA
 }
 
-local _ChiefExecutive = 
-{
-	{ type = "SEQUENCE", children = 
-		{
-			{ type = "FILTER", condition = CanAssignChara },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "ASSIGN_CHARA" } },
-		},
-	},
-}
-
-
-local _MilitaryProposals = 
+local _CommanderPlans = 
 {
 	{ type = "SEQUENCE", children = 
 		{
@@ -425,10 +338,10 @@ local _MilitaryProposals =
 			{ type = "ACTION", action = SubmitProposal, params = { type = "DISPATCH_CORPS" } },
 		},
 	},
-	--[[
-	DISMISS_CORPS   = 102,
-	UPGRADE_CORPS   = 104,
-	]]
+}
+
+local _StrategyPlans = 
+{
 	{ type = "SEQUENCE", children = 
 		{
 			{ type = "FILTER", condition = CanHarassCity },
@@ -443,7 +356,7 @@ local _MilitaryProposals =
 	},
 }
 
-local _DevelopmentProposals = 
+local _AffairsPlans =
 {
 	{ type = "SEQUENCE", children = 
 		{
@@ -477,42 +390,107 @@ local _DevelopmentProposals =
 	},
 }
 
-local CombatAI_SubmitMilitaryProposal =
+local _StaffPlans = 
 {
-	type = "SEQUENCE", desc = "submit military", children = 
+		--COLLECT INTELS
+		--EXECUTE OP
+}
+
+local _DiplomatciPlans = 
+{	
+		--IMPROVE RELATIONSHIP
+		--SIGN PACT
+		--DECLARE WAR
+}
+
+local _TechnicianPlans = 
+{
+		--RESEARCH TECH
+}
+
+
+-------------------------------------------------------
+
+local _SubmitHRProposal =
+{
+	type = "SEQUENCE", children = 
 	{
-		{ type = "FILTER", condition = CheckTopic, params = { topic = "MILITARY_PREPARATION" } },
-		{ type = "RANDOM_SELECTOR", children = _MilitaryProposals },
+		{ type = "FILTER", condition = CanSubmitPlan, params = { topic = "HR" } },
+		{ type = "RANDOM_SELECTOR", children = _HRPlans },
 	}
 }
 
-local CombatAI_SubmitDevelopProposal = {}
-local CombatAI_SubmitDevelopProposal1 = 
+local _SubmitStaffProposal =
 {
-	type = "SEQUENCE", desc = "submit development", children = 
+	type = "SEQUENCE", children = 
 	{
-		{ type = "FILTER", condition = CheckTopic, params = { topic = "CITY_DEVELOPMENT" } },
-		{ type = "RANDOM_SELECTOR", children = _DevelopmentProposals },	
+		{ type = "FILTER", condition = CanSubmitPlan, params = { topic = "STAFF" } },
+		{ type = "RANDOM_SELECTOR", children = _StaffPlans },
 	}
 }
 
---Main entrance to submit proposal
-local CombatAI_SubmitProposal = 
+local _SubmitAffairsProposal =
 {
-	type = "SELECTOR", desc = "entrance", children = 
+	type = "SEQUENCE", children = 
 	{
-		--check CD
-		{ type = "SEQUENCE", children = 
-			{
-				{ type = "FILTER", condition = IsProposalCD },
-			},
-		},
+		{ type = "FILTER", condition = CanSubmitPlan, params = { topic = "AFFAIRS" } },
+		{ type = "RANDOM_SELECTOR", children = _AffairsPlans },	
+	}
+}
 
-		-----------------------------
-		--at war
+local _SubmitMilitaryProposal =
+{
+	type = "SEQUENCE", children = 
+	{
+		{ type = "FILTER", condition = CanSubmitPlan, params = { topic = "COMMANDER" } },
+		{ type = "RANDOM_SELECTOR", children = _CommanderPlans },
+	}
+}
+
+local _SubmitDiplomaticProposal =
+{
+	type = "SEQUENCE", children = 
+	{
+		{ type = "FILTER", condition = CanSubmitPlan, params = { topic = "DIPLOMAT" } },
+		{ type = "RANDOM_SELECTOR", children = _DiplomatciPlans },
+	}
+}
+
+local _SubmitTechnicianProposal =
+{
+	type = "SEQUENCE", children = 
+	{
+		{ type = "FILTER", condition = CanSubmitPlan, params = { topic = "TECHNICIAN" } },
+		{ type = "RANDOM_SELECTOR", children = _TechnicianPlans },
+	}
+}
+
+local _SubmitStrategyProposal =
+{
+	type = "SEQUENCE", children = 
+	{
+		{ type = "FILTER", condition = CanSubmitPlan, params = { topic = "STRATEGY" } },
+		{ type = "RANDOM_SELECTOR", children = _StrategyPlans },
+	}	
+}
+
+local _QualificationChecker = 
+{
+	type = "SEQUENCE", children = 
+	{
+		{ type = "FILTER", condition = IsProposalCD },
+	},
+}
+
+local _PriorityProposals = 
+{
+	-----------------------------
+	--at war
+	type = "SELECTOR", children = 
+	{
 		{ type = "SEQUENCE", children = 
 			{
-				{ type = "FILTER", condition = CheckTopic, params = { topic = "UNDER_HARASS" } },
+				{ type = "FILTER", condition = IsTopic, params = { topic = "UNDER_HARASS" } },
 				{ type = "FILTER", condition = CanIntercept },
 				{ type = "ACTION", action = SubmitProposal, params = { type = "INTERCEPT" } },
 			},
@@ -520,79 +498,76 @@ local CombatAI_SubmitProposal =
 
 		{ type = "SEQUENCE", children = 
 			{
-				{ type = "FILTER", condition = CheckTopic, params = { topic = "UNDER_ATTACK" } },
+				{ type = "FILTER", condition = IsTopic, params = { topic = "UNDER_ATTACK" } },
 				{ type = "FILTER", condition = CanIntercept },
 				{ type = "ACTION", action = SubmitProposal, params = { type = "INTERCEPT" } },
 			},
 		},
-		-----------------------------
 
-		-----------------------------
-		--status priority
+--[[
 		{ type = "SEQUENCE", children = 
 			{
 				{ type = "FILTER", condition = HasCityStatus, params = { status = "MILITARY_DANGER" } },
-				CombatAI_SubmitMilitaryProposal,
+				_SubmitMilitaryProposal,
 			},
 		},
+
 		{ type = "SEQUENCE", children = 
 			{
 				{ type = "FILTER", condition = HasCityStatus, params = { status = "DEVELOPMENT_DANGER" } },
-				CombatAI_SubmitDevelopProposal,
+				_SubmitAffairsProposal,
 			}
 		},
-		-----------------------------
 
-		-----------------------------
-		--priority proposal
 		{ type = "SEQUENCE", children = 
 			{
 				{ type = "FILTER", condition = IsCityInstruction, params = { instruction = "MILITARY_PRIORITY" } },
-				CombatAI_SubmitMilitaryProposal,
+				_SubmitMilitaryProposal,
 			},
 		},
+
 		{ type = "SEQUENCE", children = 
 			{
 				{ type = "FILTER", condition = IsCityInstruction, params = { instruction = "DEVELOPMENT_PRIORITY" } },
-				CombatAI_SubmitDevelopProposal,
+				_SubmitAffairsProposal,
 			}
 		},
-		-----------------------------
+		]]
+	}
+	-----------------------------
+}
 
-		-----------------------------
-		--default
-		{ type = "RANDOM_SELECTOR", children = 
-			{
-				CombatAI_SubmitMilitaryProposal,
-				CombatAI_SubmitDevelopProposal,
-			}
-		}
-		-----------------------------
+--Main entrance to submit proposal
+local _MeetingProposal = 
+{
+	type = "SELECTOR", desc = "entrance", children = 
+	{	
+		_QualificationChecker,
+		_PriorityProposals,
+		_SubmitTechnicianProposal,
+		_SubmitDiplomaticProposal,
+		_SubmitHRProposal,
+		_SubmitAffairsProposal,
+		_SubmitStaffProposal,
+		_SubmitMilitaryProposal,
+		--_SubmitStrategyProposal,
 	},
 }
 
 ----------------------------------------
 
-local CombatAI_MeetingProposal = CombatAI_SubmitProposal
-
-----------------------------------------
-
 local _behavior = Behavior()
 
---personal proposal 
-_charaSubmitProposal = BehaviorNode( true )
-_charaSubmitProposal:BuildTree( CombatAI_SubmitProposal )
-
 --submit proposal in meeting
-_charaMeetingProposal = BehaviorNode( true )
-_charaMeetingProposal:BuildTree( CombatAI_MeetingProposal )
+_meetingProposal = BehaviorNode( true )
+_meetingProposal:BuildTree( _MeetingProposal )
 
 local function Init( params )
 	_registers = {}
 
-	_chara = params.chara
-	_city  = Asset_Get( _chara, CharaAssetID.HOME )
-	_group = Asset_Get( _chara, CharaAssetID.GROUP )
+	_proposer = params.chara
+	_city  = Asset_Get( _proposer, CharaAssetID.HOME )
+	_group = Asset_Get( _proposer, CharaAssetID.GROUP )
 
 	_meeting = params.meeting	
 	if _meeting then				
@@ -600,30 +575,19 @@ local function Init( params )
 	else
 		_topic = nil
 	end
-	if typeof( _chara ) == "number" then
+	if typeof( _proposer ) == "number" then
+		print( "propoer is number" )
 		return false
 	end
 	if not _city or typeof( _city ) == "number" then
-		print( "invalid city data", _chara.name )
+		print( "invalid city data", _proposer.name )
 		return false
 	end
 	if not _group or typeof( _group ) == "number" then
-		print( "invalid group data", _group, _chara.name )
+		print( "invalid group data", _group, _proposer.name )
 		return false
 	end
 	return true
-end
-
-function CharaAI_SubmitProposal( chara )
-	if not chara then
-		InputUtil_Pause( "invalid chara" )
-		return
-	end
-	if Init( { chara = chara } ) then
-		return _behavior:Run( _charaSubmitProposal )
-	end
---		print( "chara=", chara.name, " cann't submit proposal" )
-	return false
 end
 
 function CharaAI_SubmitMeetingProposal( chara, meeting )
@@ -632,7 +596,8 @@ function CharaAI_SubmitMeetingProposal( chara, meeting )
 		return
 	end
 	if Init( { chara = chara, meeting = meeting } ) then
-		return _behavior:Run( _charaMeetingProposal )
+		Stat_Add( "CharaAI@Run_Times", nil, StatType.TIMES )
+		return _behavior:Run( _meetingProposal )
 	end
 	print( "chara=", chara.name, " cann't submit proposal" )
 	return false

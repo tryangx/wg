@@ -73,6 +73,10 @@ function Stat_Dump( type )
 						for _, item in ipairs( data ) do
 							dumper( item )
 						end
+					else
+						for _, item in ipairs( data ) do
+							print( item )
+						end
 					end
 				elseif t == StatType.DESC then
 					Debug_Log( name .. "=" .. data.desc )
@@ -95,11 +99,14 @@ function Stat_Dump( type )
 	Debug_Log( "####END_DUMP####" )	
 end
 
-function Stat_SetDumper( name, fn )
-	local type = _types[name]
+function Stat_SetDumper( name, fn, type )
 	if not type then
-		error( "Invalid name-type for=", name )	
-		return
+		type = _types[name]
+		if not type then
+			error( "Invalid name-type for=" .. name )
+		end
+	elseif not _types[name] then
+		_types[name] = type
 	end
 	local stats = Stat_Get( type, name )
 	stats._DUMPER = fn

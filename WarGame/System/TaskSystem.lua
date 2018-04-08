@@ -1,8 +1,8 @@
 local DEFAULT_TASK_INIT_DURATION = 0
 
-local NORMAL_TASK_INIT_DURATION  = 30
+local DEFAULT_TASK_DURATION      = 30
 
-local DEFAULT_WORKLOAD           = 30
+local DEFAULT_TASK_CONTRIBUTION  = 10
 
 local _removeTask
 
@@ -29,31 +29,53 @@ local function carryfood()
 	Asset_Set( task, TaskAssetID.STATUS, TaskStatus.PREPARE )
 end
 
---[[]]
 local _prepareTask = 
 {
 	ESTABLISH_CORPS = function( task )
-		Asset_Set( task, TaskAssetID.DURATION, NORMAL_TASK_INIT_DURATION )
+		Asset_Set( task, TaskAssetID.DURATION, DEFAULT_TASK_DURATION )
+	end,
+	ESTABLISH_CORPS = function( task )
+		Asset_Set( task, TaskAssetID.DURATION, DEFAULT_TASK_DURATION )
 	end,
 
 	HARASS_CITY     = function ( task )
 		Intel_Post( IntelType.HARASS_CITY, Asset_Get( task, TaskAssetID.LOCATION ), { actor = Asset_Get( task, TaskAssetID.ACTOR ) } )
-		Asset_Set( task, TaskAssetID.DURATION, NORMAL_TASK_INIT_DURATION )
+		Asset_Set( task, TaskAssetID.DURATION, DEFAULT_TASK_DURATION )
 	end,
 	ATTACK_CITY     = function ( task )
 		Intel_Post( IntelType.ATTACK_CITY, Asset_Get( task, TaskAssetID.LOCATION ), { actor = Asset_Get( task, TaskAssetID.ACTOR ) } )
-		Asset_Set( task, TaskAssetID.DURATION, NORMAL_TASK_INIT_DURATION )
+		Asset_Set( task, TaskAssetID.DURATION, DEFAULT_TASK_DURATION )
 	end,
 	INTERCEPT       = function ( task )
 		--Stat_Add( "Intercept@" .. Asset_Get( task, TaskAssetID.GROUP ).name, 1, StatType.TIMES )
 		--InputUtil_Pause( Asset_Get( task, TaskAssetID.ACTOR ).name, "intercept" )
-		Asset_Set( task, TaskAssetID.DURATION, NORMAL_TASK_INIT_DURATION )
+		Asset_Set( task, TaskAssetID.DURATION, DEFAULT_TASK_DURATION )
 	end,
 }
 
 --return valid means not to set finished status
 local _executeTask = 
 {
+	HARASS_CITY     = function ( task )
+		local city = Asset_Get( task, TaskAssetID.DESTINATION )
+		local corps = Asset_Get( task, TaskAssetID.ACTOR )
+		local combat = Corps_HarassCity( corps, city )
+		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.RUNNING )
+		Asset_SetListItem( task, TaskAssetID.PARAMS, "combat", combat.id )
+		return true
+	end,
+	ATTACK_CITY     = function ( task )
+		local city = Asset_Get( task, TaskAssetID.DESTINATION )
+		local corps = Asset_Get( task, TaskAssetID.ACTOR )
+		local combat = Corps_AttackCity( corps, city )
+		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.RUNNING )
+		Asset_SetListItem( task, TaskAssetID.PARAMS, "combat", combat.id )
+		return true
+	end,
+	INTERCEPT       = function ( task )
+		--back
+	end,
+
 	ESTABLISH_CORPS = function ( task )
 		local city = Asset_Get( task, TaskAssetID.DESTINATION )
 		Corps_EstablishInCity( city )
@@ -63,11 +85,13 @@ local _executeTask =
 		local corps = Asset_GetListItem( task, TaskAssetID.PARAMS, "corps" )
 		Corps_ReinforceInCity( corps, city )
 	end,
-
 	TRAIN_CORPS     = function ( task )
+	--[[
 		local city = Asset_Get( task, TaskAssetID.DESTINATION )
 		local corps = Asset_GetListItem( task, TaskAssetID.PARAMS, "corps" )
 		Corps_Train( corps, city )
+		]]
+		Asset_Set( task, TaskAssetID.DURATION, DEFAULT_TASK_DURATION )
 	end,
 	DISPATCH_CORPS  = function ( task )
 		local city = Asset_Get( task, TaskAssetID.DESTINATION )
@@ -75,41 +99,24 @@ local _executeTask =
 		Corps_Dispatch( corps, city )
 	end,
 
-	HARASS_CITY     = function ( task )
-		local city = Asset_Get( task, TaskAssetID.DESTINATION )
-		local corps = Asset_Get( task, TaskAssetID.ACTOR )
-		local combat = Corps_HarassCity( corps, city )
-		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.SUSPENDED )
-		Asset_SetListItem( task, TaskAssetID.PARAMS, "combat", combat.id )
-		return true
+	DEV_AGRICULTURE = function( task )
+		Asset_Set( task, TaskAssetID.DURATION, DEFAULT_TASK_DURATION )
 	end,
-	ATTACK_CITY     = function ( task )
-		local city = Asset_Get( task, TaskAssetID.DESTINATION )
-		local corps = Asset_Get( task, TaskAssetID.ACTOR )
-		local combat = Corps_AttackCity( corps, city )
-		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.SUSPENDED )
-		Asset_SetListItem( task, TaskAssetID.PARAMS, "combat", combat.id )
-		return true
+	DEV_COMMERCE = function( task )
+		Asset_Set( task, TaskAssetID.DURATION, DEFAULT_TASK_DURATION )
 	end,
-	INTERCEPT       = function ( task )
-		--back
+	DEV_PRODUCTION = function( task )
+		Asset_Set( task, TaskAssetID.DURATION, DEFAULT_TASK_DURATION )
 	end,
-
-	DEV_AGRICULTURE = City_DevelopByTask,
-	DEV_COMMERCE    = City_DevelopByTask,
-	DEV_PRODUCTION  = City_DevelopByTask,
 	BUILD_CITY      = function ( task )
+		Asset_Set( task, TaskAssetID.DURATION, DEFAULT_TASK_DURATION )
 	end,
 	LEVY_TAX      = function ( task )
+		Asset_Set( task, TaskAssetID.DURATION, DEFAULT_TASK_DURATION )
 	end,
 
 	HIRE_CHARA = function ( task )
-		local city  = Asset_Get( task, TaskAssetID.DESTINATION )
-		local actor = Asset_Get( task, TaskAssetID.ACTOR )
-		local group = Asset_Get( task, TaskAssetID.GROUP )
-		local chara = System_Get( SystemType.CHARA_CREATOR_SYS ):GenerateFictionalChara( city )
-		if not chara then DBG_Trace( "no chara to hire" ) end
-		Chara_Serve( chara, group, city )
+		Asset_Set( task, TaskAssetID.DURATION, 10 )
 	end,
 	PROMOTE_CHARA = function ( task )
 		local actor = Asset_Get( task, TaskAssetID.ACTOR )
@@ -118,12 +125,55 @@ local _executeTask =
 	end,
 }
 
-local _finishTask = 
+local function Default_Work( task )
+	local progress = Random_GetInt_Sync( 5, 10 )	
+	task:Do( progress )
+	return DEFAULT_TASK_CONTRIBUTION
+end
+
+local _doTask = 
 {
+	HIRE_CHARA      = Default_Work,
+
+	DEV_AGRICULTURE = Default_Work,
+	DEV_COMMERCE    = Default_Work,
+	DEV_PRODUCTION  = Default_Work,	
+	BUILD_CITY      = Default_Work,
+	LEVY_TAX        = Default_Work,
 }
 
-local _workloads = 
+local _finishTask = 
 {
+	DEV_AGRICULTURE = function( task )
+		City_Develop( Asset_Get( task, TaskAssetID.DESTINATION ), Asset_Get( task, TaskAssetID.PROGRESS ), CityAssetID.AGRICULTURE )
+	end,
+	DEV_COMMERCE = function( task )
+		City_Develop( Asset_Get( task, TaskAssetID.DESTINATION ), Asset_Get( task, TaskAssetID.PROGRESS ), CityAssetID.COMMERCE )
+	end,
+	DEV_PRODUCTION = function( task )
+		City_Develop( Asset_Get( task, TaskAssetID.DESTINATION ), Asset_Get( task, TaskAssetID.PROGRESS ), CityAssetID.PRODUCTION )
+	end,
+	BUILD_CITY      = function ( task )
+		City_Build( Asset_Get( task, TaskAssetID.DESTINATION ) )
+	end,
+	LEVY_TAX      = function ( task )
+		City_LevyTax( Asset_Get( task, TaskAssetID.DESTINATION ), Asset_Get( task, TaskAssetID.PROGRESS ) )
+	end,
+	
+	HIRE_CHARA = function( task )
+		local progress = Asset_Get( task, TaskAssetID.PROGRESS )
+		local rand = Random_GetInt_Sync( 1, 100 )
+			if rand <= progress then
+			local city  = Asset_Get( task, TaskAssetID.DESTINATION )
+			local actor = Asset_Get( task, TaskAssetID.ACTOR )
+			local group = Asset_Get( task, TaskAssetID.GROUP )
+			local chara = System_Get( SystemType.CHARA_CREATOR_SYS ):GenerateFictionalChara( city )
+			if not chara then DBG_Trace( "no chara to hire" ) end
+			Chara_Serve( chara, group, city )
+		else
+			Report_Feedback( task:ToString( "SIMPLE" ) .. " FAILED" )
+		end
+	end,
 }
 
 ---------------------------------------------------
@@ -153,18 +203,13 @@ local function Task_IsAtHome( task )
 	return false
 end
 
-local function Task_BackHome( task )
-	if Task_IsAtHome( task ) == false then
-		local actorType = Asset_Get( task, TaskAssetID.ACTOR_TYPE )		
-		if actorType == TaskActorType.CHARA then
-			Move_Chara( actor, Asset_Get( actor, CharaAssetID.HOME ) )
-		elseif actorType == TaskActorType.CORPS then
-			Move_Corps( actor, Asset_Get( actor, CorpsAssetID.ENCAMPMENT ) )
-		end
-	end
-end
-
 ---------------------------------------------------
+
+function Task_CityReceive( task )
+	local city = Asset_Get( task, TaskAssetID.DESTINATION )
+	local plan = Asset_GetListItem( task, TaskAssetID.PARAMS, "plan" )
+	Asset_SetListItem( city, CityAssetID.PLANS, plan, task )
+end
 
 function Task_CharaReceive( task, chara )
 	local subordinates = {}
@@ -205,7 +250,8 @@ function Task_IssueByProposal( proposal )
 	Asset_Set( task, TaskAssetID.ACTOR, Asset_Get( proposal, ProposalAssetID.ACTOR ) )	
 	Asset_Set( task, TaskAssetID.LOCATION, Asset_Get( proposal, ProposalAssetID.LOCATION ) )
 	Asset_Set( task, TaskAssetID.DESTINATION, Asset_Get( proposal, ProposalAssetID.DESTINATION ) )
-	Asset_CopyDict( task, TaskAssetID.PARAMS, Asset_Get( proposal, ProposalAssetID.PARAMS ) )
+	local plan = Asset_GetListItem( proposal, ProposalAssetID.PARAMS, "plan" )
+	Asset_CopyDict( task, TaskAssetID.PARAMS, Asset_GetList( proposal, ProposalAssetID.PARAMS ) )	
 
 	local actor = Asset_Get( task, TaskAssetID.ACTOR )
 	local type = Asset_Get( task, TaskAssetID.TYPE )
@@ -214,11 +260,12 @@ function Task_IssueByProposal( proposal )
 		Asset_Set( task, TaskAssetID.ACTOR_TYPE, TaskActorType.CORPS )
 		Asset_Set( task, TaskAssetID.GROUP, Asset_Get( actor, CorpsAssetID.GROUP ) )
 		Task_CorpsReceive( task, actor )
-	else
+	else		
 		Asset_Set( task, TaskAssetID.ACTOR_TYPE, TaskActorType.CHARA )
 		Asset_Set( task, TaskAssetID.GROUP, Asset_Get( actor, CharaAssetID.GROUP ) )
+		Task_CityReceive( task )
 		--issue task to every attenders managed by the actor	
-		Task_CharaReceive( task, actor )
+		--Task_CharaReceive( task, actor )
 	end
 
 	Asset_Set( task, TaskAssetID.BEGIN_TIME, g_calendar:GetDateValue() )
@@ -227,17 +274,15 @@ function Task_IssueByProposal( proposal )
 	print( "issue task--" .. task:ToString() )
 end
 
-function Task_Do( task, actor )
-	local workload = DEFAULT_WORKLOAD
-	
-	local type = Asset_Get( task, TaskAssetID.TYPE )
-	local name = MathUtil_FindName( TaskType, type )
-	local fn = _workloads[name]
-	if fn then workload = fn( task ) end
+function Task_Do( task, actor )	
+	local contribution = DEFAULT_TASK_CONTRIBUTION
 
-	task:Contribute( actor, workload )
+	local fn = _doTask[Asset_Get( task, TaskAssetID.TYPE )]	
+	if fn then
+		contribution = fn( task )
+	end
 
-	--print( "task_do", workload, Asset_Get( task, TaskAssetID.WORKLOAD ) )
+	task:Contribute( actor, contribution )
 end
 
 local function Task_End( task )
@@ -251,175 +296,104 @@ local function Task_End( task )
 
 	Asset_Set( task, TaskAssetID.END_TIME, g_calendar:GetDateValue() )
 
-	if 1 then
-		Stat_Add( "Task@End", { id = task.id, type = Asset_Get( task, TaskAssetID.TYPE ), dest = Asset_Get( task, TaskAssetID.DESTINATION ), group = Asset_Get( task, TaskAssetID.GROUP ),
-			--begt = Asset_Get( task, TaskAssetID.BEGIN_TIME ), endt = Asset_Get( task, TaskAssetID.END_TIME ),
-			day = g_calendar:CalcDiffDayByDates( Asset_Get( task, TaskAssetID.END_TIME ), Asset_Get( task, TaskAssetID.BEGIN_TIME ) ) }, StatType.LIST )
-		Entity_Remove( task )
+	Stat_Add( "Task@End", { id = task.id, type = Asset_Get( task, TaskAssetID.TYPE ), dest = Asset_Get( task, TaskAssetID.DESTINATION ), group = Asset_Get( task, TaskAssetID.GROUP ), actor = Asset_Get( task, TaskAssetID.ACTOR ),
+		begt = Asset_Get( task, TaskAssetID.BEGIN_TIME ), endt = Asset_Get( task, TaskAssetID.END_TIME ),
+		day = g_calendar:CalcDiffDayByDates( Asset_Get( task, TaskAssetID.END_TIME ), Asset_Get( task, TaskAssetID.BEGIN_TIME ) ) }, StatType.LIST )
+	Entity_Remove( task )
 
-		Stat_SetDumper( "Task@End", function ( data )
-			print( "Task End=" .. StringUtil_Abbreviate( MathUtil_FindName( TaskType, data.type ), 16 ),  "dest=" .. StringUtil_Abbreviate( data.dest.name, 8 ),
-				--"beg=" .. g_calendar:CreateDateDescByValue( data.begt ), "end=" .. g_calendar:CreateDateDescByValue( data.endt ),
-				"day=" .. data.day, "id=" .. data.id, "group=" .. ( data.group and data.group.name or "[??]" ) )
-		end )
-	end
+	Stat_Add( "TaskType@" .. MathUtil_FindName( TaskType, Asset_Get( task, TaskAssetID.TYPE ) ), 1, StatType.TIMES )
 
-	if 1 then
-		Stat_Add( "TaskType@" .. MathUtil_FindName( TaskType, Asset_Get( task, TaskAssetID.TYPE ) ), 1, StatType.TIMES )
-	end
+	--InputUtil_Pause( g_calendar:CreateCurrentDateDesc() )
 
 	return true
 end
 
-local function Task_Replay( task )
-	local actor = Asset_Get( task, TaskAssetID.ACTOR )
-	if actor:IsAtHome() == false then return true end
+local function Task_BackHome( task )
+	Stat_Add( "Task@BackHome", 1, StatType.TIMES )
+	if Move_IsMoving( Asset_Get( task, TaskAssetID.ACTOR ) ) == false then
+		local actorType = Asset_Get( task, TaskAssetID.ACTOR_TYPE )		
+		if actorType == TaskActorType.CHARA then
+			Move_Chara( actor, Asset_Get( actor, CharaAssetID.HOME ) )
+		elseif actorType == TaskActorType.CORPS then
+			Move_Corps( actor, Asset_Get( actor, CorpsAssetID.ENCAMPMENT ) )
+		end
+	end
+end
+
+local function Task_Move2Destination( task )
+	Stat_Add( "Task@Move2Dest", 1, StatType.TIMES )
+	if Move_IsMoving( Asset_Get( task, TaskAssetID.ACTOR ) ) == false then
+		--move
+		local actorType = Asset_Get( task, TaskAssetID.ACTOR_TYPE )
+		if actorType == TaskActorType.CHARA then
+			Move_Chara( actor, Asset_Get( actor, CharaAssetID.HOME ) )
+		elseif actorType == TaskActorType.CORPS then
+			Move_Corps( actor, Asset_Get( actor, CorpsAssetID.ENCAMPMENT ) )
+		end
+	end
+end
+
+local function Task_Reply( task )
+	--default go back home
+	if Task_IsAtHome( task ) == false then
+		Task_BackHome( task )
+		return
+	end
 
 	--bonus to contributor
-	Asset_ForeachList( task, TaskAssetID.CONTRIBUTORS, function( value, actor )
-		Asset_Plus( actor, CharaAssetID.CONTRIBUTION, value )
-		--print( actor.name, "contribute", value, Asset_Get( actor, CharaAssetID.CONTRIBUTION ) )		
-	end )
+	if Asset_Get( task, TaskAssetID.ACTOR_TYPE ) == TaskActorType.CHARA then
+		Asset_ForeachList( task, TaskAssetID.CONTRIBUTORS, function( value, actor )
+			Asset_Plus( actor, CharaAssetID.CONTRIBUTION, value )
+		end )
+	else
+		--todo
+	end
 
 	Asset_Set( task, TaskAssetID.STATUS, TaskStatus.END )
 
-	return false
-end
-
-
---[[
-
-
-local function Task_Cancel( task )
-	local type = Asset_Get( task, TaskAssetID.TYPE )
-	if type == TaskType.ESTABLISH_CORPS then
-		--recycle resource
-	end
-
-	Stat_Add( "Task@Cancel", { id = task.id, type = Asset_Get( task, TaskAssetID.TYPE ) }, StatType.LIST )
-	Stat_SetDumper( "Task@Cancel", function ( data )
-		print( "Task Cancel=" .. StringUtil_Abbreviate( MathUtil_FindName( TaskType, data.type ), 16 ) )
-	end )
-
-	Entity_Remove( task )
-	return true
+	Stat_Add( "Task@Reply", 1, StatType.TIMES )
 end
 
 local function Task_Finish( task )
-	Asset_Set( task, TaskAssetID.STATUS, TaskStatus.REPLY )
+	if Asset_Get( task, TaskAssetID.STATUS ) == TaskStatus.RUNNING then return end
 
-	local type = Asset_Get( task, TaskAssetID.TYPE )
-	local name = MathUtil_FindName( TaskType, type )
-	local fn = _finishTask[name]
-	if fn then
-		if fn( task ) then return false end
-	else
-		DBG_Warning( "task_" .. name .. "_no_func", "no finish function" )
-	end
-
-	return false
-end
-
-local function Task_Suspend( task )
-	local type = Asset_Get( task, TaskAssetID.TYPE )
-	if type == TaskType.HARASS_CITY or type == TaskType.ATTACK_CITY then
-		local id = Asset_GetListItem( task, TaskAssetID.PARAMS, "combat" )
-		if not Entity_Get( EntityType.COMBAT, id ) then
-			Asset_Set( task, TaskAssetID.STATUS, TaskStatus.FINISHED )
-			return false			
-		end
-	end
-	return true
-end
-
-local function Task_Execute( task )
-	local type = Asset_Get( task, TaskAssetID.TYPE )
-	local name = MathUtil_FindName( TaskType, type )
-	local fn = _executeTask[name]
-	if fn then
-		if fn( task ) then return false end
-	else
-		DBG_Warning( "task_" .. name .. "_no_func", "no execute function" )
-	end
-	Asset_Set( task, TaskAssetID.STATUS, TaskStatus.FINISHED )
-	return false
-end
-
-local function Task_Ontheway( task )
-	if Task_IsArriveDestination( task ) == false then return true end
-	Asset_Set( task, TaskAssetID.STATUS, TaskStatus.EXECUTING )
-	--InputUtil_Pause( "EXECUTING")
-	return false
-end
-
-local function Task_Prepare( task )
-	if Task_IsArriveDestination( task ) == false then		
-		
-		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.ON_THE_WAY )	
-		return true
-	else
-		local type = Asset_Get( task, TaskAssetID.TYPE )
-		if type == TaskType.INTERCEPT then		
-			--InputUtil_Pause( Asset_Get( task, TaskAssetID.ACTOR ).name, "Arrive destination" )		
-		end
-	end
-
-	--local delta = g_calendar:CalcDiffDayByDates( g_calendar:GetDateValue(), Asset_Get( task, TaskAssetID.BEGIN_TIME ) )
-	--print( delta )
-	--InputUtil_Pause( g_calendar:CreateDesc( true, true ), g_calendar:CreateDateDescByValue( Asset_Get( task, TaskAssetID.BEGIN_TIME ) ) )
-	--Stat_Add( "Task@Prepare_Time", delta, StatType.ACCUMULATION )
-
-	Asset_Set( task, TaskAssetID.STATUS, TaskStatus.EXECUTING )
-	return false
-end
-
-]]
-
-local function Task_Finish( task )
 	--can execute the task
-	local type = Asset_Get( task, TaskAssetID.TYPE )
-	local fn = _finishTask[type]
-	if fn then
-		fn( task )
-	end
+	local fn = _finishTask[Asset_Get( task, TaskAssetID.TYPE )]
+	if fn then fn( task ) end
 
-	--default go back home
-	Task_BackHome( task )
+	Asset_Set( task, TaskAssetID.STATUS, TaskStatus.RUNNING )
 
-	Task_End( task )
+	Stat_Add( "Task@Finish", 1, StatType.TIMES )
 end
 
 local function Task_Execute( task )
 	--not arrive the destination
 	if Task_IsArriveDestination( task ) == false then
-		if Move_IsMoving( Asset_Get( task, TaskAssetID.ACTOR ) ) == false then
-			--move
-			local actorType = Asset_Get( task, TaskAssetID.ACTOR_TYPE )
-			if actorType == TaskActorType.CHARA then
-				Move_Chara( actor, Asset_Get( actor, CharaAssetID.HOME ) )
-			elseif actorType == TaskActorType.CORPS then
-				Move_Corps( actor, Asset_Get( actor, CorpsAssetID.ENCAMPMENT ) )
-			end
-		end
+		Task_Move2Destination( task )
 		return
 	end
 
 	--can execute the task
-	local type = Asset_Get( task, TaskAssetID.TYPE )
-	local fn = _executeTask[type]
+	if Asset_Get( task, TaskAssetID.STATUS ) == TaskStatus.RUNNING then return end
+
+	local fn = _executeTask[Asset_Get( task, TaskAssetID.TYPE )]
 	if fn then
 		fn( task )
 	else
-		DBG_Warning( "task_" .. name .. "_no_func", "no execute function" )
+		DBG_Warning( "task [" .. name .. "]", "no execute function" )
 	end
+
+	Asset_Set( task, TaskAssetID.STATUS, TaskStatus.RUNNING )
+
+	Stat_Add( "Task@Excute", 1, StatType.TIMES )
+
+	Stat_Add( "TaskExecute", task:ToString(), StatType.LIST )
 end
 
 local function Task_Prepare( task )
-	local status = Asset_Get( task, TaskAssetID.STATUS )
-	if status == TaskStatus.RUNNING then return end
+	if Asset_Get( task, TaskAssetID.STATUS ) == TaskStatus.RUNNING then return end
 
-	local type = Asset_Get( task, TaskAssetID.TYPE )
-	local fn = _prepareTask[type]
+	local fn = _prepareTask[Asset_Get( task, TaskAssetID.TYPE )]
 	if fn then fn( task ) end
 
 	Asset_Set( task, TaskAssetID.STATUS, TaskStatus.RUNNING )
@@ -428,33 +402,33 @@ end
 local function Task_Update( task )
 	local type = Asset_Get( task, TaskAssetID.TYPE )	
 	local step = Scenario_GetData( "TASK_STEP_DATA" )[type]	
-	if not step then return end
+	if not step then
+		DBG_Warning( "task [" .. MathUtil_FindName( TaskType, type ) .. "]", "no step data" )
+		return
+	end
 	
 	local stepIndex = Asset_Get( task, TaskAssetID.STEP )
 	local taskStep = step[stepIndex]
 	if not taskStep then
+		Task_End( task )	
 		return
-	elseif taskStep == TaskStep.PREPARE then
+	end
+	if taskStep == TaskStep.PREPARE then
 		Task_Prepare( task )
 	elseif taskStep == TaskStep.EXECUTE then
 		Task_Execute( task )
 	elseif taskStep == TaskStep.FINISH then
 		Task_Finish( task )
+	elseif taskStep == TaskStep.REPLY then
+		Task_Reply( task )
 	end
 
 	task:ElpasedTime( g_elapsed )
 
-	if task:IsStepFinished() == true then
-		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WAITING )
-		Asset_Plus( task, TaskAssetID.STEP, 1 )
-		print( task:ToString() .. " to next step=" .. MathUtil_FindName( TaskStep, Asset_Get( task, TaskAssetID.STEP ) ) )
-		Task_Update( task )
-	else
-		--print( task:ToString() .. " update=" .. Asset_Get( task, TaskAssetID.DURATION ) )
-	end
+	if task:Update( g_elapsed ) == true then Task_Update( task ) end
 end
 
-local function Task_Move2Destination( msg )
+local function Task_ArriveDestination( msg )
 	Asset_GetListItem( msg, MessageAssetID.PARAMS, "actor" )
 end
 
@@ -464,13 +438,20 @@ TaskSystem = class()
 
 function TaskSystem:__init()
 	System_Setup( self, SystemType.TASK_SYS, "TASK" )
+
+	Stat_SetDumper( "Task@End", function ( data )
+		print( "Task=" .. data.id .. " " .. StringUtil_Abbreviate( MathUtil_FindName( TaskType, data.type ), 16 ),  "dest=" .. StringUtil_Abbreviate( data.dest.name, 8 ),
+			"act=" .. data.actor.name, "beg=" .. g_calendar:CreateDateDescByValue( data.begt ), "end=" .. g_calendar:CreateDateDescByValue( data.endt ),
+			"day=" .. data.day, "id=" .. data.id, "group=" .. ( data.group and data.group.name or "[??]" ) )
+	end, StatType.LIST )
 end
 
 function TaskSystem:Start()
-	Message_Handle( SystemType.TASK_SYS, MessageType.ARRIVE_DESTINATION, Task_Move2Destination )
+	Message_Handle( SystemType.TASK_SYS, MessageType.ARRIVE_DESTINATION, Task_ArriveDestination )
 
 	_prepareTask = MathUtil_ConvertKeyToID( TaskType, _prepareTask )
 	_executeTask = MathUtil_ConvertKeyToID( TaskType, _executeTask )
+	_finishTask  = MathUtil_ConvertKeyToID( TaskType, _finishTask )
 end
 
 function TaskSystem:Update()

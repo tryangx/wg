@@ -95,7 +95,9 @@ ScenarioData =
 	RELATION_OPINION  = DefaultRelationOpinion,
 
 	--Params
-	CITY_POPUSTRUCTURE_PARAMS = DefaultCityPopuStructureParams,
+	CITY_POPUSTRUCTURE_PARAMS    = DefaultCityPopuStructureParams,
+	CITY_DEVELOP_PARAMS          = DefaultCityDevelopParams,
+	CITY_DEVELOPMENT_VARY_PARAMS = DefaultCityDevelopmentVaryParams,
 	CORPS_PARAMS              = DefaultCorpsParams,
 	TROOP_PARAMS              = DefaultTroopParams,
 

@@ -13,21 +13,23 @@ TaskAssetID =
 {
 	TYPE         = 10,	
 	STATUS       = 11,
+	STEP         = 12,
 
-	ACTOR        = 12,
-	ACTOR_TYPE   = 13,
-	GROUP        = 14,
-
+	ACTOR        = 20,
+	ACTOR_TYPE   = 21,
+	GROUP        = 22,
 	--location
-	LOCATION     = 15,
-	DESTINATION  = 16,
+	LOCATION     = 23,
+	DESTINATION  = 24,
 	--target
-	PARAMS       = 17,
+	PARAMS       = 25,
 
 	--remain time to finish the task
 	DURATION     = 30,
+	--how many works need to finish
 	WORKLOAD     = 31,
-	STEP         = 32,
+	--how many works finished
+	PROGRESS     = 32,
 	
 	CONTRIBUTORS = 40,
 
@@ -40,6 +42,7 @@ TaskAssetAttrib =
 {
 	type         = AssetAttrib_SetNumber ( { id = TaskAssetID.TYPE,       type = TaskAssetType.BASE_ATTRIB, enum = TaskType } ),
 	status       = AssetAttrib_SetNumber ( { id = TaskAssetID.STATUS,     type = TaskAssetType.BASE_ATTRIB, enum = TaskStatus, default = TaskStatus.WAITING } ),
+	step         = AssetAttrib_SetNumber ( { id = TaskAssetID.STEP,       type = TaskAssetType.BASE_ATTRIB, default = 1 } ),
 	
 	actor        = AssetAttrib_SetPointer( { id = TaskAssetID.ACTOR,      type = TaskAssetType.BASE_ATTRIB } ),
 	actortype    = AssetAttrib_SetNumber ( { id = TaskAssetID.ACTOR_TYPE, type = TaskAssetType.BASE_ATTRIB, enum = TaskActorType } ),	
@@ -50,8 +53,9 @@ TaskAssetAttrib =
 	params       = AssetAttrib_SetList   ( { id = TaskAssetID.PARAMS,     type = TaskAssetType.BASE_ATTRIB } ),	
 
 	duration     = AssetAttrib_SetNumber ( { id = TaskAssetID.DURATION,   type = TaskAssetType.BASE_ATTRIB, default = 0 } ),
-	workload     = AssetAttrib_SetNumber ( { id = TaskAssetID.WORKLOAD,   type = TaskAssetType.BASE_ATTRIB, default = 0 } ),
-	step         = AssetAttrib_SetNumber ( { id = TaskAssetID.STEP,       type = TaskAssetType.BASE_ATTRIB, default = 1 } ),
+	workload     = AssetAttrib_SetNumber ( { id = TaskAssetID.WORKLOAD,   type = TaskAssetType.BASE_ATTRIB, default = 0 } ),	
+	progress     = AssetAttrib_SetNumber ( { id = TaskAssetID.PROGRESS,   type = TaskAssetType.BASE_ATTRIB, default = 0 } ),	
+	
 	contributors = AssetAttrib_SetList   ( { id = TaskAssetID.CONTRIBUTORS,  type = TaskAssetType.BASE_ATTRIB } ),
 
 	begtime      = AssetAttrib_SetNumber( { id = TaskAssetID.BEGIN_TIME,  type = TaskAssetType.BASE_ATTRIB } ),
@@ -93,19 +97,39 @@ end
 
 function Task:Contribute( actor, contribution )
 	local cur = Asset_GetListItem( self, TaskAssetID.CONTRIBUTORS, actor )
-	if not cur then
-		cur = contribution
-	else
-		cur = cur + contribution
-	end
+	cur = cur and cur + contribution or contribution
 	Asset_SetListItem( self, TaskAssetID.CONTRIBUTORS, actor, cur )
-	
-	Asset_Plus( self, TaskAssetID.WORKLOAD, contribution )
 end
 
-function Task:ToString()
+function Task:Do( progress )
+	local cur = Asset_Get( task, TaskAssetID.PROGRESS )
+	cur = cur + progress
+	Asset_Set( task, TaskAssetID.PROGRESS, cur )
+
+	if cur >= 100 then
+		--finish task
+		Asset_Set( task, TaskAssetID.DURATION, 0 )
+		self:Update()
+	end
+end
+
+function Task:ToString( type )	
 	local content = self.id .. " " .. MathUtil_FindName( TaskType, Asset_Get( self, TaskAssetID.TYPE ) )
-	content = content .. " atr=" .. String_ToStr( Asset_Get( self, TaskAssetID.ACTOR ), "name" )
-	content = content .. " loc=" .. String_ToStr( Asset_Get( self, TaskAssetID.LOCATION ), "name" )
+	if type == "SIMPLE" then
+	else
+		content = content .. " atr=" .. String_ToStr( Asset_Get( self, TaskAssetID.ACTOR ), "name" )
+		content = content .. " loc=" .. String_ToStr( Asset_Get( self, TaskAssetID.LOCATION ), "name" )
+	end
 	return content
+end
+
+function Task:Update()
+	if self:IsStepFinished() == true then
+		Asset_Set( self, TaskAssetID.STATUS, TaskStatus.WAITING )
+		Asset_Plus( self, TaskAssetID.STEP, 1 )
+		print( self:ToString() .. " to next step" )
+		return true
+	end
+	--print( self:ToString() .. " update=" .. Asset_Get( self, TaskAssetID.DURATION ) )
+	return false
 end

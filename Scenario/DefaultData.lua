@@ -728,6 +728,115 @@ DefaultCityPopuStructureParams =
 	}
 }
 
+DefaultCityDevelopParams =
+{
+	{
+		conditions = { progress_min = 100 },
+		methods = 
+		{
+			{ prob = 50, main = 6, agri = 0,  comm = 0, prod = 0, },
+			{ prob = 50, main = 5, agri = 1,  comm = 1, prod = 0, },
+			{ prob = 50, main = 5, agri = 1,  comm = 0, prod = 1, },
+			{ prob = 50, main = 5, agri = 0,  comm = 1, prod = 1, },
+			{ prob = 50, main = 7, agri = 0,  comm = -1, prod = -1, },
+			{ prob = 50, main = 7, agri = -1, comm = 0, prod = -1, },
+			{ prob = 50, main = 7, agri = -1, comm = -1, prod = 0, },
+		},
+	},
+	{
+		conditions = { progress_min = 50 },
+		methods =
+		{
+			{ prob = 50, main = 4, agri = 0,  comm = 0, prod = 0, },
+			{ prob = 50, main = 3, agri = 1,  comm = 1, prod = 0, },
+			{ prob = 50, main = 3, agri = 1,  comm = 0, prod = 1, },
+			{ prob = 50, main = 3, agri = 0,  comm = 1, prod = 1, },
+			{ prob = 50, main = 5, agri = 0,  comm = -1, prod = -1, },
+			{ prob = 50, main = 5, agri = -1, comm = 0, prod = -1, },
+			{ prob = 50, main = 5, agri = -1, comm = -1, prod = 0, },
+		},
+	},
+	{
+		conditions = { progress_min = 0 },
+		methods =
+		{
+			{ prob = 50, main = 2, agri = 0,  comm = 0, prod = 0, },
+			{ prob = 50, main = 1, agri = 1,  comm = 1, prod = 0, },
+			{ prob = 50, main = 1, agri = 1,  comm = 0, prod = 1, },
+			{ prob = 50, main = 1, agri = 0,  comm = 1, prod = 1, },
+			{ prob = 50, main = 3, agri = 0,  comm = -1, prod = -1, },
+			{ prob = 50, main = 3, agri = -1, comm = 0, prod = -1, },
+			{ prob = 50, main = 3, agri = -1, comm = -1, prod = 0, },
+		},
+	},
+}
+
+DefaultCityDevelopmentVaryParams = 
+{
+	{
+		conditions = { security_more_than = 80, trigger_prob = 50, },
+		methods = 
+		{
+			{ prob = 50, agri = 5, comm = -1, prod = -1, },
+			{ prob = 50, agri = -1, comm = 5, prod = -1, },
+			{ prob = 50, agri = -1, comm = -1, prod = 5, },
+
+			{ prob = 50, agri = 1 },
+			{ prob = 50, comm = 1 },
+			{ prob = 50, prod = 1, },
+
+			{ prob = 50, agri = 1, comm = 0, prod = 0, },
+			{ prob = 50, agri = 0, comm = 1, prod = 0, },
+			{ prob = 50, agri = 1, comm = 1, prod = 1, },
+		},		
+	},
+	{
+		conditions = { security_more_than = 60, trigger_prob = 100, },
+		methods = 
+		{
+			{ prob = 50, agri = 2, comm = 1, prod = 0, },
+			{ prob = 50, agri = 2, comm = 0, prod = 1, },
+			{ prob = 50, agri = 1, comm = 2, prod = 0, },
+			{ prob = 50, agri = 0, comm = 2, prod = 1, },
+			{ prob = 50, agri = 1, comm = 0, prod = 2, },
+			{ prob = 50, agri = 0, comm = 1, prod = 2, },
+
+			{ prob = 50, agri = 0, comm = 0, prod = 2, },
+		},
+	},
+	{
+		conditions = { security_more_than = 40, trigger_prob = 100, },
+		methods = 
+		{
+			-- -3 ~ 1
+			{ prob = 50, agri = 3, comm = -1, prod = -1, },
+			{ prob = 50, agri = -1, comm = 3, prod = -1, },
+			{ prob = 50, agri = -1, comm = -1, prod = 3, },
+			{ prob = 50, agri = -2, },
+			{ prob = 50, comm = -2, },
+			{ prob = 50, prod = -2, },
+			{ prob = 50, agri = -1, comm = -1, prod = -1, },
+		},		
+	},
+	{
+		conditions = { security_more_than = 0, trigger_prob = 100, },
+		methods = 
+		{
+			-- -6 ~ -5
+			{ prob = 20, agri = -2, comm = -2, prod = -2, },
+			{ prob = 40, agri = -3, comm = -1, prod = -1, },
+			{ prob = 40, agri = -1, comm = -3, prod = -1, },
+			{ prob = 40, agri = -1, comm = -1, prod = -3, },
+		},
+	},
+	{
+		conditions = { insiege = true, trigger_prob = 100, },
+		methods = 
+		{
+			{ prob = 50, agri = -2, comm = -2, prod = -2, },
+		},
+	},
+}
 
 --------------------------------------------
 --
@@ -806,27 +915,26 @@ DefaultCharaPromoteMethod =
 
 DefaultTaskSteps = 
 {
-	ESTABLISH_CORPS = { "PREPARE", "EXECUTE", "FINISH" },
-	REINFORCE_CORPS = { "PREPARE", "EXECUTE", "FINISH" },
-	DISMISS_CORPS   = { "EXECUTE", "FINISH" },
-	TRAIN_CORPS     = { "EXECUTE", "FINISH" },
-	UPGRADE_CORPS   = { "EXECUTE", "FINISH" },
-	DISPATCH_CORPS  = { "EXECUTE", "FINISH" },
+	HARASS_CITY     = { "PREPARE", "EXECUTE", "FINISH", "REPLY" },
+	ATTACK_CITY     = { "PREPARE", "EXECUTE", "FINISH", "REPLY" },
+	INTERCEPT       = { "PREPARE", "EXECUTE", "FINISH", "REPLY" },
+	
+	ESTABLISH_CORPS = { "PREPARE", "EXECUTE", "FINISH", "REPLY" },
+	REINFORCE_CORPS = { "PREPARE", "EXECUTE", "FINISH", "REPLY" },
+	DISMISS_CORPS   = { "EXECUTE", "FINISH", "REPLY" },
+	TRAIN_CORPS     = { "EXECUTE", "FINISH", "REPLY" },
+	DISPATCH_CORPS  = { "EXECUTE", "FINISH", "REPLY" },
 
-	HARASS_CITY     = { "PREPARE", "EXECUTE", "FINISH" },
-	ATTACK_CITY     = { "PREPARE", "EXECUTE", "FINISH" },
-	INTERCEPT       = { "PREPARE", "EXECUTE", "FINISH" },
+	FRIENDLY        = { "EXECUTE", "FINISH", "REPLY" },
 
-	FRIENDLY        = { "EXECUTE", "FINISH" },
+	DEV_AGRICULTURE = { "EXECUTE", "FINISH", "REPLY" },
+	DEV_COMMERCE    = { "EXECUTE", "FINISH", "REPLY" },
+	DEV_PRODUCTION  = { "EXECUTE", "FINISH", "REPLY" },
+	BUILD_CITY      = { "EXECUTE", "FINISH", "REPLY" },
+	LEVY_TAX        = { "EXECUTE", "FINISH", "REPLY" },
 
-	DEV_AGRICULTURE = { "EXECUTE", "FINISH" },
-	DEV_COMMERCE    = { "EXECUTE", "FINISH" },
-	DEV_PRODUCTION  = { "EXECUTE", "FINISH" },
-	BUILD_CITY      = { "EXECUTE", "FINISH" },
-	LEVY_TAX        = { "EXECUTE", "FINISH" },
-
-	HIRE_CHARA      = { "EXECUTE", "FINISH" },
-	PROMOTE_CHARA   = { "EXECUTE", "FINISH" },
+	HIRE_CHARA      = { "EXECUTE", "FINISH", "REPLY" },
+	PROMOTE_CHARA   = { "EXECUTE", "FINISH", "REPLY" },
 }
 
 --------------------------------------------------------

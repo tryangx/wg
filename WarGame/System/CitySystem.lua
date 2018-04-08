@@ -1,98 +1,4 @@
-
-function City_DevelopByTask( task )
-	local id = nil
-	local type = Asset_Get( task, TaskAssetID.TYPE )
-	if type == TaskType.DEV_AGRICULTURE then
-		id = CityAssetID.AGRICULTURE
-	elseif type == TaskType.DEV_COMMERCE then
-		id = CityAssetID.COMMERCE
-	elseif type == TaskType.DEV_PRODUCTION then
-		id = CityAssetID.PRODUCTION
-	else
-		DBG_Warning( "dev_method_" .. type, "invalid devlopment method" )
-		return
-	end	
-	local city = Asset_Get( task, TaskAssetID.DESTINATION )
-	local workload = Asset_Get( task, TaskAssetID.WORKLOAD )
-	local inc = math.ceil( workload / 100 )
-	Asset_Plus( city, id, inc )
-
-	DBG_Warning( "city_develop_" .. id, city.name .. " dev " .. MathUtil_FindName( CityAssetID, id ) .. "+" .. inc .. "," .. workload )
-end
-
-----------------------------------------
-
-CityDevelopMethod = 
-{
-	{
-		security_more_than = 80,
-		prob = 100,
-		method = 
-		{
-			{ prob = 50, agr = 5, comm = -1, prod = -1, },
-			{ prob = 50, agr = -1, comm = 5, prod = -1, },
-			{ prob = 50, agr = -1, comm = -1, prod = 5, },
-
-			{ prob = 50, agr  = 3 },
-			{ prob = 50, comm = 3 },
-			{ prob = 50, prod = 3, },
-
-			{ prob = 50, agr = 1, comm = 1, prod = 1, },
-			{ prob = 50, agr = 1, comm = 1, prod = 1, },
-			{ prob = 50, agr = 1, comm = 1, prod = 1, },
-		},		
-	},
-	{
-		security_more_than = 60,
-		prob = 100,
-		method = 
-		{
-			{ prob = 50, agr = 2, comm = 1, prod = 0, },
-			{ prob = 50, agr = 2, comm = 0, prod = 1, },
-			{ prob = 50, agr = 1, comm = 2, prod = 0, },
-			{ prob = 50, agr = 0, comm = 2, prod = 1, },
-			{ prob = 50, agr = 1, comm = 0, prod = 2, },
-			{ prob = 50, agr = 0, comm = 1, prod = 2, },
-
-			{ prob = 50, agr = 0, comm = 0, prod = 2, },
-		},
-	},
-	{	
-		security_more_than = 40,
-		prob = 100,
-		method = 
-		{
-			-- -3 ~ 1
-			{ prob = 50, agr = 3, comm = -1, prod = -1, },
-			{ prob = 50, agr = -1, comm = 3, prod = -1, },
-			{ prob = 50, agr = -1, comm = -1, prod = 3, },
-			{ prob = 50, agr  = -2, },
-			{ prob = 50, comm = -2, },
-			{ prob = 50, prod = -2, },
-			{ prob = 50, agr = -1, comm = -1, prod = -1, },
-		},		
-	},
-	{	
-		security_more_than = 0,
-		prob = 100,
-		method = 
-		{
-			-- -6 ~ -5
-			{ prob = 20, agr = -2, comm = -2, prod = -2, },
-			{ prob = 40, agr = -3, comm = -1, prod = -1, },
-			{ prob = 40, agr = -1, comm = -3, prod = -1, },
-			{ prob = 40, agr = -1, comm = -1, prod = -3, },
-		},
-	},
-	{
-		insiege = true,
-		prob = 100,
-		method = 
-		{
-			{ prob = 50, agr = -2, comm = -2, prod = -2, },
-		},
-	},
-}
+---------------------------------------
 
 -------------------------------------------------------
 
@@ -112,7 +18,7 @@ local function City_Produce( city )
 end
 
 --collect money
-local function City_Tax( city )
+local function City_CollectTax( city )
 	local income = 0
 	local popustparams = City_GetPopuParams( city )
 	for k, v in pairs( CityPopu ) do
@@ -138,62 +44,6 @@ local function City_Harvest( city )
 	--InputUtil_Pause( "City=" .. city.name .. " collect food=" .. income .. " Food=" .. Asset_Get( city, CityAssetID.FOOD ) )
 	return income
 end
-
-local function City_DevelopByMethod( city )
-	local security = Asset_Get( city, CityAssetID.SECURITY )
-	local isSiege = Asset_GetListItem( city, CityAssetID.STATUSES, CityStatus.SIEGE )
-	local findMethod = nil
-	for _, item in pairs( CityDevelopMethod ) do
-		--init datas
-		if not item.total_prob then
-			item.total_prob = 0
-			for _, method in ipairs( item.method ) do
-				item.total_prob = item.total_prob + method.prob
-			end
-		end
-		if not item.prob or Random_GetInt_Sync( 1, 100 ) < item.prob then
-		if ( not item.insiege or item.insiege == isSiege ) and
-		 ( not item.security_more_than or security > item.security_more_than ) then
-			local dice = Random_GetInt_Sync( 1, item.total_prob )
-			for _, method in ipairs( item.method ) do
-				if dice <= method.prob then
-					findMethod = method
-					break
-				else
-					dice = dice - method.prob
-				end
-			end
-		end
-		end
-		if findMethod then break end
-	end
-	if not findMethod then
-		--InputUtil_Pause( "no develop method" )
-		return
-	end
-	if findMethod.agr and findMethod.agr > 0 then
-		local cur = Asset_Get( city, CityAssetID.AGRICULTURE )
-		local max = Asset_Get( city, CityAssetID.MAX_AGRICULTURE )
-		Asset_Set( city, CityAssetID.AGRICULTURE, math.min( max, cur + findMethod.agr ) )
-		Stat_Add( "Dev@Agr_times", city.id, StatType.TIMES )
-		Stat_Add( "Dev@Agr_Inc", findMethod.agr, StatType.ACCUMULATION )
-	end
-	if findMethod.comm and findMethod.comm > 0 then
-		local cur = Asset_Get( city, CityAssetID.COMMERCE )
-		local max = Asset_Get( city, CityAssetID.MAX_COMMERCE )
-		Asset_Set( city, CityAssetID.COMMERCE, math.min( max, cur + findMethod.comm ) )
-		Stat_Add( "Dev@Comm_Times", city.id, StatType.TIMES )
-		Stat_Add( "Dev@Comm_Inc", findMethod.comm, StatType.ACCUMULATION )
-	end
-	if findMethod.prod and findMethod.prod > 0 then
-		local cur = Asset_Get( city, CityAssetID.PRODUCTION )
-		local max = Asset_Get( city, CityAssetID.MAX_PRODUCTION )
-		Asset_Set( city, CityAssetID.PRODUCTION, math.min( max, cur + findMethod.prod ) )
-		Stat_Add( "Dev@Prod_Times", city.id, StatType.TIMES )
-		Stat_Add( "Dev@Prod_Inc", findMethod.prod, StatType.ACCUMULATION )
-	end
-end
-
 --------------------------------------
 -- City Population Structure
 
@@ -438,6 +288,122 @@ end
 
 --------------------------------------
 
+local function City_IncreaseDevelopment( city, params )
+	if params.agri then
+		local cur = Asset_Get( city, CityAssetID.AGRICULTURE )
+		local max = Asset_Get( city, CityAssetID.MAX_AGRICULTURE )
+		Asset_Set( city, CityAssetID.AGRICULTURE, math.min( max, cur + params.agri ) )
+		Stat_Add( "Dev@Agr_" .. ( params.agri > 0 and "INC" or "DEC" ), params.agri, StatType.TIMES )
+	end
+	if params.comm then
+		local cur = Asset_Get( city, CityAssetID.COMMERCE )
+		local max = Asset_Get( city, CityAssetID.MAX_COMMERCE )
+		Asset_Set( city, CityAssetID.COMMERCE, math.min( max, cur + params.comm ) )
+		Stat_Add( "Dev@Comm_" .. ( params.comm > 0 and "INC" or "DEC" ), params.comm, StatType.TIMES )
+	end
+	if params.prod then
+		local cur = Asset_Get( city, CityAssetID.PRODUCTION )
+		local max = Asset_Get( city, CityAssetID.MAX_PRODUCTION )
+		Asset_Set( city, CityAssetID.PRODUCTION, math.min( max, cur + params.prod ) )		
+		Stat_Add( "Dev@Prod_" .. ( params.prod > 0 and "INC" or "DEC" ), params.prod, StatType.TIMES )
+	end
+end
+
+local function City_DevelopmentVary( city )
+	local security = Asset_Get( city, CityAssetID.SECURITY )
+	local isSiege = Asset_GetListItem( city, CityAssetID.STATUSES, CityStatus.SIEGE )
+
+	local methods
+	for _, item in pairs( Scenario_GetData( "CITY_DEVELOPMENT_VARY_PARAMS" ) ) do
+		local match = true
+		local conditions = item.conditions
+		MathUtil_Dump( conditions )
+		if match == true and conditions.prob and Random_GetInt_Sync( 1, 100 ) > conditions.prob then match = false end
+		if match == true and conditions.insiege and conditions.insiege ~= isSiege then match = false end
+		if match == true and conditions.security_more_than and security < conditions.security_more_than then match = false end
+		if match == false then methods = item.methods break end
+	end
+	if not methods then return end
+
+	if not methods.total_prob then
+		methods.total_prob = 0
+		for _, method in ipairs( methods ) do
+			methods.total_prob = methods.total_prob + method.prob
+			method.prob        = methods.total_prob
+		end
+	end
+
+	local prob = Random_GetInt_Sync( 1, methods.total_prob )
+	local selectMethod	
+	for _, method in ipairs( methods ) do
+		if prob <= method.prob then
+			selectMethod = method
+			break
+		end
+	end
+	if not selectMethod then error( "invalid development vary" ) end
+
+	City_IncreaseDevelopment( city, { agri = selectMethod.agri, comm = selectMethod.comm, prod = selectMethod.prod } )
+end
+
+function City_Develop( city, progress, id )
+	local methods
+	for _, item in pairs( Scenario_GetData( "CITY_DEVELOP_PARAMS" ) ) do
+		local match = true
+		local conditions = item.conditions
+		if conditions.progress_min and conditions.progress_min > progress then match = false end
+		if match == true then methods = item.methods break end
+	end
+	if not methods then return end
+
+	if not methods.total_prob then
+		methods.total_prob = 0
+		for _, method in ipairs( methods ) do
+			methods.total_prob = methods.total_prob + method.prob
+			method.prob        = methods.total_prob
+		end
+	end
+	local prob = Random_GetInt_Sync( 1, methods.total_prob )
+	local selectMethod 
+	for _, method in ipairs( methods ) do
+		if prob < method.prob then
+			selectMethod = method
+			break
+		end
+	end
+	if not selectMethod then return end
+
+	local agri = selectMethod.agri or 0
+	local comm = selectMethod.comm or 0
+	local prod = selectMethod.prod or 0
+	if id == CityAssetID.AGRICULTURE then agri = agri + selectMethod.main or 0 end
+	if id == CityAssetID.COMMERCE    then comm = comm + selectMethod.main or 0 end
+	if id == CityAssetID.PRODUCTION  then prod = prod + selectMethod.main or 0 end	
+	City_IncreaseDevelopment( city, { agri = agri, comm = comm, prod = prod } )
+
+	--InputUtil_Pause( "city dev", agri, comm, prod )
+end
+
+function City_LevyTax( city, progress )
+	local income = 0
+	local popustparams = City_GetPopuParams( city )
+	for k, v in pairs( CityPopu ) do
+		if popustparams.POPU_TAX[k] then
+			income = income + popustparams.POPU_TAX[k] * v
+		end
+	end
+	income = math.ceil( income * math.min( 2.5, math.max( 0.2, progress * 0.01 ) ) )
+	Asset_Plus( city, CityAssetID.MONEY, income )
+	InputUtil_Pause( "City=" .. city.name .. " Levy tax=" .. income .. " Money=" .. Asset_Get( city, CityAssetID.MONEY ) )	
+	return income
+end
+
+function City_Build( city )
+
+end
+
+--------------------------------------
+
 CitySystem = class()
 
 function CitySystem:__init()
@@ -450,7 +416,6 @@ end
 function CitySystem:Update()
 	local month = g_calendar:GetMonth()
 	local day   = g_calendar:GetDay()
-
 	Entity_Foreach( EntityType.CITY, function ( city )
 		--print( "##############################" )
 		--city:DumpStats()
@@ -468,26 +433,17 @@ function CitySystem:Update()
 		end
 		
 		if day == 1 then
-			City_Tax( city )
+			City_CollectTax( city )
 		end
 
-		if month % 9 == 0 then
-			City_Harvest( city )
-		end
+		if month % 9 == 0 then City_Harvest( city ) end
 
-		if day % 10 == 0 then
-			City_Mental( city )
-		end		
+		if day % 10 == 0 then City_Mental( city ) end		
 
-		if day % 10 == 0 then
-			City_DevelopByMethod( city )
-		end
+		--if day % 15 == 1 then City_DevelopmentVary( city ) end
 
 		if day == 1 then
 			City_PopuConv( city )
-		end
-
-		if day == 1 then
 			City_PopuGrow( city )
 		end
 

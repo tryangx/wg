@@ -891,11 +891,3 @@ RTK_EventData =
 		triggers = { { NO_EVT_CD = -1 }, },
 	},
 }
-
-RTK_PolicyData = 
-{
-	[100] = 
-	{
-
-	},
-}

@@ -72,15 +72,6 @@ local function Event_HandleEvent( entity, event )
 		end
 	end
 	Stat_Add( "CityEvent", { city = entity.id, evt = event.id }, StatType.LIST )
-	--[[
-	Stat_SetDumper( "CityEvent", function ( data )
-		local city = Entity_Get( EntityType.CITY, data.city )
-		local evt  = Entity_Get( EntityType.EVENT, data.evt )
-		if city and evt then
-			print( "City=" .. ( city.name or "" ) .. " trigger evt=" .. ( evt.name or "" ) .. "("..evt.id.. ")" )
-		end
-	end)
-	]]
 	--InputUtil_Pause( "Event=" .. event.id .. " ocurred in " .. entity.name )	
 end
 
@@ -90,6 +81,14 @@ EventSystem = class()
 
 function EventSystem:__init()
 	System_Setup( self, SystemType.EVENT_SYS )
+
+	Stat_SetDumper( "CityEvent", function ( data )
+		local city = Entity_Get( EntityType.CITY, data.city )
+		local evt  = Entity_Get( EntityType.EVENT, data.evt )
+		if city and evt then
+			print( "City=" .. ( city.name or "" ) .. " trigger evt=" .. ( evt.name or "" ) .. "("..evt.id.. ")" )
+		end
+	end, StatType.LIST )
 end
 
 function EventSystem:Start()

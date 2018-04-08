@@ -252,7 +252,7 @@ end
 
 --return the distance between plot1 to plot2
 function Route_CalcPlotDistance( plot1, plot2 )
-	local path = Route_FindPath( plot1, plot2 )
+	local path = Route_FindPathByPlot( plot1, plot2 )
 	if not path then
 		InputUtil_Pause( "no route", city1.name, city2.name )
 		return 0

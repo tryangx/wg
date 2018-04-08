@@ -9,6 +9,8 @@ AssetAttribType =
 	TEMPORARY    = 10,	
 }
 
+ASSET_DEBUG_SWITCH = true
+
 --[[
 	function Watcher( entity, id, value )
 		if entity.type == xxx then
@@ -293,6 +295,16 @@ function Asset_FindListItem( entity, id, fn )
 	return nil
 end
 
+function Asset_GetListFromDict( entity, id )
+	local list = Asset_GetList( entity, id )
+	if not list then return end
+	local ret = {}
+	for k, item in pairs( list ) do
+		table.insert( ret, item )
+	end
+	return ret
+end
+
 --[[
 	@return true/false
 --]]
@@ -410,7 +422,16 @@ end
 
 
 function Asset_Get( entity, id )
-	if not entity then return nil end
+	if not entity then
+		if ASSET_DEBUG_SWITCH then error( "invalid entity in Asset_Get()" ) end
+		return nil
+	end
+	if ASSET_DEBUG_SWITCH then
+		local attrib = Entity_GetAssetAttrib( entity, id )
+		if attrib.value_type == AssetAttribType.LIST or attrib.value_type == AssetAttribType.POINTER_LIST then
+			error( "don't use Asset_Get() in list" )
+		end
+	end
 	if not id then error( "id is invalid" ) end
 	if typeof( entity ) == "number" then return nil end
 	local ret = entity[id]

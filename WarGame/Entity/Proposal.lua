@@ -10,8 +10,6 @@ ProposalAssetID =
 	PROPOSER    = 11,	
 	--who will execute the task by proposal
 	ACTOR       = 12,	
-	--superior
-	SUPERIOR    = 13,
 	--where submit the proposal	
 	LOCATION    = 14,
 	--where to execute the task
@@ -29,7 +27,6 @@ ProposalAssetAttrib =
 	type      = AssetAttrib_SetNumber   ( { id = ProposalAssetID.TYPE,       type = ProposalAssetType.BASE_ATTRIB, enum = ProposalType } ),
 	proposer  = AssetAttrib_SetPointer  ( { id = ProposalAssetID.PROPOSER,   type = ProposalAssetType.BASE_ATTRIB, setter = Entity_SetChara } ),
 	actor     = AssetAttrib_SetPointer  ( { id = ProposalAssetID.ACTOR,      type = ProposalAssetType.BASE_ATTRIB } ),
-	superior  = AssetAttrib_SetPointer  ( { id = ProposalAssetID.SUPERIOR,   type = ProposalAssetType.BASE_ATTRIB, setter = Entity_SetChara } ),
 	location  = AssetAttrib_SetPointer  ( { id = ProposalAssetID.LOCATION,   type = ProposalAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
 	destination = AssetAttrib_SetPointer( { id = ProposalAssetID.DESTINATION,type = ProposalAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
 	params    = AssetAttrib_SetList     ( { id = ProposalAssetID.PARAMS,     type = ProposalAssetType.BASE_ATTRIB } ),
@@ -57,10 +54,7 @@ function Proposal:ToString()
 	content = content .. " pser=" .. String_ToStr( Asset_Get( self, ProposalAssetID.PROPOSER ), "name" )
 	content = content .. " actr=" .. String_ToStr( Asset_Get( self, ProposalAssetID.ACTOR ), "name" )
 	content = content .. " loc=" .. String_ToStr( Asset_Get( self, ProposalAssetID.DESTINATION ), "name" )
-	if type == ProposalType.ISSUE_POLICY then
-		content = content .. " ply=" .. MathUtil_FindName( CityPolicy, Asset_Get( self, ProposalAssetID.PARAMS, "CITY_POLICY" ) )
-	elseif type == ProposalType.HARASS_CITY or type == ProposalType.ATTACK_CITY then
-
+	if type == ProposalType.HARASS_CITY or type == ProposalType.ATTACK_CITY then
 	end
 	return content
 end

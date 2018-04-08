@@ -34,14 +34,16 @@ function Chara_Serve( chara, group, city )
 		Asset_Set( chara, CharaAssetID.JOB, CharaJob.OFFICER )
 
 		--to set relation
-		local executive = Asset_GetListItem( Asset_Get( chara, CharaAssetID.LOCATION ), CityAssetID.OFFICER_LIST, CityOfficer.EXECUTIVE )
+		local executive = Asset_GetListItem( Asset_Get( chara, CharaAssetID.LOCATION ), CityAssetID.OFFICER_LIST, CityJob.CHIEF_EXECUTIVE )
 		if executive then
 			Asset_Set( chara, CharaAssetID.SUPERIOR, executive )
 			DBG_Trace( "chara_serve", executive.name .. " manage " .. chara.name )
 			
 			Asset_AppendList( executive, CharaAssetID.SUBORDINATES, chara )
 			DBG_Trace( "chara_serve", chara.name .. " serve " .. executive.name )
-		end		
+		end
+
+		Stat_Add( "HireChara", { name = chara.name }, StatType.LIST )
 	end
 end
 
@@ -94,28 +96,42 @@ end
 
 -----------------------------------------------------
 
-local function Chara_SubmitProposal( chara )
-	--is at home?
-	if chara:IsAtHome() ~= true then
-		DBG_Watch( "chara_proposal", chara.name .. " isn't at home" )
-		return
+function Chara_JobToPlan( job )
+	if job == CityJob.CHIEF_EXECUTIVE then
+		return CityPlan.ALL
+	elseif job == CityJob.CHIEF_COMMANDER then
+		return CityPlan.COMMANDER
+	elseif job == CityJob.CHIEF_STAFF then
+		return CityPlan.STAFF		
+	elseif job == CityJob.CHIEF_HR then
+		return CityPlan.HR
+	elseif job == CityJob.CHIEF_AFFAIRS then
+		return CityPlan.AFFAIRS
+	elseif job == CityJob.CHIEF_DIPLOMATIC then
+		return CityPlan.DIPLOMATIC
+	elseif job == CityJob.CHIEF_TECHNICIAN then
+		return CityPlan.TECHNICIAN
 	end
-
-	--has task?
-	if Asset_GetListSize( chara, CharaAssetID.TASKS ) > 0 then
-		print( "has task")
-		return
-	end
-
-	--is executive at home?
-	local executive = Asset_GetListItem( Asset_Get( chara, CharaAssetID.LOCATION ), CityAssetID.OFFICER_LIST, CityOfficer.EXECUTIVE )
-	if not executive or executive:IsAtHome() ~= true then
-		DBG_Watch( "chara_proposal", "executive=" .. ( executive and executive.name or "none" ) .. " isn't at home" )
-	end
-
-	CharaAI_SubmitProposal( chara )
+	return CityPlan.NONE
 end
 
+local function Chara_WorkForJob( chara )
+	local home = Asset_Get( chara, CharaAssetID.HOME )
+	local job = home:GetCharaJob( chara )
+	plan = Chara_JobToPlan( job )	
+	local task
+	if plan == CityPlan.NONE then
+		return
+	elseif plan == CityPlan.ALL then
+		task = Random_GetDictData( home, CityAssetID.PLANS )
+	else
+		task = Asset_GetListItem( home, CityAssetID.PLANS, plan )
+	end
+	if not task then return end
+	--print( MathUtil_FindName( CityJob, job ), MathUtil_FindName( CityPlan, plan ), task  )
+	--InputUtil_Pause( chara.name, "work on" .. task:ToString() )
+	Task_Do( task, chara )
+end
 
 local function Chara_ExecuteTask( chara )
 	local loc = Asset_Get( chara, CharaAssetID.LOCATION )
@@ -139,6 +155,10 @@ CharaSystem = class()
 
 function CharaSystem:__init()
 	System_Setup( self, SystemType.CHARA_SYS )
+
+	Stat_SetDumper( "HireChara", function ( data )
+		print( "name=" .. data.name )
+	end, StatType.LIST )
 end
 
 function CharaSystem:Start()
@@ -151,8 +171,7 @@ function CharaSystem:Update()
 		chara:Update()
 
 		Chara_ExecuteTask( chara )
-		
-		--move to meeting system
-		--if day == 1 then Chara_SubmitProposal( chara ) end
+
+		Chara_WorkForJob( chara )
 	end )
 end

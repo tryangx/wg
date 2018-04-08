@@ -151,7 +151,7 @@ function Manager:RemoveData( id, fn )
 		return false
 	end
 	if self._removeList then
-		DBG_Warning( "Remove In Foreach()", "Remove data(" .. self._type .. ") isn't recommended!" )
+		DBG_Warning( "Remove In Foreach()", "Remove data(type=" .. self._type .. ") isn't recommended!" )
 		self._removeList[id] = self._datas[id]
 	end
 	if not fn or fn( self._datas[id] ) then

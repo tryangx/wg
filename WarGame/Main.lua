@@ -130,7 +130,7 @@ function Game_Init()
 	for k, v in pairs( EntityType ) do
 		--print( "Entity=" .. MathUtil_FindName( EntityType, v ) )
 		Entity_Foreach( v, function ( entity )
-			--Entity_VerifyData( entity )
+			Entity_VerifyData( entity )
 		end )
 	end
 
@@ -149,11 +149,11 @@ function Game_Init()
 	System_Add( ConsumeSystem() )
 	System_Add( SupplySystem() )
 	System_Add( LogisticsSystem() )
-	System_Add( IntelSystem() )
-	System_Add( TaskSystem() )
+	System_Add( IntelSystem() )	
 	System_Add( EventSystem() )
 	System_Add( MeetingSystem() )
 	System_Add( DiplomacySystem() )
+	System_Add( TaskSystem() )	
 	System_Add( GoalSystem() )
 	System_Start()
 
