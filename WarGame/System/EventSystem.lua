@@ -29,8 +29,8 @@ local EventHandlers =
 	SET_GLB_FLAG = function( value, event, entity ) System_Get( SystemType.EVENT_SYS ):SetFlag( value, nil, true ) end,
 
 	--city
-	SECURITY     = function( value, event, entity ) Asset_Plus( entity, CityAssetID.SECURITY, value ) end,	
-	SATISFACTION = function( value, event, entity ) Asset_Plus( entity, CityAssetID.SATISFACTION, value ) end,
+	SECURITY        = function( value, event, entity ) Asset_Plus( entity, CityAssetID.SECURITY, value ) end,	
+	DISSATISFACTION = function( value, event, entity ) Asset_Plus( entity, CityAssetID.DISSATISFACTION, value ) end,
 }
 
 local function Event_TriggerEvent( entity, event )

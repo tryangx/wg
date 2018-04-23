@@ -41,13 +41,13 @@ function LogUtility:WriteContent( content, level )
 	if self.isPrintLog == true and self.logLevel and self.logLevel <= level then print( content ) end
 
 	if level <= LogWarningLevel.DEBUG then
-		content = "[DEBUG] " .. content
+		content = "[DBG] " .. content
 	elseif level <= LogWarningLevel.LOG then
 		content = "[LOG] " .. content
 	elseif level <= LogWarningLevel.IMPORTANT then
 		content = "[IMPT] " .. content
 	elseif level <= LogWarningLevel.ERROR then
-		content = "[ERROR] " .. content
+		content = "[ERR] " .. content
 	end
 	--print( self.isPrintLog, self.logLevel, level )
 	

@@ -1,3 +1,7 @@
+function Group_FormulaInit()
+	GroupGovernmentData = MathUtil_ConvertKey2ID( GroupGovernmentData, GroupGovernment )
+end
+
 function Group_SeizeCity( group, city )
 	local oldGroup = Asset_Get( city, CityAssetID.GROUP )
 	if oldGroup == group then

@@ -57,7 +57,7 @@ CityAssetID =
 	MONEY           = 211,
 	MATERIAL        = 212,
 	SECURITY        = 220,	--enough officer
-	SATISFACTION    = 221,	--p
+	DISSATISFACTION = 221,	--p
 	
 	CHARA_LIST      = 300,
 	OFFICER_LIST    = 301,	
@@ -97,7 +97,7 @@ CityAssetAttrib =
 	money      = AssetAttrib_SetNumber( { id = CityAssetID.MONEY,           type = CityAssetType.GROWTH_ATTRIB } ),
 	material   = AssetAttrib_SetNumber( { id = CityAssetID.MATERIAL,        type = CityAssetType.GROWTH_ATTRIB } ),
 	security   = AssetAttrib_SetNumber( { id = CityAssetID.SECURITY,        type = CityAssetType.GROWTH_ATTRIB,  min = 0, max = 100, default = 50 } ),	
-	satisfaction = AssetAttrib_SetNumber( { id = CityAssetID.SATISFACTION,  type = CityAssetType.GROWTH_ATTRIB,  min = 0, max = 100, default = 50 } ),
+	dissatisfaction = AssetAttrib_SetNumber( { id = CityAssetID.DISSATISFACTION,  type = CityAssetType.GROWTH_ATTRIB,  min = 0, max = 100, default = 50 } ),
 
 	charas     = AssetAttrib_SetPointerList( { id = CityAssetID.CHARA_LIST,   type = CityAssetType.PROPERTY_ATTRIB, setter = Entity_SetChara } ),
 	prisoner   = AssetAttrib_SetPointerList( { id = CityAssetID.PRISONER_LIST,type = CityAssetType.PROPERTY_ATTRIB, setter = Entity_SetChara } ),
@@ -185,8 +185,31 @@ function City:Load( data )
 	end
 end
 
-function City:ToString()
-	return self.name .. "(" .. Asset_Get( self, CityAssetID.CENTER_PLOT ):ToString() ..  ")"
+function City:ToString( type )
+	local content = "[" .. self.name .. "]"
+	local group = Asset_Get( self, CityAssetID.GROUP )
+	content = content .. "[" .. ( group and group.name or "" ) .. "]"
+	if type == "SIMPLE" then
+		content = content .. "(" .. Asset_Get( self, CityAssetID.CENTER_PLOT ):ToString() ..  ")"
+	elseif type == "ALL" then
+		content = content .. "(" .. Asset_Get( self, CityAssetID.CENTER_PLOT ):ToString() ..  ")"
+		content = content .. " chars=" .. Asset_GetListSize( self, CityAssetID.CHARA_LIST )
+		content = content .. " corps=" .. Asset_GetListSize( self, CityAssetID.CORPS_LIST )
+		content = content .. " offr=" .. Asset_GetListSize( self, CityAssetID.OFFICER_LIST )
+		content = content .. " cons=" .. Asset_GetListSize( self, CityAssetID.CONSTR_LIST )
+		content = content .. " popu=" .. Asset_Get( self, CityAssetID.POPULATION )
+		content = content .. " resv=" .. Asset_GetListItem( self, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES )
+	elseif type == "OFFICER" then
+		content = content .. " chars=" .. Asset_GetListSize( self, CityAssetID.CHARA_LIST )
+		Asset_ForeachList( self, CityAssetID.OFFICER_LIST, function ( officer, job )
+			content = content .. " [" .. MathUtil_FindName( CityJob, job ) .. "]=" .. officer.name
+		end )
+	elseif type == "MILITARY" then
+		content = content .. " corps=" .. Asset_GetListSize( self, CityAssetID.CORPS_LIST )
+		content = content .. " soldier=" .. self:GetSoldier()
+		content = content .. " reserved=" .. Asset_GetListItem( self, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES )
+	end
+	return content
 end
 
 ------------------------------------------
@@ -195,7 +218,7 @@ function City:TrackData( dump )
 	Track_Pop( "track_city_" .. self.id )
 	Track_Data( "total popu", Asset_Get( self, CityAssetID.POPULATION ) )
 	Track_Data( "security", Asset_Get( self, CityAssetID.SECURITY ) )
-	Track_Data( "satisfaction", Asset_Get( self, CityAssetID.SATISFACTION ) )
+	Track_Data( "dissatisfaction", Asset_Get( self, CityAssetID.DISSATISFACTION ) )
 
 	Track_Data( "agri", Asset_Get( self, CityAssetID.AGRICULTURE ) )
 	Track_Data( "prod", Asset_Get( self, CityAssetID.PRODUCTION ) )
@@ -318,6 +341,37 @@ function City:GetCharaJob( chara )
 	return findJob
 end
 
+function City:GetSoldier()
+	--corps in city
+	local soldier = 0
+	local maxSoldier = 0
+	Asset_ForeachList( self, CityAssetID.CORPS_LIST, function ( corps )
+		Asset_ForeachList( corps, CorpsAssetID.TROOP_LIST, function( troop )
+			local cur = Asset_Get( troop, TroopAssetID.SOLDIER )
+			local max = Asset_Get( troop, TroopAssetID.MAX_SOLDIER )
+			soldier = soldier + cur
+			maxSoldier = maxSoldier + max
+		end )
+	end )
+
+	return soldier, maxSoldier
+end
+
+--Get military power evaluation
+function City:GetMilitaryPower()
+	--corps in city
+	local power = 0
+	Asset_ForeachList( self, CityAssetID.CORPS_LIST, function ( corps )
+		Asset_ForeachList( corps, CorpsAssetID.TROOP_LIST, function( troop )
+			power = power + Asset_Get( troop, TroopAssetID.SOLDIER ) * TroopTable_GetPower( troop )
+		end )
+	end )
+
+	--reserved
+
+	return power
+end
+
 -------------------------------------------
 --checker
 
@@ -377,6 +431,20 @@ function City:GetNumOfFreeCorps()
 	return freeCorps
 end
 
+--chara is at home
+--chara isn't in task
+--chara isn't corps leader
+function City:FindFreeCharas()
+	local charaList = {}
+	Asset_ForeachList( self, CityAssetID.CHARA_LIST, function( chara )
+		if chara:IsAtHome() == false then return end
+		if chara:IsBusy() == true then return end
+		if Asset_Get( chara, CharaAssetID.CORPS ) then return end		
+		table.insert( charaList, chara )
+	end )
+	return charaList
+end
+
 function City:GetNumOfOfficerSlot()
 	local endPos = self:IsCapital() and CityJob.CAPITAL_POSITION_END or CityJob.POSITION_END
 	return endPos - CityJob.POSITION_BEGIN
@@ -395,47 +463,57 @@ function City:FindVacancyOfficerPositions()
 end
 
 --return list of characters not chara in any officer position
-function City:FindNonOfficerCharas()
-	local charaList = {}
+function City:FindNonOfficerFreeCharas( charaList )
+	if not charaList then charaList = {} end
 	Asset_ForeachList( self, CityAssetID.CHARA_LIST, function( chara )
-		if Asset_HasItem( self, CityAssetID.OFFICER_LIST, chara ) == false then
-			table.insert( charaList, chara )
-		end
+		if chara:IsAtHome() == false then return end
+		if chara:IsBusy() == true then return end
+		if Asset_HasItem( self, CityAssetID.OFFICER_LIST, chara, true ) == true then return end
+		table.insert( charaList, chara )
 	end )
 	return charaList
 end
 
-function City:FindFreeCorps()
+function City:GetDefendCorps()
 	local list = {}
 	Asset_ForeachList( self, CityAssetID.CORPS_LIST, function ( corps )
-		if Asset_Get( corps, CorpsAssetID.LOCATION ) == Asset_Get( corps, CorpsAssetID.ENCAMPMENT ) then
-			local ret = Asset_GetListItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )
-			if not ret or ret ~= true then
-				table.insert( list, corps )
-			end
-		end
-	end)
+		if corps:IsAtHome() == false then return end
+		table.insert( list, corps )
+	end )
 	return list
 end
 
-function City:FindHarassCityTargets()
+function City:GetFreeCorps()
+	local list = {}
+	local soldier = 0
+	local power = 0
+	Asset_ForeachList( self, CityAssetID.CORPS_LIST, function ( corps )
+		if corps:IsAtHome() == false then return end
+		if corps:IsBusy() == true then return end
+		table.insert( list, corps )				
+		soldier = soldier + corps:GetSoldier()
+	end )
+	return list, soldier
+end
+
+function City:FindHarassCityTargets( fn )
 	local group = Asset_Get( self, CityAssetID.GROUP )
-	local selfPower = City_GetMilitaryPower( self )
 	return self:FilterAdjaCities( function ( adja )
-		local adjaGroup = Asset_Get( adja, CityAssetID.GROUP )
-		return Dipl_IsAtWar( adjaGroup, group )
+		local adjaGroup = Asset_Get( adja, CityAssetID.GROUP )		
+		if Dipl_IsAtWar( adjaGroup, group ) == false then return false end
+		if fn( adja ) == false then return false end
+		return true
 	end )
 end
 
-function City:FindAttackCityTargets()
+function City:FindAttackCityTargets( fn )
 	local group = Asset_Get( self, CityAssetID.GROUP )
-	local selfPower = City_GetMilitaryPower( self )
 	return self:FilterAdjaCities( function ( adja )		
 		local adjaGroup = Asset_Get( adja, CityAssetID.GROUP )
-		if adjaGroup == group then print( "same group") return false end
+		if adjaGroup == group then return false end
 		if Dipl_IsAtWar( adjaGroup, group ) == false then return false end
 		local adjaPower = City_GetMilitaryPowerWithIntel( adja, group )	
-		--if adjaPower > selfPower then return false end
+		if fn( adja ) == false then return false end
 		return true
 	end )
 end
@@ -457,20 +535,22 @@ function City:CharaJoin( chara )
 
 	Asset_AppendList( self, CityAssetID.CHARA_LIST, chara )
 
-	print( chara.name, "join city=", self.name )
+	--Debug_Log( chara:ToString(), "join city=", self.name )
 end
 
 function City:CharaLeave( chara )
 	Asset_Set( chara, CharaAssetID.HOME, nil )
 
 	Asset_RemoveListItem( self, CityAssetID.CHARA_LIST, chara )
+
+	Debug_Log( chara:ToString(), "leave city=", self.name )
 end
 
 --------------------------------------------
 -- Corps relative
 
 --corps join into city, but no means reach there
-function City:CorpsJoin( corps )
+function City:AddCorps( corps )
 	Asset_Set( corps, CorpsAssetID.ENCAMPMENT, self )
 	--[[
 	--allot food
@@ -490,13 +570,18 @@ function City:CorpsJoin( corps )
 		Asset_AppendList( self, CityAssetID.CHARA_LIST, chara )
 	end)
 
-	print( corps.name, "join city=", self.name )
+	--add from group
+	local group = Asset_Get( self, CityAssetID.GROUP )
+	if group then
+		group:AddCorps( corps )
+	end
+
+	Debug_Log( corps:ToString(), "join city=", self.name )
 end
 
-function City:CorpsLeave( corps )
+function City:RemoveCorps( corps )	
 	Asset_Set( corps, CorpsAssetID.ENCAMPMENT, nil )
 
-	--remove from trooplist
 	Asset_RemoveListItem( self, CityAssetID.CORPS_LIST, corps )
 
 	--remove charalist
@@ -504,6 +589,11 @@ function City:CorpsLeave( corps )
 		Asset_RemoveListItem( self, CityAssetID.CHARA_LIST,   chara )
 		Asset_RemoveListItem( self, CityAssetID.OFFICER_LIST, chara )
 	end)
+
+	local group = Asset_Get( self, CityAssetID.GROUP )
+	if group then
+		group:RemoveCorps( corps )
+	end
 end
 
 --------------------------------------------
@@ -528,9 +618,10 @@ function City:ElectExecutive()
 end
 
 function City:AssignVacancyOfficer()
+	if 1 then return end
 	local posList = self:FindVacancyOfficerPositions()
 	if #posList ~= 0 then
-		local charaList = self:FindNonOfficerCharas()
+		local charaList = self:FindNonOfficerFreeCharas()
 		if #charaList == 0 then return false end
 
 		function FindSuitChara( pos, list )
@@ -561,7 +652,7 @@ function City:SetOfficer( chara, position )
 		InputUtil_Pause( "Old Officer=" .. old.name )
 	end
 	Asset_SetListItem( self, CityAssetID.OFFICER_LIST, position, chara )
-	print( "Assign " .. chara.name .. "-->" .. MathUtil_FindName( CityJob, position ) )
+	Debug_Log( self.name, "Assign " .. chara.name .. "-->" .. MathUtil_FindName( CityJob, position ) )
 end
 
 --------------------------------------------
@@ -579,7 +670,8 @@ function City:Update()
 	--print( self.name, "food=" .. Asset_Get( self, CityAssetID.FOOD ))
 
 	if day == 1 then
-		--Track_HistoryRecord( "soldier", { name = self.name, soldier = City_GetSoldier( self ), date = g_calendar:GetDateValue() } )
+		--Track_HistoryRecord( "soldier", { name = self.name, soldier = self:GetSoldier(), date = g_calendar:GetDateValue() } )
+		--Track_HistoryRecord( "reserves", { name = self.name, reserves = Asset_GetListItem( self, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES ), date = g_calendar:GetDateValue() } )
 		--Track_HistoryRecord( "dev", { name = self.name, agr = Asset_Get( self, CityAssetID.AGRICULTURE ), comm = Asset_Get( self, CityAssetID.COMMERCE ), prod = Asset_Get( self, CityAssetID.PRODUCTION ), date = g_calendar:GetDateValue() } )
 	end
 end
@@ -606,107 +698,3 @@ end
 ]]
 
 --------------------------------------------
-
-function City_GetSoldier( city )
-	--corps in city
-	local soldier = 0
-	Asset_ForeachList( city, CityAssetID.CORPS_LIST, function ( corps )
-		Asset_ForeachList( corps, CorpsAssetID.TROOP_LIST, function( troop )
-			soldier = soldier + Asset_Get( troop, TroopAssetID.SOLDIER )
-		end )
-	end )
-
-	return soldier
-end
-
---Get military power evaluation
-function City_GetMilitaryPower( city )
-	--corps in city
-	local power = 0
-	Asset_ForeachList( city, CityAssetID.CORPS_LIST, function ( corps )
-		Asset_ForeachList( corps, CorpsAssetID.TROOP_LIST, function( troop )
-			power = power + Asset_Get( troop, TroopAssetID.SOLDIER ) * TroopTable_GetPower( troop )
-		end )
-	end )
-
-	--reserved
-
-	return power
-end
-
---Get military power evaluation under intel report
-function City_GetMilitaryPowerWithIntel( city, fromGroup )
-	local power = City_GetMilitaryPower( city )
-	return power
-end
-
---function City_GetCity
-function City_GetSupportPopu( city )
-	local popustparams = Scenario_GetData( "CITY_POPUSTRUCTURE_PARAMS" )[1]
-	local agr = Asset_Get( city, CityAssetID.AGRICULTURE )
-	local farmer = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.FARMER )
-	local useagr = math.ceil( farmer / popustparams.POPU_PER_UNIT.FARMER )
-	local supportPopu = math.ceil( useagr * PlotParams.FOOD_PER_AGRICULTURE / GlobalTime.TIME_PER_YEAR )
-	local maxSupport = math.ceil( agr * PlotParams.FOOD_PER_AGRICULTURE / GlobalTime.TIME_PER_YEAR )
-	local popu = Asset_Get( city, CityAssetID.POPULATION )
-	print( city.name .. "popu=" .. popu .. "/" .. supportPopu .. "(" .. math.ceil( popu * 100 / supportPopu ) .. "%)" .. " Max:" .. maxSupport .. "(" .. math.ceil( popu * 100 / maxSupport ) .. "%)" )
-	return popu
-end
-
------------------------------------------------
-
-function City_GetPopuParams( city )
-return Scenario_GetData( "CITY_POPUSTRUCTURE_PARAMS" )[1]
-end
-
-function City_GetPopuTypeByDevIndex( id )
-	if id == CityAssetID.AGRICULTURE then
-		return "FARMER"
-	elseif id == CityAssetID.COMMERCE then
-		return "MERCHANT"
-	elseif id == CityAssetID.PRODUCTION then
-		return "WORKER"
-	end
-	return "NONE"
-end
-
--- Measure how many population in every career required by the development index.
-function City_NeedPopu( city, poputype )
-	local cityparams = City_GetPopuParams( city )
-	local needparam  = cityparams.POPU_NEED_RATIO
-	local unitparam  = cityparams.POPU_PER_UNIT
-
-	--some career needs the fixed ratio of the total population
-	if needparam[poputype] then
-		local popu   = Asset_Get( city, CityAssetID.POPULATION )
-		return math.floor( needparam[poputype] * popu )
-	end
-
-	--some career needs the number of population per development index 
-	if poputype == "FARMER" then
-		return Asset_Get( city, CityAssetID.AGRICULTURE ) * unitparam[poputype]
-	elseif poputype == "WORKER" then
-		return Asset_Get( city, CityAssetID.PRODUCTION ) * unitparam[poputype]
-	elseif poputype == "MERCHANT" then
-		return Asset_Get( city, CityAssetID.COMMERCE ) * unitparam[poputype]
-	end
-	
-	return 0
-end
-
-function City_NeedDevIndex( city, id )
-	local cityparams = City_GetPopuParams( city )
-	local unitparam  = cityparams.POPU_PER_UNIT
-
-	if id == CityAssetID.AGRICULTURE then
-		return math.ceil( Asset_Get( city, CityAssetID.AGRICULTURE ) / unitparam.FARMER )
-	elseif id == CityAssetID.COMMERCE then
-		return math.ceil( Asset_Get( city, CityAssetID.COMMERCE ) / unitparam.MERCHANT )
-	elseif id == CityAssetID.PRODUCTION then
-		return math.ceil( Asset_Get( city, CityAssetID.PRODUCTION ) / unitparam.WORKER )
-	end
-
-	return 0
-end
-
----------------------------------------------

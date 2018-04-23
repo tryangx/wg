@@ -96,7 +96,7 @@ local function IsAdvantageous()
 
 	--small probability to attack
 	local rand = Random_GetInt_Sync( 1, 100 )
-	print( "atck intense=" .. intense * 50, rand )
+	--print( "atck intense=" .. intense * 50, rand )
 	if rand < intense * 50 then		
 		return true
 	end

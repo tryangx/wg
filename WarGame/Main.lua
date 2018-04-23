@@ -32,7 +32,7 @@ function Game_Init()
 		elseif entity.type == EntityType.CITY then
 			if id == CityAssetID.SECURITY then
 				--print( entity.name, MathUtil_FindName( CityAssetID, id ), operation or "unkown" )
-			elseif id == CityAssetID.SATISFACTION then
+			elseif id == CityAssetID.DISSATISFACTION then
 				--print( entity.name, MathUtil_FindName( CityAssetID, id ), operation or "unkown" )
 			end			
 		elseif entity.type == EntityType.CHARA then
@@ -160,6 +160,9 @@ function Game_Init()
 	--init fomula
 	Group_FormulaInit()
 
+	--init combat params
+	Combat_Init()
+
 	Entity_Foreach( EntityType.CITY, function( data )
 		--Entity_Dump( data )
 	end )
@@ -239,13 +242,35 @@ local function Game_MainLoop()
 
 	Track_HistoryDump( nil, function( key, data )
 		if key == "soldier" then
-			print( key, g_calendar:CreateDateDescByValue( data.date ), data.name .. "=" .. data.soldier )
+			Debug_Normal( key, g_calendar:CreateDateDescByValue( data.date ), data.name .. "=" .. data.soldier )
+		elseif key == "reserves" then
+			Debug_Normal( key, g_calendar:CreateDateDescByValue( data.date ), data.name .. "=" .. data.reserves )
 		elseif key == "dev" then
-			print( key, g_calendar:CreateDateDescByValue( data.date ), data.name .. "=" .. data.agr .. "/" .. data.comm .. "/" .. data.prod )
+			Debug_Normal( key, g_calendar:CreateDateDescByValue( data.date ), data.name .. "=" .. data.agr .. "/" .. data.comm .. "/" .. data.prod )
 		end
 	end )
 
-	print( "winner=", g_winner and g_winner.name or "[NONE]" )
+	Debug_Normal( "Troop==>" )
+	Entity_Foreach( EntityType.TROOP, function ( entity )		
+		Debug_Normal( entity:ToString( "ALL" ) )
+	end )
+
+	Debug_Normal( "Corps==>" )
+	Entity_Foreach( EntityType.CORPS, function ( entity )		
+		Debug_Normal( entity:ToString( "ALL" ) )
+	end )
+
+	Debug_Normal( "City==>" )
+	Entity_Foreach( EntityType.CITY, function ( entity )		
+		Debug_Normal( entity:ToString( "ALL" ) )
+	end )
+
+	Debug_Normal( "Group==>" )
+	Entity_Foreach( EntityType.GROUP, function ( entity )
+		Debug_Normal( entity:ToString( "ALL" ) )
+	end )
+
+	Debug_Normal( "winner=", g_winner and g_winner.name or "[NONE]" )
 end
 
 function Game_Start()

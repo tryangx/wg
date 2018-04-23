@@ -82,6 +82,23 @@ function Troop:__init()
 	Entity_Init( self, EntityType.TROOP, TroopAssetAttrib )
 end
 
+function Troop:ToString( type )
+	local content = "[" .. self.name .. "](" .. self.id .. ")"
+	if type == "SIMPLE" then
+	elseif type == "BREIF" then
+		content = content .. " n=" .. Asset_Get( self, TroopAssetID.SOLDIER )
+	else
+		content = content .. " n=" .. Asset_Get( self, TroopAssetID.SOLDIER )
+		local corps = Asset_Get( self, TroopAssetID.CORPS )
+		content = content .. " corp=" .. corps.name
+		local group = Asset_Get( corps, CorpsAssetID.GROUP )
+		if group then
+			content = content .. " grp=" .. group.name
+		end		
+	end
+	return content
+end
+
 function Troop:LoadFromTable( tableData )
 	self.name = tableData.name
 
@@ -141,30 +158,4 @@ end
 function Troop:GetWeaponBy( name, value )
 	local tableData = Asset_Get( self, TroopAssetID.TABLEDATA )
 	return tableData and tableData:GetWeaponBy( name, value ) or nil
-end
-
--------------------------------------------
--- Global
-
------------------------------------
---  Remove troop from data
---    1. killed in combat
---    2. dismiss by command
---    3. sth. else
---
---  Don't care about the leader here.
---  It should be dealed with the situtation
---
-function Troop_Remove( troop )
-	--remove from list in corps
-	local corps = Asset_Get( troop, TroopAssetID.CORPS )
-	if corps then Asset_RemoveListItem( corps, CorpsAssetID.TROOP_LIST, troop ) end
-
-	--remove entity
-	Entity_Remove( troop )
-end
-
-function Troop_GetConsumeFood( troop )
-	local table = Asset_Get( troop, TroopAssetID.TABLEDATA )
-	return table and table.consume.FOOD
 end

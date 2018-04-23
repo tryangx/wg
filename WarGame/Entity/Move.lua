@@ -19,7 +19,7 @@ MoveAssetID =
 	STATUS     = 12,
 	PROGRESS   = 13,
 	DURATION   = 14,
-	ROUTE      = 15,
+	PATH       = 15,
 }
 
 MoveAssetAttrib = 
@@ -36,7 +36,7 @@ MoveAssetAttrib =
 	status   = AssetAttrib_SetNumber ( { id = MoveAssetID.STATUS,     type = MoveAssetType.BASE_ATTRIB, enum = MoveStatus } ),
 	progress = AssetAttrib_SetNumber ( { id = MoveAssetID.PROGRESS,   type = MoveAssetType.BASE_ATTRIB } ),
 	duration = AssetAttrib_SetNumber ( { id = MoveAssetID.DURATION,   type = MoveAssetType.BASE_ATTRIB } ),
-	route    = AssetAttrib_SetPointer( { id = MoveAssetID.ROUTE,      type = MoveAssetType.BASE_ATTRIB } ),
+	path     = AssetAttrib_SetPointer( { id = MoveAssetID.PATH,       type = MoveAssetType.BASE_ATTRIB } ),
 }
 
 
@@ -47,6 +47,17 @@ Move = class()
 
 function Move:__init( ... )
 	Entity_Init( self, EntityType.MOVE, MoveAssetAttrib )
+end
+
+function Move:ToString( type )
+	local content = Asset_Get( self, MoveAssetID.ACTOR ):ToString()
+	local curplot = Asset_Get( self, MoveAssetID.CUR_PLOT )
+	if curplot then content = content .. " cur=" .. curplot:ToString() end
+	content = content .. " dst=" .. Asset_Get( self, MoveAssetID.DEST_PLOT ):ToString()
+	if type == "END" then
+		content = content .. " day=" .. g_calendar:CalcDiffDayByDates( Asset_Get( self, MoveAssetID.END_TIME ), Asset_Get( self, MoveAssetID.BEGIN_TIME ) )
+	end
+	return content
 end
 
 function Move:Load( data )
@@ -60,10 +71,3 @@ function Move:IsArrived()
 end
 
 --------------------------------------------
-
---return days
-function Move_CalcCorpsMoveDuration( corps, from, to )
-	local distance = Route_CalcCityDistance( from, to )
-	local movement = Asset_Get( corps, CorpsAssetID.MOVEMENT )
-	return math.ceil( distance / movement )
-end

@@ -48,6 +48,20 @@ function Group:__init()
 	Entity_Init( self, EntityType.GROUP, GroupAssetAttrib )
 end
 
+function Group:ToString( type )
+	local content = "[" .. self.name .. "]"
+	if type == "SIMPLE" then
+		content = content .. " city=" .. Asset_GetListSize( self, GroupAssetID.CITY_LIST )
+		content = content .. " chara=" .. Asset_GetListSize( self, GroupAssetID.CHARA_LIST )
+		content = content .. " corps=" .. Asset_GetListSize( self, GroupAssetID.CORPS_LIST )
+	elseif type == "MILITARY" then
+		content = content .. " pow=" .. self:GetSoldier()
+	elseif type == "ALL" then
+		content = content .. " pow=" .. self:GetSoldier()
+	end
+	return content
+end
+
 function Group:Load( data )
 	self.id = data.id
 	self.name = data.name
@@ -70,10 +84,12 @@ end
 function Group:VerifyData()
 	local group = self
 
+	--[[
 	local capital = Asset_Get( self, GroupAssetID.CAPITAL )
-	if capital and typeof( capital ) ~= "number" then		
-		Asset_Set( capital, CityAssetID.STATUSES, CityStatus.CAPITAL, true )
+	if capital and typeof( capital ) ~= "number" then
+		Asset_SetListItem( capital, CityAssetID.STATUSES, CityStatus.CAPITAL, true )
 	end
+	]]
 
 	--city belong the group
 	Asset_ForeachList( self, GroupAssetID.CITY_LIST, function( city )
@@ -132,6 +148,30 @@ function Group:Update( ... )
 end
 
 
+----------------------------------------------------------
+
+function Group:GetSoldier()
+	--corps in city
+	local soldier = 0
+	Asset_ForeachList( self, GroupAssetID.CITY_LIST, function ( city )
+		soldier = soldier + city:GetSoldier()
+	end )
+	return soldier
+end
+
+
+function Group:GetVacancyCityList()
+	local list = {}
+	Asset_ForeachList( self, GroupAssetID.CITY_LIST, function ( city )
+		if Asset_GetListSize( city, CityAssetID.CHARA_LIST ) < Chara_GetReqNumOfOfficer( city ) then
+			table.insert( list, city )
+		end
+	end)
+	return list
+end
+
+----------------------------------------------------------
+
 function Group:LoseCity( city, toCity )
 	--remove city from list
 	Asset_RemoveListItem( self, GroupAssetID.CITY_LIST, city )
@@ -171,20 +211,21 @@ function Group:LoseCity( city, toCity )
 	Asset_ClearList( city, CityAssetID.OFFICER_LIST )
 
 	--corps retreat
-	local reserve = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.SOLDIER )
+	local reserve = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES )
 	Asset_ForeachList( city, CityAssetID.CORPS_LIST, function( corps )
 		if corps:IsAtHome() then
 			--dismiss corps
 			local soldier = corps:GetSoldier()
 			--put soldier into reserve
 			reserve = reserve + soldier
-		else
+		elseif toCity then
 			--retreat to nearby city
-			toCity:CorpsJoin( corps )
+			InputUtil_Pause( corps:ToString(), "not at home" )
+			toCity:AddCorps( corps )
 		end
 	end )
 	Asset_ClearList( city, CityAssetID.CORPS_LIST )
-	Asset_SetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.SOLDIER, reserve )
+	Asset_SetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES, reserve )
 end
 
 function Group:OccupyCity( city )
@@ -212,6 +253,7 @@ function Group:OccupyCity( city )
 	end )
 
 	--other things to do in the future
+	Asset_Set( city, CityAssetID.GROUP, self )
 
 	--append to group
 	Asset_AppendList( self, GroupAssetID.CITY_LIST, city )
@@ -221,10 +263,10 @@ function Group:LoseChara( chara )
 	Asset_RemoveListItem( self, GroupAssetID.CHARA_LIST, chara )
 end
 
----------------------------------------
+function Group:AddCorps( corps )	
+end
 
-function Group_FormulaInit()
-	GroupGovernmentData = MathUtil_ConvertKey2ID( GroupGovernmentData, GroupGovernment )
+function Group:RemoveCorps( corps )
 end
 
 ---------------------------------------

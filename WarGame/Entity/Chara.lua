@@ -170,8 +170,11 @@ end
 
 
 function Chara:ToString( type )
-	local content = "[" .. self.name .. "@" .. Asset_Get( self, CharaAssetID.LOCATION ).name .. "]"
-	if type == "JOB" then
+	local content = "[" .. self.name .. "]"
+
+	if type == "LOCATION" then
+		content = content .. " @" .. Asset_Get( self, CharaAssetID.LOCATION ).name
+	elseif type == "JOB" then
 		local home = Asset_Get( self, CharaAssetID.HOME )
 		content = content .. "job=" .. MathUtil_FindName( CityJob, city:GetCharaJob( self ) )
 	end	
@@ -188,24 +191,6 @@ end
 
 function Chara:IsBusy()
 	return Asset_GetListItem( self, CharaAssetID.STATUSES, CharaStatus.IN_TASK ) ~= nil
-end
-
--------------------------------------------
-
-function Chara_GetLimitByGroup( group )
-	if not group then return 0 end
-	local government = Asset_Get( group, GroupAssetID.GOVERNMENT )
-	--print( "gov=" .. MathUtil_FindName( GroupGovernment, government ) )
-	return GroupGovernmentData[government].CAPITAL_CHARA_LIMIT
-end
-
-function Chara_GetLimitByCity( city )
-	if not city then return 0 end
-	if city:IsCapital() then return -1 end
-	local lv = Asset_Get( city, CityAssetID.LEVEL )	
-	local ret = math.ceil( lv / 4 ) + 1
-	DBG_Warning( "chara_limit_bycity", ret )
-	return ret
 end
 
 -------------------------------------------

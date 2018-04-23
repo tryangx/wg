@@ -535,15 +535,15 @@ GroupGovernmentData =
 	NONE          = {},
 	KINGDOM       =
 	{
-		CAPITAL_CHARA_LIMIT = 30,
+		CAPITAL_CHARA_LIMIT = 12,
 	},
 	EMPIRE        =
 	{
-		CAPITAL_CHARA_LIMIT = 50,
+		CAPITAL_CHARA_LIMIT = 12,
 	},
 	REGION        =
 	{
-		CAPITAL_CHARA_LIMIT = 16,
+		CAPITAL_CHARA_LIMIT = 8,
 	},
 	FAMILY        =
 	{
@@ -551,11 +551,11 @@ GroupGovernmentData =
 	},
 	GUERRILLA     =
 	{
-		CAPITAL_CHARA_LIMIT = 12,
+		CAPITAL_CHARA_LIMIT = 6,
 	},
 	WARZONE       =
 	{
-		CAPITAL_CHARA_LIMIT = 8,
+		CAPITAL_CHARA_LIMIT = 6,
 	},
 }
 
@@ -584,6 +584,7 @@ FoodParams =
 
 ----------------------------------------------
 -- City population structure
+
 DefaultCityPopuPleb = 
 {
 	ALL      = 1,
@@ -617,7 +618,7 @@ DefaultCityPopuInit =
 {
 	HOBO     = { min = 120, max = 240 },
 	CHILDREN = { min = 60, max = 120 },
-	SOLDIER  = { min = 60, max = 120 },
+	RESERVES = { min = 60, max = 120 },
 	MIDDLE   = { min = 60, max = 120 },
 	BACHELOR = { min = 40, max = 120 },
 	OFFICER  = { min = 40, max = 120 },
@@ -667,7 +668,7 @@ DefaultCityPopuNeed =
 	--percent unit
 	HOBO     = 0.04,
 	CHILDREN = 0.15,
-	SOLDIER  = 0.02,
+	RESERVES = 0.02,
 	MIDDLE   = 0.05,
 	OFFICER  = 0.05,
 	BACHELOR = 0.02,
@@ -702,6 +703,25 @@ DefaultCityPopuConv =
 	{ from = "BACHELOR", to = "MIDDLE", sat_less_than = 35, prob = 20, force_conv = true },
 	{ from = "RICH",     to = "MIDDLE", sat_less_than = 30, sec_less_than = 30, prob = 10, force_conv = true },
 	{ from = "NOBLE",    to = "MIDDLE", sat_less_than = 25, sec_less_than = 25, prob = 10, force_conv = true },
+}
+
+--rate unit is 1 per 10000
+DefaultCityConscript = 
+{
+	{ from = "HOBO",     to = "RESERVES", prob = 100, min_rate = 10, max_rate = 20 },
+	{ from = "FARMER",   to = "RESERVES", prob = 80,  min_rate = 10, max_rate = 20 },
+	{ from = "WORKER",   to = "RESERVES", prob = 80,  min_rate = 10, max_rate = 20 },
+	{ from = "MERCHANT", to = "RESERVES", prob = 80,  min_rate = 10, max_rate = 20 },
+	{ from = "MIDDLE",   to = "RESERVES", prob = 50,  min_rate = 10, max_rate = 20 },
+}
+
+--rate unit is 1 per 1000
+DefaultCityRecruit =
+{
+	{ from = "HOBO",     to = "RESERVES", prob = 100, min_rate = 5, max_rate = 15 },
+	{ from = "FARMER",   to = "RESERVES", prob = 100, min_rate = 5, max_rate = 15 },
+	{ from = "WORKER",   to = "RESERVES", prob = 100, min_rate = 5, max_rate = 15 },
+	{ from = "MERCHANT", to = "RESERVES", prob = 100, min_rate = 5, max_rate = 15 },	
 }
 
 DefaultCityPopuStructureParams = 
@@ -919,11 +939,15 @@ DefaultTaskSteps =
 	ATTACK_CITY     = { "PREPARE", "EXECUTE", "FINISH", "REPLY" },
 	INTERCEPT       = { "PREPARE", "EXECUTE", "FINISH", "REPLY" },
 	
-	ESTABLISH_CORPS = { "PREPARE", "EXECUTE", "FINISH", "REPLY" },
-	REINFORCE_CORPS = { "PREPARE", "EXECUTE", "FINISH", "REPLY" },
+	ESTABLISH_CORPS = { "EXECUTE", "FINISH", "REPLY" },
+	REINFORCE_CORPS = { "EXECUTE", "FINISH", "REPLY" },
 	DISMISS_CORPS   = { "EXECUTE", "FINISH", "REPLY" },
 	TRAIN_CORPS     = { "EXECUTE", "FINISH", "REPLY" },
 	DISPATCH_CORPS  = { "EXECUTE", "FINISH", "REPLY" },
+	ENROLL_CORPS    = { "EXECUTE", "FINISH", "REPLY" },
+	CONSCRIPT       = { "EXECUTE", "FINISH", "REPLY" },
+	RECRUIT         = { "EXECUTE", "FINISH", "REPLY" },
+
 
 	FRIENDLY        = { "EXECUTE", "FINISH", "REPLY" },
 
@@ -934,7 +958,9 @@ DefaultTaskSteps =
 	LEVY_TAX        = { "EXECUTE", "FINISH", "REPLY" },
 
 	HIRE_CHARA      = { "EXECUTE", "FINISH", "REPLY" },
-	PROMOTE_CHARA   = { "EXECUTE", "FINISH", "REPLY" },
+	PROMOTE_CHARA   = { "FINISH", "REPLY" },
+	DISPATCH_CHARA  = { "PREPARE", "EXECUTE", "FINISH", },
+	CALL_CHARA      = { "PREPARE", "EXECUTE", "FINISH", },
 }
 
 --------------------------------------------------------

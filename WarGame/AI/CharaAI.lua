@@ -11,6 +11,7 @@ local _topic   = nil
 local _registers = {}
 
 local function pause()
+	--print( "topic=", MathUtil_FindName( MeetingTopic, _topic ) )
 	InputUtil_Pause( "debug chara ai" )
 	return true
 end
@@ -20,6 +21,10 @@ local bp = { type = "FILTER", condition = pause }
 local stop = { type = "FILTER", condition = function ( ... )
 	return false
 end }
+
+local function dbg( content )
+	InputUtil_Pause( content )
+end
 
 ----------------------------------------
 
@@ -43,8 +48,15 @@ local function SubmitProposal( params )
 		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.HR )
 	elseif params.type == "HIRE_CHARA" then
 		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.HR )
+	elseif params.type == "DISPATCH_CHARA" then
+		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["DISPATCH_CITY"] )
+	elseif params.type == "CALL_CHARA" then		
+		Asset_Set( proposal, ProposalAssetID.LOCATION, _registers["CALL_FROM_CITY"] )
 	
-	elseif params.type == "HARASS_CITY" or params.type == "ATTACK_CITY" then		
+	elseif params.type == "ATTACK_CITY" then		
+		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "corps_list", _registers["ATTACK_CORPS"] )
+		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
+	elseif params.type == "HARASS_CITY" then
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
 	elseif params.type == "INTERCEPT" then
 		local enemyCorps = _registers["TARGET_CORPS"]
@@ -53,11 +65,15 @@ local function SubmitProposal( params )
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
 		--InputUtil_Pause( "inter", _city.name, city.name, enemyCorps.name )
 	
+	elseif params.type == "ESTABLISH_CORPS" then
+		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "leader", _registers["CORPS_LEADER"] )
+		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.COMMANDER )
 	elseif params.type == "REINFORCE_CORPS"
 		or params.type == "DISMISS_CORPS"
 		or params.type == "TRAIN_CORPS"
 		or params.type == "UPGRADE_CORPS"
-		or params.type == "DISPATCH_CORPS" then
+		or params.type == "DISPATCH_CORPS"
+		or params.type == "ENROLL_CORPS" then
 		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "corps", _registers["CORPS"] )
 		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.COMMANDER )
 
@@ -118,16 +134,22 @@ local function CanEstablishCorps()
 		return false
 	end
 
-	local soldier = math.min( 1000, Asset_GetListItem( _city, CityAssetID.POPU_STRUCTURE, CityPopu.SOLDIER ) or 0 )
+	--need a leader
+	--to do	
+	local charaList = _city:FindFreeCharas()
+	if #charaList == 0 then return end
+
+	--check minimum soldier available
+	local soldier = Asset_GetListItem( _city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES )
 	if soldier < Scenario_GetData( "TROOP_PARAMS" ).MIN_TROOP_SOLDIER then
-		print( "not enough soldier" )
 		return false
 	end
-
 	if Corps_CanEstablishCorps( _city, soldier ) == false then
 		print( "cann't est corps" )
 		return false
 	end
+
+	_registers["CORPS_LEADER"] = Random_GetListItem( charaList )
 
 	--InputUtil_Pause( "can est corps" )
 
@@ -135,9 +157,38 @@ local function CanEstablishCorps()
 end
 
 local function CanReinforceCorps()
+	--[[
+	local soldier = Asset_GetListItem( _city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES )	
+	if soldier < Scenario_GetData( "TROOP_PARAMS" ).MIN_TROOP_SOLDIER then
+		--print( "not enough soldier" )
+		return false
+	end
+	]]
+
+	local corpsList = {}
+	Asset_FindListItem( _city, CityAssetID.CORPS_LIST, function ( corps )
+		if corps:IsAtHome() == false then return false end
+		if corps:IsBusy() == true then return false end
+		local num, max = corps:GetSoldier()
+		--InputUtil_Pause( num, max )
+		--print( corps:ToString(), num, max )
+		if num < max then table.insert( corpsList, corps ) end
+	end )
+	if #corpsList == 0 then return false end
+
+	local findCorps = corpsList[Random_GetInt_Sync( 1, #corpsList )]
+
+	_registers["CORPS"] = findCorps
+	_registers["ACTOR"] = findCorps
+
+	return true
+end
+
+local function CanEnrollCorps()
 	local findCorps = nil
 	Asset_FindListItem( _city, CityAssetID.CORPS_LIST, function ( corps )
 		if corps:IsAtHome() == false then return false end
+		if corps:IsBusy() == true then return false end
 		--print( "check corps", Asset_GetListSize( corps, CorpsAssetID.TROOP_LIST ), Scenario_GetData( "CORPS_PARAMS" ).REQ_TROOP_NUMBER )
 		if Asset_GetListSize( corps, CorpsAssetID.TROOP_LIST ) < Scenario_GetData( "CORPS_PARAMS" ).REQ_TROOP_NUMBER then
 			findCorps = corps
@@ -149,13 +200,21 @@ local function CanReinforceCorps()
 		return false
 	end
 
-	local soldier = Asset_GetListItem( _city, CityAssetID.POPU_STRUCTURE, CityPopu.SOLDIER )
+	--[[
+	local soldier = Asset_GetListItem( _city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES )
+	soldier = math.min( soldier, Asset_GetListItem( _city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES ) )
+	]]
+	local soldier = Asset_GetListItem( _city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES )
 	if soldier < Scenario_GetData( "TROOP_PARAMS" ).MIN_TROOP_SOLDIER then
-		InputUtil_Pause( "no corps" )
+		return false
+	end
+	if Corps_CanEstablishCorps( _city, soldier ) == false then
+		print( "cann't est corps" )
 		return false
 	end
 
 	_registers["CORPS"] = findCorps
+	_registers["ACTOR"] = findCorps
 
 	return true
 end
@@ -164,6 +223,7 @@ local function CanTrainCorps()
 	local findCorps = nil
 	Asset_FindListItem( _city, CityAssetID.CORPS_LIST, function ( corps )
 		if corps:IsAtHome() == false then return false end
+		if corps:IsBusy() == true then return false end
 		if corps:GetTraining() < 50 then
 			findCorps = corps
 			return true
@@ -175,6 +235,7 @@ local function CanTrainCorps()
 	end
 
 	_registers["CORPS"] = findCorps
+	_registers["ACTOR"] = findCorps
 
 	return true
 end
@@ -183,15 +244,20 @@ local function CanDispatchCorps()
 	return false
 end
 
-local function CanHarassCity()	
-	if 1 then return false end
-
+local function CanHarassCity()
 	--check free corps
-	local list = _city:FindFreeCorps()
-	if #list == 0 then return false end
+	local list, soldier, power = _city:GetFreeCorps()
+	if #list == 0 then
+		return false
+	end
 
 	--check & find target
-	local cities = _city:FindHarassCityTargets()
+	local cities = _city:FindHarassCityTargets( function ( city )
+		local citySoldier = City_GetSoldierWithIntel( city, _group )
+		if citySoldier > soldier + soldier then return false end
+		if Random_GetInt_Sync( 1, citySoldier ) > soldier then return false end
+		return true
+	end )
 	local number = #cities
 	if number == 0 then return false end
 
@@ -209,14 +275,19 @@ end
 
 local function CanAttackCity()
 	--check free corps
-	local list = _city:FindFreeCorps()
+	local list, soldier, power = _city:GetFreeCorps()
 	if #list == 0 then
-		local numofcorps = Asset_GetListSize( _city, CityAssetID.CORPS_LIST )
+		--local numofcorps = Asset_GetListSize( _city, CityAssetID.CORPS_LIST )
 		--print( _city.name, "has corps=" .. numofcorps )
 		return false
 	end
-	
-	local cities = _city:FindAttackCityTargets()
+
+	local cities = _city:FindAttackCityTargets( function ( city )
+		local citySoldier = City_GetSoldierWithIntel( city, _group )
+		if soldier < citySoldier then return false end
+		if Random_GetInt_Sync( 1, soldier ) >= citySoldier then return false end
+		return true
+	end )
 	local number = #cities
 	if number == 0 then return false end
 
@@ -228,12 +299,13 @@ local function CanAttackCity()
 
 	_registers["ACTOR"] = corps
 	_registers["TARGET_CITY"] = destcity
+	_registers["ATTACK_CORPS"] = list
 
 	return true
 end
 
 local function CanIntercept()
-	local list = _city:FindFreeCorps()
+	local list = _city:GetFreeCorps()
 	if #list == 0 then return false end
 
 	local target = Asset_Get( _meeting, MeetingAssetID.TARGET )
@@ -250,6 +322,64 @@ local function CanIntercept()
 	return true
 end
 
+--1. in danger
+--2. not enough reserves
+--3. corps understaffed
+local function NeedMoreReserves( score )
+	if not score then score = 0 end
+
+	if Asset_GetListItem( _city, CityAssetID.STATUSES, CityStatus.MILITARY_DANGER ) then
+		score = score + 50
+	end
+	if Asset_GetListItem( _city, CityAssetID.STATUSES, CityStatus.MILITARY_WEAK ) then
+		score = score + 35
+	end
+
+	local soldier, maxSoldier = _city:GetSoldier()
+	local needSoldier = maxSoldier - soldier
+	local reserves = Asset_GetListItem( _city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES )
+	if reserves < needSoldier * 0.5 then
+		score = score + 35
+	elseif reserves < needSoldier then
+		score = score + 25
+	end
+
+	--if score > 0 then InputUtil_Pause( score ) end
+	score = 100
+
+	return Random_GetInt_Sync( 1, 100 ) < score
+end
+
+--force conscript, 
+local function CanConscript()
+	local score = 0
+	local security = Asset_Get( _city, CityAssetID.SECURITY )
+	if security < 30 then
+		return false
+	elseif security < 40 then
+		score = score - 20
+	elseif security < 60 then
+		score = score - 10
+	elseif security > 80 then
+		score = score + 20
+	end
+	if NeedMoreReserves( score ) == false then
+		return false
+	end
+	return true
+end
+
+--use money to recruit
+local function CanRecruit()
+	local needMoney = 1000
+	if Asset_Get( _city, CityAssetID.MONEY ) < needMoney then
+		return false
+	end
+	if NeedMoreReserves() == false then
+		return false
+	end
+end
+
 ----------------------------------------
 
 local function CanBuildCity()
@@ -260,9 +390,13 @@ local function CanLevyTax()
 end
 
 local function CanHireChara()
+	if Asset_GetListItem( _city, CityAssetID.PLANS, CityPlan.HR ) then
+		return false
+	end
+
 	local limit
 	if _city then
-		limit = Chara_GetLimitByCity( _city )
+		limit = Chara_GetLimitByCity( _city )		
 		if limit > 0 and limit <= Asset_GetListSize( _city, CityAssetID.CHARA_LIST ) then
 			return false
 		end
@@ -280,6 +414,56 @@ local function CanPromoteChara()
 	return false
 end
 
+local function CanDispatchChara()
+	if _city:IsCapital() == false then return false end
+
+	local charaList = _city:FindNonOfficerFreeCharas()
+	if #charaList == 0 then return false end
+
+	local cityList = _group:GetVacancyCityList()
+	if #cityList == 0 then return false end	
+
+	--simply random
+	local city  = Random_GetListItem( cityList )	
+	local chara = Random_GetListItem( charaList )
+
+	_registers["DISPATCH_CITY"] = city
+	_registers["ACTOR"]         = chara
+
+	--print( _city:ToString( "OFFICER") )
+
+	return true
+end
+
+local function CanCallChara()
+	if _city:IsCapital() == false then return false end
+
+	if Chara_GetSurplusNumOfChara( _city ) > 1 then return false end
+
+	local limit = Chara_GetLimitByCity( _city )
+	if Asset_GetListSize( _city, CityAssetID.CHARA_LIST ) >= limit then return false end
+
+	local charaList = {}	
+	Asset_ForeachList( _group, GroupAssetID.CITY_LIST, function ( city )
+		if city:IsCapital() then return end
+		--print( city.name, Asset_GetListSize( city, CityAssetID.CHARA_LIST ), Asset_GetListSize( city, CityAssetID.OFFICER_LIST ), Chara_GetReqNumOfOfficer( city ) )
+		if Asset_GetListSize( city, CityAssetID.OFFICER_LIST ) >= Chara_GetReqNumOfOfficer( city ) then
+			charaList = city:FindNonOfficerFreeCharas( charaList )
+		end
+	end)
+
+	if #charaList == 0 then return false end
+
+	local chara = Random_GetListItem( charaList )
+	local city = Asset_Get( chara, CharaAssetID.HOME )
+
+	_registers["CALL_FROM_CITY"] = city
+	_registers["ACTOR"]          = chara
+
+	return true
+end
+
+
 local function CanDevelop( params )
 	local id = params.id
 	local cur = Asset_Get( _city, id )
@@ -288,7 +472,6 @@ local function CanDevelop( params )
 	return cur < need
 end
 
-
 ------------------------------
 -- AI
 
@@ -296,18 +479,30 @@ local _HRPlans =
 {
 	{ type = "SEQUENCE", children = 
 		{
+			{ type = "FILTER", condition = CanCallChara },
+			{ type = "ACTION", action = SubmitProposal, params = { type = "CALL_CHARA" } },
+		},
+	},	
+	{ type = "SEQUENCE", children = 
+		{
+			{ type = "FILTER", condition = CanDispatchChara },
+			{ type = "ACTION", action = SubmitProposal, params = { type = "DISPATCH_CHARA" } },
+		},
+	},	
+	{ type = "SEQUENCE", children = 
+		{
 			{ type = "FILTER", condition = CanHireChara },
 			{ type = "ACTION", action = SubmitProposal, params = { type = "HIRE_CHARA" } },
 		},
-	},	
+	},
+	--[[
 	{ type = "SEQUENCE", children = 
 		{
 			{ type = "FILTER", condition = CanPromoteChara },
 			{ type = "ACTION", action = SubmitProposal, params = { type = "PROMOTE_CHARA" } },
 		},
 	},
-
-		--HIRE NEW CHAR
+	]]
 		--ENCOURGAE CHARA
 		--SUPERVISE CHARA
 }
@@ -318,6 +513,12 @@ local _CommanderPlans =
 		{
 			{ type = "FILTER", condition = CanEstablishCorps },
 			{ type = "ACTION", action = SubmitProposal, params = { type = "ESTABLISH_CORPS" } },
+		},
+	},	
+	{ type = "SEQUENCE", children = 
+		{
+			{ type = "FILTER", condition = CanEnrollCorps },
+			{ type = "ACTION", action = SubmitProposal, params = { type = "ENROLL_CORPS" } },
 		},
 	},
 	{ type = "SEQUENCE", children = 
@@ -332,12 +533,27 @@ local _CommanderPlans =
 			{ type = "ACTION", action = SubmitProposal, params = { type = "TRAIN_CORPS" } },
 		},
 	},
+
+	{ type = "SEQUENCE", children = 
+		{
+			{ type = "FILTER", condition = CanConscript },
+			{ type = "ACTION", action = SubmitProposal, params = { type = "CONSCRIPT" } },
+		},
+	},
+	{ type = "SEQUENCE", children = 
+		{
+			{ type = "FILTER", condition = CanRecruit },
+			{ type = "ACTION", action = SubmitProposal, params = { type = "RECRUIT" } },
+		},
+	},
+	--[[
 	{ type = "SEQUENCE", children = 
 		{
 			{ type = "FILTER", condition = CanDispatchCorps },
 			{ type = "ACTION", action = SubmitProposal, params = { type = "DISPATCH_CORPS" } },
 		},
 	},
+	--]]
 }
 
 local _StrategyPlans = 
@@ -542,15 +758,16 @@ local _MeetingProposal =
 {
 	type = "SELECTOR", desc = "entrance", children = 
 	{	
-		_QualificationChecker,
+		--_QualificationChecker,
 		_PriorityProposals,
 		_SubmitTechnicianProposal,
-		_SubmitDiplomaticProposal,
+
+		--_SubmitDiplomaticProposal,
 		_SubmitHRProposal,
 		_SubmitAffairsProposal,
 		_SubmitStaffProposal,
 		_SubmitMilitaryProposal,
-		--_SubmitStrategyProposal,
+		_SubmitStrategyProposal,
 	},
 }
 
@@ -597,6 +814,7 @@ function CharaAI_SubmitMeetingProposal( chara, meeting )
 	end
 	if Init( { chara = chara, meeting = meeting } ) then
 		Stat_Add( "CharaAI@Run_Times", nil, StatType.TIMES )
+		--print( "enter", MathUtil_FindName( MeetingTopic, _topic ) )
 		return _behavior:Run( _meetingProposal )
 	end
 	print( "chara=", chara.name, " cann't submit proposal" )

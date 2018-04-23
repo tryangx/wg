@@ -98,6 +98,8 @@ ScenarioData =
 	CITY_POPUSTRUCTURE_PARAMS    = DefaultCityPopuStructureParams,
 	CITY_DEVELOP_PARAMS          = DefaultCityDevelopParams,
 	CITY_DEVELOPMENT_VARY_PARAMS = DefaultCityDevelopmentVaryParams,
+	CITY_CONSCRIPT_PARAMS        = DefaultCityConscript,
+	CITY_RECRUIT_PARAMS          = DefaultCityRecruit,
 	CORPS_PARAMS              = DefaultCorpsParams,
 	TROOP_PARAMS              = DefaultTroopParams,
 

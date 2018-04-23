@@ -56,10 +56,11 @@ CombatAssetID =
 	BATTLEFIELD    = 102,
 	ATKCAMPFIELD   = 103,
 	DEFCAMPFIELD   = 104,
-	ATK_CORPS_LIST = 110,
-	DEF_CORPS_LIST = 111,
-	TROOP_LIST    = 112,
-	LEADER_LIST   = 113,
+	CORPS_LIST     = 110,
+	ATK_CORPS_LIST = 111,
+	DEF_CORPS_LIST = 112,
+	TROOP_LIST    = 113,
+	LEADER_LIST   = 114,
 	ATTACKER_LIST = 120,
 	DEFENDER_LIST = 121,
 
@@ -131,23 +132,24 @@ CombatLog =
 
 local logUtility
 --logUtility = LogUtility( "log/combat_" .. g_gameId .. ".log", LogWarningLevel.DEBUG, false )
-logUtility = LogUtility( "log/combat_test.log", LogWarningLevel.DEBUG, false )
+--logUtility = LogUtility( "combat_test.log", LogWarningLevel.DEBUG, false )
 
-local function WriteLog( type, ... )
+local function WriteCombatLog( type, ... )
 	if type == CombatLog.DEBUG then return end
 	if type == CombatLog.MAP then return end
 	if type == CombatLog.DESC then return end
 	if type == CombatLog.INITIAL then return end
 	--print( ... )
-	--logUtility:WriteLog( ... )
+	logUtility:WritedLog( ... )
 end
 
-local function DebugLog( ... )
-	WriteLog( CombatLog.DEBUG, ... )
+local function DebugCombat( ... )
+	WriteCombatLog( CombatLog.DEBUG, ... )
 end
 
 local function TroopToString( troop )
-	return NIDString( troop ) .. ( troop._combatSide and ( troop._combatSide == CombatSide.ATTACKER and "-ATK" or "-DEF" ) or "" )
+	local content = NIDString( troop ) .. ( troop._combatSide and ( troop._combatSide == CombatSide.ATTACKER and "-ATK" or "-DEF" ) or "" )		
+	return content
 end
 
 -------------------------------------------------------
@@ -160,54 +162,62 @@ CombatPurposeParam =
 	--soldier_comparison_ratio
 	--  self.soldier / enemy.soldier
 	--
-	--intense_ratio
+	--intense
 	--	power_comparsion_ration
 	--
-	--Determine the situation the side decide to attend combat
-	INTENSE = 
-	{
-		[10] = { intense_ratio = 0.4 },
-		[20] = { intense_ratio = 0.35 },
-		[30] = { intense_ratio = 0.3 },
-	},
 
-	--Determine the situation the side decide to refuse combat
-	DECLINED = 
+	CONSERVATIVE = 
 	{
-		[10] = { intense_ratio = 0.7 },
-		[20] = { intense_ratio = 0.6 },
-		[30] = { intense_ratio = 0.5 },
-	},
-
-	--Determine what situation the side decide to withdraw
-	WITHDRAW = 
-	{
-		[10] = 
+		ATTEND_INTENSE   = 0.35,
+		DECLINED_INTENSE = 0.7,
+		FORCED_INTENSE   = 0.75,
+		WITHDRAW = 
 		{
-			{ reason="normal", intense_ratio = 0.35, morale = 30, casualty_ratio = 0.5 },
+			{ reason="danger", intense = 0.35 },
+			{ reason="normal", intense = 0.35, morale = 30, casualty_ratio = 0.5 },
 			{ reason="no food", food_supply_day = 15, is_atk = 1 },
 		},
-		--neutralize
-		[20] = 
-		{		 
-			{ reason="normal", intense_ratio = 0.35, morale = 30, casualty_ratio = 1 },
-			{ reason="no food", food_supply_day = 10, is_atk = 1 },
-		},
-		--AGGRESSIVE
-		[30] = 
+	},
+
+	MODERATE = 
+	{
+		ATTEND_INTENSE   = 0.3,
+		DECLINED_INTENSE = 0.6,
+		FORCED_INTENSE   = 0.5,
+		WITHDRAW =
 		{
-			{ reason="normal", intense_ratio = 0.3, morale = 25, casualty_ratio = 1.5 },
+			{ reason="danger", intense = 0.3 },
+			{ reason="normal", intense = 0.35, morale = 30, casualty_ratio = 1 },
 			{ reason="no food", food_supply_day = 10, is_atk = 1 },
 		},
 	},
 
-	--Determine what situation the side decide to attack the opponent side which decline attend combat
-	FORCED_ATTACK = 
+	AGGRESSIVE = 
 	{
-		[10] = { intense_ratio = 0.75, },
-		[20] = { intense_ratio = 0.5 , },
-		[30] = { intense_ratio = 0.35, },
+		ATTEND_INTENSE   = 0.2,
+		DECLINED_INTENSE = 0.5,
+		FORCED_INTENSE   = 0.35,
+		WITHDRAW = 
+		{
+			{ reason="danger", intense = 0.2 },
+			{ reason="normal", intense = 0.3, morale = 25, casualty_ratio = 1.5 },
+			{ reason="no food", food_supply_day = 10, is_atk = 1 },
+		},
 	},
+}
+
+CombatPrepareResult = 
+{
+	BOTH_DECLINED     = 0,
+	BOTH_ACCEPTED     = 1,
+	ONLY_ATK_ACCEPTED = 2,
+	ONLY_DEF_ACCEPTED = 3,
+}
+
+CombatTime = 
+{
+	NORMAL_END_TIME = 5,
+	PURSUE_END_TIME = 7,
 }
 
 CombatVictoryPoint =
@@ -250,20 +260,9 @@ CombatVictoryPoint =
 	},
 }
 
-
-CombatPrepareResult = 
-{
-	BOTH_DECLINED     = 0,
-	BOTH_ACCEPTED     = 1,
-	ONLY_ATK_ACCEPTED = 2,
-	ONLY_DEF_ACCEPTED = 3,
-}
-
-CombatTime = 
-{
-	NORMAL_END_TIME = 5,
-	PURSUE_END_TIME = 7,
-}
+function Combat_Init()
+	CombatPurposeParam = MathUtil_ConvertKey2ID( CombatPurposeParam, CombatPurpose )
+end
 
 -------------------------------------------------------
 
@@ -285,6 +284,38 @@ function Combat:__init( ... )
 	self._stat[CombatSide.DEFENDER] = {}
 end
 
+function Combat:ToString( type )
+	local content = "combatid=" .. self.id
+	local city = Asset_Get( self, CombatAssetID.CITY )
+	if city then
+		content = content .. " loc=" .. String_ToStr( city, "name" )
+	else
+		content = content .. " pt=" .. Asset_Get( self, CombatAssetID.PLOT ):ToString()
+	end
+	content = content .. " typ=" .. MathUtil_FindName( CombatType, Asset_Get( self, CombatAssetID.TYPE ) )
+	if type == "DEBUG_CORPS" then
+		content = content .. " corps="
+		Asset_ForeachList( self, CombatAssetID.ATK_CORPS_LIST, function( corps )
+			content = content .. corps:ToString( "SIMPLE" ) .. ","
+		end )
+		Asset_ForeachList( self, CombatAssetID.DEF_CORPS_LIST, function ( corps )
+			content = content .. corps:ToString( "SIMPLE" ) .. ","
+		end )
+		content = content .. " troops="
+		Asset_ForeachList( self, CombatAssetID.TROOP_LIST, function ( troop )
+			content = content .. troop:ToString( "SIMPLE" ) .. ","
+		end )
+	elseif type == "RESULT" then
+		content = content .. " rsult=" .. MathUtil_FindName( CombatResult, Asset_Get( self, CombatAssetID.RESULT ) )
+		content = content .. " winner=" .. self:GetGroupName( self:GetWinner() )
+		content = content .. " date=" .. g_calendar:CreateCurrentDateDesc()
+		content = content .. " day=" .. Asset_Get( self, CombatAssetID.DAY )
+		content = content .. " atkkill=" .. self:GetStat( CombatSide.ATTACKER, CombatStatistic.KILL ) .. "/" .. self:GetStat( CombatSide.ATTACKER, CombatStatistic.TOTAL_SOLDIER )
+		content = content .. " defkill=" .. self:GetStat( CombatSide.DEFENDER, CombatStatistic.KILL ) .. "/" .. self:GetStat( CombatSide.DEFENDER, CombatStatistic.TOTAL_SOLDIER )
+	end
+	return content
+end
+
 function Combat:Remove()
 	self._currentField = nil
 	self._grids = nil
@@ -298,6 +329,8 @@ end
 
 --Add single troop into Combat
 function Combat:AddTroop( troop, side )
+	DebugCombat( "Add troop" .. troop:ToString() )
+
 	--side data
 	troop._combatSide = side
 
@@ -333,12 +366,19 @@ function Combat:AddTroop( troop, side )
 end
 
 --Add single troop into Combat
-function Combat:AddCorps( corps, side )	
+function Combat:AddCorps( corps, side )
+	if Asset_HasItem( self, CombatAssetID.CORPS_LIST, corps ) == true then
+		InputUtil_Pause( corps:ToString(), "already" )
+		return
+	end
+
 	if side == CombatSide.ATTACKER then
 		Asset_AppendList( self, CombatAssetID.ATK_CORPS_LIST, corps )
 	elseif side == CombatSide.DEFENDER then
 		Asset_AppendList( self, CombatAssetID.DEF_CORPS_LIST, corps )
 	end
+
+	Asset_AppendList( self, CombatAssetID.CORPS_LIST, corps )
 
 	Asset_ForeachList( corps, CorpsAssetID.TROOP_LIST, function( troop )
 		self:AddTroop( troop, side )
@@ -389,7 +429,7 @@ function Combat:RemoveTroop( troop, isNeutralized )
 	troop._faceDir  = nil
 	troop._grid     = nil
 
-	--InputUtil_Pause( "remove troop", troop.id )
+	--Debug_Log( "remove troop", troop:ToString() )
 end
 
 function Combat:RemoveCorps( corps )
@@ -479,7 +519,10 @@ function Combat:GetGroup( side )
 	elseif side == CombatSide.DEFENDER then
 		corps = Asset_GetListByIndex( self, CombatAssetID.DEF_CORPS_LIST, 1 )
 	end
-	local group = corps and Asset_Get( corps, CorpsAssetID.GROUP ) or nil
+	--maybe unknown side
+	if not corps then return end
+
+	local group = Asset_Get( corps, CorpsAssetID.GROUP )
 	return group
 end
 
@@ -509,14 +552,14 @@ function Combat:DrawBattlefield()
 	--if 1 then return end
 	if not self._currentField then return end
 
-	DebugLog( "Field=" .. self._currentField.name )
+	DebugCombat( "Field=" .. self._currentField.name )
 
 	local battlefield = self._currentField
 	local content = "     "
 	for x = 1, battlefield.width do
 		content = content .. ( x < 10 and "X=" .. x .. "  " or " X=" .. x .. " " )
 	end
-	WriteLog( CombatLog.MAP, content )
+	WriteCombatLog( CombatLog.MAP, content )
 	for y = 1, battlefield.height do
 		content = ( y < 10 and "Y= " .. y or "Y=" .. y ) .. " "
 		for x = 1, battlefield.width do
@@ -539,7 +582,7 @@ function Combat:DrawBattlefield()
 			end
 			content = content .. troopDesc
 		end
-		WriteLog( CombatLog.MAP, content )
+		WriteCombatLog( CombatLog.MAP, content )
 	end
 end
 
@@ -554,22 +597,22 @@ function Combat:DumpStatistic()
 		self:DumpTroop( troop )
 	end )
 
-	DebugLog( "Type = " .. MathUtil_FindName( CombatType, Asset_Get( self, CombatAssetID.TYPE ) ) )
-	DebugLog( "Day  = " .. Asset_Get( self, CombatAssetID.DAY ) )
-	DebugLog( "Total VP = " .. Asset_Get( self, CombatAssetID.TOTAL_VP ) )
+	DebugCombat( "Type = " .. MathUtil_FindName( CombatType, Asset_Get( self, CombatAssetID.TYPE ) ) )
+	DebugCombat( "Day  = " .. Asset_Get( self, CombatAssetID.DAY ) )
+	DebugCombat( "Total VP = " .. Asset_Get( self, CombatAssetID.TOTAL_VP ) )
 
 	function DumpStatus( side )
 		local list
 		if side == CombatSide.ATTACKER then
-			DebugLog( "ATK Status=" )
+			DebugCombat( "ATK Status=" )
 			list = Asset_GetList( self, CombatAssetID.ATK_STATUS )
 		elseif side == CombatSide.DEFENDER then
-			DebugLog( "DEF Status=" )
+			DebugCombat( "DEF Status=" )
 			list = Asset_GetList( self, CombatAssetID.DEF_STATUS )
 		end
 		if list then
 			for k, v in pairs( list ) do
-				DebugLog( "", k .. "=", v )
+				DebugCombat( "", k .. "=", v )
 			end
 		end
 	end
@@ -578,22 +621,22 @@ function Combat:DumpStatistic()
 
 	for k, v in pairs( CombatStatistic ) do
 		if self._stat[CombatSide.ALL][v] ~= nil then
-			DebugLog( "Tot " .. k .. "=".. self._stat[CombatSide.ALL][v] )
+			DebugCombat( "Tot " .. k .. "=".. self._stat[CombatSide.ALL][v] )
 		end
 	end
 	for k, v in pairs( CombatStatistic ) do
 		if self._stat[CombatSide.ATTACKER][v] ~= nil then			
-			DebugLog( "Att " .. k .. "=".. self._stat[CombatSide.ATTACKER][v] )
+			DebugCombat( "Att " .. k .. "=".. self._stat[CombatSide.ATTACKER][v] )
 		end
 		if self._stat[CombatSide.DEFENDER][v] ~= nil then
-			DebugLog( "Def " .. k .. "=".. self._stat[CombatSide.DEFENDER][v] )
+			DebugCombat( "Def " .. k .. "=".. self._stat[CombatSide.DEFENDER][v] )
 		end
 	end
 	for k, v in pairs( CombatStatistic ) do
 		if v >= CombatStatistic.ACCUMULATE_TYPE then
 			Asset_ForeachList( self, CombatAssetID.TROOP_LIST, function ( troop )
 				if self._stat[troop] and self._stat[troop][v] then
-					WriteLog( TroopToString( troop ) .. " " .. " " .. k .. "=" .. self._stat[troop][v] )
+					DebugCombat( TroopToString( troop ) .. " " .. " " .. k .. "=" .. self._stat[troop][v] )
 				end
 			end )				
 		end
@@ -638,7 +681,8 @@ end
 
 function Combat:DumpTroop( troop )
 	--if 1 then return end
-	DebugLog( "side=" .. MathUtil_FindName( CombatSide, troop._combatSide ) )
+	DebugCombat( "side=" .. MathUtil_FindName( CombatSide, troop._combatSide ) )
+	if 1 then return end
 	Entity_Dump( troop, function ( attrib )
 		if 1 then return false end
 		if attrib.id == TroopAssetID.ORGANIZATION then return true end
@@ -766,13 +810,18 @@ function Combat:Embattle()
 				self:AddGridTroop( grid, troop )
 				troop._grid = grid
 
-				WriteLog( CombatLog.INITIAL, "put", troop._x, troop._y, TroopToString( troop ), MathUtil_FindName( CombatSide, troop._combatSide ), Asset_Get( troop, TroopAssetID.SOLDIER ) )
+				WriteCombatLog( CombatLog.INITIAL, "put", troop._x, troop._y, TroopToString( troop ), MathUtil_FindName( CombatSide, troop._combatSide ), Asset_Get( troop, TroopAssetID.SOLDIER ) )
 			end
 		end
 	end
 	--put attackers
 	EmbattleSide( CombatSide.ATTACKER )
 	EmbattleSide( CombatSide.DEFENDER )
+
+	--statistics
+	Asset_ForeachList( self, CombatAssetID.CORPS_LIST, function ( corps )
+		--Stat_Add( "Corps@Combat", g_calendar:CreateCurrentDateDesc() .. " " .. corps:ToString(), StatType.LIST )
+	end)
 
 	self:DrawBattlefield()
 end
@@ -807,6 +856,9 @@ function Combat:Prepare()
 			troop._prepared = true
 			troop._exposure = math.min( 100, troop._exposure + 20 )
 			self:SetStat( troop._combatSide, CombatStatistic.PREPARED, 1 )
+		end	
+		if not troop._exposure then
+			error( self:ToString( "DEBUG_CORPS" ), troop:ToString() )
 		end
 		local exposure = 100 + Random_GetInt_Sync( ( troop._exposure - 100 ) * 0.25, ( 100 - troop._exposure ) * 0.25 )
 		local soldier = Asset_Get( troop, TroopAssetID.SOLDIER )
@@ -877,35 +929,43 @@ function Combat:Prepare()
 	CheckSurrounded( { side = CombatSide.ATTACKER, power = atkPower, exposurePower = atkExposurePower, ratio = defPower / ( defPower + atkPower ), statuslist = CombatAssetID.ATK_STATUS } )
 	
 	--check Withdraw
-	local atkWithdraw, defWithdraw = false, false
-	function NeedWithdraw( side, conditions )
+	local atkWithdraw = false
+	local defWithdraw = false
+	function NeedWithdraw( side, conditions )		
 		for k, cond in pairs( conditions ) do
 			local ret = true
-			--print( "h1=", cond.intense_ratio and self:GetStat( side, CombatStatistic.COMBAT_INTENSE ) > cond.intense_ratio )
-			if cond.intense_ratio and self:GetStat( side, CombatStatistic.COMBAT_INTENSE ) > cond.intense_ratio then ret = false end
+			if cond.intense and self:GetStat( side, CombatStatistic.COMBAT_INTENSE ) > cond.intense then ret = false end
 			if cond.morale and self:GetStat( side, CombatStatistic.AVERAGE_MORALE ) > cond.morale then ret = false end
 			if cond.casualty_ratio and self:GetStat( side, CombatStatistic.CASUALTY_RATIO ) < cond.casualty_ratio then ret = false end
-			if cond.food_supply_day and self:GetStat( side, CombatStatistic.FOOD_SUPPLY_DAY ) > cond.food_supply_day then ret = false end			
+			if FeatureOption.ENABLE_FOOD_SUPPLY ~= 0 then
+				if cond.food_supply_day and self:GetStat( side, CombatStatistic.FOOD_SUPPLY_DAY ) > cond.food_supply_day then ret = false end
+			else
+			 	ret = false
+			end
 			if cond.is_atk and side ~= CombatSide.ATTACKER then ret = false end
 			if cond.is_def and side ~= CombatSide.DEFENDER then ret = false end
 			if cond.is_siege and ( combatType == CombatType.SIEGE_COMBAT or combatType == CombatType.CAMP_COMBAT ) then ret = false end
 			if cond.is_field and combatType == CombatType.FIELD_COMBAT then ret = false end
+			
+			--print( cond.reason, self:GetStat( side, CombatStatistic.COMBAT_INTENSE ), cond.intense, ret )
 			if ret == true then
-				DebugLog( "withdraw reason=" .. ( cond.reason and cond.reason or "" ) )				
-				DebugLog( "intense="..self:GetStat( side, CombatStatistic.COMBAT_INTENSE ) )
-				DebugLog( "mor="..self:GetStat( side, CombatStatistic.AVERAGE_MORALE ) )
-				DebugLog( "casulaty="..self:GetStat( side, CombatStatistic.CASUALTY_RATIO ) )
-				DebugLog( "foodsup="..self:GetStat( side, CombatStatistic.FOOD_SUPPLY_DAY ) )
+				DebugCombat( "withdraw reason=" .. ( cond.reason and cond.reason or "" ) )				
+				DebugCombat( "intense="..self:GetStat( side, CombatStatistic.COMBAT_INTENSE ) )
+				DebugCombat( "mor="..self:GetStat( side, CombatStatistic.AVERAGE_MORALE ) )
+				DebugCombat( "casulaty="..self:GetStat( side, CombatStatistic.CASUALTY_RATIO ) )
+				DebugCombat( "foodsup="..self:GetStat( side, CombatStatistic.FOOD_SUPPLY_DAY ) )
+				local reason = cond.reason-- MathUtil_ToString( cond )
+				Stat_Add( "Withdraw@Reason", self:ToString() .. " " .. MathUtil_FindName( CombatSide, side ) .. " " .. reason, StatType.LIST )
 				return ret
 			end
 		end
 		return false
 	end
-	if NeedWithdraw( CombatSide.ATTACKER, CombatPurposeParam.WITHDRAW[atkPurpose] ) then atkWithdraw = true end
-	if NeedWithdraw( CombatSide.DEFENDER, CombatPurposeParam.WITHDRAW[defPurpose] ) then defWithdraw = true end
+	if NeedWithdraw( CombatSide.ATTACKER, CombatPurposeParam[atkPurpose].WITHDRAW ) == true then atkWithdraw = true end
+	if NeedWithdraw( CombatSide.DEFENDER, CombatPurposeParam[defPurpose].WITHDRAW ) == true then defWithdraw = true end
 
-	DebugLog( "withdraw atk=", atkWithdraw, self:GetStat( CombatSide.ATTACKER, CombatStatistic.COMBAT_INTENSE ) )
-	DebugLog( "withdraw def=", defWithdraw, self:GetStat( CombatSide.DEFENDER, CombatStatistic.COMBAT_INTENSE ) )	
+	--Debug_Log( "wid atk=", atkWithdraw, self:GetStat( CombatSide.ATTACKER, CombatStatistic.COMBAT_INTENSE ) )
+	--Debug_Log( "wid def=", defWithdraw, self:GetStat( CombatSide.DEFENDER, CombatStatistic.COMBAT_INTENSE ) )	
 
 	if atkWithdraw ~= defWithdraw then
 		--one side decide to withdraw
@@ -925,25 +985,35 @@ function Combat:Prepare()
 		Asset_Set( self, CombatAssetID.RESULT, defWithdraw == true and CombatResult.STRATEGIC_VICTORY or CombatResult.STRATEGIC_LOSE )
 		Asset_Set( self, CombatAssetID.WINNER, defWithdraw == true and CombatSide.ATTACKER or CombatSide.DEFENDER )
 		return defWithdraw == true and CombatPrepareResult.ONLY_ATK_ACCEPTED or CombatPrepareResult.ONLY_DEF_ACCEPTED
+
 	elseif atkWithdraw == true then
 		Asset_Set( self, CombatAssetID.RESULT, CombatResult.DRAW )
 		return CombatPrepareResult.BOTH_DECLINED
 	end
+
 	--determine rest
 	local atkPrepared = self:GetStat( CombatSide.ATTACKER, CombatStatistic.PREPARED )
 	local defPrepared = self:GetStat( CombatSide.DEFENDER, CombatStatistic.PREPARED )
 	if atkPrepared == defPrepared and atkPrepared == false then
-		if atkIntense < CombatPurposeParam.DECLINED[atkPurpose].intense_ratio and defIntense < CombatPurposeParam.DECLINED[defPurpose].intense_ratio then
+		if atkIntense < CombatPurposeParam[atkPurpose].DECLINED_INTENSE and defIntense < CombatPurposeParam[defPurpose].DECLINED_INTENSE then
 			return CombatPrepareResult.BOTH_DECLINED
 		end
 	end
 	
-	local atkAttend = atkIntense > CombatPurposeParam.INTENSE[atkPurpose].intense_ratio
-	local defAttend = defIntense > CombatPurposeParam.INTENSE[defPurpose].intense_ratio
+	local atkAttend = atkIntense > CombatPurposeParam[atkPurpose].ATTEND_INTENSE
+	local defAttend = defIntense > CombatPurposeParam[defPurpose].ATTEND_INTENSE
 
 	--both side agree to attend combat or not
 	if atkAttend == defAttend then
-		return atkAttend == true and CombatPrepareResult.BOTH_ACCEPTED or CombatPrepareResult.BOTH_DECLINED
+		if atkAttend == true then
+			return CombatPrepareResult.BOTH_ACCEPTED
+		else
+			local reason = "Intense="
+			reason = reason .. PercentString( atkIntense ) .. "<" .. CombatPurposeParam[atkPurpose].ATTEND_INTENSE
+			reason = reason .. PercentString( defIntense ) .. "<" .. CombatPurposeParam[defPurpose].ATTEND_INTENSE
+			Stat_Add( "Withdraw@Reason", self:ToString() .. " " .. reason, StatType.LIST )
+			return CombatPrepareResult.BOTH_DECLINED
+		end
 	end
 
 	--only one side agree to attend combat, so we should check FORCED ATTACK
@@ -960,17 +1030,25 @@ function Combat:Prepare()
 		agreedIntense   = atkIntense
 		declinedIntense = defIntense
 	end
+	
 	--determine agress side will forced attack
-	local ret = false
-	if agreedPurpose == CombatPurpose.CONSERVATIVE then
-		ret = agreedIntense > CombatPurposeParam.FORCED_ATTACK[agreedPurpose].intense_ratio
-	elseif agreedPurpose == CombatPurpose.AGGRESSIVE then
-		ret = agreedIntense > CombatPurposeParam.FORCED_ATTACK[agreedPurpose].intense_ratio
-	elseif agreedPurpose == CombatPurpose.MODERATE then
-		ret = agreedIntense > CombatPurposeParam.FORCED_ATTACK[agreedPurpose].intense_ratio
+	local ret = agreedIntense >= CombatPurposeParam[agreedPurpose].FORCED_INTENSE	
+	if ret == false then
+		local reason = "AGREED_Intense="
+		reason = reason .. agreedIntense .. "<" .. CombatPurposeParam[agreedPurpose].FORCED_INTENSE	
+		Stat_Add( "Withdraw@Reason", self:ToString() .. " " .. reason, StatType.LIST )
+		return CombatPrepareResult.BOTH_DECLINED
 	end
 
-	return atkAttend == true and CombatPrepareResult.ONLY_ATK_ACCEPTED or CombatPrepareResult.ONLY_DEF_ACCEPTED
+	if atkAttend == true then
+		return CombatPrepareResult.ONLY_ATK_ACCEPTED
+	end
+
+	local reason = "Atk_Intense="
+	reason = reason .. PercentString( atkIntense ) .. "<" .. CombatPurposeParam[atkPurpose].ATTEND_INTENSE
+	Stat_Add( "Withdraw@Reason", self:ToString() .. " " .. reason, StatType.LIST )
+
+	return CombatPrepareResult.ONLY_DEF_ACCEPTED
 end
 
 function Combat:PrepareDefense()
@@ -991,7 +1069,7 @@ function Combat:PrepareDefense()
 		if grid.isWall then
 			grid.defense = defenses[index]
 			--InputUtil_Pause( "add defense=", grid.defense, index, defenses[index] )
-			--WriteLog( index .. "=" .. defenses[index] )
+			--WriteCombatLog( index .. "=" .. defenses[index] )
 			index = index + 1
 		end
 	end
@@ -1085,32 +1163,36 @@ function Combat:CheckStatus()
 end
 
 --Return true means continue next step, return false not
-function Combat:NextStep( status )
-	if status == CombatStep.REST then
+function Combat:NextStep( step )
+	if step == CombatStep.REST then
 		if Asset_Get( self, CombatAssetID.DAY ) > 0 then
 			self:Rest()
 		end
-	elseif status == CombatStep.PREPARE then
+
+	elseif step == CombatStep.PREPARE then
 		--pass a day
 		Asset_Plus( self, CombatAssetID.DAY, 1 )
 		--reset states
-		Asset_Set( self, CombatAssetID.RESULT, CombatResult.UNKNOWN )
-		if self:CheckStatus() == false then
-			return false
-		end
+		Asset_Set( self, CombatAssetID.RESULT, CombatResult.UNKNOWN )				
+		--if self:CheckStatus() == false then return false end
+		
+		--check preparation
 		local result = self:Prepare()
 		if result == CombatPrepareResult.BOTH_DECLINED then
 			if Asset_Get( self, CombatAssetID.RESULT ) == CombatResult.DRAW then
-				print( "both withdraw" )
+				--print( "both withdraw" )
 			else
 				self:AddStat( CombatSide.ALL, CombatStatistic.REST_DAY, 1 )
 				--InputUtil_Pause( "Rest a day=".. Asset_Get( self, CombatAssetID.DAY ) )
 			end
+			Stat_Add( "Combat@BothWithdraw", 1, StatType.TIMES )
 			return false
 		end
+
 		--one side withdraw
 		if Asset_Get( self, CombatAssetID.RESULT ) ~= CombatResult.UNKNOWN then
-			print( "One side withdraw" )
+			--print( "One side withdraw" )
+			Stat_Add( "Combat@OneWithdraw", 1, StatType.TIMES )
 			return false
 		end
 
@@ -1119,7 +1201,8 @@ function Combat:NextStep( status )
 		if type == CombatType.SIEGE_COMBAT then
 			self._currentField = Asset_Get( self, CombatAssetID.DEFCAMPFIELD )
 			if result == CombatPrepareResult.ONLY_DEF_ACCEPTED then
-				print( "atk refused, should we occured a field combat?" )
+				--Debug_Log( self:ToString() .. " atk refused, should we occured a field combat?" )
+				Stat_Add( "Siege@AtkWithdraw", 1, StatType.TIMES )
 				return false
 			end			
 		else
@@ -1134,8 +1217,7 @@ function Combat:NextStep( status )
 				self._currentField = Asset_Get( self, CombatAssetID.BATTLEFIELD )				
 				--no need to prepare for all
 			end
-			if type == CombatType.CAMP_COMBAT then				
-				--InputUtil_Pause( "force attack" )
+			if type == CombatType.CAMP_COMBAT then
 				self:AddStat( CombatSide.ALL, CombatStatistic.FORCED_ATK_DAY, 1 )
 			end
 			Asset_Set( self, CombatAssetID.TYPE, type )
@@ -1146,18 +1228,22 @@ function Combat:NextStep( status )
 		self:AddStat( CombatSide.ALL, CombatStatistic.COMBAT_DAY, 1 )
 		--set ai enviroment
 		CombatAI_SetEnviroment( CombatAIEnviroment.COMBAT_INSTANCE, self )
-	elseif status == CombatStep.EMBATTLE then
+
+	elseif step == CombatStep.EMBATTLE then
 		self:Embattle()
 		self:PrepareDefense()		
-	elseif status == CombatStep.ORDER then
+
+	elseif step == CombatStep.ORDER then
 		self:Order()
-	elseif status == CombatStep.INCOMBAT then
+
+	elseif step == CombatStep.INCOMBAT then
 		--initialize time
 		Asset_Set( self, CombatAssetID.TIME, 0 )
 		Asset_Set( self, CombatAssetID.END_TIME, CombatTime.NORMAL_END_TIME )
 		while self:IsEnd() == false do
 			self:Update()
 		end
+
 	else
 		return false
 	end
@@ -1171,12 +1257,25 @@ function Combat:NextDay()
 	if Asset_Get( self, CombatAssetID.DAY ) >= Asset_Get( self, CombatAssetID.END_DAY ) then
 		Asset_Set( self, CombatAssetID.RESULT, CombatResult.DRAW )
 		Asset_Set( self, CombatAssetID.WINNER, CombatSide.UNKNOWN )
+		Stat_Add( "Combat@Draw", 1, StatType.TIMES )
 		return
 	end
 
 	local step = CombatStep.REST
 	while self:NextStep( step ) do
 		step = step + 1
+	end
+
+	if step == CombatStep.PREPARE then
+		local atkPower = self:GetStat( CombatSide.ATTACKER, CombatStatistic.TOTAL_POWER )
+		local defPower = self:GetStat( CombatSide.DEFENDER, CombatStatistic.TOTAL_POWER )
+		local atkSoldier = self:GetStat( CombatSide.ATTACKER, CombatStatistic.TOTAL_SOLDIER )
+		local defSoldier = self:GetStat( CombatSide.DEFENDER, CombatStatistic.TOTAL_SOLDIER )
+		local atkIntense = self:GetStat( CombatSide.ATTACKER, CombatStatistic.COMBAT_INTENSE )
+		local defIntense = self:GetStat( CombatSide.DEFENDER, CombatStatistic.COMBAT_INTENSE )
+		local atk = atkIntense
+		local def = defIntense
+		Debug_Log( "combat prepared failed", atk, def, self:ToString() )
 	end
 
 	--Feedback
@@ -1189,6 +1288,8 @@ function Combat:NextDay()
 	--self:Dump()
 
 	--InputUtil_Pause( "day end=" .. Asset_Get( self, CombatAssetID.DAY ), "winner=" .. Asset_Get( self, CombatAssetID.WINNER ) )
+
+	Stat_Add( "Combat" .. self.id .. "@DAY", 1, StatType.TIMES )
 end
 
 --no combat
@@ -1213,7 +1314,7 @@ function Combat:Feedback()
 		for _, grid in pairs( self._grids ) do
 			if grid.isWall == true then
 				Asset_SetListItem( city, CityAssetID.DEFENSES, grid.x, grid.defense )
-				DebugLog( "DEFENSE-" .. grid.x .. "=" .. grid.defense )
+				DebugCombat( "DEFENSE-" .. grid.x .. "=" .. grid.defense )
 			end
 		end
 	end
@@ -1222,7 +1323,7 @@ end
 function Combat:UpdateRound()
 	--Timer go on
 	Asset_Plus( self, CombatAssetID.TIME, 1 )
-	--DebugLog( "#Day=" .. Asset_Get( self, CombatAssetID.DAY ), "Time=" .. Asset_Get( self, CombatAssetID.TIME ) )
+	--DebugCombat( "#Day=" .. Asset_Get( self, CombatAssetID.DAY ), "Time=" .. Asset_Get( self, CombatAssetID.TIME ) )
 end
 
 function Combat:UpdateResult()
@@ -1241,7 +1342,6 @@ function Combat:UpdateResult()
 		local list = side == CombatSide.ATTACKER and CombatAssetID.ATTACKER_LIST or CombatAssetID.DEFENDER_LIST
 		Asset_ForeachList( self, list, function( troop )
 			if troop._attend == true then
-				--print( troop.id, 'attendance' )
 				attend = true
 			end
 		end )
@@ -1530,7 +1630,7 @@ end
 -- Use BFS to find the closest target filter by given fn
 -- fn returns 1 means find target, returns 0 means not target, returns -1 means blocked
 function Combat:FindBfsTarget( troop, fn )
-	--WriteLog( CombatLog.DEBUG, "current=", troop.name, troop._x, troop._y )
+	--WriteCombatLog( CombatLog.DEBUG, "current=", troop.name, troop._x, troop._y )
 	local openList   = { { x = troop._x, y = troop._y, distance = 0 } }
 	local closeList  = {}
 	local targetList = {}
@@ -1559,7 +1659,7 @@ function Combat:FindBfsTarget( troop, fn )
 						end
 					elseif ret == 0 then
 						if not closeList[index] then
-							--WriteLog( CombatLog.DEBUG, "add", tx, ty, index, offset.x, offset.y, closeList[index] )
+							--WriteCombatLog( CombatLog.DEBUG, "add", tx, ty, index, offset.x, offset.y, closeList[index] )
 							table.insert( openList, { x = tx, y = ty, distance = current.distance + offset.distance } )
 						end
 					elseif ret == -1 then				
@@ -1743,10 +1843,10 @@ function Combat:InfluenceFriendlyOrg( side, troop )
 end
 
 function Combat:Kill( attacker, defender )
-	WriteLog( CombatLog.DESC, TroopToString( attacker ) .. " kill " .. TroopToString( defender ) )
+	WriteCombatLog( CombatLog.DESC, TroopToString( attacker ) .. " kill " .. TroopToString( defender ) )
 	
 	--process with leader
-	local leader = Asset_Get( troop, TroopAssetID.LEADER )
+	local leader = Asset_Get( defender, TroopAssetID.LEADER )
 	if leader then
 		if Random_GetInt_Sync( 0, 100 ) < 20 then
 			--captured
@@ -1816,7 +1916,7 @@ function Combat:DealDamage( attacker, defender, params )
 	local kill = math.ceil( dmg * hitRate )
 
 	if defNumber <= kill then
-		--WriteLog( CombatLog.DESC, TroopToString( attacker ), MathUtil_FindName( CombatTask, type ).. TroopToString( defender ), " dmg=".. dmg, " kill="..kill, " left=", defNumber - kill, " org=".. organization )
+		--WriteCombatLog( CombatLog.DESC, TroopToString( attacker ), MathUtil_FindName( CombatTask, type ).. TroopToString( defender ), " dmg=".. dmg, " kill="..kill, " left=", defNumber - kill, " org=".. organization )
 		self:AddStat( attacker._combatSide, CombatStatistic.GAIN_VP, defNumber * defender._vp )		
 		self:AddStat( defender._combatSide, CombatStatistic.DEAD, defNumber )	
 		self:AddStat( attacker._combatSide, CombatStatistic.KILL, defNumber )
@@ -1832,8 +1932,8 @@ function Combat:DealDamage( attacker, defender, params )
 	-----------------------------------------
 	-- Damage( Kill ) Statistic	
 	local corps = Asset_Get( attacker, TroopAssetID.CORPS )
-	Stat_Add( "Combat@" .. self:GetCorpsGroupName( corps ) .. "_KILL", kill, StatType.ACCUMULATION )	
-	Stat_Add( "Combat@" .. self.id .. "_KILL", kill, StatType.ACCUMULATION )
+	Stat_Add( self:GetCorpsGroupName( corps ) .. "@KILL", kill, StatType.ACCUMULATION )	
+	--Stat_Add( "Combat@" .. self.id .. "_KILL", kill, StatType.ACCUMULATION )
 	Stat_Add( "Combat@Kill", kill, StatType.ACCUMULATION )
 	-----------------------------------------
 
@@ -1843,9 +1943,9 @@ function Combat:DealDamage( attacker, defender, params )
 	self:AddStat( attacker            , CombatStatistic.KILL, kill )
 
 	if testMode == true then
-		WriteLog( TroopToString( attacker ) .."=>" .. MathUtil_FindName( CombatTask, params.type ).."=>" ..  TroopToString( defender ).."=>" ..  " dmg=".."=>" ..  dmg..  " kill=".."=>" ..  kill .."=>" ..  " org=".."=>" .. math.max( 0, organization - reduceOrg ) )
+		WriteCombatLog( TroopToString( attacker ) .."=>" .. MathUtil_FindName( CombatTask, params.type ).."=>" ..  TroopToString( defender ).."=>" ..  " dmg=".."=>" ..  dmg..  " kill=".."=>" ..  kill .."=>" ..  " org=".."=>" .. math.max( 0, organization - reduceOrg ) )
 	else
-		WriteLog( CombatLog.DESC, TroopToString( attacker ), MathUtil_FindName( CombatTask, params.type ), TroopToString( defender ), " dmg=".. dmg, " kill="..kill, " left=", defNumber - kill, " org=".. organization )
+		WriteCombatLog( CombatLog.DESC, TroopToString( attacker ), MathUtil_FindName( CombatTask, params.type ), TroopToString( defender ), " dmg=".. dmg, " kill="..kill, " left=", defNumber - kill, " org=".. organization )
 	end
 end
 
@@ -1875,7 +1975,7 @@ function Combat:DestroyDefense( atk, def, params )
 	else
 		def.defense = def.defense - dmg
 	end
-	--WriteLog( CombatLog.DESC, TroopToString( atk ), MathUtil_FindName( CombatTask, params.type ), "("..def.x..","..def.y..")", " dmg=".. dmg, " left=", def.defense )
+	--WriteCombatLog( CombatLog.DESC, TroopToString( atk ), MathUtil_FindName( CombatTask, params.type ), "("..def.x..","..def.y..")", " dmg=".. dmg, " left=", def.defense )
 	self:AddStat( atk._combatSide, CombatStatistic.DESTROY_DEFENSE, dmg )
 	--InputUtil_Pause( TroopToString( atk ), "hit defense=" .. dmg .. "->" .. def.defense )
 end
@@ -1906,7 +2006,7 @@ function Combat:DealAttack( atk, def, params )
 	params.isTired      = atk._attacked
 	params.isSuppressed = atk._defended
 
-	--WriteLog( CombatLog.DESC, MathUtil_FindName( CombatTask, params.type ), TroopToString( atk ) .. " vs " .. TroopToString( def ) )
+	--WriteCombatLog( CombatLog.DESC, MathUtil_FindName( CombatTask, params.type ), TroopToString( atk ) .. " vs " .. TroopToString( def ) )
 	if params.type == CombatTask.DESTROY_DEFENSE then
 		self:DestroyDefense( atk, def, params )
 		return
@@ -1963,7 +2063,7 @@ function Combat:Flee( troop )
 			troop._captured = true
 			local oppSide = self:GetOppSide( troop._combatSide )
 			Asset_AppendList( self, CombatAssetID.PRISONER, { side = oppSide, prisoner = troop } )
-			print( TroopToString( troop ), "captured" )
+			--InputUtil_Pause( TroopToString( troop ), "captured" )
 			Stat_Add( "Combat@Capture_Troop", nil, StatType.TIMES )
 			Stat_Add( "Combat@Capture_Soldier", Asset_Get( troop, TroopAssetID.SOLDIER ), StatType.ACCUMULATION )
 			return
@@ -1994,7 +2094,7 @@ function Combat:MoveTo( troop, x, y, type )
 		end
 	end
 	
-	WriteLog( CombatLog.DESC, TroopToString( troop ) .. " Move ("..troop._x..","..troop._y..")->" .. "("..tx..","..ty..")", MathUtil_FindName( CombatTask, type ) )
+	WriteCombatLog( CombatLog.DESC, TroopToString( troop ) .. " Move ("..troop._x..","..troop._y..")->" .. "("..tx..","..ty..")", MathUtil_FindName( CombatTask, type ) )
 	
 	local curGrid = self:GetGrid( troop._x, troop._y )
 	local nextGrid = self:GetGrid( tx, ty )	
@@ -2014,7 +2114,7 @@ end
 function Combat:ExecuteMovement( task )
 	local troop = task.troop
 
-	--WriteLog( CombatLog.DESC, TroopToString( troop ) .. " type=" .. MathUtil_FindName( CombatTask, task.type ) .. " tar=" .. ( task.target and NIDString( task.target ) or "" ) )
+	--WriteCombatLog( CombatLog.DESC, TroopToString( troop ) .. " type=" .. MathUtil_FindName( CombatTask, task.type ) .. " tar=" .. ( task.target and NIDString( task.target ) or "" ) )
 
 	--set acted flag
 	troop._moved = true
@@ -2104,7 +2204,6 @@ function Combat:TestDamage()
 	end )
 
 	for _, atk in ipairs( atklist ) do
-		--Asset_Set( atk, TroopAssetID.SOLDIER, number )
 		for _, def in ipairs( deflist ) do
 			Asset_Set( def, TroopAssetID.SOLDIER, number )
 			Asset_Set( def, TroopAssetID.MAX_SOLDIER, number )
@@ -2157,7 +2256,7 @@ function Combat_IsPrepared( troop )
 	elseif order == CombatOrder.SURVIVE then
 		ret = soliderRatio + orgRatio > 150 and soliderRatio > 70 and morale > 45
 	end
-	if ret == false then print( troop.name .. "," .. troop.id .. " Pre=" .. ( ret == true and "Y" or "N" ) .. " side=" .. MathUtil_FindName( CombatSide, troop._combatSide ) .. " sol=" .. soldier .. "/" .. maxsoldier .. "(" .. soliderRatio .. "%) org=" .. orgRatio ) end
+	--if ret == false then Debug_Log( troop.name .. "," .. troop.id .. " Pre=" .. ( ret == true and "Y" or "N" ) .. " side=" .. MathUtil_FindName( CombatSide, troop._combatSide ) .. " sol=" .. soldier .. "/" .. maxsoldier .. "(" .. soliderRatio .. "%) org=" .. orgRatio ) end
 	return ret
 end
 

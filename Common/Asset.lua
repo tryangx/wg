@@ -138,7 +138,7 @@ function Asset_GetList( entity, id )
 			entity[id] = {}
 			list = entity[id]
 		else
-			error( "what's wrong?", entity.type, id )
+			error( "what's wrong?" .. entity.type .. "," .. id )
 		end
 	end
 	return list
@@ -308,7 +308,7 @@ end
 --[[
 	@return true/false
 --]]
-function Asset_HasItem( entity, id, item, name )
+function Asset_HasItem( entity, id, item, isValue )
 	if not item then return false end
 	if not id then error( "id is invalid" ) end
 	if typeof( entity ) == "number" then return end
@@ -316,8 +316,8 @@ function Asset_HasItem( entity, id, item, name )
 	
 	local list = entity[id]
 	for k, data in pairs( list ) do
-		if name then
-			if data[name] == item then return true end
+		if isValue then
+			if data == item then return true end
 		else
 			if k == item then return true end
 		end
@@ -394,7 +394,7 @@ function Asset_Set( entity, id, value )
 	if attrib then
 		if not value then
 			value = attrib.default
-		end
+		end		
 		if attrib.value_type == AssetAttribType.NUMBER then
 			if attrib.min ~= nil and value < attrib.min then
 				value = attrib.min
@@ -406,6 +406,8 @@ function Asset_Set( entity, id, value )
 		elseif attrib.value_type == AssetAttribType.LIST or attrib.value_type == AssetAttribType.POINTER_LIST then
 			if typeof( value ) == "number" then
 				error( "cann't set number to list" .." type=" .. entity.type .. " id=" .. id )
+			else
+				error( "shouldn't set value to list/pointer_list, use Asset_SetListItem() instead." )
 			end
 		end
 		if attrib.setter and typeof( value ) == "number" then

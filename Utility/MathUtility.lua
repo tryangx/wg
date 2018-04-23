@@ -131,6 +131,24 @@ function MathUtil_FindTableKey_Ascend( source, value )
 	return findKey
 end
 
+function MathUtil_ToString( source )
+	local content = ""
+	for k, v in pairs( source ) do
+		local brackets = false
+		if typeof( k ) == "object" or typeof( k ) == "class" then
+			content = content .. "{"
+			brackets = true
+		elseif typeof( v ) == "number" then
+			content = content .. " " .. k .. "=" .. v
+		end				
+
+		if brackets == true then
+			brackets = content .. "}"
+		end
+	end
+	return content
+end
+
 function MathUtil_Dump( source, depth, indent )
 	if not depth then depth = 3 end
 	if not indent then indent = 0 end
@@ -140,7 +158,7 @@ function MathUtil_Dump( source, depth, indent )
 		--print( str )
 	end
 
-	if not source or typeof( source ) ~= "table" then
+	if not source or ( typeof( source ) ~= "table" and typeof( source ) ~= "object" ) then
 		print( "Dump source is invalid!", typeof(source) )
 		return
 	end
@@ -151,13 +169,13 @@ function MathUtil_Dump( source, depth, indent )
 	DumpWithTab( "{", indent )	
 	for k, v in pairs( source ) do
 		local key
-		if typeof( k ) == "source" or typeof( k ) == "class" then
+		if typeof( k ) == "object" or typeof( k ) == "class" then
 			key = ""
 		else
 			key = k
 		end
-		if type( v ) == "source" then
-			if typeof( k ) == "source" or typeof( k ) == "class" then
+		if type( v ) == "object" then
+			if typeof( k ) == "object" or typeof( k ) == "class" then
 				print( k )
 			else				
 				DumpWithTab( key .. "=", indent + 1 )

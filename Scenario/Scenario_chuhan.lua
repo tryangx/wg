@@ -113,6 +113,21 @@ CHUHAN_CharaData =
 		strategy    = { 0, 10, 1000 },
 		tactic      = { 0, 10, 1000 },
 	},
+	[104] = 
+	{
+		name = "Chen Pin",	
+		birth       = 150,
+		ability     = 60,
+		potential   = 80,
+		grade       = "BEST",
+		purpose     = 0,
+		job         = "",
+		home        = 100,
+		skills      = { 1000, 1030 },
+		politics    = { 0, 10, 1000 },
+		strategy    = { 0, 10, 1000 },
+		tactic      = { 0, 10, 1000 },
+	},
 
 	[200] = 
 	{
@@ -175,22 +190,22 @@ CHUHAN_CharaData =
 
 CHUHAN_CityData = 
 {
-	[100] = 
+	[101] = 
 	{
 		name = "Xian Yan",
 		coordinate = { x = 42, y = 6 },
 		level = 10,
 		charas = {},
-		adjacents = { 101, 200 },
+		adjacents = { 100, 200 },
 		defenses = { 15000, 10000, 15000 },
 	},
-	[101] = 
+	[100] = 
 	{
 		name = "Guan Zhong",
 		coordinate = { x = 36, y = 12 },
 		level = 10,
-		charas = { 100, 101, 102, 103 },		
-		adjacents = { 100 },
+		charas = { 100, 101, 102, 103, 104 },
+		adjacents = { 101 },
 		defenses = { 15000, 10000, 15000 },
 	},
 	[200] = 
@@ -199,7 +214,7 @@ CHUHAN_CityData =
 		coordinate = { x = 48, y = 12 },
 		level = 10,
 		charas = { 200, 201, 202, 203 },
-		adjacents = { 100 },
+		adjacents = { 101 },
 		defenses = { 15000, 10000, 15000 },
 	},
 	--[[
@@ -223,8 +238,8 @@ CHUHAN_GroupData =
 		goals = { { type="DOMINATION_TERRIORITY", target = 100 } },
 		leader = 100,
 		capital = 100,
-		cities = { 101 },		
-		charas = { 100, 101, 102, 103 },
+		cities = { 100, 101 },
+		charas = { 100, 101, 102, 103, 104 },
 		troops = {},
 		corps = {},
 		relations = {  },

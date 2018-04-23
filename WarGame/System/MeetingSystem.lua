@@ -9,7 +9,9 @@ end
 local function Proposal_Respond( proposal )
 	local city = Asset_Get( proposal, ProposalAssetID.DESTINATION )
 	if not city then
-		InputUtil_Pause( "Invalid proposal location" )
+		--InputUtil_Pause( "Invalid proposal location" )
+		print( proposal:ToString() )
+		k.p = 1
 		return
 	end
 	local isAccepted = true
@@ -17,11 +19,11 @@ local function Proposal_Respond( proposal )
 		Proposal_Execute( proposal )
 		--accept or not, NOW WE ALWAYS PERMITTED
 		Asset_Set( proposal, ProposalAssetID.STATUS, ProposalStatus.PERMITTED )
-		Stat_Add( "Proposal@Accept", { type = Asset_Get( proposal, ProposalAssetID.TYPE ) }, StatType.LIST )
+		--Stat_Add( "Proposal@Accepted", MathUtil_FindName( ProposalType, Asset_Get( proposal, ProposalAssetID.TYPE ) ), StatType.LIST )
 		Entity_Remove( proposal )
 	else
 		Asset_Set( proposal, ProposalAssetID.STATUS, ProposalStatus.REJECTED )
-		Stat_Add( "Proposal@Rejected", { type = Asset_Get( proposal, ProposalAssetID.TYPE ) }, StatType.LIST )
+		--Stat_Add( "Proposal@Rejected", MathUtil_FindName( ProposalType, Asset_Get( proposal, ProposalAssetID.TYPE ) ), StatType.LIST )
 		Entity_Remove( proposal )
 	end
 end
@@ -48,6 +50,7 @@ local function Meeting_Update( meeting )
 	local superior = Asset_Get( meeting, MeetingAssetID.SUPERIOR )
 
 	while topic < endTopic do
+		--print( "cur_topic=", MathUtil_FindName( MeetingTopic, topic ) )
 		Asset_Set( meeting, MeetingAssetID.TOPIC, topic )
 
 		--clear all proposals
@@ -61,6 +64,7 @@ local function Meeting_Update( meeting )
 			if Asset_GetListSize( chara, CharaAssetID.TASKS ) > 0 then return end			
 			freeParticiants = freeParticiants + 1
 			Stat_Add( "Proposal@Try_Times", nil, StatType.TIMES )
+			--if topic == MeetingTopic.COMMANDER then InputUtil_Pause( "commander") end
 			if CharaAI_SubmitMeetingProposal( chara, meeting ) then
 				--print( chara.name, "submit")
 				numofproposer = numofproposer - 1
@@ -69,10 +73,9 @@ local function Meeting_Update( meeting )
 		end )
 		if freeParticiants == 0 then
 			--let superior submit proposal
-			CharaAI_SubmitMeetingProposal( superior, meeting )
+			CharaAI_SubmitMeetingProposal( superior, meeting )			
 			--Stat_Add( "Meeting@Cancel_Times", nil, StatType.TIMES )
 			--print( "end meeting" )
-			return
 		end
 
 		--update proposals
@@ -96,27 +99,32 @@ local function Meeting_Update( meeting )
 end
 
 function Meeting_Hold( city, topic, target )
+	if Asset_GetListItem( city, CityAssetID.STATUSES, CityStatus.IN_SIEGE ) == true then
+		Debug_Log( city.name, "in siege, cann't hold meeting" )
+		return
+	end
+
 	if not topic then topic = MeetingTopic.NONE end
 	local executive = city:GetOfficer( CityJob.CHIEF_EXECUTIVE )
 	if topic == MeetingTopic.UNDER_HARASS or topic == MeetingTopic.UNDER_ATTACK then		
 		--find highest rank		
 		local highestRank = CharaJob.NONE
 		city:FilterOfficer( function ( chara )
-			if chara:IsAtHome() then
-				local rank = Asset_Get( chara, CharaAssetID.JOB )
-				if rank > highestRank then
-					executive = chara
-					highestRank = rank
-				end
+			if chara:IsAtHome() == false then return end
+			local rank = Asset_Get( chara, CharaAssetID.JOB )
+			if rank > highestRank then
+				executive = chara
+				highestRank = rank
 			end
 		end)
 		if not executive then
-			print( "no exec")
+			Stat_Add( "Meeting@Pass", 1, StatType.TIMES )
 			return
 		end
 	else
 		if not executive then
 			--no executive, cann't hold on any meeting
+			Stat_Add( "Meeting@Pass", 1, StatType.TIMES )
 			return
 		end
 	end
@@ -139,6 +147,7 @@ function Meeting_Hold( city, topic, target )
 			--print( chara.name, " isn't at home" )
 			return
 		end
+		if chara == executive then return end
 		table.insert( participants, chara )
 	end )
 	participants = MathUtil_Shuffle_Sync( participants )
@@ -147,7 +156,8 @@ function Meeting_Hold( city, topic, target )
 
 	--print( "hold meeting in=" .. city.name, "chara=" .. Asset_GetListSize( city, CityAssetID.CHARA_LIST ), #participants )
 
-	Stat_Add( "Meeting@Hold_Times", 1, StatType.TIMES )
+	Stat_Add( "Meeting@HoldTimes", 1, StatType.TIMES )
+	Stat_Add( "Meeting@CityHold_" .. city.name, 1, StatType.TIMES )
 end
 
 --------------------------------------
@@ -168,7 +178,7 @@ function MeetingSystem:__init()
 end
 
 function MeetingSystem:Start()
-	Message_Handle( SystemType.MEETING_SYS, MessageType.CITY_HOLD_MEETING, Meeting_CityHold )	
+	Message_Handle( self.type, MessageType.CITY_HOLD_MEETING, Meeting_CityHold )	
 end
 
 function MeetingSystem:Update()

@@ -278,7 +278,7 @@ CityPopu =
 	FARMER   = 20,
 	WORKER   = 21,
 	MERCHANT = 22,
-	SOLDIER  = 23,
+	RESERVES = 23,
 
 	MIDDLE   = 30,
 	
@@ -292,7 +292,7 @@ CityPopu =
 --Default Value: true / false / nil
 CityStatus = 
 {
-	SIEGE              = 20,
+	IN_SIEGE           = 20,
 	STARVATION         = 21,
 
 	MILITARY_WEAK      = 100,
@@ -481,31 +481,6 @@ CorpsPurpose =
 --
 ----------------------------------------------------------------------------------------
 
-ProposalType = 
-{
-	ESTABLISH_CORPS = 100,
-	REINFORCE_CORPS = 101,
-	DISMISS_CORPS   = 102,
-	TRAIN_CORPS     = 103,
-	UPGRADE_CORPS   = 104,
-	DISPATCH_CORPS  = 105,	
-
-	HARASS_CITY     = 110,
-	ATTACK_CITY     = 111,
-	INTERCEPT       = 120,
-
-	FRIENDLY        = 200,
-
-	DEV_AGRICULTURE = 310,
-	DEV_COMMERCE    = 311,
-	DEV_PRODUCTION  = 312,
-	BUILD_CITY      = 320,
-	LEVY_TAX        = 321,
-
-	HIRE_CHARA      = 400,
-	PROMOTE_CHARA   = 401,
-}
-
 ProposalStatus = 
 {
 	SUBMITTED    = 1,
@@ -513,19 +488,56 @@ ProposalStatus =
 	REJECTED     = 3,
 }
 
+ProposalType = 
+{
+	HARASS_CITY     = 110,
+	ATTACK_CITY     = 111,
+	INTERCEPT       = 112,
+
+	ESTABLISH_CORPS = 120,
+	REINFORCE_CORPS = 121,
+	DISMISS_CORPS   = 122,
+	TRAIN_CORPS     = 123,
+	UPGRADE_CORPS   = 124,
+	DISPATCH_CORPS  = 125,	
+	ENROLL_CORPS    = 126,
+
+	CONSCRIPT       = 130,
+	RECRUIT         = 131,
+
+	FRIENDLY        = 200,
+
+	DEV_AGRICULTURE = 310,
+	DEV_COMMERCE    = 311,
+	DEV_PRODUCTION  = 312,		
+	BUILD_CITY      = 320,
+	LEVY_TAX        = 321,
+	CONSCRIPT       = 330,
+	RECRUIT         = 331,
+
+	HIRE_CHARA      = 400,
+	PROMOTE_CHARA   = 401,
+	DISPATCH_CHARA  = 402,
+	CALL_CHARA      = 403,
+}
+
 --all proposal type should exist in TaskType or it'll occur error
 TaskType = 
 {
-	ESTABLISH_CORPS = 100,
-	REINFORCE_CORPS = 101,
-	DISMISS_CORPS   = 102,
-	TRAIN_CORPS     = 103,
-	UPGRADE_CORPS   = 104,
-	DISPATCH_CORPS  = 105,
-
 	HARASS_CITY     = 110,
 	ATTACK_CITY     = 111,
-	INTERCEPT       = 120,
+	INTERCEPT       = 112,
+
+	ESTABLISH_CORPS = 120,
+	REINFORCE_CORPS = 121,
+	DISMISS_CORPS   = 122,
+	TRAIN_CORPS     = 123,
+	UPGRADE_CORPS   = 124,
+	DISPATCH_CORPS  = 125,
+	ENROLL_CORPS    = 126,
+
+	CONSCRIPT       = 130,
+	RECRUIT         = 131,
 
 	FRIENDLY        = 200,
 
@@ -537,6 +549,8 @@ TaskType =
 
 	HIRE_CHARA      = 400,
 	PROMOTE_CHARA   = 401,
+	DISPATCH_CHARA  = 402,
+	CALL_CHARA      = 403,
 }
 
 TaskActorType = 
@@ -561,11 +575,21 @@ TaskStep =
 
 TaskStatus = 
 {
-	WAITING    = 0,
-	RUNNING    = 1,
-	SUCCEED    = 2,
-	FAILED     = 3,
-	END        = 4,
+	--normal status, always idle
+	RUNNING    = 0,
+	--means current step is waiting until duration time elapsed
+	WAITING    = 1,
+	--means acotr is moving, should wait
+	MOVING     = 2,
+	--means task is working, should wait for finish
+	WORKING    = 3,
+}
+
+TaskResult = 
+{
+	UNKNOWN = 0,
+	SUCCESS = 1,
+	FAILED  = 2,
 }
 
 ------------------------------
@@ -652,25 +676,42 @@ MeetingTopic =
 --All system should depend on messages and process with them
 MessageType = 
 {
-	--actor, destination
+	------------------------------------
+	--start / resume move
+
+	--@param actor
+	START_MOVING          = 70,
+	--@param actor
+	STOP_MOVING           = 71,
+	--@param actor
+	CANCEL_MOVING         = 72,
+	------------------------------------
+
+
+	--actor, destination	
 	ARRIVE_DESTINATION    = 80,	
 
 	CORPS_ATTACK          = 91,
 
 	----------------------------------
 	-- Combat Relative
+
+	COMBAT_TRIGGERRED     = 100,
+	--@param plot encounter when moving
+	--@param city harass city task
+	--@param atk  always valid
+	--@param def  defender corps, only valid in encouter
+	--@param task param
 	FIELD_COMBAT_TRIGGER  = 101,
-	SIEGE_COMBAT_TRIGGER  = 102,
+	SIEGE_COMBAT_TRIGGER  = 102,	
 
 	COMBAT_OCCURED        = 110,
 	FIELD_COMBAT_OCCURED  = 111,
 	SIEGE_COMBAT_OCCURED  = 112,
 
-	COMBAT_END            = 120,
-	FIELD_COMBAT_END      = 121,
-	SIEGE_COMBAT_END      = 122,
+	COMBAT_ENDED          = 120,
 
-	COMBAT_REMOVE         = 130,
+	COMBAT_REMOVE         = 140,	
 	----------------------------------
 
 	----------------------------------
@@ -734,5 +775,5 @@ DiplomacyMethod =
 
 FeatureOption =
 {
-	FOOD_SUPPLY = 0,
+	ENABLE_FOOD_SUPPLY = 0,
 }

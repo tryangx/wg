@@ -432,4 +432,12 @@ DefaultCorpsParams =
 DefaultTroopParams = 
 {
 	MIN_TROOP_SOLDIER = 100,
+
+	TROOP_MAX_NUMBER = 
+	{
+		[0] = 200,
+		[1] = 500,
+		[2] = 1000,
+		[3] = 2000,
+	}
 }

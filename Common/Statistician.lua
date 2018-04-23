@@ -49,16 +49,16 @@ function Stat_Add( name, data, type )
 		table.insert( stats, data )
 	elseif type == StatType.ACCUMULATION then
 		stats.accumulation = stats.accumulation and stats.accumulation + data or data
-	end	
+	end
 end
 
 function Stat_Dump( type )
-	Debug_Log( "####STAT_DUMP####" )
+	Debug_Normal( "####STAT_DUMP####" )
 	--output
 	for t, list in pairs( _stats ) do
 		if not type or t == type then
-			Debug_Log( "" )
-			Debug_Log( "#" .. MathUtil_FindName( StatType, t ) )
+			Debug_Normal( "" )
+			Debug_Normal( "#" .. MathUtil_FindName( StatType, t ) )
 			local namelist = {}
 			for name, data in pairs( list ) do
 				table.insert( namelist, name )
@@ -68,35 +68,35 @@ function Stat_Dump( type )
 				local data = list[name]
 				local dumper = list[name] and list[name]._DUMPER or nil
 				if t == StatType.LIST then
-					Debug_Log( name .. ":" .. " cnt=" .. #data, dumper )
+					Debug_Normal( name .. ":" .. " cnt=" .. #data, dumper )
 					if dumper then
 						for _, item in ipairs( data ) do
 							dumper( item )
 						end
 					else
 						for _, item in ipairs( data ) do
-							print( item )
+							Debug_Normal( item )
 						end
 					end
 				elseif t == StatType.DESC then
-					Debug_Log( name .. "=" .. data.desc )
+					Debug_Normal( name .. "=" .. data.desc )
 				elseif t == StatType.TIMES  then
-					Debug_Log( name .. "=" .. data.times )
+					Debug_Normal( name .. "=" .. data.times )
 				elseif t == StatType.DATA then
 					if dumper then
 						dumper( name, data )
 					else
-						Debug_Log( name .. "=" .. data.data )
+						Debug_Normal( name .. "=" .. data.data )
 					end
 				elseif t == StatType.VALUE then
-					Debug_Log( name .. "=" .. data.value )
+					Debug_Normal( name .. "=" .. data.value )
 				elseif t == StatType.ACCUMULATION then
-					Debug_Log( name .. "=" .. data.accumulation )
+					Debug_Normal( name .. "=" .. data.accumulation )
 				end
 			end
 		end
 	end
-	Debug_Log( "####END_DUMP####" )	
+	Debug_Normal( "####END_DUMP####" )	
 end
 
 function Stat_SetDumper( name, fn, type )

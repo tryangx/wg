@@ -81,6 +81,33 @@ end
 
 -------------------------------------------
 
+function Corps:ToString( type )
+	local content = "[" .. self.name .. "]"	
+	if type == "SIMPLE"	then
+		content = content .. Asset_Get( self, CorpsAssetID.LOCATION ):ToString()
+		content = content .. " trp=" .. Asset_GetListSize( self, CorpsAssetID.TROOP_LIST )
+	elseif type == "ALL"	then
+		local leader = Asset_Get( self, CorpsAssetID.LEADER )
+		if leader then
+			content = content .. leader:ToString()
+		end
+		content = content .. Asset_Get( self, CorpsAssetID.LOCATION ):ToString()
+		content = content .. " trp=" .. Asset_GetListSize( self, CorpsAssetID.TROOP_LIST )
+		content = content .. " soldier=" .. self:GetSoldier()
+	elseif type == "BRIEF" then		
+		local leader = Asset_Get( self, CorpsAssetID.LEADER )
+		if leader then
+			content = content .. leader:ToString()
+		end
+		content = content .. " soldier=" .. self:GetSoldier()
+		Asset_ForeachList( self, CorpsAssetID.TROOP_LIST, function( troop )
+			content = content .. " " .. troop:ToString( type )
+		end)
+	else		
+	end
+	return content
+end
+
 function Corps:Breif()
 	local number = 0
 	Asset_ForeachList( self, CorpsAssetID.TROOP_LIST, function( troop )
@@ -110,15 +137,16 @@ function Corps:GetTraining()
 	return total
 end
 
-
 ---------------------------------------------
 -- Getter
 function Corps:GetSoldier()
 	local number = 0
+	local maxNumber = 0
 	Asset_ForeachList( self, CorpsAssetID.TROOP_LIST, function ( troop )
 		number = number + Asset_Get( troop, TroopAssetID.SOLDIER )
+		maxNumber = maxNumber + Asset_Get( troop, TroopAssetID.MAX_SOLDIER )
 	end )
-	return number
+	return number,  maxNumber
 end
 
 function Corps:GetConsumeFood()
@@ -154,12 +182,24 @@ function Corps:IsAtHome()
 	return location == encampment
 end
 
+function Corps:IsBusy()
+	return Asset_GetListItem( self, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK ) ~= nil
+end
+
 ---------------------------------------------
 
 function Corps:Update( ... )
 end
 
 -------------------------------------------
+
+function Corps:AddTroop( troop )
+	Asset_AppendList( self, CorpsAssetID.TROOP_LIST, troop )
+end
+
+function Corps:RemoveTroop( troop )
+	Asset_RemoveListItem( self, CorpsAssetID.TROOP_LIST, troop )
+end
 
 -------------------------------------------
 -- handler

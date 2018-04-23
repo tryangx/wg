@@ -38,7 +38,8 @@ end
 
 --Post message means message will wait until some one pick it up.
 function Message_Post( msgtype, params )
-	Message_Create( msgtype, params )
+	--Message_Create( msgtype, params )
+	Message_Send( msgtype, params )
 end
 
 --------------------------------------------------------------

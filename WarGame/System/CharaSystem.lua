@@ -1,3 +1,34 @@
+-------------------------------------------
+
+function Chara_GetLimitByGroup( group )
+	if not group then return 0 end
+	local government = Asset_Get( group, GroupAssetID.GOVERNMENT )
+	--print( "gov=" .. MathUtil_FindName( GroupGovernment, government ) )
+	return GroupGovernmentData[government].CAPITAL_CHARA_LIMIT
+end
+
+function Chara_GetLimitByCity( city )
+	if not city then return 0 end
+	if city:IsCapital() then
+		return Chara_GetLimitByGroup( Asset_Get( city, CityAssetID.GROUP ) )
+	end
+	local lv = Asset_Get( city, CityAssetID.LEVEL )	
+	local ret = math.ceil( lv / 4 ) + 1
+	DBG_Warning( "chara_limit_bycity", ret )
+	return ret
+end
+
+function Chara_GetReqNumOfOfficer( city )
+	return 2
+end
+
+function Chara_GetSurplusNumOfChara( city )
+	local list = city:FindVacancyOfficerPositions()
+	return #list - city:GetNumOfOfficerSlot()
+end
+
+-------------------------------------------
+
 function Chara_Join( chara, city )
 	local oldHome = Asset_Get( chara, CharaAssetID.HOME )
 	if oldHome == city then return end
@@ -43,7 +74,7 @@ function Chara_Serve( chara, group, city )
 			DBG_Trace( "chara_serve", chara.name .. " serve " .. executive.name )
 		end
 
-		Stat_Add( "HireChara", { name = chara.name }, StatType.LIST )
+		Stat_Add( "Chara@Hire", chara.name, StatType.LIST )
 	end
 end
 
@@ -74,7 +105,10 @@ function Chara_FindPromoteJob( chara )
 			for _, bundle in pairs( data.has_skill ) do
 				local has = true
 				for _, id in pairs( bundle ) do
-					if Asset_HasItem( chara, CharaAssetID.SKILLS, id, "id" ) == false then
+					local findSkill = Asset_FindListItem( chara, CharaAssetID.SKILLS, function( skill )
+						return skill.id == id
+					end )
+					if not findSkill then
 						has = false
 						break
 					end
@@ -116,7 +150,10 @@ function Chara_JobToPlan( job )
 end
 
 local function Chara_WorkForJob( chara )
+	if chara:IsAtHome() == false then return end
+
 	local home = Asset_Get( chara, CharaAssetID.HOME )
+	if not home then return end
 	local job = home:GetCharaJob( chara )
 	plan = Chara_JobToPlan( job )	
 	local task
@@ -155,10 +192,6 @@ CharaSystem = class()
 
 function CharaSystem:__init()
 	System_Setup( self, SystemType.CHARA_SYS )
-
-	Stat_SetDumper( "HireChara", function ( data )
-		print( "name=" .. data.name )
-	end, StatType.LIST )
 end
 
 function CharaSystem:Start()
@@ -170,7 +203,7 @@ function CharaSystem:Update()
 	Entity_Foreach( EntityType.CHARA, function ( chara )
 		chara:Update()
 
-		Chara_ExecuteTask( chara )
+		--Chara_ExecuteTask( chara )
 
 		Chara_WorkForJob( chara )
 	end )

@@ -1,3 +1,8 @@
+--1 unit means 1KM
+SCALE_UNIT = 10
+
+--------------------------------------------------------
+
 --Route caches for plot to plot
 --{ plotid1_plotid2 = route, ... }
 local _routes = {}
@@ -245,6 +250,7 @@ function Route_FindPathByPlot( plot1, plot2 )
 end
 
 function Route_FindPathByCity( city1, city2 )
+	--print( String_ToStr( city1, "name" ), String_ToStr( city2, "name" ) )
 	local plot1 = Asset_Get( city1, CityAssetID.CENTER_PLOT )
 	local plot2 = Asset_Get( city2, CityAssetID.CENTER_PLOT )
 	return Route_FindPathByPlot( plot1, plot2 )
@@ -270,6 +276,14 @@ function Route_CalcCityDistance( city1, city2 )
 	local plot1 = Asset_Get( city1, CityAssetID.CENTER_PLOT )
 	local plot2 = Asset_Get( city2, CityAssetID.CENTER_PLOT )
 	return Route_CalcPlotDistance( plot1, plot2 )
+end
+
+--manhattan
+function Route_CalcCityCoorDistance( city1, city2 )
+	local plot1 = Asset_Get( city1, CityAssetID.CENTER_PLOT )
+	local plot2 = Asset_Get( city2, CityAssetID.CENTER_PLOT )
+	local dist = math.abs( Asset_Get( plot1, PlotAssetID.X ) - Asset_Get( plot2, PlotAssetID.X ) ) + math.abs( Asset_Get( plot2, PlotAssetID.X ) - Asset_Get( plot2, PlotAssetID.X ) )		
+	return dist * SCALE_UNIT
 end
 
 --Make all route between city to adjacent city
@@ -331,8 +345,6 @@ function Route_Make()
 			end
 		end )
 	end )
-
-
 end
 
 --Find the path between city to city
