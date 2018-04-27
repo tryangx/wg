@@ -18,7 +18,7 @@ end
 
 function Debug_Log( ... )
 	if enableDebug then
-		local date = g_calendar:CreateCurrentDateDesc()
+		local date = g_Time:CreateCurrentDateDesc()
 		Debug_GetLog():WriteLog( date, ... )
 	end
 end

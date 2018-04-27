@@ -1,5 +1,5 @@
 --------------------------
--- Calendar
+-- Time
 --------------------------
 
 local DAY_IN_MONTH   = 30
@@ -38,9 +38,9 @@ Normal_DayPerMonth =
 	[12] = 31,
 }
 
-Calendar = class()
+Time = class()
 
-function Calendar:__init()
+function Time:__init()
 	self.year  = 2000
 	--month from 1 ~ 12
 	self.month = 1
@@ -60,12 +60,12 @@ function Calendar:__init()
 	self.passYear  = false
 end
 
-function Calendar:Init( daysInMonth )
+function Time:Init( daysInMonth )
 	self.daysInMonth = daysInMonth
 end
 
--- calendar:SetDate( 2000, 1, 1, false )
-function Calendar:SetDate( year, month, day, hour, beforeChrist )
+-- Time:SetDate( 2000, 1, 1, false )
+function Time:SetDate( year, month, day, hour, beforeChrist )
 	self.month = month or self.month	
 	self.day   = day or self.day	
 	self.year  = math.abs( year or self.year )	
@@ -77,38 +77,38 @@ function Calendar:SetDate( year, month, day, hour, beforeChrist )
 	end
 end
 
-function Calendar:GetDayInMonth()
+function Time:GetDayInMonth()
 	if self.daysInMonth and self.daysInMonth[self.month] then
 		return self.daysInMonth[self.month]
 	end
 	return DAY_IN_MONTH
 end
 
-function Calendar:GetYear()
+function Time:GetYear()
 	return self.year
 end
 
 --month from 1 ~ 12
-function Calendar:GetMonth()
+function Time:GetMonth()
 	return self.month
 end
 
 --day from 1~31
-function Calendar:GetDay()
+function Time:GetDay()
 	return self.day
 end
 
 --Important getter
-function Calendar:GetDateValue()
+function Time:GetDateValue()
 	return self:ConvertDateValue( self.year, self.month, self.day, self.beforeChrist )
 end
 
-function Calendar:ConvertDateValue( year, month, day, beforeChrist )
+function Time:ConvertDateValue( year, month, day, beforeChrist )
 	local ret = year * 100000 + month * 1000 + day * 10 + ( beforeChrist == true and 1 or 0 )
 	return ret
 end
 
-function Calendar:ConvertFromDateValue( dateValue )
+function Time:ConvertFromDateValue( dateValue )
 	local year  = math.floor( dateValue / 100000 )
 	local month = math.floor( ( dateValue % 100000 ) / 1000 )
 	local day   = math.floor( ( dateValue % 1000 ) / 10 )
@@ -118,11 +118,11 @@ function Calendar:ConvertFromDateValue( dateValue )
 end
 
 --default by year
-function Calendar:CreateDesc( byDay, byMonth )
+function Time:CreateDesc( byDay, byMonth )
 	return self:CreateDateDesc( self.year, self.month, self.day, self.beforeChrist, byDay, byMonth )
 end
 
-function Calendar:CreateDateDesc( year, month, day, beforeChrist, byDay, byMonth )
+function Time:CreateDateDesc( year, month, day, beforeChrist, byDay, byMonth )
 	local content = ( beforeChrist == false and "BC " or "AD " )
 	if byDay then
 		content = content .. year .. "Y" .. ( month < 10 and "0" .. month or month ) .. "M" .. ( day < 10 and "0" .. day or day ) .. "D"
@@ -134,7 +134,7 @@ function Calendar:CreateDateDesc( year, month, day, beforeChrist, byDay, byMonth
 	return content
 end
 
-function Calendar:CreateDateDescByValue( dateValue, byDay, byMonth )
+function Time:CreateDateDescByValue( dateValue, byDay, byMonth )
 	if not dateValue then return "" end
 	if not byMonth then byMonth = true end
 	if not byDay then byDay = true end
@@ -142,7 +142,7 @@ function Calendar:CreateDateDescByValue( dateValue, byDay, byMonth )
 	return self:CreateDateDesc( year, month, day, beforeChrist, byDay, byMonth )
 end
 
-function Calendar:CreateCurrentDateDesc( byDay, byMonth )
+function Time:CreateCurrentDateDesc( byDay, byMonth )
 	if not byMonth then byMonth = true end
 	if not byDay then byDay = true end
 	return self:CreateDateDesc( self.year, self.month, self.day, self.beforeChrist, byDay, byMonth )
@@ -151,7 +151,7 @@ end
 -----------------------------
 -- Operation method
 
-function Calendar:ElapseDay( elapsedDay )
+function Time:ElapseDay( elapsedDay )
 	self.passMonth = false
 	self.passYear  = false
 
@@ -161,7 +161,7 @@ function Calendar:ElapseDay( elapsedDay )
 	end
 end
 
-function Calendar:ElapseAMonth()
+function Time:ElapseAMonth()
 	self.passYear  = false
 	self.passMonth = true
 	self.day   = self.day - self:GetDayInMonth()
@@ -181,13 +181,13 @@ function Calendar:ElapseAMonth()
 	end
 end
 
-function Calendar:ElapseADay()	
+function Time:ElapseADay()	
 	self.hour = self.hour - HOUR_IN_DAY + 1
 	self.day  = self.day + 1
 	if self.day > self:GetDayInMonth() then	self:ElapseAMonth() end
 end
 
-function Calendar:ElapseAHour()
+function Time:ElapseAHour()
 	self.hour = self.hour + 1
 	if self.hour > HOUR_IN_DAY - 1 then self:ElapseADay() end
 end
@@ -195,12 +195,12 @@ end
 --------------------------------------
 -- Calculate difference between two date
 
-function Calendar:CalcNewYear( passYear )
+function Time:CalcNewYear( passYear )
 	local year = self.beforeChrist and -self.year or self.year
 	return year + passYear
 end
 
-function Calendar:CalcDiffYear( year, beforeChrist )
+function Time:CalcDiffYear( year, beforeChrist )
 	year = math.abs( year )
 	if beforeChrist ~= self.beforeChrist then
 		return year + self.year
@@ -208,13 +208,13 @@ function Calendar:CalcDiffYear( year, beforeChrist )
 	return math.abs( year - self.year )
 end
 
-function Calendar:CalcDiffYearByDate( dateValue )
+function Time:CalcDiffYearByDate( dateValue )
 	if not dateValue then return 0 end
 	local year, month, day, beforeChrist = self:ConvertFromDateValue( dateValue )
 	return self:CalcDiffYear( year, month, day, beforeChrist )
 end
 
-function Calendar:CalcDiffMonthByDate( dateValue )	
+function Time:CalcDiffMonthByDate( dateValue )	
 	if not dateValue then return 0 end
 	local year, month, day, beforeChrist = self:ConvertFromDateValue( dateValue )
 	
@@ -254,13 +254,13 @@ local function CalcDayDiffByDate( y1, m1, d1, b1, y2, m2, d2, b2 )
 	return math.abs( totalDays2 - totalDays1 )
 end
 
-function Calendar:CalcDiffDayByDate( dateValue )
+function Time:CalcDiffDayByDate( dateValue )
 	if not dateValue then return 0 end
 	local year, month, day, beforeChrist = self:ConvertFromDateValue( dateValue )
 	return CalcDayDiffByDate( self.year, self.month, self.day, self.beforeChrist, year, month, day, beforeChrist )
 end
 
-function Calendar:CalcDiffDayByDates( dateValue1, dateValue2 )
+function Time:CalcDiffDayByDates( dateValue1, dateValue2 )
 	local year1, month1, day1, beforeChrist1 = self:ConvertFromDateValue( dateValue1 )
 	local year2, month2, day2, beforeChrist2 = self:ConvertFromDateValue( dateValue2 )
 	return CalcDayDiffByDate( year1, month1, day1, beforeChrist1, year2, month2, day2, beforeChrist2 )

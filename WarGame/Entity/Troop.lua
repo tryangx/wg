@@ -13,7 +13,7 @@ TroopAssetID =
 {
 	--base
 	CORPS        = 101,
-	LEADER       = 102,
+	OFFICER      = 102,
 	POTENTIAL    = 105,	
 	TABLEDATA    = 106,
 
@@ -45,7 +45,7 @@ TroopAssetID =
 TroopAssetAttrib =
 {
 	corps        = AssetAttrib_SetPointer( { id = TroopAssetID.CORPS,         type = TroopAssetType.BASE_ATTRIB, setter = Entity_SetCorps } ),
-	chara        = AssetAttrib_SetPointer( { id = TroopAssetID.LEADER,        type = TroopAssetType.BASE_ATTRIB, setter = Entity_SetChara } ),
+	chara        = AssetAttrib_SetPointer( { id = TroopAssetID.OFFICER,       type = TroopAssetType.BASE_ATTRIB, setter = Entity_SetChara } ),
 	potential    = AssetAttrib_SetNumber ( { id = TroopAssetID.POTENTIAL,     type = TroopAssetType.BASE_ATTRIB, min = 0, max = 100 } ),	
 	tabledata    = AssetAttrib_SetPointer( { id = TroopAssetID.TABLEDATA,     type = TroopAssetType.BASE_ATTRIB, setter = Table_SetTroop } ),
 	
@@ -119,7 +119,7 @@ end
 
 function Troop:TestGenerate()
 	Asset_Set( self, TroopAssetID.CORPS, nil )
-	Asset_Set( self, TroopAssetID.LEADER, nil )
+	Asset_Set( self, TroopAssetID.OFFICER, nil )
 	Asset_Set( self, TroopAssetID.POTENTIAL, Random_GetInt( TroopAssetAttrib.potential.min, TroopAssetAttrib.potential.max ) )	
 	Asset_Set( self, TroopAssetID.SOLDIER, Random_GetInt( 1, 4 ) * 500 )
 	Asset_Set( self, TroopAssetID.MAX_SOLDIER, Asset_Get( self, TroopAssetID.SOLDIER ) )

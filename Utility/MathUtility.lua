@@ -460,24 +460,24 @@ end
 	local datas = 
 	{
 		{ prob = 10, ret = 1 },
-		{ prob = 10, ret = 2 },
-		{ prob = 20, ret = 3 },
+		{ prob = 10, ret = 3 },
+		{ prob = 20, ret = 5 },
 	}
-	print( MathUtil_SumIf( datas, "prob", nil, "ret" ) )
-	--6
+	print( MathUtil_SumIf( datas, nil, nil, "ret" ) )
+	--9
 
 	local datas2 = 
 	{
 		{ prob = 10, ret = 1 },
-		{ prob = 10, ret = 2 },
-		{ prob = 20, ret = 3 },
+		{ prob = 10, ret = 3 },
+		{ prob = 20, ret = 5 },
 	}
 	print( MathUtil_SumIf( datas2, "prob", 10, "ret" ) )
-	--3
+	--4
 --]]
 function MathUtil_SumIf( datas, itemName, itemValue, countName )
 	local ret = 0	
-	for k, data in ipairs( datas ) do
+	for k, data in pairs( datas ) do
 		local cur = itemName and data[itemName] or data
 		if not itemValue or cur == itemValue then
 			ret = ret + ( countName and data[countName] or data )

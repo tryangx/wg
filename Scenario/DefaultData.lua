@@ -560,7 +560,29 @@ GroupGovernmentData =
 }
 
 --------------------------------------------------------
---  City Population
+--  City Params
+
+CitySpyParams = 
+{
+	--G1 known base intel popu, charas
+	--G2 known roughly charas info
+	--G3 known roughly military intel, exactly charas info( like loyality etc )
+	--G4 known everything 
+	--G5 improve op success probability
+	INIT_GRADE  = 1,
+	REQ_GRADE   = 3,
+	MAX_GRADE   = 5,	
+	GRADE_INTEL = { 100, 200, 400, 1000 },
+	GRADE_DATA  = 
+	{
+		[1] = { BASE = 1, GROWTH = 0, MILITARY = 0 },
+		[2] = { BASE = 2, GROWTH = 0, MILITARY = 1 },
+		[3] = { BASE = 2, GROWTH = 1, MILITARY = 2 },
+		[4] = { BASE = 2, GROWTH = 2, MILITARY = 2 },
+		[5] = { BASE = 2, GROWTH = 2, MILITARY = 2 },
+	},
+	GRADE_OP_BONUS = { 0, 0, 5, 10, 25 }
+}
 
 PopulationParams =
 {
@@ -676,6 +698,18 @@ DefaultCityPopuNeed =
 	NOBLE    = 0.002,
 }
 
+DefaultCityPopuLimit = 
+{
+	HOBO     = 0.1,
+	CHILDREN = 0.3,	
+	RESERVES = 0.1,
+	MIDDLE   = 0.1,	
+	BACHELOR = 0.2,
+	OFFICER  = 0.1,
+	RICH     = 0.1,
+	NOBLE    = 0.05,	
+}
+
 DefaultCityPopuConv = 
 {
 	{ from = "CHILDREN", to = "HOBO",     ratio = 0.018, force_conv = true },
@@ -738,14 +772,16 @@ DefaultCityPopuStructureParams =
 		
 		--reveal the productive of the scenario time
 		POPU_PER_UNIT     = DefaultCityPopuPerUnit,
+		
 		--reveal the manpower requirement of each job in the city
 		POPU_NEED_RATIO   = DefaultCityPopuNeed,
+		POPU_LIMIT_RATIO  = DefaultCityPopuLimit,
 		POPU_MENTAL_RATIO = DefaultCityPopuMental,		
 		POPU_MENTAL_MAX   = DefaultCityPopuMentalMax,		
 		POPU_MENTAL_MIN   = DefaultCityPopuMentalMin,
 
 		POPU_CONV_COND    = DefaultCityPopuConv,
-	}
+	},
 }
 
 DefaultCityDevelopParams =
@@ -931,6 +967,8 @@ DefaultCharaPromoteMethod =
 }
 
 --------------------------------------------------------
+
+--------------------------------------------------------
 -- Task
 
 DefaultTaskSteps = 
@@ -939,17 +977,14 @@ DefaultTaskSteps =
 	ATTACK_CITY     = { "PREPARE", "EXECUTE", "FINISH", "REPLY" },
 	INTERCEPT       = { "PREPARE", "EXECUTE", "FINISH", "REPLY" },
 	
-	ESTABLISH_CORPS = { "EXECUTE", "FINISH", "REPLY" },
+	ESTABLISH_CORPS = { "PREPARE", "EXECUTE", "FINISH", "REPLY" },
 	REINFORCE_CORPS = { "EXECUTE", "FINISH", "REPLY" },
 	DISMISS_CORPS   = { "EXECUTE", "FINISH", "REPLY" },
 	TRAIN_CORPS     = { "EXECUTE", "FINISH", "REPLY" },
-	DISPATCH_CORPS  = { "EXECUTE", "FINISH", "REPLY" },
+	DISPATCH_CORPS  = { "PREPARE", "EXECUTE", "FINISH", "REPLY" },
 	ENROLL_CORPS    = { "EXECUTE", "FINISH", "REPLY" },
 	CONSCRIPT       = { "EXECUTE", "FINISH", "REPLY" },
 	RECRUIT         = { "EXECUTE", "FINISH", "REPLY" },
-
-
-	FRIENDLY        = { "EXECUTE", "FINISH", "REPLY" },
 
 	DEV_AGRICULTURE = { "EXECUTE", "FINISH", "REPLY" },
 	DEV_COMMERCE    = { "EXECUTE", "FINISH", "REPLY" },
@@ -961,6 +996,16 @@ DefaultTaskSteps =
 	PROMOTE_CHARA   = { "FINISH", "REPLY" },
 	DISPATCH_CHARA  = { "PREPARE", "EXECUTE", "FINISH", },
 	CALL_CHARA      = { "PREPARE", "EXECUTE", "FINISH", },
+
+	RECONNOITRE     = { "EXECUTE", "FINISH", "REPLY" },
+	SABOTAGE        = { "EXECUTE", "FINISH", "REPLY" },
+
+	RESEARCH        = { "EXECUTE", "FINISH", "REPLY" },
+
+
+	IMPROVE_RELATION = { "EXECUTE", "FINISH", "REPLY" },
+	DECLARE_WAR      = { "PREPARE", "FINISH", "REPLY" },	
+	SIGN_PACT        = { "EXECUTE", "FINISH", "REPLY" },
 }
 
 --------------------------------------------------------
@@ -982,4 +1027,87 @@ DefaultDiplomacyCond =
 	FRIENDLY      = { attitude = 0, },
 	DECLARE_WAR   = { attitude = 0, },
 	REQUEST_TRADE = { attitude = 0, },
+}
+
+
+--------------------------------------------------------
+
+DefaultCharaSkill = 
+{
+	
+}
+
+DefaultTechData = 
+{
+	{
+		id = 100, type = TechType.WEAPON, workload = 1000,		
+	},
+	{
+		id = 101, type = TechType.WEAPON, workload = 3000,
+		prerequisite = { tech = { 100, 110 }, },
+	},
+	{
+		id = 102, type = TechType.WEAPON, workload = 5000,
+		prerequisite = { tech = { 101, 111 }, },
+	},
+
+	{
+		id = 110, type = TechType.ARMOR, workload = 1000,
+	},
+	{
+		id = 111, type = TechType.ARMOR, workload = 3000,
+		prerequisite = { tech = { 100, 110 }, },
+	},
+	{
+		id = 112, type = TechType.ARMOR, workload = 5000,
+		prerequisite = { tech = { 101, 111 }, },
+ 	},
+	
+	{
+		id = 120, type = TechType.ORGNIZATION, workload = 1000,		
+	},
+	{
+		id = 121, type = TechType.ORGNIZATION, workload = 3000,
+		prerequisite = { tech = { 120 } },
+	},
+	{
+		id = 122, type = TechType.ORGNIZATION, workload = 5000,
+		prerequisite = { tech = { 121 } },
+	},
+
+	{
+		id = 200, type = TechType.AGRICULTURE, workload = 1000,
+	},
+	{
+		id = 201, type = TechType.AGRICULTURE, workload = 3000,
+		prerequisite = { tech = { 200 } },
+	},
+	{
+		id = 202, type = TechType.AGRICULTURE, workload = 5000,
+		prerequisite = { tech = { 201 } },
+	},
+
+	{
+		id = 210, type = TechType.COMMERCE, workload = 1000,		
+	},
+	{
+		id = 211, type = TechType.COMMERCE, workload = 3000,
+		prerequisite = { tech = { 210 } },
+	},
+	{
+		id = 212, type = TechType.COMMERCE, workload = 5000,
+		prerequisite = { tech = { 211 } },
+	},
+
+	{
+		id = 220, type = TechType.PRODUCTION, workload = 1000,
+	},
+	{
+		id = 221, type = TechType.PRODUCTION, workload = 3000,
+		prerequisite = { tech = { 220 } },
+	},
+	{
+		id = 222, type = TechType.PRODUCTION, workload = 5000,
+		prerequisite = { tech = { 221 } },
+	},
 }

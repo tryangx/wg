@@ -31,24 +31,24 @@ function City_GetPopuTypeByDevIndex( id )
 end
 
 -- Measure how many population in every career required by the development index.
-function City_NeedPopu( city, poputype )
+function City_NeedPopu( city, popuname )
 	local cityparams = City_GetPopuParams( city )
 	local needparam  = cityparams.POPU_NEED_RATIO
 	local unitparam  = cityparams.POPU_PER_UNIT
 
 	--some career needs the fixed ratio of the total population
-	if needparam[poputype] then
+	if needparam[popuname] then
 		local popu   = Asset_Get( city, CityAssetID.POPULATION )
-		return math.floor( needparam[poputype] * popu )
+		return math.floor( needparam[popuname] * popu )
 	end
 
 	--some career needs the number of population per development index 
-	if poputype == "FARMER" then
-		return Asset_Get( city, CityAssetID.AGRICULTURE ) * unitparam[poputype]
-	elseif poputype == "WORKER" then
-		return Asset_Get( city, CityAssetID.PRODUCTION ) * unitparam[poputype]
-	elseif poputype == "MERCHANT" then
-		return Asset_Get( city, CityAssetID.COMMERCE ) * unitparam[poputype]
+	if popuname == "FARMER" then
+		return Asset_Get( city, CityAssetID.AGRICULTURE ) * unitparam[popuname]
+	elseif popuname == "WORKER" then
+		return Asset_Get( city, CityAssetID.PRODUCTION ) * unitparam[popuname]
+	elseif popuname == "MERCHANT" then
+		return Asset_Get( city, CityAssetID.COMMERCE ) * unitparam[popuname]
 	end
 	
 	return 0
@@ -70,17 +70,6 @@ function City_NeedDevIndex( city, id )
 end
 
 -------------------------------------------------------
-
---Get military power evaluation under intel report
-function City_GetMilitaryPowerWithIntel( city, fromGroup )
-	local power = city:GetMilitaryPower()
-	return power
-end
-
-function City_GetSoldierWithIntel( city, fromGroup )
-	local power = city:GetSoldier()
-	return power
-end
 
 -------------------------------------------------------
 
@@ -342,10 +331,21 @@ local function City_CheckFlag( city )
 	local group = Asset_Get( city, CityAssetID.GROUP )
 	local power = city:GetMilitaryPower( city )
 	if power == 0 then score = 4 end
+
+	Asset_SetListItem( city, CityAssetID.STATUSES, CityStatus.SAFETY, true )
 	Asset_ForeachList( city, CityAssetID.ADJACENTS, function( adjaCity )
 		local adjaGroup = Asset_Get( adjaCity, CityAssetID.GROUP )
-		if adjaGroup ~= group and typeof( adjaCity ) == "table" then
-			local adjaPower = City_GetMilitaryPowerWithIntel( adjaCity, group )
+		if adjaGroup ~= group then
+			Asset_SetListItem( city, CityAssetID.STATUSES, CityStatus.SAFETY, nil )
+
+			if Dipl_IsAtWar( adjaGroup, group ) then
+				Asset_SetListItem( city, CityAssetID.STATUSES, CityStatus.BATTLEFRONT, true )
+			end			
+
+			if typeof( adjaCity ) ~= "table" then
+				--should to do
+			end
+			local adjaPower = Intel_GetMilPower( adjaCity, city )
 			if adjaPower > ( power + power + power ) then score = score + 1 end
 			if adjaPower > ( power + power ) then score = score + 1 end
 			if adjaPower > power * 1.5 then score = score + 1 end
@@ -477,7 +477,7 @@ function City_LevyTax( city, progress )
 	end
 	income = math.ceil( income * math.min( 2.5, math.max( 0.2, progress * 0.01 ) ) )
 	Asset_Plus( city, CityAssetID.MONEY, income )
-	InputUtil_Pause( "City=" .. city.name .. " Levy tax=" .. income .. " Money=" .. Asset_Get( city, CityAssetID.MONEY ) )	
+	Debug_Log( "City=" .. city.name .. " Levy tax=" .. income .. " Money=" .. Asset_Get( city, CityAssetID.MONEY ) )	
 	return income
 end
 
@@ -524,8 +524,8 @@ function CitySystem:Start()
 end
 
 function CitySystem:Update()
-	local month = g_calendar:GetMonth()
-	local day   = g_calendar:GetDay()
+	local month = g_Time:GetMonth()
+	local day   = g_Time:GetDay()
 	Entity_Foreach( EntityType.CITY, function ( city )
 		--print( "##############################" )
 		--city:DumpStats()

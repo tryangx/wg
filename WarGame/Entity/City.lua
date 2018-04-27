@@ -64,6 +64,7 @@ CityAssetID =
 	CORPS_LIST      = 302,
 	CONSTR_LIST     = 303,
 	PRISONER_LIST   = 304,
+	SPY_LIST        = 305,
 
 	GUARD           = 310,
 	DEFENSES        = 311,	
@@ -71,6 +72,7 @@ CityAssetID =
 
 	INSTRUCTION     = 320,
 	PLANS           = 321,
+	RESEARCH        = 322,
 }
 
 CityAssetAttrib = 
@@ -99,12 +101,12 @@ CityAssetAttrib =
 	security   = AssetAttrib_SetNumber( { id = CityAssetID.SECURITY,        type = CityAssetType.GROWTH_ATTRIB,  min = 0, max = 100, default = 50 } ),	
 	dissatisfaction = AssetAttrib_SetNumber( { id = CityAssetID.DISSATISFACTION,  type = CityAssetType.GROWTH_ATTRIB,  min = 0, max = 100, default = 50 } ),
 
-	charas     = AssetAttrib_SetPointerList( { id = CityAssetID.CHARA_LIST,   type = CityAssetType.PROPERTY_ATTRIB, setter = Entity_SetChara } ),
-	prisoner   = AssetAttrib_SetPointerList( { id = CityAssetID.PRISONER_LIST,type = CityAssetType.PROPERTY_ATTRIB, setter = Entity_SetChara } ),
+	charas     = AssetAttrib_SetPointerList( { id = CityAssetID.CHARA_LIST,   type = CityAssetType.PROPERTY_ATTRIB, setter = Entity_SetChara } ),	
 	officers   = AssetAttrib_SetPointerList( { id = CityAssetID.OFFICER_LIST, type = CityAssetType.PROPERTY_ATTRIB, setter = Entity_SetChara } ),
 	corps      = AssetAttrib_SetPointerList( { id = CityAssetID.CORPS_LIST,   type = CityAssetType.PROPERTY_ATTRIB, setter = Entity_SetCorps } ),
 	constrs    = AssetAttrib_SetPointerList( { id = CityAssetID.CONSTR_LIST,  type = CityAssetType.PROPERTY_ATTRIB, setter = Entity_SetConstruction } ),
-	instruction= AssetAttrib_SetPointerList( { id = CityAssetID.INSTRUCTION,  type = CityAssetType.PROPERTY_ATTRIB, default = CityInstruction.NONE } ),
+	prisoner   = AssetAttrib_SetPointerList( { id = CityAssetID.PRISONER_LIST,type = CityAssetType.PROPERTY_ATTRIB, setter = Entity_SetChara } ),
+	spys       = AssetAttrib_SetList       ( { id = CityAssetID.SPY_LIST,     type = CityAssetType.PROPERTY_ATTRIB } ),
 
 	guard      = AssetAttrib_SetNumber( { id = CityAssetID.GUARD,           type = CityAssetType.PROPERTY_ATTRIB } ),
 	defenses   = AssetAttrib_SetList  ( { id = CityAssetID.DEFENSES,        type = CityAssetType.PROPERTY_ATTRIB } ),		
@@ -112,6 +114,7 @@ CityAssetAttrib =
 
 	instruction = AssetAttrib_SetNumber( { id = CityAssetID.INSTRUCTION,    type = CityAssetType.PROPERTY_ATTRIB } ),
 	plans       = AssetAttrib_SetList  ( { id = CityAssetID.PLANS,          type = CityAssetType.PROPERTY_ATTRIB } ),
+	research    = AssetAttrib_SetData  ( { id = CityAssetID.RESEARCH,       type = CityAssetType.GROWTH_ATTRIB } ),
 }
 
 -------------------------------------------
@@ -189,8 +192,10 @@ function City:ToString( type )
 	local content = "[" .. self.name .. "]"
 	local group = Asset_Get( self, CityAssetID.GROUP )
 	content = content .. "[" .. ( group and group.name or "" ) .. "]"
+
 	if type == "SIMPLE" then
 		content = content .. "(" .. Asset_Get( self, CityAssetID.CENTER_PLOT ):ToString() ..  ")"
+
 	elseif type == "ALL" then
 		content = content .. "(" .. Asset_Get( self, CityAssetID.CENTER_PLOT ):ToString() ..  ")"
 		content = content .. " chars=" .. Asset_GetListSize( self, CityAssetID.CHARA_LIST )
@@ -199,15 +204,18 @@ function City:ToString( type )
 		content = content .. " cons=" .. Asset_GetListSize( self, CityAssetID.CONSTR_LIST )
 		content = content .. " popu=" .. Asset_Get( self, CityAssetID.POPULATION )
 		content = content .. " resv=" .. Asset_GetListItem( self, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES )
+
 	elseif type == "OFFICER" then
 		content = content .. " chars=" .. Asset_GetListSize( self, CityAssetID.CHARA_LIST )
 		Asset_ForeachList( self, CityAssetID.OFFICER_LIST, function ( officer, job )
 			content = content .. " [" .. MathUtil_FindName( CityJob, job ) .. "]=" .. officer.name
 		end )
+
 	elseif type == "MILITARY" then
 		content = content .. " corps=" .. Asset_GetListSize( self, CityAssetID.CORPS_LIST )
 		content = content .. " soldier=" .. self:GetSoldier()
 		content = content .. " reserved=" .. Asset_GetListItem( self, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES )
+
 	end
 	return content
 end
@@ -273,6 +281,19 @@ end
 
 ------------------------------------------
 
+function City:Init()
+	local group = Asset_Get( self, CityAssetID.GROUP )
+	Asset_ForeachList( self, CityAssetID.ADJACENTS, function ( city )
+		local grade = CitySpyParams.INIT_GRADE
+		if Asset_Get( city, CityAssetID.GROUP ) == group then
+			grade = CitySpyParams.MAX_GRADE
+		end
+		Asset_AppendList( self, CityAssetID.SPY_LIST, { city = city, grade = grade, intel = 0 } )
+	end )
+	self:InitPlots()
+	self:InitPopu()
+end
+
 function City:InitPlots()
 	Asset_ForeachList( self, CityAssetID.PLOTS, function( plot )
 		Asset_Plus( self, CityAssetID.POPULATION,  Asset_Get( plot, PlotAssetID.POPULATION ) )
@@ -312,6 +333,39 @@ end
 
 -------------------------------------------
 --getter
+
+function City:GetMaxBulidArea()
+	local area = 10
+	local center = Asset_Get( self, CityAssetID.CENTER_PLOT )
+	local template = Asset_Get( center, PlotAssetID.TEMPLATE )	
+	if template.type == PlotType.LAND then
+		area = 16
+	elseif template.type == PlotType.HILLS then
+		area = 8
+	elseif template.type == PlotType.MOUNTAIN then
+		area = 4
+	elseif template.type == PlotType.WATER then
+		area = 12
+	end
+
+	if template.terrain == PlotTerrainType.PLAINS then
+		area = area + 4
+	elseif template.terrain == PlotTerrainType.GRASSLAND then
+		area = area + 4
+	elseif template.terrain == PlotTerrainType.DESERT then
+		area = area - 4
+	elseif template.terrain == PlotTerrainType.TUNDRA then
+		area = area - 2
+	elseif template.terrain == PlotTerrainType.SNOW then
+		area = area - 2
+	elseif template.terrain == PlotTerrainType.LAKE then
+	elseif template.terrain == PlotTerrainType.COAST then
+		area = area - 2
+	elseif template.terrain == PlotTerrainType.OCEAN then
+		area = 0
+	end
+	return math.max( 2, area )
+end
 
 --get number of population structure 
 function City:GetPopu( citypopu )
@@ -468,7 +522,7 @@ function City:FindNonOfficerFreeCharas( charaList )
 	Asset_ForeachList( self, CityAssetID.CHARA_LIST, function( chara )
 		if chara:IsAtHome() == false then return end
 		if chara:IsBusy() == true then return end
-		if Asset_HasItem( self, CityAssetID.OFFICER_LIST, chara, true ) == true then return end
+		if Asset_HasItem( self, CityAssetID.OFFICER_LIST, chara ) == true then return end
 		table.insert( charaList, chara )
 	end )
 	return charaList
@@ -483,6 +537,9 @@ function City:GetDefendCorps()
 	return list
 end
 
+--corps should at home
+--corps should out of task
+--corps should has a leader
 function City:GetFreeCorps()
 	local list = {}
 	local soldier = 0
@@ -490,7 +547,8 @@ function City:GetFreeCorps()
 	Asset_ForeachList( self, CityAssetID.CORPS_LIST, function ( corps )
 		if corps:IsAtHome() == false then return end
 		if corps:IsBusy() == true then return end
-		table.insert( list, corps )				
+		if Asset_Get( corps, CorpsAssetID.LEADER ) == nil then return end
+		table.insert( list, corps )
 		soldier = soldier + corps:GetSoldier()
 	end )
 	return list, soldier
@@ -507,12 +565,11 @@ function City:FindHarassCityTargets( fn )
 end
 
 function City:FindAttackCityTargets( fn )
-	local group = Asset_Get( self, CityAssetID.GROUP )
 	return self:FilterAdjaCities( function ( adja )		
 		local adjaGroup = Asset_Get( adja, CityAssetID.GROUP )
 		if adjaGroup == group then return false end
 		if Dipl_IsAtWar( adjaGroup, group ) == false then return false end
-		local adjaPower = City_GetMilitaryPowerWithIntel( adja, group )	
+		local adjaPower = Intel_GetMilPower( adja, self )	
 		if fn( adja ) == false then return false end
 		return true
 	end )
@@ -524,6 +581,22 @@ function City:FindNearbyFriendCities()
 		local adjaGroup = Asset_Get( adja, CityAssetID.GROUP )
 		return adjaGroup == group
 	end )
+end
+
+--------------------------------------------
+
+function City:GetLimitPopuRatio( poputype )
+	local cityparams = City_GetPopuParams( self )
+	local limitparam  = cityparams.POPU_LIMIT_RATIO
+	local popuname = MathUtil_FindName( CityPopu, poputype )
+	local ratio = limitparam[popuname]
+	return ratio or 0
+end
+
+--return maximum population of given population type
+function City:GetLimitPopu( poputype )
+	local ratio = self:GetLimitPopuRatio( poputype )
+	return math.ceil( Asset_Get( self, CityAssetID.POPULATION ) * ratio )
 end
 
 --------------------------------------------
@@ -576,7 +649,7 @@ function City:AddCorps( corps )
 		group:AddCorps( corps )
 	end
 
-	Debug_Log( corps:ToString(), "join city=", self.name )
+	--Debug_Log( corps:ToString(), "join city=", self.name )
 end
 
 function City:RemoveCorps( corps )	
@@ -586,6 +659,7 @@ function City:RemoveCorps( corps )
 
 	--remove charalist
 	Asset_ForeachList( corps, CorpsAssetID.OFFICER_LIST, function ( chara )
+		Asset_Set( chara, CharaAssetID.HOME, nil )
 		Asset_RemoveListItem( self, CityAssetID.CHARA_LIST,   chara )
 		Asset_RemoveListItem( self, CityAssetID.OFFICER_LIST, chara )
 	end)
@@ -602,11 +676,9 @@ function City:ElectExecutive()
 	local executive = self:GetOfficer( CityJob.CHIEF_EXECUTIVE )
 	if not executive then
 		--find a leader from officer
-		Asset_FindListItem( self, CityAssetID.CHARA_LIST, function ( chara )
-			if not executive or Asset_Get( executive, CharaAssetID.JOB ) < Asset_Get( chara, CharaAssetID.JOB ) then
-				executive = chara
-			end
-		end )
+		local charaList = Asset_GetList( self, CityAssetID.CHARA_LIST )
+		executive = Chara_FindLeader( charaList )
+
 		--executive = Random_GetListData( self, CityAssetID.CHARA_LIST )		
 		--DBG_Trace( "city=" .. self.name .. " no executive, num_chara=" .. Asset_GetListSize( self, CityAssetID.CHARA_LIST ) )
 		if executive then
@@ -658,7 +730,7 @@ end
 --------------------------------------------
 
 function City:Update()
-	local day = g_calendar:GetDay()
+	local day = g_Time:GetDay()
 
 	--no executive? find one
 	self:ElectExecutive()
@@ -670,13 +742,51 @@ function City:Update()
 	--print( self.name, "food=" .. Asset_Get( self, CityAssetID.FOOD ))
 
 	if day == 1 then
-		--Track_HistoryRecord( "soldier", { name = self.name, soldier = self:GetSoldier(), date = g_calendar:GetDateValue() } )
-		--Track_HistoryRecord( "reserves", { name = self.name, reserves = Asset_GetListItem( self, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES ), date = g_calendar:GetDateValue() } )
-		--Track_HistoryRecord( "dev", { name = self.name, agr = Asset_Get( self, CityAssetID.AGRICULTURE ), comm = Asset_Get( self, CityAssetID.COMMERCE ), prod = Asset_Get( self, CityAssetID.PRODUCTION ), date = g_calendar:GetDateValue() } )
+		--Track_HistoryRecord( "soldier", { name = self.name, soldier = self:GetSoldier(), date = g_Time:GetDateValue() } )
+		--Track_HistoryRecord( "reserves", { name = self.name, reserves = Asset_GetListItem( self, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES ), date = g_Time:GetDateValue() } )
+		--Track_HistoryRecord( "dev", { name = self.name, agr = Asset_Get( self, CityAssetID.AGRICULTURE ), comm = Asset_Get( self, CityAssetID.COMMERCE ), prod = Asset_Get( self, CityAssetID.PRODUCTION ), date = g_Time:GetDateValue() } )
+	end
+
+	--cancel research
+	if self:IsCapital() == false then
+		Asset_Set( self, CityAssetID.RESEARCH, nil )
 	end
 end
 
 --------------------------------------------
+
+function City:GetSpy( city )
+	local spy = Asset_FindListItem( self, CityAssetID.SPY_LIST, function( s )
+		return s.city == city
+	end )
+	if not spy then
+		spy =  { city = city, grade = CitySpyParams.INIT_GRADE, intel = 0 }
+		Asset_AppendList( self, CityAssetID.SPY_LIST, spy )
+	end
+	return spy 
+end
+
+function City:LoseSpy( city, grade )
+	spy = self:GetSpy( city )	
+	if not grade then grade = -1 end
+	spy.intel = math.ceil( spy.intel * 0.5 )
+	spy.grade = MathUtil_Clamp( spy.grade - grade, CitySpyParams.INIT_GRADE, CitySpyParams.MAX_GRADE )
+end
+
+function City:Reconnoitre( city, intel )
+	spy = self:GetSpy( city )
+	spy.intel = spy.intel + intel
+	if spy.intel > CitySpyParams.GRADE_INTEL[spy.grade] then
+		spy.intel = 0
+		spy.grade = MathUtil_Clamp( spy.grade + 1, CitySpyParams.INIT_GRADE, CitySpyParams.MAX_GRADE )
+		--InputUtil_Pause( "gain intel", spy.grade, spy.city.name, self.name )
+	end
+end
+
+function City:Sabotage()
+	City_Pillage( self )
+	--InputUtil_Pause( "sabotage" )
+end
 
 function City:Starvation()
 	local cur = Asset_GetListItem( self, CityAssetID.STATUSES, CityStatus.STARVATION )

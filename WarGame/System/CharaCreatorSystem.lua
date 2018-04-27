@@ -189,7 +189,7 @@ function CharaCreatorSystem:GenerateFictionalChara( city )
 	Asset_Set( chara, CharaAssetID.AGE, age )
 
 	--birth
-	local birth = g_calendar:CalcNewYear( -age )
+	local birth = g_Time:CalcNewYear( -age )
 	Asset_Set( chara, CharaAssetID.BIRTH, birth )
 
 	--life

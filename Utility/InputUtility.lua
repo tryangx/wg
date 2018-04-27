@@ -13,7 +13,7 @@ function InputUtil_Pause( ... )
 		print( ... )
 	else
 		print( "Press any key to continue" )
-	end	
+	end
 	InputUtil_ReceiveInput()
 end
 

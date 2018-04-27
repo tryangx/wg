@@ -141,6 +141,7 @@ function Warefare_SiegeCombatOccur( corps, city )
 
 	Asset_SetListItem( city, CityAssetID.STATUSES, CityStatus.IN_SIEGE, true )
 
+	--Debug_Log( corps:ToString(), "try siege" )
 	Debug_Log( "siege combat occur", combat:ToString( "DEBUG_CORPS" ), city:ToString( "MILITARY" ) )
 
 	return combat
@@ -256,8 +257,8 @@ function WarfareSystem:UpdateCombat( combat )
 				Corps_Join( corps, city )
 			end
 
-			Debug_Log( city:ToString() .. " occupied by " .. ( group and group:ToString() or "" ), g_calendar:CreateCurrentDateDesc() )
-			Stat_Add( "City@Occupy", city:ToString() .. " occupied by " .. ( group and group:ToString() or "" ) .. " " .. g_calendar:CreateCurrentDateDesc(), StatType.LIST )
+			Debug_Log( city:ToString() .. " occupied by " .. ( group and group:ToString() or "" ), g_Time:CreateCurrentDateDesc() )
+			Stat_Add( "City@Occupy", city:ToString() .. " occupied by " .. ( group and group:ToString() or "" ) .. " " .. g_Time:CreateCurrentDateDesc(), StatType.LIST )
 
 			--InputUtil_Pause( "occupy", city:ToString(), group:ToString() )
 		end
@@ -285,6 +286,18 @@ function WarfareSystem:UpdateCombat( combat )
 		end
 	end
 
+	local group = combat:GetGroup( winner )
+	local oppGroup = combat:GetGroup( combat:GetOppSide( winner ) )
+	if group then
+		group:ElectLeader()
+	end
+	if oppGroup then
+		oppGroup:ElectLeader()
+	end
+
+	Debug_Log( combat:ToString( "DEBUG_CORPS" ) )
+	Debug_Log( combat:ToString( "RESULT" ), "combat end!!!" )
+
 	Asset_ForeachList( combat, CombatAssetID.CORPS_LIST, function  ( corps )
 		if corps:GetSoldier() == 0 then
 			Corps_Dismiss( corps )
@@ -292,8 +305,6 @@ function WarfareSystem:UpdateCombat( combat )
 	end )
 
 	Message_Post( MessageType.COMBAT_ENDED, { combat = combat } )
-
-	Debug_Log( combat:ToString(), "combat end!!!" )
 
 	--InputUtil_Pause( "combat end", combat:ToString() )
 

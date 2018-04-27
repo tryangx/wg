@@ -60,7 +60,7 @@ CombatAssetID =
 	ATK_CORPS_LIST = 111,
 	DEF_CORPS_LIST = 112,
 	TROOP_LIST    = 113,
-	LEADER_LIST   = 114,
+	OFFICER_LIST  = 114,
 	ATTACKER_LIST = 120,
 	DEFENDER_LIST = 121,
 
@@ -90,7 +90,7 @@ CombatAssetAttrib =
 	atkcorpses  = AssetAttrib_SetPointerList( { id = CombatAssetID.ATK_CORPS_LIST,  type = CombatAssetType.BASE_ATTRIB, setter = Entity_SetCorps } ),
 	defcorpses  = AssetAttrib_SetPointerList( { id = CombatAssetID.DEF_CORPS_LIST,  type = CombatAssetType.BASE_ATTRIB, setter = Entity_SetCorps } ),
 	troops      = AssetAttrib_SetPointerList( { id = CombatAssetID.TROOP_LIST,      type = CombatAssetType.BASE_ATTRIB, setter = Entity_SetTroop } ),
-	leaders     = AssetAttrib_SetPointerList( { id = CombatAssetID.LEADER_LIST,     type = CombatAssetType.BASE_ATTRIB, setter = Entity_SetChara } ),
+	leaders     = AssetAttrib_SetPointerList( { id = CombatAssetID.OFFICER_LIST,     type = CombatAssetType.BASE_ATTRIB, setter = Entity_SetChara } ),
 	attackers   = AssetAttrib_SetPointerList( { id = CombatAssetID.ATTACKER_LIST,   type = CombatAssetType.BASE_ATTRIB, setter = Entity_SetTroop } ),
 	defenders   = AssetAttrib_SetPointerList( { id = CombatAssetID.DEFENDER_LIST,   type = CombatAssetType.BASE_ATTRIB, setter = Entity_SetTroop } ),
 	
@@ -308,7 +308,7 @@ function Combat:ToString( type )
 	elseif type == "RESULT" then
 		content = content .. " rsult=" .. MathUtil_FindName( CombatResult, Asset_Get( self, CombatAssetID.RESULT ) )
 		content = content .. " winner=" .. self:GetGroupName( self:GetWinner() )
-		content = content .. " date=" .. g_calendar:CreateCurrentDateDesc()
+		content = content .. " date=" .. g_Time:CreateCurrentDateDesc()
 		content = content .. " day=" .. Asset_Get( self, CombatAssetID.DAY )
 		content = content .. " atkkill=" .. self:GetStat( CombatSide.ATTACKER, CombatStatistic.KILL ) .. "/" .. self:GetStat( CombatSide.ATTACKER, CombatStatistic.TOTAL_SOLDIER )
 		content = content .. " defkill=" .. self:GetStat( CombatSide.DEFENDER, CombatStatistic.KILL ) .. "/" .. self:GetStat( CombatSide.DEFENDER, CombatStatistic.TOTAL_SOLDIER )
@@ -329,7 +329,7 @@ end
 
 --Add single troop into Combat
 function Combat:AddTroop( troop, side )
-	DebugCombat( "Add troop" .. troop:ToString() )
+	--Debug_Log( "Add troop" .. troop:ToString() )
 
 	--side data
 	troop._combatSide = side
@@ -361,14 +361,16 @@ function Combat:AddTroop( troop, side )
 	end
 	
 	--leader list
-	local leader = Asset_Get( troop, TroopAssetID.LEADER )	
-	if leader then Asset_AppendList( self, CombatAssetID.LEADER_LIST, leader ) end
+	local officer= Asset_Get( troop, TroopAssetID.OFFICER )	
+	if officer then
+		Asset_AppendList( self, CombatAssetID.OFFICER_LIST, officer )
+	end
 end
 
 --Add single troop into Combat
 function Combat:AddCorps( corps, side )
 	if Asset_HasItem( self, CombatAssetID.CORPS_LIST, corps ) == true then
-		InputUtil_Pause( corps:ToString(), "already" )
+		--InputUtil_Pause( corps:ToString(), "already" )
 		return
 	end
 
@@ -387,7 +389,39 @@ function Combat:AddCorps( corps, side )
 	Asset_SetListItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_COMBAT, true )
 end
 
-function Combat:RemoveTroop( troop, isNeutralized )
+function Combat:RemoveTroopOfficer( troop, isKilled )
+	local officer = Asset_Get( troop, TroopAssetID.OFFICER )
+	Asset_Set( troop, TroopAssetID.OFFICER, nil )
+
+	local corps  = Asset_Get( troop, TroopAssetID.CORPS )
+	local leader = Asset_Get( corps, CorpsAssetID.LEADER )
+	if isKilled then		
+		if officer then
+			InputUtil_Pause( "remove troop ld")
+			if leader == officer then
+				--all flee
+				Corps_OfficerDie( corps, officer )
+
+				--find new leader
+				local charaList = Asset_GetList( corps, CorpsAssetID.OFFICER_LIST )
+				leader = Chara_FindLeader( charaList )
+				Asset_Set( corps, CorpsAssetID.LEADER, leader )
+
+				--InputUtil_Pause( "leader killed" )
+			else
+				Corps_OfficerDie( corps, officer )
+			end
+		end
+	else
+		--process with leader		
+		if Random_GetInt_Sync( 0, 100 ) < 20 then
+			--captured
+			--to do
+		end
+	end
+end
+
+function Combat:RemoveTroop( troop, isKilled )
 	--remove from list
 	Asset_RemoveListItem( self, CombatAssetID.TROOP_LIST, troop )
 
@@ -403,10 +437,7 @@ function Combat:RemoveTroop( troop, isNeutralized )
 	end
 
 	--when troop is neutralized, leader should go back to staff or be captured
-	if not isKilled then
-		local leader = Asset_Get( troop, TroopAssetID.LEADER )	
-		if leader then Asset_RemoveListItem( self, CombatAssetID.LEADER_LIST, leader ) end
-	end
+	self:RemoveTroopOfficer( troop, nil )-- isKilled )
 
 	--clear combat datas
 	troop._combatSide = nil
@@ -646,7 +677,8 @@ end
 function Combat:GetStat( obj, statid )
 	if not obj then return end
 	local key = statid
-	if not self._stat[obj] then return nil end
+	if not self._stat then return 0 end
+	if not self._stat[obj] then return 0 end
 	return self._stat[obj][key] or 0
 end
 
@@ -820,7 +852,7 @@ function Combat:Embattle()
 
 	--statistics
 	Asset_ForeachList( self, CombatAssetID.CORPS_LIST, function ( corps )
-		--Stat_Add( "Corps@Combat", g_calendar:CreateCurrentDateDesc() .. " " .. corps:ToString(), StatType.LIST )
+		--Stat_Add( "Corps@Combat", g_Time:CreateCurrentDateDesc() .. " " .. corps:ToString(), StatType.LIST )
 	end)
 
 	self:DrawBattlefield()
@@ -858,7 +890,7 @@ function Combat:Prepare()
 			self:SetStat( troop._combatSide, CombatStatistic.PREPARED, 1 )
 		end	
 		if not troop._exposure then
-			error( self:ToString( "DEBUG_CORPS" ), troop:ToString() )
+			error( troop:ToString() )
 		end
 		local exposure = 100 + Random_GetInt_Sync( ( troop._exposure - 100 ) * 0.25, ( 100 - troop._exposure ) * 0.25 )
 		local soldier = Asset_Get( troop, TroopAssetID.SOLDIER )
@@ -1845,21 +1877,6 @@ end
 function Combat:Kill( attacker, defender )
 	WriteCombatLog( CombatLog.DESC, TroopToString( attacker ) .. " kill " .. TroopToString( defender ) )
 	
-	--process with leader
-	local leader = Asset_Get( defender, TroopAssetID.LEADER )
-	if leader then
-		if Random_GetInt_Sync( 0, 100 ) < 20 then
-			--captured
-			table.insert( self._stat[attacker._combatSide], leader )
-		else
-			--go back to staff
-			local corps = Asset_Get( defender, TroopAssetID.CORPS )
-			if corps then
-				Asset_AppendList( corps, CorpsAssetID.OFFICER_LIST, leader )
-			end
-		end
-	end
-
 	--influence friendly morale
 	self:InfluenceFriendlyMorale( defender._combatSide )
 
@@ -1877,7 +1894,7 @@ function Combat:DealDamage( attacker, defender, params )
 	if not dmg then return end	
 
 	if testMode == false and attacker._attacked == true and params.isCounter ~= true then
-		InputUtil_Pause( "Attack again?", TroopToString( attacker ), attacker._attacked )
+		--InputUtil_Pause( "Attack again?", TroopToString( attacker ), attacker._attacked )
 	end
 
 	if params.isCounter ~= true then
@@ -1929,12 +1946,23 @@ function Combat:DealDamage( attacker, defender, params )
 	--count soldier
 	Asset_Set( defender, TroopAssetID.SOLDIER, defNumber - kill )
 
+	--test, kill king
+	local officer = Asset_Get( defender, TroopAssetID.OFFICER )
+	if officer then
+		if officer:IsGroupLeader() then
+			self:RemoveTroopOfficer( defender )
+		end
+	end
+
 	-----------------------------------------
 	-- Damage( Kill ) Statistic	
-	local corps = Asset_Get( attacker, TroopAssetID.CORPS )
-	Stat_Add( self:GetCorpsGroupName( corps ) .. "@KILL", kill, StatType.ACCUMULATION )	
+	local atkcorps = Asset_Get( attacker, TroopAssetID.CORPS )
+	local defcorps = Asset_Get( defender, TroopAssetID.CORPS )
+	Stat_Add( self:GetCorpsGroupName( atkcorps ) .. "@KILL", kill, StatType.ACCUMULATION )	
 	--Stat_Add( "Combat@" .. self.id .. "_KILL", kill, StatType.ACCUMULATION )
 	Stat_Add( "Combat@Kill", kill, StatType.ACCUMULATION )
+	Stat_Add( atkcorps.name .. "@Die",  kill, StatType.ACCUMULATION )
+	Stat_Add( defcorps.name .. "@Kill", kill, StatType.ACCUMULATION )
 	-----------------------------------------
 
 	--statistic
@@ -2064,6 +2092,7 @@ function Combat:Flee( troop )
 			local oppSide = self:GetOppSide( troop._combatSide )
 			Asset_AppendList( self, CombatAssetID.PRISONER, { side = oppSide, prisoner = troop } )
 			--InputUtil_Pause( TroopToString( troop ), "captured" )
+			Debug_Log( "captured", troop:ToString() )
 			Stat_Add( "Combat@Capture_Troop", nil, StatType.TIMES )
 			Stat_Add( "Combat@Capture_Soldier", Asset_Get( troop, TroopAssetID.SOLDIER ), StatType.ACCUMULATION )
 			return

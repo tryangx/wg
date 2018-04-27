@@ -235,7 +235,7 @@ CHUHAN_GroupData =
 	[1] =
 	{
 		name = "HAN",
-		goals = { { type="DOMINATION_TERRIORITY", target = 100 } },
+		--goals = { { type="DOMINATION_TERRIORITY", target = 100 } },
 		leader = 100,
 		capital = 100,
 		cities = { 100, 101 },

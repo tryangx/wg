@@ -1,13 +1,13 @@
 --Table
-require "Table/TableDefine"
+require "TableDefine"
 --Data
-require "Entity/EntityDefine"
+require "EntityDefine"
 --System
-require "System/SystemDefine"
+require "SystemDefine"
 --Module
-require "Module/ModuleDefine"
+require "ModuleDefine"
 --AI
-require "AI/AI"
+require "AI"
 
 --Local gamedata, not framework
 require "GameData"
@@ -46,7 +46,7 @@ function Game_Init()
 
 	local date = Scenario_GetData( "BASE_DATA" )
 
-	g_calendar:SetDate( date.start_date.year, date.start_date.month, date.start_date.day, date.start_date.year < 0 and true or false )
+	g_Time:SetDate( date.start_date.year, date.start_date.month, date.start_date.day, date.start_date.year < 0 and true or false )
 
 	-- Initialize Entity
 	print( "load entity......" )
@@ -57,7 +57,6 @@ function Game_Init()
 	Entity_Setup( EntityType.CORPS,    Corps )
 	Entity_Setup( EntityType.TROOP,    Troop )
 	Entity_Setup( EntityType.SKILL,    Skill )
-	Entity_Setup( EntityType.TECH,     Tech )
 	Entity_Setup( EntityType.WEAPON,   Weapon )
 	Entity_Setup( EntityType.COMBAT,   Combat )
 	Entity_Setup( EntityType.MAP,      Map )
@@ -91,20 +90,16 @@ function Game_Init()
 	--init weapon pointers
 	TroopTable_Init()
 
+	------------------------------------------------------------------------------------------
+	--!!!! Important !!!!!
+	--The sequence to initialize all datas should never changed, or it be designed correctly
+	------------------------------------------------------------------------------------------
+
 	-- Generate map
 	if true then	
 		print( "#Generate map......" )	
 		g_map:Generate( Scenario_GetData( "MAP_DATA" ) )	
 		g_map:AllocateToCity()
-	end
-
-	-- Initialize City & Plots
-	if true then
-		print( "#Init cities( plots )......" )
-		Entity_Foreach( EntityType.CITY, function ( city )
-			city:InitPlots()
-			city:InitPopu()
-		end )
 	end
 
 	-- Initliaze Pointer
@@ -117,6 +112,14 @@ function Game_Init()
 			then
 			--Entity_Dump( entity )
 			end
+		end )
+	end
+
+	-- Initialize City & Plots
+	if true then
+		print( "#Init cities( plots )......" )
+		Entity_Foreach( EntityType.CITY, function ( city )
+			city:Init()
 		end )
 	end
 
@@ -226,12 +229,20 @@ function Game_Test()
 end
 
 local function Game_MainLoop()
+	System_Update( g_turnStep )
+	Game_NextTurn()
+end
+
+function Game_Start()
+	Game_Init()
+	
+	Game_Test()
+	
 	local city = Entity_Get( EntityType.CITY, 100 )
 	city:TrackData()
 
 	while Game_IsRunning()  do
-		System_Update( g_turnStep )
-		Game_NextTurn()
+		Game_MainLoop()
 	end
 
 	--city:TrackData( true )
@@ -242,41 +253,21 @@ local function Game_MainLoop()
 
 	Track_HistoryDump( nil, function( key, data )
 		if key == "soldier" then
-			Debug_Normal( key, g_calendar:CreateDateDescByValue( data.date ), data.name .. "=" .. data.soldier )
+			Debug_Normal( key, g_Time:CreateDateDescByValue( data.date ), data.name .. "=" .. data.soldier )
 		elseif key == "reserves" then
-			Debug_Normal( key, g_calendar:CreateDateDescByValue( data.date ), data.name .. "=" .. data.reserves )
+			Debug_Normal( key, g_Time:CreateDateDescByValue( data.date ), data.name .. "=" .. data.reserves )
 		elseif key == "dev" then
-			Debug_Normal( key, g_calendar:CreateDateDescByValue( data.date ), data.name .. "=" .. data.agr .. "/" .. data.comm .. "/" .. data.prod )
+			Debug_Normal( key, g_Time:CreateDateDescByValue( data.date ), data.name .. "=" .. data.agr .. "/" .. data.comm .. "/" .. data.prod )
 		end
 	end )
 
-	Debug_Normal( "Troop==>" )
-	Entity_Foreach( EntityType.TROOP, function ( entity )		
-		Debug_Normal( entity:ToString( "ALL" ) )
-	end )
+--	Debug_Normal( "Troop==>" ) Entity_Foreach( EntityType.TROOP, function ( entity ) Debug_Normal( entity:ToString( "ALL" ) ) end )
+	Debug_Normal( "Chara==>" .. Entity_Number( EntityType.CHARA ) ) Entity_Foreach( EntityType.CHARA, function ( entity ) Debug_Normal( entity:ToString( "ALL" ) ) end )
+	Debug_Normal( "Corps==>" .. Entity_Number( EntityType.CORPS ) ) Entity_Foreach( EntityType.CORPS, function ( entity ) Debug_Normal( entity:ToString( "ALL" ) ) end )
+	Debug_Normal( "City==>" .. Entity_Number( EntityType.CITY ) ) Entity_Foreach( EntityType.CITY, function ( entity ) Debug_Normal( entity:ToString( "ALL" ) ) end )
+	Debug_Normal( "Group==>" .. Entity_Number( EntityType.GROUP ) ) Entity_Foreach( EntityType.GROUP, function ( entity ) Debug_Normal( entity:ToString( "ALL" ) ) end )	
+	Debug_Normal( "Task==>" .. Entity_Number( EntityType.TASK ) ) Entity_Foreach( EntityType.TASK, function( entity ) Debug_Normal( entity:ToString(), "exist" ) end )
+	Debug_Normal( "Move==>" .. Entity_Number( EntityType.MOVE ) ) Entity_Foreach( EntityType.MOVE, function( entity ) Debug_Normal( entity:ToString(), "still" ) end )
 
-	Debug_Normal( "Corps==>" )
-	Entity_Foreach( EntityType.CORPS, function ( entity )		
-		Debug_Normal( entity:ToString( "ALL" ) )
-	end )
-
-	Debug_Normal( "City==>" )
-	Entity_Foreach( EntityType.CITY, function ( entity )		
-		Debug_Normal( entity:ToString( "ALL" ) )
-	end )
-
-	Debug_Normal( "Group==>" )
-	Entity_Foreach( EntityType.GROUP, function ( entity )
-		Debug_Normal( entity:ToString( "ALL" ) )
-	end )
-
-	Debug_Normal( "winner=", g_winner and g_winner.name or "[NONE]" )
-end
-
-function Game_Start()
-	Game_Init()
-
-	Game_Test()
-	
-	Game_MainLoop()
+	InputUtil_Pause( g_Time:CreateCurrentDateDesc(), "win=" .. ( g_winner and g_winner.name or "[NONE]" ) )
 end

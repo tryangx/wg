@@ -27,7 +27,43 @@ function Chara_GetSurplusNumOfChara( city )
 	return #list - city:GetNumOfOfficerSlot()
 end
 
+function Chara_FindLeader( charaList )
+	local findChara
+	for _, chara in pairs( charaList ) do
+		if not findChara or Asset_Get( findChara, CharaAssetID.JOB ) < Asset_Get( chara, CharaAssetID.JOB ) then
+			findChara = chara
+		end
+	end
+	return findChara
+end
+
 -------------------------------------------
+
+function Chara_Die( chara )
+	local group = Asset_Get( chara, CharaAssetID.GROUP )
+	if group then		
+		group:LoseChara( chara )
+	end
+
+	local home = Asset_Get( chara, CharaAssetID.HOME )
+	if home then
+		home:CharaLeave( chara )
+	end
+
+	--remove task
+	local task = Asset_GetListItem( chara, CharaAssetID.STATUSES, CharaStatus.IN_TASK )
+	if task then
+		Task_Terminate( task )
+	end
+
+	Debug_Log( chara:ToString(), "died" )
+
+	Stat_Add( "Chara@Die", chara:ToString(), StatType.LIST )
+
+	Entity_Remove( chara )
+
+	--InputUtil_Pause( "die")
+end
 
 function Chara_Join( chara, city )
 	local oldHome = Asset_Get( chara, CharaAssetID.HOME )
@@ -199,7 +235,7 @@ function CharaSystem:Start()
 end
 
 function CharaSystem:Update()
-	local day   = g_calendar:GetDay()
+	local day   = g_Time:GetDay()
 	Entity_Foreach( EntityType.CHARA, function ( chara )
 		chara:Update()
 

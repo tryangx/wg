@@ -16,6 +16,12 @@ function Group_SeizeCity( group, city )
 	group:OccupyCity( city )
 end
 
+function Group_Vanish( group )
+	Entity_Remove( group )
+
+	InputUtil_Pause( group:ToString(), "vanish" )
+end
+
 -----------------------------------------
 
 GroupSystem = class()

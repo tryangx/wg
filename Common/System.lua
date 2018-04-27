@@ -35,3 +35,9 @@ end
 function System_Get( type )
 	return _manager:GetData( type )
 end
+
+function System_Load( )	
+end
+
+function System_Save( )	
+end

@@ -26,7 +26,7 @@ CorpsAssetID =
 local function Corps_SetTroop( entity, id, value )
 	local troop = Entity_SetTroop( entity, id, value )
 	if troop and typeof( troop ) ~= "number" then
-		Asset_Set( entity, CorpsAssetID.OFFICER_LIST, Asset_Get( troop, TroopAssetID.LEADER ) )
+		Asset_Set( entity, CorpsAssetID.OFFICER_LIST, Asset_Get( troop, TroopAssetID.OFFICER ) )
 	end
 	return troop
 end
@@ -87,6 +87,7 @@ function Corps:ToString( type )
 		content = content .. Asset_Get( self, CorpsAssetID.LOCATION ):ToString()
 		content = content .. " trp=" .. Asset_GetListSize( self, CorpsAssetID.TROOP_LIST )
 	elseif type == "ALL"	then
+		content = content .. " grp=" .. String_ToStr( Asset_Get( self, CorpsAssetID.GROUP ), "name" )
 		local leader = Asset_Get( self, CorpsAssetID.LEADER )
 		if leader then
 			content = content .. leader:ToString()
@@ -103,25 +104,19 @@ function Corps:ToString( type )
 		Asset_ForeachList( self, CorpsAssetID.TROOP_LIST, function( troop )
 			content = content .. " " .. troop:ToString( type )
 		end)
-	else		
+	elseif type == "MILITARY" then
+		content = content .. " trp=" .. Asset_GetListSize( self, CorpsAssetID.TROOP_LIST )
+		content = content .. " soldier=" .. self:GetSoldier()
+	elseif type == "POSITION" then
+		content = content .. " loc=" .. Asset_Get( self, CorpsAssetID.LOCATION ):ToString()
+	elseif type == "MAINTAIN" then
+		local food = Asset_Get( self, CorpsAssetID.FOOD )
+		local consume = self:GetConsumeFood()
+		local foodDays = math.ceil( food / consume )
+		print( self.name, "food supply=" .. foodDays .. "Days" )
+		content = content .. " suply" .. foodDays .. "/" .. foodDays
 	end
 	return content
-end
-
-function Corps:Breif()
-	local number = 0
-	Asset_ForeachList( self, CorpsAssetID.TROOP_LIST, function( troop )
-		print( troop )
-		number = number + Asset_Get( troop, TroopAssetID.SOLDIER )
-	end)
-	return self.name .. "[" .. self.id ..  "] Num=" .. number
-end
-
-function Corps:DumpMaintain()
-	local food = Asset_Get( self, CorpsAssetID.FOOD )
-	local consume = self:GetConsumeFood()
-	local foodDays = math.ceil( food / consume )
-	print( self.name, "food supply=" .. foodDays .. "Days" )
 end
 
 -------------------------------------------
@@ -183,7 +178,9 @@ function Corps:IsAtHome()
 end
 
 function Corps:IsBusy()
-	return Asset_GetListItem( self, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK ) ~= nil
+	local status = Asset_GetListItem( self, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )
+	if not status then return false end
+	return status ~= false
 end
 
 ---------------------------------------------
@@ -199,6 +196,10 @@ end
 
 function Corps:RemoveTroop( troop )
 	Asset_RemoveListItem( self, CorpsAssetID.TROOP_LIST, troop )
+end
+
+function Corps:LoseOfficer( officer )
+	Asset_RemoveListItem( self, CorpsAssetID.OFFICER_LIST, officer )
 end
 
 -------------------------------------------
@@ -221,7 +222,7 @@ function Corps:ConsumeFood( consume )
 		Asset_Set( self, CorpsAssetID.FOOD, food - foodConsume )		
 		--self:DumpMaintain()
 		--InputUtil_Pause( self.name, "consume=" .. foodConsume, "left=" .. food - foodConsume )
-		Stat_Add( "ConsumeFood@Corps_" .. self.id, foodConsume, StatType.ACCUMULATION )
+		--Stat_Add( "ConsumeFood@Corps_" .. self.id, foodConsume, StatType.ACCUMULATION )
 		return foodConsume
 	end
 

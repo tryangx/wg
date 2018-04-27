@@ -79,26 +79,31 @@ function Task:ToString( type )
 	local content = self.id .. " " .. MathUtil_FindName( TaskType, Asset_Get( self, TaskAssetID.TYPE ) )
 	content = content .. " " .. String_ToStr( Asset_Get( self, TaskAssetID.GROUP ), "name" )
 	if type == "SIMPLE" then
-		content = content .. " beg=" .. g_calendar:CreateDateDescByValue( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )
+		content = content .. " beg=" .. g_Time:CreateDateDescByValue( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )
 	elseif type == "DEBUG_UPDATE" then
 		content = content .. " atr=" .. ( Asset_Get( self, TaskAssetID.ACTOR ):ToString() )
 		content = content .. " dur=" .. Asset_Get( self, TaskAssetID.DURATION )
 	elseif type == "END" then
 		content = content .. " atr=" .. ( Asset_Get( self, TaskAssetID.ACTOR ):ToString() )
-		content = content .. " beg=" .. g_calendar:CreateDateDescByValue( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )
-		content = content .. " end=" .. g_calendar:CreateDateDescByValue( Asset_Get( self, TaskAssetID.END_TIME ) )
-		content = content .. " day=" .. g_calendar:CalcDiffDayByDates( Asset_Get( self, TaskAssetID.END_TIME ), Asset_Get( self, TaskAssetID.BEGIN_TIME ) )
+		content = content .. " beg=" .. g_Time:CreateDateDescByValue( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )
+		content = content .. " end=" .. g_Time:CreateDateDescByValue( Asset_Get( self, TaskAssetID.END_TIME ) )
+		content = content .. " pas=" .. g_Time:CalcDiffDayByDate( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )
 	elseif type == "PLAN" then
 		content = content .. " pln=" .. MathUtil_FindName( CityPlan, Asset_GetListItem( self, TaskAssetID.PARAMS, "plan" ) )
+	elseif type == "DETAIL" then
+		content = content .. " atr=" .. ( Asset_Get( self, TaskAssetID.ACTOR ):ToString() )
+		content = content .. " loc=" .. String_ToStr( Asset_Get( self, TaskAssetID.LOCATION ), "name" )	
+		content = content .. " dst=" .. String_ToStr( Asset_Get( self, TaskAssetID.DESTINATION ), "name" )
+		content = content .. " beg=" .. g_Time:CreateDateDescByValue( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )
 	else
 		content = content .. " atr=" .. ( Asset_Get( self, TaskAssetID.ACTOR ):ToString() )
 		content = content .. " loc=" .. String_ToStr( Asset_Get( self, TaskAssetID.LOCATION ), "name" )	
 		content = content .. " dst=" .. String_ToStr( Asset_Get( self, TaskAssetID.DESTINATION ), "name" )		
-	end
-	content = content .. " stp=" .. MathUtil_FindName( TaskStep, self:GetStepType() )
-	content = content .. " sts=" .. MathUtil_FindName( TaskStatus, Asset_Get( self, TaskAssetID.STATUS ) )
-	
-	content = content .. " prg=" .. Asset_Get( self, TaskAssetID.PROGRESS )
+		content = content .. " stp=" .. MathUtil_FindName( TaskStep, self:GetStepType() )
+		content = content .. " sts=" .. MathUtil_FindName( TaskStatus, Asset_Get( self, TaskAssetID.STATUS ) )
+		content = content .. " pas=" .. g_Time:CalcDiffDayByDate( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )
+		content = content .. " prg=" .. Asset_Get( self, TaskAssetID.PROGRESS )
+	end	
 	local result = Asset_Get( self, TaskAssetID.RESULT )
 	if result ~= TaskResult.UNKNOWN then
 		content = content .. " rslt=" .. MathUtil_FindName( TaskResult, result )
@@ -125,10 +130,12 @@ function Task:IsStepFinished()
 	if result ~= TaskResult.UNKNOWN then
 		return true
 	end
+
 	local status   = Asset_Get( self, TaskAssetID.STATUS )
 	if status == TaskStatus.WAITING then
 		return Asset_Get( self, TaskAssetID.DURATION ) <= 0
 	end
+
 	if status == TaskStatus.WORKING then
 		if Asset_Get( self, TaskAssetID.PROGRESS ) >= Asset_Get( self, TaskAssetID.WORKLOAD ) then
 			return true

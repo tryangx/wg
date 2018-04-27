@@ -117,7 +117,7 @@ function Chara:Load( data )
 	self.name = data.name
 
 	Asset_Set( self, CharaAssetID.BIRTH,     data.birth )
-	Asset_Set( self, CharaAssetID.AGE,       g_calendar:CalcDiffYear( data.birth, data.birth < 0 and true or false ) )
+	Asset_Set( self, CharaAssetID.AGE,       g_Time:CalcDiffYear( data.birth, data.birth < 0 and true or false ) )
 	Asset_Set( self, CharaAssetID.JOB,       CharaJob[data.job] )
 	Asset_Set( self, CharaAssetID.GENDER,    data.gender )
 	Asset_Set( self, CharaAssetID.LIFE,      data.life )
@@ -183,6 +183,12 @@ end
 
 -------------------------------------------
 
+function Chara:IsGroupLeader()
+	local group = Asset_Get( self, CharaAssetID.GROUP )
+	local leader = Asset_Get( group, GroupAssetID.LEADER )
+	return leader == self
+end
+
 function Chara:IsAtHome()
 	local location = Asset_Get( self, CharaAssetID.LOCATION )
 	local home     = Asset_Get( self, CharaAssetID.HOME )	
@@ -190,7 +196,13 @@ function Chara:IsAtHome()
 end
 
 function Chara:IsBusy()
-	return Asset_GetListItem( self, CharaAssetID.STATUSES, CharaStatus.IN_TASK ) ~= nil
+	local status = Asset_GetListItem( self, CharaAssetID.STATUSES, CharaStatus.IN_TASK )
+	if not status then return false end	
+	return status ~= false
+end
+
+function Chara:GetTask()
+	return Asset_GetListItem( self, CharaAssetID.STATUSES, CharaStatus.IN_TASK )
 end
 
 -------------------------------------------

@@ -56,7 +56,9 @@ local function Meeting_Update( meeting )
 		--clear all proposals
 		Entity_Clear( EntityType.PROPOSAL )
 
-		local numofproposer = Random_GetInt_Sync( 1, 2 )
+		--number of allow proposer
+		local numofproposer  = Random_GetInt_Sync( 1, 2 )
+		local submitProposal = 0
 
 		--submit proposals
 		local freeParticiants = 0
@@ -66,14 +68,18 @@ local function Meeting_Update( meeting )
 			Stat_Add( "Proposal@Try_Times", nil, StatType.TIMES )
 			--if topic == MeetingTopic.COMMANDER then InputUtil_Pause( "commander") end
 			if CharaAI_SubmitMeetingProposal( chara, meeting ) then
-				--print( chara.name, "submit")
-				numofproposer = numofproposer - 1
+				numofproposer  = numofproposer - 1
+				submitProposal = submitProposal + 1
 			end
 			return numofproposer <= 0
 		end )
-		if freeParticiants == 0 then
+		
+		if freeParticiants == 0 or submitProposal == 0 then
+			--InputUtil_Pause( freeParticiants, submitProposal, MathUtil_FindName( MeetingTopic, topic ) )
 			--let superior submit proposal
-			CharaAI_SubmitMeetingProposal( superior, meeting )			
+			if superior:IsBusy() == false then
+				CharaAI_SubmitMeetingProposal( superior, meeting )
+			end
 			--Stat_Add( "Meeting@Cancel_Times", nil, StatType.TIMES )
 			--print( "end meeting" )
 		end
@@ -107,6 +113,7 @@ function Meeting_Hold( city, topic, target )
 	if not topic then topic = MeetingTopic.NONE end
 	local executive = city:GetOfficer( CityJob.CHIEF_EXECUTIVE )
 	if topic == MeetingTopic.UNDER_HARASS or topic == MeetingTopic.UNDER_ATTACK then		
+		--Debug_Log( "gain intel need to intercept" .. target:ToString() )
 		--find highest rank		
 		local highestRank = CharaJob.NONE
 		city:FilterOfficer( function ( chara )

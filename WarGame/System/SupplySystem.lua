@@ -79,8 +79,7 @@ local function Supply_CorpsGainFood( corps )
 	Asset_Plus( corps, CorpsAssetID.FOOD, need )
 	Asset_Set( city, CityAssetID.FOOD, food - need )
 
-	Stat_Add( "Supply@Corps_" .. corps.id, need, StatType.ACCUMULATION )
-	--corps:DumpMaintain()
+	--Stat_Add( "Supply@Corps_" .. corps.id, need, StatType.ACCUMULATION )
 end
 
 --------------------------------------------------------------
@@ -95,7 +94,7 @@ function SupplySystem:Start()
 end
 
 function SupplySystem:Update()
-	local day = g_calendar:GetDay()
+	local day = g_Time:GetDay()
 
 	Entity_Foreach( EntityType.CORPS, Supply_CorpsConsumeFood )
 

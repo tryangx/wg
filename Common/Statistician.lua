@@ -17,6 +17,8 @@ StatType =
 
 ----------------------------------------------
 
+local _log = LogUtility( "stat_" .. g_gameId .. ".log", LogWarningLevel.LOG, true )
+
 local _stats = {}
 
 local _types = {}
@@ -53,12 +55,12 @@ function Stat_Add( name, data, type )
 end
 
 function Stat_Dump( type )
-	Debug_Normal( "####STAT_DUMP####" )
+	_log:WriteDebug( "####STAT_DUMP####" )
 	--output
 	for t, list in pairs( _stats ) do
 		if not type or t == type then
-			Debug_Normal( "" )
-			Debug_Normal( "#" .. MathUtil_FindName( StatType, t ) )
+			_log:WriteDebug( "" )
+			_log:WriteDebug( "#" .. MathUtil_FindName( StatType, t ) )
 			local namelist = {}
 			for name, data in pairs( list ) do
 				table.insert( namelist, name )
@@ -68,35 +70,35 @@ function Stat_Dump( type )
 				local data = list[name]
 				local dumper = list[name] and list[name]._DUMPER or nil
 				if t == StatType.LIST then
-					Debug_Normal( name .. ":" .. " cnt=" .. #data, dumper )
+					_log:WriteDebug( name .. ":" .. " cnt=" .. #data, dumper )
 					if dumper then
 						for _, item in ipairs( data ) do
 							dumper( item )
 						end
 					else
 						for _, item in ipairs( data ) do
-							Debug_Normal( item )
+							_log:WriteDebug( item )
 						end
 					end
 				elseif t == StatType.DESC then
-					Debug_Normal( name .. "=" .. data.desc )
+					_log:WriteDebug( name .. "=" .. data.desc )
 				elseif t == StatType.TIMES  then
-					Debug_Normal( name .. "=" .. data.times )
+					_log:WriteDebug( name .. "=" .. data.times )
 				elseif t == StatType.DATA then
 					if dumper then
 						dumper( name, data )
 					else
-						Debug_Normal( name .. "=" .. data.data )
+						_log:WriteDebug( name .. "=" .. data.data )
 					end
 				elseif t == StatType.VALUE then
-					Debug_Normal( name .. "=" .. data.value )
+					_log:WriteDebug( name .. "=" .. data.value )
 				elseif t == StatType.ACCUMULATION then
-					Debug_Normal( name .. "=" .. data.accumulation )
+					_log:WriteDebug( name .. "=" .. data.accumulation )
 				end
 			end
 		end
 	end
-	Debug_Normal( "####END_DUMP####" )	
+	_log:WriteDebug( "####END_DUMP####" )	
 end
 
 function Stat_SetDumper( name, fn, type )

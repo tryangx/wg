@@ -124,7 +124,6 @@ GroupGoalType =
 	--Control terriority percent
 	DOMINATION_TERRIORITY = 10,	
 
-
 	---------------------------------
 	SHORT_GOAL_SEPARATOR  = 100,
 
@@ -227,6 +226,8 @@ CityJob =
 	CHIEF_HR         = 13,
 	CHIEF_AFFAIRS    = 14,
 	POSITION_END     = 15,
+
+	--capital
 	CHIEF_DIPLOMATIC = 15,
 	CHIEF_TECHNICIAN = 16,
 	CAPITAL_POSITION_END = 17,
@@ -239,6 +240,7 @@ CityPlan =
 	AFFAIRS    = 2,
 	COMMANDER  = 3,
 	STAFF      = 4,
+
 	DIPLOMATIC = 5,
 	TECHNICIAN = 6,
 
@@ -297,9 +299,12 @@ CityStatus =
 
 	MILITARY_WEAK      = 100,
 	MILITARY_DANGER    = 101,
+
 	DEVELOPMENT_WEAK   = 110,
 	DEVELOPMENT_DANGER = 111,
-	INTERRELATION_WEAK = 120,
+
+	BATTLEFRONT        = 120,
+	SAFETY             = 121,
 }
 
 CityInstruction = 
@@ -493,19 +498,18 @@ ProposalType =
 	HARASS_CITY     = 110,
 	ATTACK_CITY     = 111,
 	INTERCEPT       = 112,
+	DISPATCH_CORPS  = 113,
 
 	ESTABLISH_CORPS = 120,
 	REINFORCE_CORPS = 121,
 	DISMISS_CORPS   = 122,
 	TRAIN_CORPS     = 123,
-	UPGRADE_CORPS   = 124,
-	DISPATCH_CORPS  = 125,	
+	UPGRADE_CORPS   = 124,	
 	ENROLL_CORPS    = 126,
+	REGROUP_CORPS   = 127,
 
 	CONSCRIPT       = 130,
 	RECRUIT         = 131,
-
-	FRIENDLY        = 200,
 
 	DEV_AGRICULTURE = 310,
 	DEV_COMMERCE    = 311,
@@ -519,6 +523,15 @@ ProposalType =
 	PROMOTE_CHARA   = 401,
 	DISPATCH_CHARA  = 402,
 	CALL_CHARA      = 403,
+
+	RECONNOITRE     = 500,
+	SABOTAGE        = 501,
+
+	RESEARCH        = 600,
+
+	IMPROVE_RELATION = 700,
+	DECLARE_WAR      = 701,
+	SIGN_PACT        = 702,
 }
 
 --all proposal type should exist in TaskType or it'll occur error
@@ -527,19 +540,18 @@ TaskType =
 	HARASS_CITY     = 110,
 	ATTACK_CITY     = 111,
 	INTERCEPT       = 112,
+	DISPATCH_CORPS  = 113,
 
 	ESTABLISH_CORPS = 120,
 	REINFORCE_CORPS = 121,
 	DISMISS_CORPS   = 122,
 	TRAIN_CORPS     = 123,
 	UPGRADE_CORPS   = 124,
-	DISPATCH_CORPS  = 125,
 	ENROLL_CORPS    = 126,
+	REGROUP_CORPS   = 127,
 
 	CONSCRIPT       = 130,
 	RECRUIT         = 131,
-
-	FRIENDLY        = 200,
 
 	DEV_AGRICULTURE = 310,
 	DEV_COMMERCE    = 311,
@@ -551,6 +563,15 @@ TaskType =
 	PROMOTE_CHARA   = 401,
 	DISPATCH_CHARA  = 402,
 	CALL_CHARA      = 403,
+
+	RECONNOITRE     = 500,
+	SABOTAGE        = 501,
+
+	RESEARCH        = 600,
+
+	IMPROVE_RELATION = 700,
+	DECLARE_WAR      = 701,
+	SIGN_PACT        = 702,
 }
 
 TaskActorType = 
@@ -665,8 +686,10 @@ MeetingTopic =
 	--establish corps, reinforce corps
 	COMMANDER             = 15,	
 
+	STAFF                 = 16,
+
 	--harass, attack
-	STRATEGY              = 16,
+	STRATEGY              = 17,
 
 	MEETING_END           = 17,
 	---------------------------------
@@ -746,13 +769,18 @@ MoveStatus =
 
 RelationOpinion = 
 {
+	--base
 	TRUST      = 1,
-	WAS_AT_WAR = 2,
-	AT_WAR     = 10,
-	NO_WAR     = 11,
-	TRADE      = 12,
-	PROTECT    = 13,
-	ALLY       = 14,
+
+	--status
+	WAS_AT_WAR = 10,
+	AT_WAR     = 11,
+	
+	--pact
+	NO_WAR     = 20,
+	TRADE      = 21,
+	PROTECT    = 22,
+	ALLY       = 23,
 }
 
 RelationPact = 
@@ -766,9 +794,9 @@ RelationPact =
 
 DiplomacyMethod = 
 {
-	FRIENDLY      = 1,
-	DECLARE_WAR   = 2,
-	REQUEST_TRADE = 3,
+	IMPROVE_RELATION = 1,
+	DECLARE_WAR      = 2,
+	SIGN_PACT        = 3,
 }
 
 ------------------------------
@@ -776,4 +804,27 @@ DiplomacyMethod =
 FeatureOption =
 {
 	ENABLE_FOOD_SUPPLY = 0,
+}
+
+----------------------------------------------------------------------------------------
+
+EffectType = 
+{
+
+}
+
+TraitType = 
+{
+
+}
+
+TechType = 
+{
+	WEAPON      = 100,
+	ARMOR       = 110,
+	ORGNIZATION = 120,
+
+	AGRICULTURE = 200,
+	COMMERCE    = 210,
+	PRODUCTION  = 220,
 }

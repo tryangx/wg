@@ -1,7 +1,7 @@
 --package.path = package.path .. ";Common/Base/?.lua"
 
 require "Behavior"
-require "Calendar"
+require "Time"
 
 require "Manager"
 require "Asset"
@@ -12,5 +12,4 @@ require "Global"
 
 require "Statistician"
 require "Tracker"
-require "Corrector"
 require "Debugger"

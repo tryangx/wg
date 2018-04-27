@@ -79,26 +79,26 @@ function Plot:InitName()
 end
 
 function Plot:GetPlotType()
-	local table = Asset_Get( self, PlotAssetID.TEMPLATE )
-	return table and table.type or 0
+	local template = Asset_Get( self, PlotAssetID.TEMPLATE )
+	return template and template.type or 0
 end
 
 function Plot:GetTerrain()
-	local table = Asset_Get( self, PlotAssetID.TEMPLATE )
-	return table and table.terrain or 0
+	local template = Asset_Get( self, PlotAssetID.TEMPLATE )
+	return template and template.terrain or 0
 end
 
 function Plot:GetFeature()
-	local table = Asset_Get( self, PlotAssetID.TEMPLATE )
-	return table and table.feature or 0
+	local template = Asset_Get( self, PlotAssetID.TEMPLATE )
+	return template and template.feature or 0
 end
 
 function Plot:InitGrowth( params )	
 	--1st, calculate all development indexs depends on plots and resources
-	local table = Asset_Get( self, PlotAssetID.TEMPLATE )
-	if table then
-		--table:Dump()
-		for type, value in pairs( table.bonuses ) do
+	local template = Asset_Get( self, PlotAssetID.TEMPLATE )
+	if template then
+		--template:Dump()
+		for type, value in pairs( template.bonuses ) do
 			--print( MathUtil_FindName( BonusType, type ), value )
 			if type == BonusType.AGRICULTURE then
 				Asset_Plus( self, PlotAssetID.MAX_AGRICULTURE, value )
@@ -151,7 +151,7 @@ function Plot:Update()
 
 	local city = Asset_Get( self, PlotAssetID.CITY )
 	if city then return end
-	local day   = g_calendar:GetDay()
+	local day   = g_Time:GetDay()
 	if day % GlobalTime.TIME_PER_YEAR ~= 0 then return end
 
 	local population = Asset_Get( self, PlotAssetID.POPULATION )

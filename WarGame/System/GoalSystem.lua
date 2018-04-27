@@ -12,7 +12,6 @@ function GoalSystem:Update()
 	Entity_Find( EntityType.GROUP, function ( group )
 		if Asset_GetListSize( group, GroupAssetID.CITY_LIST ) >= numOfCity then
 			g_winner = group
-			InputUtil_Pause( g_calendar:CreateCurrentDateDesc(), "winner=" .. group.name )
 			return true
 		end
 		return false

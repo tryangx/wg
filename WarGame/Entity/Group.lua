@@ -35,7 +35,7 @@ GroupAssetAttrib =
 	money     = AssetAttrib_SetNumber( { id = GroupAssetID.MONEY,    type = GroupAssetType.PROPERTY_ATTRIB } ),
 	material  = AssetAttrib_SetNumber( { id = GroupAssetID.MONEY,    type = GroupAssetType.PROPERTY_ATTRIB } ),
 
-	techs     = AssetAttrib_SetPointerList   ( { id = GroupAssetID.TECH_LIST,     type = GroupAssetType.GROWTH_ATTRIB, Entity_SetTech } ),
+	techs     = AssetAttrib_SetList          ( { id = GroupAssetID.TECH_LIST,     type = GroupAssetType.GROWTH_ATTRIB } ),
 	goals     = AssetAttrib_SetList          ( { id = GroupAssetID.GOAL_LIST,     type = GroupAssetType.GROWTH_ATTRIB } ),
 	tags      = AssetAttrib_SetPointerList   ( { id = GroupAssetID.TAG_LIST,      type = GroupAssetType.GROWTH_ATTRIB } ),
 }
@@ -144,7 +144,7 @@ function Group:VerifyData()
 	--generate the superior and subordinates	
 end
 
-function Group:Update( ... )	
+function Group:Update( ... )
 end
 
 
@@ -220,7 +220,8 @@ function Group:LoseCity( city, toCity )
 			reserve = reserve + soldier
 		elseif toCity then
 			--retreat to nearby city
-			InputUtil_Pause( corps:ToString(), "not at home" )
+			--print( Move_Track( corps ) )
+			--InputUtil_Pause( corps:ToString( "POSITION" ), "retreat to", toCity:ToString() )
 			toCity:AddCorps( corps )
 		end
 	end )
@@ -269,7 +270,39 @@ end
 function Group:RemoveCorps( corps )
 end
 
+function Group:ElectLeader()
+	local leader = Asset_Get( self, GroupAssetID.LEADER )
+	if leader then return end
+
+	local charaList = Asset_GetList( self, GroupAssetID.CHARA_LIST )
+	local leader = Chara_FindLeader( charaList )
+	Asset_Set( self, GroupAssetID.LEADER, leader )
+
+	if leader then
+		InputUtil_Pause( "no king", leader.name )
+	else
+		Group_Vanish( self )
+	end
+end
+
 ---------------------------------------
 
+function Group:HasTech( id )
+	return Asset_HasItem( self, GroupAssetID.TECH_LIST, id, "id" )
+end
+
+function Group:HasGoal( type )	
+	local findGoal = Asset_FindListItem( self, GroupAssetID.GOAL_LIST, function ( goal )
+		if GroupGoalType[goal.type] == type then
+			return true
+		end
+	end)
+	return findGoal
+end
 
 ---------------------------------------
+
+function Group:MasterTech( tech )
+	Asset_AppendList( self, GroupAssetID.TECH_LIST, tech )
+	--InputUtil_Pause( "master tech" .. tech.id )
+end

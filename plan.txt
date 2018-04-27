@@ -1,7 +1,0 @@
-#Move System, 
-	Current: From city to city
-	Modify : From plot to plot
-
-#Proposal & Task
-    Bonus Chara: Give beauty or anything else as a bonus to character
-    

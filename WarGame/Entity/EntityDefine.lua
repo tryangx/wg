@@ -9,7 +9,6 @@ EntityType =
 	TROOP  = 5,
 
 	SKILL  = 20,
-	TECH   = 21,
 	WEAPON = 22,
 
 	EVENT    = 30,
@@ -55,10 +54,6 @@ function Entity_SetSkill( entity, id, value )
 	return Entity_Get( EntityType.SKILL, value ) or value
 end
 
-function Entity_SetTech( entity, id, value )
-	return Entity_Get( EntityType.TECH, value ) or value
-end
-
 function Entity_SetPlot( entity, id, value )
 	return Entity_Get( EntityType.PLOT, value ) or value
 end
@@ -80,7 +75,6 @@ require "Entity/Corps"
 require "Entity/Troop"
 require "Entity/Weapon"
 require "Entity/Skill"
-require "Entity/Tech"
 
 require "Entity/Plot"
 require "Entity/Map"

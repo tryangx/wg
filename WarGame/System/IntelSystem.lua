@@ -1,3 +1,26 @@
+--Get military power evaluation under intel report
+function Intel_GetMilPower( city, fromCity )
+	local spy   = fromCity:GetSpy( city )
+	local data  = CitySpyParams.GRADE_DATA[spy.grade]
+	local level =  data["MILITARY"]
+	
+	local power = city:GetMilitaryPower()
+	if level == 1 then
+		return power
+	elseif level == 2 then	
+		--unknown
+	end
+	--unknown
+	return -1	
+end
+
+function Intel_GetSoldier( city, fromCity )
+	local spy = fromCity:GetSpy( city )
+	local power = city:GetSoldier()
+	return power
+end
+
+---------------------------------------------------
 
 function Intel_Post( inteltype, city, params )	
 	local intel = Entity_New( EntityType.INTEL )
@@ -8,7 +31,7 @@ function Intel_Post( inteltype, city, params )
 	local curGroup = Asset_Get( city, CityAssetID.GROUP )
 	Entity_Foreach( EntityType.GROUP, function ( group )
 		if group == curGroup then return end
-		local dur = Move_CalcCharaMoveDuration( nil, Asset_Get( group, GroupAssetID.CAPITAL ), city )
+		local dur = Move_CalcIntelTransDuration( nil, Asset_Get( group, GroupAssetID.CAPITAL ), city )
 		--InputUtil_Pause( "intel to " .. group.name, "need dur=" .. dur )
 		Asset_SetListItem( intel, IntelAssetID.SPYS_DURATION, group, dur )
 	end )
@@ -21,7 +44,8 @@ function Intel_Update( intel )
 			dur = dur - g_elapsed
 			Asset_SetListItem( intel, IntelAssetID.SPYS_DURATION, group, dur )
 			if dur <= 0 then
-				--group receive intel				
+				--group receive intel
+				--Stat_Add( "Intel@Gain", intel:ToString(), StatType.LIST )
 				if type  == IntelType.HARASS_CITY then
 					local target = Asset_GetListItem( intel, IntelAssetID.PARAMS, "actor" )
 					Message_Post( MessageType.CITY_HOLD_MEETING, { city = Asset_Get( group, GroupAssetID.CAPITAL ), topic = MeetingTopic.UNDER_HARASS, target = target } )

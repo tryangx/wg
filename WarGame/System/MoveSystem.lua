@@ -15,6 +15,10 @@ local _encounters = {}
 
 ------------------------------------------------
 
+function Move_Track( actor )
+	return System_Get( SystemType.MOVE_SYS ):TrackMove( actor )
+end
+
 function Move_IsMoving( actor )
 	return System_Get( SystemType.MOVE_SYS ):IsMoving( actor )
 end
@@ -88,7 +92,7 @@ local function Move_CheckEncounter( move )
 			local othGroup = Asset_Get( otherActor, CorpsAssetID.GROUP )
 			if Dipl_IsAtWar( curGroup, othGroup ) then
 				--encounter, actually we should send a message to other system, but now, we call Combat by myself							
-				Debug_Normal( "Encounter in", curplot:ToString(), actor:ToString(), otherActor:ToString() )
+				Debug_Normal( "Encounter in", curplot:ToString(), actor:ToString( "MILITARY" ), otherActor:ToString( "MILITARY" ) )
 				isEncounter = true
 				_plotMoves[k] = nil
 				Asset_Set( move, MoveAssetID.STATUS, MoveStatus.SUSPEND )
@@ -152,7 +156,7 @@ local function Move_DoAction( move )
 	if Move_MoveToNext( move ) == true then return false end
 	
 	--reach the destination
-	Asset_Set( move, MoveAssetID.END_TIME, g_calendar:GetDateValue() )
+	Asset_Set( move, MoveAssetID.END_TIME, g_Time:GetDateValue() )
 	
 	local actor = Asset_Get( move, MoveAssetID.ACTOR )
 	local dest  = Asset_Get( move, MoveAssetID.TO_CITY )
@@ -160,7 +164,7 @@ local function Move_DoAction( move )
 	local role = Asset_Get( move, MoveAssetID.ROLE )
 	if role == MoveRole.CORPS then
 		--InputUtil_Pause( Asset_Get( move, MoveAssetID.ACTOR ).name, "reach", Asset_Get( move, MoveAssetID.TO_CITY ).name )
-		Stat_Add( "Corps@Move", g_calendar:CalcDiffDayByDates( Asset_Get( move, MoveAssetID.END_TIME ), Asset_Get( move, MoveAssetID.BEGIN_TIME ) ), StatType.ACCUMULATION )
+		Stat_Add( "Corps@Move", g_Time:CalcDiffDayByDates( Asset_Get( move, MoveAssetID.END_TIME ), Asset_Get( move, MoveAssetID.BEGIN_TIME ) ), StatType.ACCUMULATION )
 		Asset_Set( actor, CorpsAssetID.LOCATION, dest )
 		home = Asset_Get( actor, CorpsAssetID.ENCAMPMENT )
 	elseif role == MoveRole.CHARA then
@@ -172,7 +176,7 @@ local function Move_DoAction( move )
 
 	Message_Post( MessageType.ARRIVE_DESTINATION, { actor = Asset_Get( move, MoveAssetID.ACTOR ), destination = Asset_Get( move, MoveAssetID.DEST_PLOT ) } )
 
-	Stat_Add( "Move@End", move:ToString( "END" ), StatType.LIST )
+	--Stat_Add( "Move@End", move:ToString( "END" ), StatType.LIST )
 
 	return true
 end
@@ -218,6 +222,20 @@ local function Move_OnCancelMoving( msg )
 	error( "it shouldn't be here" )
 end
 
+local function Move_OnCombatEnded( msg )
+	local combat  = Asset_GetListItem( msg, MessageAssetID.PARAMS, "combat" )
+	if not combat then return end
+
+	Asset_ForeachList( combat, CombatAssetID.CORPS_LIST, function ( corps )
+		if corps:IsBusy() == false then
+			System_Get( SystemType.MOVE_SYS ):StopMoving( corps )
+		else
+			local task = Asset_GetListItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )
+			Debug_Log( corps:ToString(), "is busying", task:ToString() )
+		end
+	end )
+end
+
 ------------------------------------------------
 
 MoveSystem = class()
@@ -232,6 +250,7 @@ function MoveSystem:Start()
 	Message_Handle( self.type, MessageType.START_MOVING,  Move_OnStartMoving )
 	Message_Handle( self.type, MessageType.STOP_MOVING,   Move_OnStopMoving )
 	Message_Handle( self.type, MessageType.CANCEL_MOVING, Move_OnCancelMoving )
+	Message_Handle( self.type, MessageType.COMBAT_ENDED,  Move_OnCombatEnded )
 end
 
 --1. Determine whether move to the next plot, put them into list
@@ -286,7 +305,7 @@ function MoveSystem:MoveC2C( actor, fromCity, toCity, type )
 	end
 
 	local move = Entity_New( EntityType.MOVE )
-	Asset_Set( move, MoveAssetID.BEGIN_TIME, g_calendar:GetDateValue() )
+	Asset_Set( move, MoveAssetID.BEGIN_TIME, g_Time:GetDateValue() )
 	Asset_Set( move, MoveAssetID.ROLE, type )
 	Asset_Set( move, MoveAssetID.ACTOR, actor )
 	Asset_Set( move, MoveAssetID.STATUS, MoveStatus.MOVING )
@@ -327,4 +346,10 @@ function MoveSystem:StartMoving( actor )
 		--InputUtil_Pause( "resume moving", move:ToString() )
 		Asset_Set( move, MoveAssetID.STATUS, MoveStatus.MOVING )
 	end
+end
+
+function MoveSystem:TrackMove( actor )
+	local move = self._actors[actor]
+	if not move then return end
+	Debug_Log( move:ToString() )
 end

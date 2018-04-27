@@ -51,11 +51,23 @@ end
 
 function Move:ToString( type )
 	local content = Asset_Get( self, MoveAssetID.ACTOR ):ToString()
+
+	local from = Asset_Get( self, MoveAssetID.FROM_CITY )
+	content = content .. " from=" .. from:ToString( "SIMPLE" )
+	
 	local curplot = Asset_Get( self, MoveAssetID.CUR_PLOT )
 	if curplot then content = content .. " cur=" .. curplot:ToString() end
+
+	content = content .. MathUtil_FindName( MoveStatus, Asset_Get( self, MoveAssetID.STATUS ) )
+
+	content = content .. " beg=" .. g_Time:CreateDateDescByValue( Asset_Get( self, MoveAssetID.BEGIN_TIME ) )
+	
 	content = content .. " dst=" .. Asset_Get( self, MoveAssetID.DEST_PLOT ):ToString()
+
 	if type == "END" then
-		content = content .. " day=" .. g_calendar:CalcDiffDayByDates( Asset_Get( self, MoveAssetID.END_TIME ), Asset_Get( self, MoveAssetID.BEGIN_TIME ) )
+		content = content .. " day=" .. g_Time:CalcDiffDayByDates( Asset_Get( self, MoveAssetID.END_TIME ), Asset_Get( self, MoveAssetID.BEGIN_TIME ) )
+	else
+		content = content .. " pas=" .. g_Time:CalcDiffDayByDate( Asset_Get( self, MoveAssetID.BEGIN_TIME ) )
 	end
 	return content
 end

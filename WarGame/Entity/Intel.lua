@@ -34,3 +34,9 @@ end
 function Intel:Load( data )
 	self.id = data.id
 end
+
+function Intel:ToString()
+	local content = ""
+	content = content .. MathUtil_FindName( IntelType, Asset_Get( self, IntelAssetID.TYPE ) ) 
+	return content
+end

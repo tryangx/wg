@@ -47,8 +47,8 @@ function Corps_GetTroopMaxNumber( city, troop )
 end
 
 function Corps_GetLimityByCity( city )
-	if city:IsCapital() == true then return 2 end
-	return 1
+	if city:IsCapital() == true then return 4 end
+	return 2
 end
 
 function Corps_Join( corps, city )	
@@ -70,16 +70,36 @@ function Corps_Join( corps, city )
 	end )
 end
 
-function Corps_Dismiss( corps )
+function Corps_Dismiss( corps )	
 	--remove from old city
 	local encampment = Asset_Get( corps, CorpsAssetID.ENCAMPMENT )
 	if encampment then
 		encampment:RemoveCorps( corps )
 	else
-		InputUtil_Pause( "corps not belong to any group or city!" )
+		Debug_Log( corps:ToString() .. " not belong to any group or city!" )
 	end
 
+	--killed the leaders
+	Asset_ForeachList( corps, CorpsAssetID.OFFICER_LIST, function ( chara )
+		Chara_Die( chara )
+	end )
+
+	--remove task
+	local task = Asset_GetListItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )
+	if task then
+		Task_Terminate( task )
+	end
+
+	Debug_Log( corps:ToString(), "dimiss" )
+
+	Stat_Add( "Corps@Dismiss", corps:ToString(), StatType.LIST )
+
 	Entity_Remove( corps )
+end
+
+function Corps_OfficerDie( corps, officer )
+	corps:LoseOfficer( officer )
+	Chara_Die( officer )
 end
 
 ---------------------------------------
@@ -211,11 +231,11 @@ local function Corps_EstablishTroop( city, corps, numberOfReqTroop, soldierPerTr
 	function EstablishTroop( category )
 		local troopTable = ChooseTroopTable( category, troopTables )
 		if not troopTable then
-			--print( "failed to find ", MathUtil_FindName( TroopCategory, category ), #troopTables )
+			Debug_Log( "failed to find ", MathUtil_FindName( TroopCategory, category ), #troopTables )
 			return false
 		end
 		if Corps_CanEstablishTroop( city, troopTable, soldierPerTroop, resources ) ~= true then
-			--print( "establish troop failed")
+			Debug_Log( "establish troop failed")
 			return false
 		end
 
@@ -230,7 +250,7 @@ local function Corps_EstablishTroop( city, corps, numberOfReqTroop, soldierPerTr
 
 		local group = Asset_Get( corps, CorpsAssetID.GROUP )
 		if group then
-			Stat_Add( group:ToString() .. "@Establish", soldierPerTroop, StatType.ACCUMULATION )
+			Stat_Add( group:ToString() .. "@Soldier", soldierPerTroop, StatType.ACCUMULATION )
 		end
 		--Debug_Log( "Add troop ", troopTable.name, soldierPerTroop )
 		return true
@@ -244,7 +264,7 @@ local function Corps_EstablishTroop( city, corps, numberOfReqTroop, soldierPerTr
 			numberOfCategory[data.category] = numberOfCategory[data.category] - data.number
 		end
 		if need > 0 then
-			for num = 1, need do
+			for num = 1, need do				
 				if EstablishTroop( data.category ) == true then
 					numberOfReqTroop = numberOfReqTroop - 1
 					if numberOfReqTroop <= 0 then break end
@@ -296,6 +316,8 @@ function Corps_EstablishInCity( city, leader, purpose, troopNumber )
 	--to make a corps
 	local corps = Entity_New( EntityType.CORPS )
 	Asset_Set( corps, CorpsAssetID.LEADER,     leader )
+	Asset_Set( leader, CharaAssetID.CORPS,     corps )
+
 	Asset_Set( corps, CorpsAssetID.LOCATION,   city )
 	Asset_Set( corps, CorpsAssetID.ENCAMPMENT, city )
 	Asset_Set( corps, CorpsAssetID.TEMPLATE,   template )
@@ -341,6 +363,15 @@ function Corps_EstablishInCity( city, leader, purpose, troopNumber )
 	end
 
 	Corps_EstablishTroop( city, corps, numberOfReqTroop, soldierPerTroop )
+
+	--set leader to troop
+	local officer = leader
+	Asset_ForeachList( corps, CorpsAssetID.TROOP_LIST, function ( troop )
+		if officer then
+			Asset_Set( troop, TroopAssetID.OFFICER, officer )
+			officer = nil
+		end
+	end)
 
 	--put corps into city
 	city:AddCorps( corps )
@@ -391,7 +422,7 @@ function Corps_Train( corps, progress )
 end
 
 function Corps_Dispatch( corps, city )
-	Corps_Join( corps, city )
+	Corps_Join( corps, city )	
 end
 
 function Corps_AttackCity( corps, city, task )

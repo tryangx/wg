@@ -207,7 +207,10 @@ function Asset_CopyList( entity, id, source, fn )
 end
 
 -- Use this to add item into the list
-function Asset_AppendList( entity, id, item )
+function Asset_AppendList( entity, id, item, checker )
+	if checker then
+		error( "use wrong method, please check it, maybe use Asset_SetListItem() insted of." )
+	end
 	if not item then return end
 	local list = Asset_GetList( entity, id )	
 	local attrib = Entity_GetAssetAttrib( entity, id )
@@ -308,7 +311,12 @@ end
 --[[
 	@return true/false
 --]]
-function Asset_HasItem( entity, id, item, isValue )
+function Asset_HasItem( entity, id, value, name )
+	return Asset_FindListItem( entity, id, function( item, k )
+		if name then return item[name] == value end
+		return item == value
+	end ) ~= nil
+	--[[
 	if not item then return false end
 	if not id then error( "id is invalid" ) end
 	if typeof( entity ) == "number" then return end
@@ -323,6 +331,7 @@ function Asset_HasItem( entity, id, item, isValue )
 		end
 	end
 	return false
+	]]
 end
 
 function Asset_VerifyList( entity, id )
@@ -441,7 +450,7 @@ function Asset_Get( entity, id )
 		local attrib = Entity_GetAssetAttrib( entity, id )
 		if attrib then
 			if attrib.value_type == AssetAttribType.DATA then
-				ret = attrib.initer()
+				ret = attrib.initer and attrib.initer() or nil
 			else
 				ret = attrib.default
 			end

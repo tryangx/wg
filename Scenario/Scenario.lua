@@ -1,76 +1,11 @@
-require "Scenario/DefaultDefine"
-require "Scenario/DefaultData"
-require "Scenario/DefaultCombatData"
+require "DefaultDefine"
+require "DefaultData"
+require "DefaultCombatData"
 
 --scenario
-require "Scenario/scenario_threekindoms"
-require "Scenario/scenario_chuhan"
-
-RouteTest_CityData =
-{
-	--test
-	--  1   2
-	--3   4   5
-	--  6   7
-	[1] = 
-	{
-		name = "Left-Top",
-		coordinate = { x = 1, y = 1 },
-		adjacents = { 3 },
-	},
-	[2] = 
-	{
-		name = "Right-Top",
-		coordinate = { x = 5, y = 1 },
-		adjacents = { 5 },
-	},
-	[3] = 
-	{
-		name = "Left",
-		coordinate = { x = 1, y = 3 },
-		adjacents = { 1, 4, 6 },
-	},
-	[4] = 
-	{
-		name = "Center",
-		coordinate = { x = 3, y = 3 },
-		adjacents = { 3, 5 },
-	},
-	[5] = 
-	{
-		name = "Right",
-		coordinate = { x = 5, y = 3 },
-		adjacents = { 2, 7 },
-	},
-	[6] = 
-	{
-		name = "Left-Bottom",
-		coordinate = { x = 1, y = 5 },
-		adjacents = { 3 },
-	},
-	[7] = 
-	{
-		name = "Right-Bottom",
-		coordinate = { x = 5, y = 5 },
-		adjacents = { 5 },
-	},
-	--]]
-}
-
-Test_CityData = 
-{
-	[1000] = 
-	{
-		name = "Test City",
-		coordinate = { x = 66, y = 6 },
-		level = 10,
-		money    = 10000,
-		material = 10000,
-		--adjacents = { 101 },
-		defenses = { 15000, 10000, 15000 },
-		charas = { 100, 101, 102, 103 },
-	},
-}
+require "scenario_test"
+require "scenario_threekindoms"
+require "scenario_chuhan"
 
 ScenarioData = 
 {
@@ -89,10 +24,10 @@ ScenarioData =
 	CHARA_GIVENNAME_DATA  = DefaultCharaGivenName,
 
 	--datas
-	CHARA_PROMOTE_DATA   = DefaultJobPromoteData,
-	CHARA_PROMOTE_METHOD = DefaultCharaPromoteMethod,
+	CHARA_PROMOTE_DATA    = DefaultJobPromoteData,
+	CHARA_PROMOTE_METHOD  = DefaultCharaPromoteMethod,
 
-	RELATION_OPINION  = DefaultRelationOpinion,
+	RELATION_OPINION      = DefaultRelationOpinion,
 
 	--Params
 	CITY_POPUSTRUCTURE_PARAMS    = DefaultCityPopuStructureParams,
@@ -100,12 +35,13 @@ ScenarioData =
 	CITY_DEVELOPMENT_VARY_PARAMS = DefaultCityDevelopmentVaryParams,
 	CITY_CONSCRIPT_PARAMS        = DefaultCityConscript,
 	CITY_RECRUIT_PARAMS          = DefaultCityRecruit,
-	CORPS_PARAMS              = DefaultCorpsParams,
-	TROOP_PARAMS              = DefaultTroopParams,
+	CORPS_PARAMS                 = DefaultCorpsParams,
+	TROOP_PARAMS                 = DefaultTroopParams,
 
 	TASK_STEP_DATA   = DefaultTaskSteps,
 	TACTIC_DATA      = DefaultTacticData,
 	BATTLEFIELD_DATA = DefaultBattlefieldData,
+	TECH_DATA        = DefaultTechData,
 
 	--Scenario 
 	--[[
@@ -141,7 +77,6 @@ ScenarioData =
 
 local _Scenario = ScenarioData
 
-
 --do the work like convert string to number
 function Scenario_InitData()
 	_Scenario.CHARA_PROMOTE_DATA   = MathUtil_ConvertKeyToID( CharaJob, _Scenario.CHARA_PROMOTE_DATA )
@@ -161,6 +96,10 @@ function Scenario_InitData()
 end
 
 
-function Scenario_GetData( dataName )
-	return _Scenario[dataName]
+function Scenario_GetData( dataName, id )
+	if not id then
+		return _Scenario[dataName]
+	end
+	local datas = _Scenario[dataName]
+	return datas[id]
 end
