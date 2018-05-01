@@ -39,20 +39,26 @@ CharaAssetID =
 	TACTIC_LIMIT    = 208,
 
 	--GROWTH
+	--normal, good, excellent, best, perfect
 	GRADE           = 300,
+	--determine how many skills can learn( 100 potential per 1 skill )
 	POTENTIAL       = 301,
-	LOYALITY        = 303,
-	CONTRIBUTION    = 304,
-	LEVEL           = 305,
-	EXP             = 306,
-	SERVICE_DAY     = 307,
-	SKILLS          = 311,
-	PURPOSE         = 321,
+	--determine to learn skills
+	EXP             = 303,
+	--determine how many skills enabled
+	LOYALITY        = 310,
+	--determine what job can be assigned.
+	CONTRIBUTION    = 311,
+	--reserved, will combine into loyality list
+	SERVICE_DAY     = 312,
 
-	--relationship
+	--affect what skills can learn
+	TRAITS          = 320,
+	SKILLS          = 321,
+
+	--relationship	
+	SUBORDINATES    = 400,
 	SUPERIOR        = 401,
-	SUBORDINATES    = 402,
-
 }
 
 CharaAssetAttrib = 
@@ -84,12 +90,13 @@ CharaAssetAttrib =
 	tactic_lim   = AssetAttrib_SetNumber( { id = CharaAssetID.TACTIC_LIMIT,  type = CharaAssetType.ACTION_ATTRIB, min = 0, max = 9999 } ),
 
 	grade        = AssetAttrib_SetNumber     ( { id = CharaAssetID.GRADE,        type = CharaAssetType.GROWTH_ATTRIB, enum = CharaGrade, default = CharaGrade.NORMAL } ),
-	potential    = AssetAttrib_SetNumber     ( { id = CharaAssetID.POTENTIAL,    type = CharaAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),
+	potential    = AssetAttrib_SetNumber     ( { id = CharaAssetID.POTENTIAL,    type = CharaAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),	
+	exp          = AssetAttrib_SetNumber     ( { id = CharaAssetID.EXP,          type = CharaAssetType.GROWTH_ATTRIB, min = 0, max = 9999 } ),
 	loyality     = AssetAttrib_SetNumber     ( { id = CharaAssetID.LOYALITY,     type = CharaAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),
 	contribution = AssetAttrib_SetNumber     ( { id = CharaAssetID.CONTRIBUTION, type = CharaAssetType.GROWTH_ATTRIB, min = 0 } ),
-	level        = AssetAttrib_SetNumber     ( { id = CharaAssetID.LEVEL,        type = CharaAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),
-	exp          = AssetAttrib_SetNumber     ( { id = CharaAssetID.EXP,          type = CharaAssetType.GROWTH_ATTRIB, min = 0, max = 9999 } ),
 	service_day  = AssetAttrib_SetNumber     ( { id = CharaAssetID.SERVICE_DAY,  type = CharaAssetType.GROWTH_ATTRIB } ),
+
+	traits       = AssetAttrib_SetPointerList( { id = CharaAssetID.TRAITS,       type = CharaAssetType.GROWTH_ATTRIB, setter = Entity_SetSkill } ),
 	skills       = AssetAttrib_SetPointerList( { id = CharaAssetID.SKILLS,       type = CharaAssetType.GROWTH_ATTRIB, setter = Entity_SetSkill } ),
 
 	superior     = AssetAttrib_SetPointer    ( { id = CharaAssetID.SUPERIOR,     type = CharaAssetType.RELATION_ATTRIB } ),
@@ -144,7 +151,6 @@ function Chara:Load( data )
 	Asset_Set( self, CharaAssetID.POTENTIAL, data.potential )
 	Asset_Set( self, CharaAssetID.LOYALITY, data.loyality )
 	Asset_Set( self, CharaAssetID.CONTRIBUTION, data.contribution )
-	Asset_Set( self, CharaAssetID.LEVEL, data.level )
 	Asset_Set( self, CharaAssetID.EXP, data.exp )
 	Asset_CopyList( self, CharaAssetID.SKILLS, data.skills )
 
@@ -172,11 +178,13 @@ end
 function Chara:ToString( type )
 	local content = "[" .. self.name .. "]"
 
-	if type == "LOCATION" then
+	if type == "LOCATION" or type == "ALL" then
 		content = content .. " @" .. Asset_Get( self, CharaAssetID.LOCATION ).name
-	elseif type == "JOB" then
+	end
+	if type == "JOB" or type == "ALL" then
 		local home = Asset_Get( self, CharaAssetID.HOME )
-		content = content .. "job=" .. MathUtil_FindName( CityJob, city:GetCharaJob( self ) )
+		content = content .. " job=" .. MathUtil_FindName( CityJob, home:GetCharaJob( self ) )
+		content = content .. " cot=" .. Asset_Get( self, CharaAssetID.CONTRIBUTION )
 	end	
 	return content
 end
@@ -214,4 +222,12 @@ function Chara:Update()
 	end
 
 	Asset_Plus( self, CharaAssetID.SERVICE_DAY, g_elapsed )
+end
+
+-------------------------------------------
+
+function Chara:Contribute( value )
+	Asset_Plus( actor, CharaAssetID.EXP, value )
+	Asset_Plus( actor, CharaAssetID.CONTRIBUTION, value )
+	Stat_Add( "Chara@Contribute", value, StatType.ACCUMULATION )
 end

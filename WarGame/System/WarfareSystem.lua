@@ -301,6 +301,7 @@ function WarfareSystem:UpdateCombat( combat )
 	Asset_ForeachList( combat, CombatAssetID.CORPS_LIST, function  ( corps )
 		if corps:GetSoldier() == 0 then
 			Corps_Dismiss( corps )
+			Stat_Add( "Corps@Vanished", corps:ToString( "SIMPLE"), StatType.LIST )
 		end
 	end )
 

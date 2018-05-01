@@ -167,6 +167,7 @@ function Task:Contribute( actor, contribution )
 	local cur = Asset_GetListItem( self, TaskAssetID.CONTRIBUTORS, actor )
 	cur = cur and cur + contribution or contribution
 	Asset_SetListItem( self, TaskAssetID.CONTRIBUTORS, actor, cur )
+	--InputUtil_Pause( actor.name, contribution, Asset_GetListItem( self, TaskAssetID.CONTRIBUTORS, actor ) )
 end
 
 function Task:DoTask( progress )

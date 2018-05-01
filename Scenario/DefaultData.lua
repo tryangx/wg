@@ -1002,10 +1002,48 @@ DefaultTaskSteps =
 
 	RESEARCH        = { "EXECUTE", "FINISH", "REPLY" },
 
-
 	IMPROVE_RELATION = { "EXECUTE", "FINISH", "REPLY" },
 	DECLARE_WAR      = { "PREPARE", "FINISH", "REPLY" },	
 	SIGN_PACT        = { "EXECUTE", "FINISH", "REPLY" },
+}
+
+DefaultTaskContribution = 
+{
+	HARASS_CITY     = { success = 200, failed = 0, city_level_ratio = 20 },
+	ATTACK_CITY     = { success = 400, failed = 0, city_level_ratio = 20 },
+	INTERCEPT       = { success = 300, failed = 0, city_level_ratio = 20 },
+	DISPATCH_CORPS  = { success = 20,  failed = 0 },
+
+	ESTABLISH_CORPS = { success = 40, failed = 0, },
+	REINFORCE_CORPS = { success = 20, failed = 0 },
+	DISMISS_CORPS   = { success = 10, failed = 0 },
+	TRAIN_CORPS     = { success = 40, failed = 0 },
+	UPGRADE_CORPS   = { success = 40, failed = 0 },
+	ENROLL_CORPS    = { success = 20, failed = 0 },
+	REGROUP_CORPS   = { success = 40, failed = 0 },
+
+	CONSCRIPT       = { success = 20, failed = 0 },
+	RECRUIT         = { success = 20, failed = 0 },
+
+	DEV_AGRICULTURE = { success = 30, failed = 0, work = 1 },
+	DEV_COMMERCE    = { success = 30, failed = 0, work = 1 },
+	DEV_PRODUCTION  = { success = 30, failed = 0, work = 1 },
+	BUILD_CITY      = { success = 50, failed = 0, work = 1 },
+	LEVY_TAX        = { success = 40, failed = 0, work = 1 },
+
+	HIRE_CHARA      = { success = 40, failed = 0 },
+	PROMOTE_CHARA   = { success = 20, failed = 0 },
+	DISPATCH_CHARA  = { success = 20, failed = 0 },
+	CALL_CHARA      = { success = 20, failed = 0 },
+
+	RECONNOITRE     = { success = 30, failed = 0 },
+	SABOTAGE        = { success = 30, failed = 0 },
+
+	RESEARCH        = { success = 50, failed = 0 },
+
+	IMPROVE_RELATION = { success = 40, failed = 0 },
+	DECLARE_WAR      = { success = 10, failed = 0 },
+	SIGN_PACT        = { success = 40, failed = 0 },
 }
 
 --------------------------------------------------------
@@ -1013,29 +1051,179 @@ DefaultTaskSteps =
 
 DefaultRelationOpinion =
 {
-	TRUST      = { increment = -1,  def = 500, min = -500,   max = 1000 },
-	WAS_AT_WAR = { increment = 1,   def = 0,   min = -1000,  max = 0   },
-	AT_WAR     = { increment = 1,   def = 0,   min = -1000,  max = 0   },
-	NO_WAR     = { increment = -1,  def = 0,   min = 0,      max = 500  },	
-	TRADE      = { increment = -1,  def = 0,   min = 200,    max = 500  },
-	PROTECT    = { increment = -1,  def = 0,   min = 300,    max = 500  },
-	ALLY       = { increment = -1,  def = 0,   min = 600,    max = 1000 },	
+	TRUST      = { increment = -1,  def = 500,   min = -500,   max = 1000, time = -1 },
+
+	WAS_AT_WAR = { increment = 1,   def = -400,  min = -1000,  max = 0,    time = 1800 },
+	AT_WAR     = { increment = 1,   def = -300,  min = -1000,  max = 0,    time = -1 },
+	OLD_ENEMY  = { increment = 1,   def = -500,  min = -500,   max = 0,    time = 3600 },
+
+	NO_WAR     = { increment = -1,  def = 0,     min = 0,      max = 500,  time = 1 },
+	TRADE      = { increment = -1,  def = 0,     min = 200,    max = 500,  time = 1 },	
+	PROTECT    = { increment = -1,  def = 0,     min = 300,    max = 500,  time = 1 },	
+	ALLY       = { increment = -1,  def = 0,     min = 600,    max = 1000, time = 1 },	
 }
 
-DefaultDiplomacyCond = 
+
+--pact, time
+--prob, has_opinion, no_opinion, duration_above, has_pact, attitude_above
+DefaultPactCond = 
 {
-	FRIENDLY      = { attitude = 0, },
-	DECLARE_WAR   = { attitude = 0, },
-	REQUEST_TRADE = { attitude = 0, },
-}
+	{
+		pact  = "PEACE",
+		time  = 180,
+		has_opinion    = "AT_WAR",
+		duration_above = 180,
+		prob           = 50,
+	},
+	{
+		pact  = "PEACE",
+		time  = 180,
+		has_opinion    = "AT_WAR",
+		duration_above = 360,
+		prob           = 100,
+	},
 
+	{
+		pact  = "NO_WAR",
+		time  = 360,
+		attitude_above = 300,
+		no_opinion = "AT_WAR",
+		no_pact = "NO_WAR",
+		prob = 80,
+	},
+	
+	{
+		pact  = "TRADE",
+		time  = 360,
+		attitude_above = 300,
+		no_opinion = "AT_WAR",
+		no_pact = "TRADE",
+		prob = 80,
+	},
+
+	{
+		pact  = "PROTECT",
+		time  = 36000,
+		attitude_above = 500,
+		no_opinion = "AT_WAR",
+		no_pact = "PROTECT",
+		prob = 80,
+	},
+
+	{
+		pact  = "ALLY",
+		time  = 1080,
+		attitude_above = 600,
+		no_opinion = "AT_WAR",
+		no_pact = "ALLY",
+		prob = 80,
+	},
+}
 
 --------------------------------------------------------
 
+--"prerequisite" means these condition should always be satisfied
+--"traits" means one of every subset conditions should be satisfied
 DefaultCharaSkill = 
 {
-	
+	{
+		id=2000, name="HR expert",
+		effects = { HIRE_CHARA_BONUS = 150, },
+		prerequisite = { pot_above, exp_above = 100 },
+		traits  = { { "OPEN" } },
+	},
+
+	{
+		id=3010, name="Agri expert",
+		effects = { AGRICULTURE_BONUS = 150, },
+		prerequisite = { pot_above, exp_above = 100 },
+		traits  = { { "HARDWORK" } },
+	},
+	{
+		id=3020, name="Comm expert",
+		effects = { COMMERCE_BONUS = 150, },
+		prerequisite = { pot_above, exp_above = 100 },
+		traits  = { { "HARDWORK" } },
+	},
+	{
+		id=3030, name="Prod expert",
+		effects = { PRODUCTION_BONUS = 150, },
+		prerequisite = { pot_above, exp_above = 100 },
+		traits  = { { "HARDWORK" } },
+	},
+	{
+		id=3040, name="Builder expert",
+		effects = { BUILD_BONUS = 150, },
+		prerequisite = { pot_above, exp_above = 100 },
+		traits = { { "HARDWORK" } },
+	},
+	{
+		id=3050, name="Tax expert",
+		effects = { LEVY_TAX_BONUS = 150, },
+		prerequisite = { pot_above, exp_above = 100 },
+		traits = { { "HARDWORK" } },
+	},
+
+	{
+		id=4010, name="SCOUT expert",
+		effects = { RECONNOITRE_BONUS = 150, },
+		prerequisite = { pot_above, exp_above = 100 },
+		traits = { { "HARDWORK" } },
+	},
+	{
+		id=4020, name="SPY expert",
+		effects = { SABOTAGE_BONUS = 150, },
+		prerequisite = { pot_above, exp_above = 100 },
+		traits = { { "INSIDIOUS" } },
+	},
+
+	{
+		id=5010, name="dipl expert",
+		effects = { IMPROVE_RELATION_BONUS = 150, },
+		prerequisite = { pot_above, exp_above = 100 },
+		traits = { { "SMART" } },
+	},
+	{
+		id=5020, name="pact expert",
+		effects = { SIGN_PACT_BONUS = 150, },
+		prerequisite = { pot_above, exp_above = 100 },
+		traits = { { "INSIDIOUS" } },
+	},
+
+	{
+		id=6010, name="tech expert",
+		effects = { RESEARCH_BONUS = 150, },
+		prerequisite = { pot_above, exp_above = 100 },
+		traits = { { "CAREFUL" } },
+	},
+
+	{
+		id=7010, name="atk expert",
+		effects = { ATTACK = 150, },
+		prerequisite = { pot_above, exp_above = 100 },
+		traits = { { "AGGRESSIVE" } },
+	},
+	{
+		id=7020, name="def expert",
+		effects = { DEFEND = 150, },
+		prerequisite = { pot_above, exp_above = 100 },
+		traits = { { "CONSERVATIVE" } },
+	},
+	{
+		id=7110, name="field expert",
+		effects = { FIELD_COMBAT_BONUS = 150, },
+		prerequisite = { pot_above, exp_above = 100 },
+		traits = { { "STRONG", "INSIDIOUS" } },
+	},
+	{
+		id=7120, name="siege expert",
+		effects = { SIEGE_COMBAT_BONUS = 150, },
+		prerequisite = { pot_above, exp_above = 100 },
+		traits = { { "STRONG", "CAREFUL" } },
+	},
 }
+
+--------------------------------------------------------
 
 DefaultTechData = 
 {

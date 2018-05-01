@@ -691,7 +691,8 @@ MeetingTopic =
 	--harass, attack
 	STRATEGY              = 17,
 
-	MEETING_END           = 17,
+	--should be the last topic + 1
+	MEETING_END           = 18,
 	---------------------------------
 }
 
@@ -775,6 +776,7 @@ RelationOpinion =
 	--status
 	WAS_AT_WAR = 10,
 	AT_WAR     = 11,
+	OLD_ENEMY  = 12,
 	
 	--pact
 	NO_WAR     = 20,
@@ -785,7 +787,7 @@ RelationOpinion =
 
 RelationPact = 
 {
-	AT_WAR   = 10,
+	PEACE    = 10,
 	NO_WAR   = 11,
 	TRADE    = 12,
 	PROTECT  = 13,
@@ -808,14 +810,65 @@ FeatureOption =
 
 ----------------------------------------------------------------------------------------
 
-EffectType = 
+SkillEffectType = 
 {
+	HIRE_CHARA_BONUS   = 201,
 
+	AGRICULTURE_BONUS  = 301,
+	COMMERCE_BONUS     = 302,
+	PRODUCTION_BONUS   = 303,
+	BUILD_BONUS        = 304,
+	LEVY_TAX_BONUS     = 305,
+
+	RECONNOITRE_BONUS  = 401,
+	SABOTAGE_BONUS     = 402,
+
+	IMPROVE_RELATION_BONUS = 501,
+	SIGN_PACT_BONUS        = 502,
+	
+	RESEARCH_BONUS     = 601,
+
+	ATTACK             = 701,
+	DEFEND             = 702,
+	FIELD_COMBAT_BONUS = 711,
+	SIEGE_COMBAT_BONUS = 711,
 }
 
-TraitType = 
+--
+-- Selfish --       
+-- Close -- Open
+--
+--
+TraitEffectType = 
 {
+	--mental
+	OPEN  = 1010,
+	CLOSE = 1011,
+	
+	AGGRESSIVE   = 1020,
+	CONSERVATIVE = 1021,
 
+	SELFISH    = 1030,
+	GENEROUS   = 1031,
+
+	CAREFUL    = 1040,
+	CARELESS   = 1041,
+
+	INSIDIOUS  = 1050,
+	NOBEL      = 1051,
+
+	IRRITABLE  = 1060,
+	DISPASSIONATE = 1061,
+
+	--physical
+	STRONG     = 2010,
+	WEAK       = 2011,
+
+	HARDWORK   = 2020,
+	LAZY       = 2021,
+
+	SMART      = 2030,
+	FOOLISH    = 2031,
 }
 
 TechType = 

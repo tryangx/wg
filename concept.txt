@@ -1,3 +1,8 @@
+To Do List
+
+1. Finish Chara Contribution Progress & Level Up System
+2.
+
 ------------------------------------------------
 
 [Goal]

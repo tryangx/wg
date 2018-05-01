@@ -1,3 +1,5 @@
+_trait2Skill = {}
+
 -------------------------------------------
 
 function Chara_GetLimitByGroup( group )
@@ -14,7 +16,7 @@ function Chara_GetLimitByCity( city )
 	end
 	local lv = Asset_Get( city, CityAssetID.LEVEL )	
 	local ret = math.ceil( lv / 4 ) + 1
-	DBG_Warning( "chara_limit_bycity", ret )
+	--DBG_Warning( "chara_limit_bycity", ret )
 	return ret
 end
 
@@ -222,6 +224,19 @@ local function Chara_ExecuteTask( chara )
 	Task_Do( task, chara )
 end
 
+local function Chara_LearnSkill( chara )
+	local numOfSkill = Asset_GetListSize( chara, CharaAssetID.SKILLS )
+	local reqNumOfSkill = Asset_Get( self, CharaAssetID.EXP ) / 100
+	if reqNumOfSkill > numOfSkill then
+		return
+	end
+
+end
+
+local function Chara_LevelUp( chara )
+	Chara_LearnSkill( chara )
+end
+
 -----------------------------------------------------
 
 CharaSystem = class()
@@ -232,6 +247,12 @@ end
 
 function CharaSystem:Start()
 	DBG_SetWatcher( "chara_proposal", DBGLevel.NORMAL )
+
+	--init trait->skills caches
+	local datas = Scenario_GetData( "CHARA_SKILL_DATA" )
+	for _, skill in pairs( datas ) do
+		
+	end
 end
 
 function CharaSystem:Update()
@@ -239,6 +260,10 @@ function CharaSystem:Update()
 	Entity_Foreach( EntityType.CHARA, function ( chara )
 		chara:Update()
 
+		if day % 10 == 0 then
+			Chara_LevelUp( chara )
+		end
+		
 		--Chara_ExecuteTask( chara )
 
 		Chara_WorkForJob( chara )

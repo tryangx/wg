@@ -89,8 +89,9 @@ CombatAssetAttrib =
 	defcampfield= AssetAttrib_SetPointer    ( { id = CombatAssetID.DEFCAMPFIELD,    type = CombatAssetType.BASE_ATTRIB, setter = Table_SetBattlefield } ),
 	atkcorpses  = AssetAttrib_SetPointerList( { id = CombatAssetID.ATK_CORPS_LIST,  type = CombatAssetType.BASE_ATTRIB, setter = Entity_SetCorps } ),
 	defcorpses  = AssetAttrib_SetPointerList( { id = CombatAssetID.DEF_CORPS_LIST,  type = CombatAssetType.BASE_ATTRIB, setter = Entity_SetCorps } ),
+	corps       = AssetAttrib_SetPointerList( { id = CombatAssetID.CORPS_LIST,      type = CombatAssetType.BASE_ATTRIB, setter = Entity_SetCorps } ),
 	troops      = AssetAttrib_SetPointerList( { id = CombatAssetID.TROOP_LIST,      type = CombatAssetType.BASE_ATTRIB, setter = Entity_SetTroop } ),
-	leaders     = AssetAttrib_SetPointerList( { id = CombatAssetID.OFFICER_LIST,     type = CombatAssetType.BASE_ATTRIB, setter = Entity_SetChara } ),
+	leaders     = AssetAttrib_SetPointerList( { id = CombatAssetID.OFFICER_LIST,    type = CombatAssetType.BASE_ATTRIB, setter = Entity_SetChara } ),
 	attackers   = AssetAttrib_SetPointerList( { id = CombatAssetID.ATTACKER_LIST,   type = CombatAssetType.BASE_ATTRIB, setter = Entity_SetTroop } ),
 	defenders   = AssetAttrib_SetPointerList( { id = CombatAssetID.DEFENDER_LIST,   type = CombatAssetType.BASE_ATTRIB, setter = Entity_SetTroop } ),
 	
@@ -368,7 +369,7 @@ function Combat:AddTroop( troop, side )
 end
 
 --Add single troop into Combat
-function Combat:AddCorps( corps, side )
+function Combat:AddCorps( corps, side )	
 	if Asset_HasItem( self, CombatAssetID.CORPS_LIST, corps ) == true then
 		--InputUtil_Pause( corps:ToString(), "already" )
 		return

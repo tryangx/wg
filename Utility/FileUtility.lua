@@ -42,7 +42,7 @@ function LoadFileUtility:ReopenFile( fileName )
 end
 
 --[[
---Standard Format
+  --Standard Format
 {
 	t1={
 		str = "test"

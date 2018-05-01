@@ -569,7 +569,6 @@ function City:FindAttackCityTargets( fn )
 		local adjaGroup = Asset_Get( adja, CityAssetID.GROUP )
 		if adjaGroup == group then return false end
 		if Dipl_IsAtWar( adjaGroup, group ) == false then return false end
-		local adjaPower = Intel_GetMilPower( adja, self )	
 		if fn( adja ) == false then return false end
 		return true
 	end )

@@ -28,6 +28,7 @@ ScenarioData =
 	CHARA_PROMOTE_METHOD  = DefaultCharaPromoteMethod,
 
 	RELATION_OPINION      = DefaultRelationOpinion,
+	RELATION_PACT         = DefaultPactCond,	
 
 	--Params
 	CITY_POPUSTRUCTURE_PARAMS    = DefaultCityPopuStructureParams,
@@ -39,6 +40,8 @@ ScenarioData =
 	TROOP_PARAMS                 = DefaultTroopParams,
 
 	TASK_STEP_DATA   = DefaultTaskSteps,
+	TASK_CONTRIBUTION_DATA = DefaultTaskContribution,	
+
 	TACTIC_DATA      = DefaultTacticData,
 	BATTLEFIELD_DATA = DefaultBattlefieldData,
 	TECH_DATA        = DefaultTechData,
@@ -59,6 +62,8 @@ ScenarioData =
 
 	EVENT_DATA    = RTK_EventData,
 	]]
+	CHARA_SKILL_DATA = DefaultCharaSkill,
+
 	BASE_DATA     = CHUHAN_BaseData,
 	MAP_DATA      = CHUHAN_MapData,
 
@@ -89,6 +94,8 @@ function Scenario_InitData()
 	for id, list in pairs( _Scenario.TASK_STEP_DATA ) do
 		_Scenario.TASK_STEP_DATA[id] = MathUtil_ConvertDataStringToID( TaskStep, list )
 	end
+
+	_Scenario.TASK_CONTRIBUTION_DATA = MathUtil_ConvertKeyToID( TaskType, _Scenario.TASK_CONTRIBUTION_DATA )
 
 	_Scenario.RELATION_OPINION = MathUtil_ConvertKeyToID( RelationOpinion, _Scenario.RELATION_OPINION )
 

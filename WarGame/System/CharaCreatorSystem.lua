@@ -212,7 +212,7 @@ function CharaCreatorSystem:GenerateFictionalChara( city )
 	Asset_Set( chara, CharaAssetID.LOYALITY,     0 )
 	local potential = Random_GetInt_Sync( gradeData.min_potential, gradeData.max_potential )
 	Asset_Set( chara, CharaAssetID.POTENTIAL,    potential )
-	Asset_Set( chara, CharaAssetID.LEVEL,        math.floor( potential * Random_GetInt_Sync( MIN_LEVEL_PERCENT, MAX_LEVEL_PERCENT ) * 0.01 ) )
+	--Asset_Set( chara, CharaAssetID.LEVEL,        math.floor( potential * Random_GetInt_Sync( MIN_LEVEL_PERCENT, MAX_LEVEL_PERCENT ) * 0.01 ) )
 	Asset_Set( chara, CharaAssetID.CONTRIBUTION, 0 )
 	Asset_Set( chara, CharaAssetID.EXP,          0 )
 

@@ -51,14 +51,13 @@ function Relation:ToString( type )
 	if type == "ALL" then
 	end
 	if type == "PACT" or type == "ALL" then
-		Asset_ForeachList( self, RelationAssetID.PACT_LIST, function ( time, pact )
-			print( time, pact )
-			content = content .. " " .. MathUtil_FindName( RelationPact, pact ) .. "+" .. time
+		Asset_ForeachList( self, RelationAssetID.PACT_LIST, function ( data, pact )
+			content = content .. " " .. MathUtil_FindName( RelationPact, pact ) .. "+" .. data.time
 		end)
 	end
 	if type == "OPINION" or type == "ALL" then
-		Asset_ForeachList( self, RelationAssetID.OPINION_LIST, function ( at, opinion )
-			content = content .. " " .. MathUtil_FindName( RelationOpinion, opinion ) .. "=" .. at
+		Asset_ForeachList( self, RelationAssetID.OPINION_LIST, function ( data, opinion )
+			content = content .. " " .. MathUtil_FindName( RelationOpinion, opinion ) .. "=" .. data.attitude
 		end)
 	end
 	return content
@@ -66,15 +65,32 @@ end
 
 function Relation:Update()
 	local attitude = 0
-	Asset_ForeachList( self, RelationAssetID.OPINION_LIST, function ( value, type )
-		local opinion = Scenario_GetData( "RELATION_OPINION" )[type]
-		if opinion then
-			value = MathUtil_Clamp( value + opinion.increment * g_elapsed, opinion.min, opinion.max )		
-			attitude = attitude + value
-			Asset_SetListItem( self, RelationAssetID.OPINION_LIST, type, attitude )
+
+	--update optnion
+	Asset_ForeachList( self, RelationAssetID.OPINION_LIST, function ( data, type )
+		data.duration = data.duration + 1
+		if data.time > 1 then
+			data.time = data.time - 1		
+			local opinion = Scenario_GetData( "RELATION_OPINION" )[type]
+			if opinion then			
+				data.attitude = MathUtil_Clamp( data.attitude + opinion.increment * g_elapsed, opinion.min, opinion.max )
+				attitude = attitude + data.attitude
+			end
+		elseif data.time == 0 then
+			InputUtil_Pause( "op over", MathUtil_FindName( RelationOpinion, type ) )
+			Asset_SetListItem( self, RelationAssetID.OPINION_LIST, type, nil )
 		end
 	end)
 	Asset_Set( self, RelationAssetID.ATTITUDE, attitude )
+
+	--update pact
+	Asset_ForeachList( self, RelationAssetID.PACT_LIST, function ( data, pact )
+		data.remain = data.remain - g_elapsed
+		if data.remain < 0 then			
+			InputUtil_Pause( "pact over", MathUtil_FindName( RelationPact, pact ) )
+			Asset_SetListItem( self, RelationAssetID.PACT_LIST, pact, nil )			
+		end
+	end)
 end
 
 function Relation:GetPact( type )
@@ -88,20 +104,21 @@ function Relation:GetOppGroup( group )
 	return opp
 end
 
-function Relation:GetOpinion( opinion )
-	returnAsset_GetListItem( self, RelationAssetID.OPINION_LIST, opinion )
+function Relation:GetOpinion( type )
+	return Asset_GetListItem( self, RelationAssetID.OPINION_LIST, type )
 end
 
 function Relation:HasPact( type )
 	local pact = Asset_GetListItem( self, RelationAssetID.PACT_LIST, type )
 	if not pact then return false end
-	return pact
+	if pact.remain and pact.remain > 0 then return true end
+	return false
 end
 
-function Relation:HasOpinion( opinion )
-	local attitude = Asset_GetListItem( self, RelationAssetID.OPINION_LIST, opinion )
-	if not attitude then return false end
-	return attitude > 0
+function Relation:HasOpinion( type )
+	local opinion = Asset_GetListItem( self, RelationAssetID.OPINION_LIST, type )
+	if not opinion then return false end
+	return opinion ~= 0
 end
 
 -------------------------------------------------
@@ -114,12 +131,20 @@ function Relation:ImproveRelation( attitude )
 	--InputUtil_Pause( "imporve re", cur .. "+" .. attitude )
 end
 
+function Relation:AddOpinion( type )
+	local opinion = {}
+	local data = Scenario_GetData( "RELATION_OPINION" )[type]
+	opinion.attitude = data.def
+	opinion.time     = data.time
+	opinion.duration = 1
+	Asset_SetListItem( self, RelationAssetID.OPINION_LIST, type, opinion )
+end
+
 function Relation:DeclareWar()
-	Asset_SetListItem( self, RelationAssetID.PACT_LIST, RelationPact.AT_WAR, 1 )
-	InputUtil_Pause( "DeclareWars" )
+	self:AddOpinion( RelationOpinion.AT_WAR )
 end
 
 function Relation:SignPact( pact, time )
-	Asset_SetListItem( self, RelationAssetID.PACT_LIST, pact, time )
-	InputUtil_Pause( "sign pact" )
+	Asset_SetListItem( self, RelationAssetID.PACT_LIST, pact, { remain = time } )
+	--InputUtil_Pause( "sign pact", MathUtil_FindName( RelationPact, pact ), time )
 end

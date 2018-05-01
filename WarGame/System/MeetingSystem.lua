@@ -63,7 +63,7 @@ local function Meeting_Update( meeting )
 		--submit proposals
 		local freeParticiants = 0
 		Asset_FindListItem( meeting, MeetingAssetID.PARTICIPANTS, function ( chara )			
-			if Asset_GetListSize( chara, CharaAssetID.TASKS ) > 0 then return end			
+			if chara:IsBusy() then return end
 			freeParticiants = freeParticiants + 1
 			Stat_Add( "Proposal@Try_Times", nil, StatType.TIMES )
 			--if topic == MeetingTopic.COMMANDER then InputUtil_Pause( "commander") end
@@ -100,7 +100,6 @@ local function Meeting_Update( meeting )
 		--simply to the next topic
 		topic = topic + 1
 	end
-
 	--Stat_Add( "Meeting@End_Times", nil, StatType.TIMES )
 end
 
@@ -145,7 +144,6 @@ function Meeting_Hold( city, topic, target )
 	--find participants
 	local participants = {}
 	Asset_ForeachList( city, CityAssetID.CHARA_LIST, function ( chara )
-		--print( chara.name, "task=" .. Asset_GetListSize( chara, CharaAssetID.TASKS ) )
 		if chara:IsBusy() == true then
 			--print( chara.name, " is busy" )
 			return

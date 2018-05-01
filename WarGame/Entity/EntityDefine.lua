@@ -8,7 +8,6 @@ EntityType =
 	CORPS  = 4,
 	TROOP  = 5,
 
-	SKILL  = 20,
 	WEAPON = 22,
 
 	EVENT    = 30,

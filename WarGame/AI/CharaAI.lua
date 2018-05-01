@@ -105,6 +105,8 @@ local function SubmitProposal( params )
 		local oppGroup = _registers["TARGET_GROUP"]
 		local capital  = Asset_Get( oppGroup, GroupAssetID.CAPITAL )
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, capital )
+		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "pact", _registers["PACT"] )		
+		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "time", _registers["TIME"] )
 		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "group", oppGroup )
 		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.DIPLOMATIC )
 
@@ -155,9 +157,48 @@ local function HasGroupGoal( params )
 end
 
 local function CanSubmitPlan( params )
-	if IsTopic( params ) == false then return false end
-	if true then return true end
-	return _city:IsCharaOfficer( CityJob.CHIEF_EXECUTIVE, _proposer ) == true or _city:IsCharaOfficer( params.position, _proposer )
+	if IsTopic( params ) == false then
+		return false
+	end
+
+	--exclusive task	
+	local topic = MeetingTopic[params.topic]
+	local plan
+	if topic == MeetingTopic.TECHNICIAN then
+		plan = CityPlan.TECHNICIAN
+	elseif topic == MeetingTopic.DIPLOMATIC then
+		plan = CityPlan.DIPLOMATIC
+	elseif topic == MeetingTopic.HR then
+		plan = CityPlan.HR
+	elseif topic == MeetingTopic.AFFAIRS then
+		plan = CityPlan.AFFAIRS
+	elseif topic == MeetingTopic.COMMANDER then
+		plan = CityPlan.COMMANDER
+	elseif topic == MeetingTopic.STAFF then		
+		plan = CityPlan.STAFF
+	elseif topic == MeetingTopic.STRATEGY then
+	end
+	if plan then
+		local task = Asset_GetListItem( _city, CityAssetID.PLANS, plan ) 
+		if task then
+			--print( MathUtil_FindName( CityPlan, plan ), "exist", task:ToString() )
+			return false
+		end
+	end
+
+	--check proposer status who shouldn't be busy
+	if topic ~= MeetingTopic.AFFAIRS then
+		if _proposer:IsBusy() then
+			--print( _proposer.name .. " is busy" )
+			return false
+		end
+	end
+
+	--if true then return true end
+	if _city:IsCharaOfficer( CityJob.CHIEF_EXECUTIVE, _proposer ) == true or _city:IsCharaOfficer( params.position, _proposer ) then
+		return true
+	end
+	return true
 end
 
 ----------------------------------------
@@ -289,8 +330,13 @@ local function CanHarassCity()
 	--check & find target
 	local cities = _city:FindHarassCityTargets( function ( city )
 		local citySoldier = Intel_GetSoldier( city, _city )
-		if citySoldier > soldier + soldier then return false end
-		if Random_GetInt_Sync( 1, citySoldier ) > soldier then return false end
+		--ignore when enemy is two times than self
+		if citySoldier > soldier + soldier then
+			return false
+		end
+		if Random_GetInt_Sync( 1, citySoldier ) < soldier then
+			return false
+		end
 		return true
 	end )
 	local number = #cities
@@ -319,10 +365,15 @@ local function CanAttackCity()
 
 	local cities = _city:FindAttackCityTargets( function ( city )
 		local citySoldier = Intel_GetSoldier( city, _city )
-		if soldier < citySoldier then return false end
-		if Random_GetInt_Sync( 1, soldier ) >= citySoldier then return false end
+		if soldier < citySoldier then
+			return false
+		end
+		if Random_GetInt_Sync( 1, soldier ) < citySoldier then
+			--print( "rand soldier", soldier, citySoldier, city:GetSoldier() )
+			return false
+		end
 		return true
-	end )
+	end )	
 	local number = #cities
 	if number == 0 then return false end
 	local corps = list[Random_GetInt_Sync( 1, #list )]
@@ -512,10 +563,6 @@ local function CanLevyTax()
 end
 
 local function CanHireChara()
-	if Asset_GetListItem( _city, CityAssetID.PLANS, CityPlan.HR ) then
-		return false
-	end
-
 	local limit
 	if _city then
 		limit = Chara_GetLimitByCity( _city )		
@@ -735,7 +782,7 @@ local _StrategyPlans =
 		},
 	},
 	{ type = "SEQUENCE", children = 
-		{
+		{		
 			{ type = "FILTER", condition = CanAttackCity },
 			{ type = "ACTION", action = SubmitProposal, params = { type = "ATTACK_CITY" } },
 		},
@@ -814,7 +861,7 @@ local _StaffPlans =
 	--COLLECT INTELS
 	--EXECUTE OP
 	{ type = "SEQUENCE", children = 
-		{
+		{		
 			{ type = "FILTER", condition = CanReconnoitre },
 			{ type = "ACTION", action = SubmitProposal, params = { type = "RECONNOITRE" } },
 		},
@@ -857,15 +904,11 @@ local function CanImproveRelation()
 end
 
 local function CanDeclareWar()
-	--1. self isn't at war
-	--2. target isn't at war
-	if Dipl_IsAtWar( _group ) == true then return false end
-
 	local list = Dipl_GetRelations( _group )
 	if not list then return false end
 	local groupList = {}
 	for _, relation in pairs( list ) do
-		if Dipl_CanDeclareWar( relation ) then
+		if Dipl_CanDeclareWar( relation ) == true then
 			local opp = relation:GetOppGroup( _group )		
 			table.insert( groupList, opp )
 		end
@@ -879,28 +922,30 @@ local function CanDeclareWar()
 end
 
 local function CanSignPact()
-	if 1 then return false end
-
 	local list = Dipl_GetRelations( _group )
 	if not list then return  false end	
 
+	local pactList = {}
 	for _, relation in pairs( list ) do
-
+		Dipl_GetPossiblePact( relation, pactList )
 	end
+	if #pactList == 0 then return false end
+
+	local sign     = Random_GetListItem( pactList )
+	local oppGroup = relation:GetOppGroup( _group )
 
 	--local target = Random_GetListItem( groupList )
-	_registers["TARGET_GROUP"] = target
+	_registers["TARGET_GROUP"] = oppGroup
+	_registers["PACT"]         = RelationPact[sign.pact]
+	_registers["TIME"]         = sign.time
 
-	InputUtil_Pause( "find dip target" )
+	--InputUtil_Pause( "find pact", MathUtil_FindName( RelationPact, RelationPact[pact] ), oppGroup:ToString() )
 
 	return true
 end
 
 local _DiplomatciPlans = 
-{	
-		--IMPROVE RELATIONSHIP
-		--SIGN PACT
-		--DECLARE WAR
+{
 	{ type = "SEQUENCE", children = 
 		{
 			{ type = "FILTER", condition = CanImproveRelation },
@@ -1106,9 +1151,8 @@ local _MeetingProposal =
 		_PriorityProposals,
 
 		--test slot
-		_SubmitDiplomaticProposal,
 
-		--[[
+		--[[]]
 		_SubmitTechnicianProposal,
 		_SubmitDiplomaticProposal,
 		_SubmitHRProposal,

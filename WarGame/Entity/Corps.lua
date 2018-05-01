@@ -85,7 +85,7 @@ function Corps:ToString( type )
 	local content = "[" .. self.name .. "]"	
 	if type == "SIMPLE"	then
 		content = content .. Asset_Get( self, CorpsAssetID.LOCATION ):ToString()
-		content = content .. " trp=" .. Asset_GetListSize( self, CorpsAssetID.TROOP_LIST )
+		--content = content .. " trp=" .. Asset_GetListSize( self, CorpsAssetID.TROOP_LIST )
 	elseif type == "ALL"	then
 		content = content .. " grp=" .. String_ToStr( Asset_Get( self, CorpsAssetID.GROUP ), "name" )
 		local leader = Asset_Get( self, CorpsAssetID.LEADER )

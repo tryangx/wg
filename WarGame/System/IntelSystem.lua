@@ -6,9 +6,10 @@ function Intel_GetMilPower( city, fromCity )
 	
 	local power = city:GetMilitaryPower()
 	if level == 1 then
-		return power
-	elseif level == 2 then	
+		return math.ceil( power * Random_GetInt_Sync( 50, 150 ) * 0.01 )
+	elseif level == 2 then
 		--unknown
+		return power
 	end
 	--unknown
 	return -1	
@@ -16,8 +17,17 @@ end
 
 function Intel_GetSoldier( city, fromCity )
 	local spy = fromCity:GetSpy( city )
+
+	local data  = CitySpyParams.GRADE_DATA[spy.grade]
+	local level =  data["MILITARY"]
+
 	local power = city:GetSoldier()
-	return power
+	if level == 1 then
+		return math.ceil( power * Random_GetInt_Sync( 50, 150 ) * 0.01 )
+	elseif level == 2 then
+		return power
+	end
+	return -1
 end
 
 ---------------------------------------------------

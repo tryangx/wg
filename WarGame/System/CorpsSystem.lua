@@ -90,8 +90,6 @@ function Corps_Dismiss( corps )
 		Task_Terminate( task )
 	end
 
-	Debug_Log( corps:ToString(), "dimiss" )
-
 	Stat_Add( "Corps@Dismiss", corps:ToString(), StatType.LIST )
 
 	Entity_Remove( corps )

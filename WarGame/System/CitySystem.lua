@@ -345,7 +345,7 @@ local function City_CheckFlag( city )
 			if typeof( adjaCity ) ~= "table" then
 				--should to do
 			end
-			local adjaPower = Intel_GetMilPower( adjaCity, city )
+			local adjaPower = Intel_GetSoldier( adjaCity, city )
 			if adjaPower > ( power + power + power ) then score = score + 1 end
 			if adjaPower > ( power + power ) then score = score + 1 end
 			if adjaPower > power * 1.5 then score = score + 1 end
@@ -477,7 +477,8 @@ function City_LevyTax( city, progress )
 	end
 	income = math.ceil( income * math.min( 2.5, math.max( 0.2, progress * 0.01 ) ) )
 	Asset_Plus( city, CityAssetID.MONEY, income )
-	Debug_Log( "City=" .. city.name .. " Levy tax=" .. income .. " Money=" .. Asset_Get( city, CityAssetID.MONEY ) )	
+	Stat_Add( city.name .. "@LevyTax", "money=" .. income, StatType.LIST )
+	--Debug_Log( "City=" .. city.name .. " Levy tax=" .. income .. " Money=" .. Asset_Get( city, CityAssetID.MONEY ) )	
 	return income
 end
 
