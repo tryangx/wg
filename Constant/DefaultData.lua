@@ -573,13 +573,19 @@ CitySpyParams =
 	REQ_GRADE   = 3,
 	MAX_GRADE   = 5,	
 	GRADE_INTEL = { 100, 200, 400, 1000 },
+
+	--Grade Level
+	--3 Know everything
+	--2 Know 50~90% exactly
+	--1 know 20~50%
+	--0 unknown
 	GRADE_DATA  = 
 	{
-		[1] = { BASE = 1, GROWTH = 0, MILITARY = 0 },
-		[2] = { BASE = 2, GROWTH = 0, MILITARY = 1 },
-		[3] = { BASE = 2, GROWTH = 1, MILITARY = 2 },
-		[4] = { BASE = 2, GROWTH = 2, MILITARY = 2 },
-		[5] = { BASE = 2, GROWTH = 2, MILITARY = 2 },
+		[1] = { BASE = 1, GROWTH = 0, MILITARY = 1 },
+		[2] = { BASE = 2, GROWTH = 1, MILITARY = 1 },
+		[3] = { BASE = 3, GROWTH = 1, MILITARY = 2 },
+		[4] = { BASE = 3, GROWTH = 2, MILITARY = 3 },
+		[5] = { BASE = 3, GROWTH = 3, MILITARY = 3 },
 	},
 	GRADE_OP_BONUS = { 0, 0, 5, 10, 25 }
 }
@@ -604,301 +610,12 @@ FoodParams =
 	CONSUME_PER_MAN = 10,
 }
 
-----------------------------------------------
--- City population structure
-
-DefaultCityPopuPleb = 
-{
-	ALL      = 1,
-	FARMER   = 1,
-	WORKER   = 1,
-	MERCHANT = 1,
-}
-
-DefaultCityPopuHarvest = 
-{
-	FARMER   = 100,
-}
-
-DefaultCityPopuTax = 
-{
-	FARMER   = 1,
-	WORKER   = 2,
-	MERCHANT = 10,
-	MIDDLE   = 5,
-	BACHELOR = 1,
-	RICH     = 20,
-	NOBLE    = 0,	
-}
-
-DefaultCityPopuProduce = 
-{
-	WORKER   = 100,
-}
-
-DefaultCityPopuInit = 
-{
-	HOBO     = { min = 120, max = 240 },
-	CHILDREN = { min = 60, max = 120 },
-	RESERVES = { min = 60, max = 120 },
-	MIDDLE   = { min = 60, max = 120 },
-	BACHELOR = { min = 40, max = 120 },
-	OFFICER  = { min = 40, max = 120 },
-	RICH     = { min = 20, max = 120 },
-	NOBLE    = { min = 20, max = 120 },
-}
-
-DefaultCityPopuMental = 
-{
-	--affect SECURITY
-	HOBO     = -100,
-	OFFICER  = 200,
-	SOLDIER  = 400,
-	--affect SATISFACTION
-	MIDDLE   = 200,
-	RICH     = 600,
-	NOBLE    = 1000,
-}
-
-DefaultCityPopuMentalMax = 
-{
-	--affect SECURITY
-	HOBO     = 0,
-	OFFICER  = 20,
-	SOLDIER  = 35,
-	--affect SATISFACTION
-	MIDDLE   = 20,
-	RICH     = 20,
-	NOBLE    = 20,
-}
-
-DefaultCityPopuMentalMin = 
-{
-	--affect SECURITY
-	HOBO     = -20,
-}
-
-DefaultCityPopuPerUnit =
-{
-	FARMER   = 40,  --need farmer per agriculture
-	WORKER   = 20,  --need worker per production
-	MERCHANT = 10,  --need merchant per commerce
-}
-
-DefaultCityPopuNeed = 
-{
-	--percent unit
-	HOBO     = 0.04,
-	CHILDREN = 0.15,
-	RESERVES = 0.02,
-	MIDDLE   = 0.05,
-	OFFICER  = 0.05,
-	BACHELOR = 0.02,
-	RICH     = 0.01,
-	NOBLE    = 0.002,
-}
-
-DefaultCityPopuLimit = 
-{
-	HOBO     = 0.1,
-	CHILDREN = 0.3,	
-	RESERVES = 0.1,
-	MIDDLE   = 0.1,	
-	BACHELOR = 0.2,
-	OFFICER  = 0.1,
-	RICH     = 0.1,
-	NOBLE    = 0.05,	
-}
-
-DefaultCityPopuConv = 
-{
-	{ from = "CHILDREN", to = "HOBO",     ratio = 0.018, force_conv = true },
-
-	--low to high
-	{ from = "HOBO",     to = "FARMER",   sec_more_than = 40, prob = 90, sec = -1 },
-	{ from = "HOBO",     to = "WORKER",   sec_more_than = 40, prob = 80, sec = -1 },
-	{ from = "HOBO",     to = "MERCHANT", sec_more_than = 40, prob = 70, sec = -1 },
-
-	{ from = "FARMER",   to = "MIDDLE",   sat_more_than = 60, prob = 30, sec = -1  },
-	{ from = "WORKER",   to = "MIDDLE",   sat_more_than = 60, prob = 35, sec = -1  },
-	{ from = "MERCHANT", to = "MIDDLE",   sat_more_than = 60, prob = 40, sec = -1  },
-
-	{ from = "MIDDLE",   to = "OFFICER",  sat_more_than = 60, prob = 35 },
-	{ from = "MIDDLE",   to = "BACHELOR", sat_more_than = 70, prob = 25 },
-	{ from = "MIDDLE",   to = "RICH",     sat_more_than = 75, prob = 20 },
-
-	--high to low
-	{ from = "FARMER",   to = "HOBO", sec_less_than = 40, prob = 40, force_conv = true },
-	{ from = "WORKER",   to = "HOBO", sec_less_than = 40, prob = 40, force_conv = true },
-	{ from = "MERCHANT", to = "HOBO", sec_less_than = 40, prob = 40, force_conv = true },
-	{ from = "MIDDLE",   to = "HOBO", sec_less_than = 30, prob = 30, force_conv = true },
-
-	{ from = "OFFICER",  to = "MIDDLE", sat_less_than = 40, prob = 20, force_conv = true },
-	{ from = "BACHELOR", to = "MIDDLE", sat_less_than = 35, prob = 20, force_conv = true },
-	{ from = "RICH",     to = "MIDDLE", sat_less_than = 30, sec_less_than = 30, prob = 10, force_conv = true },
-	{ from = "NOBLE",    to = "MIDDLE", sat_less_than = 25, sec_less_than = 25, prob = 10, force_conv = true },
-}
-
---rate unit is 1 per 10000
-DefaultCityConscript = 
-{
-	{ from = "HOBO",     to = "RESERVES", prob = 100, min_rate = 10, max_rate = 20 },
-	{ from = "FARMER",   to = "RESERVES", prob = 80,  min_rate = 10, max_rate = 20 },
-	{ from = "WORKER",   to = "RESERVES", prob = 80,  min_rate = 10, max_rate = 20 },
-	{ from = "MERCHANT", to = "RESERVES", prob = 80,  min_rate = 10, max_rate = 20 },
-	{ from = "MIDDLE",   to = "RESERVES", prob = 50,  min_rate = 10, max_rate = 20 },
-}
-
---rate unit is 1 per 1000
-DefaultCityRecruit =
-{
-	{ from = "HOBO",     to = "RESERVES", prob = 100, min_rate = 5, max_rate = 15 },
-	{ from = "FARMER",   to = "RESERVES", prob = 100, min_rate = 5, max_rate = 15 },
-	{ from = "WORKER",   to = "RESERVES", prob = 100, min_rate = 5, max_rate = 15 },
-	{ from = "MERCHANT", to = "RESERVES", prob = 100, min_rate = 5, max_rate = 15 },	
-}
-
-DefaultCityPopuStructureParams = 
-{
-	[1] = 
-	{
-		IS_PLEB      = DefaultCityPopuPleb,
-		POPU_HARVEST = DefaultCityPopuHarvest,
-		POPU_TAX     = DefaultCityPopuTax,
-		POPU_PRODUCE = DefaultCityPopuProduce,
-
-		--use to initialize population structure in city
-		POPU_INIT    = DefaultCityPopuInit,
-		
-		--reveal the productive of the scenario time
-		POPU_PER_UNIT     = DefaultCityPopuPerUnit,
-		
-		--reveal the manpower requirement of each job in the city
-		POPU_NEED_RATIO   = DefaultCityPopuNeed,
-		POPU_LIMIT_RATIO  = DefaultCityPopuLimit,
-		POPU_MENTAL_RATIO = DefaultCityPopuMental,		
-		POPU_MENTAL_MAX   = DefaultCityPopuMentalMax,		
-		POPU_MENTAL_MIN   = DefaultCityPopuMentalMin,
-
-		POPU_CONV_COND    = DefaultCityPopuConv,
-	},
-}
-
-DefaultCityDevelopParams =
-{
-	{
-		conditions = { progress_min = 100 },
-		methods = 
-		{
-			{ prob = 50, main = 6, agri = 0,  comm = 0, prod = 0, },
-			{ prob = 50, main = 5, agri = 1,  comm = 1, prod = 0, },
-			{ prob = 50, main = 5, agri = 1,  comm = 0, prod = 1, },
-			{ prob = 50, main = 5, agri = 0,  comm = 1, prod = 1, },
-			{ prob = 50, main = 7, agri = 0,  comm = -1, prod = -1, },
-			{ prob = 50, main = 7, agri = -1, comm = 0, prod = -1, },
-			{ prob = 50, main = 7, agri = -1, comm = -1, prod = 0, },
-		},
-	},
-	{
-		conditions = { progress_min = 50 },
-		methods =
-		{
-			{ prob = 50, main = 4, agri = 0,  comm = 0, prod = 0, },
-			{ prob = 50, main = 3, agri = 1,  comm = 1, prod = 0, },
-			{ prob = 50, main = 3, agri = 1,  comm = 0, prod = 1, },
-			{ prob = 50, main = 3, agri = 0,  comm = 1, prod = 1, },
-			{ prob = 50, main = 5, agri = 0,  comm = -1, prod = -1, },
-			{ prob = 50, main = 5, agri = -1, comm = 0, prod = -1, },
-			{ prob = 50, main = 5, agri = -1, comm = -1, prod = 0, },
-		},
-	},
-	{
-		conditions = { progress_min = 0 },
-		methods =
-		{
-			{ prob = 50, main = 2, agri = 0,  comm = 0, prod = 0, },
-			{ prob = 50, main = 1, agri = 1,  comm = 1, prod = 0, },
-			{ prob = 50, main = 1, agri = 1,  comm = 0, prod = 1, },
-			{ prob = 50, main = 1, agri = 0,  comm = 1, prod = 1, },
-			{ prob = 50, main = 3, agri = 0,  comm = -1, prod = -1, },
-			{ prob = 50, main = 3, agri = -1, comm = 0, prod = -1, },
-			{ prob = 50, main = 3, agri = -1, comm = -1, prod = 0, },
-		},
-	},
-}
-
-DefaultCityDevelopmentVaryParams = 
-{
-	{
-		conditions = { security_more_than = 80, trigger_prob = 50, },
-		methods = 
-		{
-			{ prob = 50, agri = 5, comm = -1, prod = -1, },
-			{ prob = 50, agri = -1, comm = 5, prod = -1, },
-			{ prob = 50, agri = -1, comm = -1, prod = 5, },
-
-			{ prob = 50, agri = 1 },
-			{ prob = 50, comm = 1 },
-			{ prob = 50, prod = 1, },
-
-			{ prob = 50, agri = 1, comm = 0, prod = 0, },
-			{ prob = 50, agri = 0, comm = 1, prod = 0, },
-			{ prob = 50, agri = 1, comm = 1, prod = 1, },
-		},		
-	},
-	{
-		conditions = { security_more_than = 60, trigger_prob = 100, },
-		methods = 
-		{
-			{ prob = 50, agri = 2, comm = 1, prod = 0, },
-			{ prob = 50, agri = 2, comm = 0, prod = 1, },
-			{ prob = 50, agri = 1, comm = 2, prod = 0, },
-			{ prob = 50, agri = 0, comm = 2, prod = 1, },
-			{ prob = 50, agri = 1, comm = 0, prod = 2, },
-			{ prob = 50, agri = 0, comm = 1, prod = 2, },
-
-			{ prob = 50, agri = 0, comm = 0, prod = 2, },
-		},
-	},
-	{
-		conditions = { security_more_than = 40, trigger_prob = 100, },
-		methods = 
-		{
-			-- -3 ~ 1
-			{ prob = 50, agri = 3, comm = -1, prod = -1, },
-			{ prob = 50, agri = -1, comm = 3, prod = -1, },
-			{ prob = 50, agri = -1, comm = -1, prod = 3, },
-			{ prob = 50, agri = -2, },
-			{ prob = 50, comm = -2, },
-			{ prob = 50, prod = -2, },
-			{ prob = 50, agri = -1, comm = -1, prod = -1, },
-		},		
-	},
-	{
-		conditions = { security_more_than = 0, trigger_prob = 100, },
-		methods = 
-		{
-			-- -6 ~ -5
-			{ prob = 20, agri = -2, comm = -2, prod = -2, },
-			{ prob = 40, agri = -3, comm = -1, prod = -1, },
-			{ prob = 40, agri = -1, comm = -3, prod = -1, },
-			{ prob = 40, agri = -1, comm = -1, prod = -3, },
-		},
-	},
-	{
-		conditions = { insiege = true, trigger_prob = 100, },
-		methods = 
-		{
-			{ prob = 50, agri = -2, comm = -2, prod = -2, },
-		},
-	},
-}
-
 --------------------------------------------
 --
 
 DefaultJobPromoteData = 
 {
+	--[[
 	OFFICER           = { contribution = 0, service = 0 },
 	CIVIAL_OFFICIAL   = { contribution = 100, service = 0 },
 	MILITARY_OFFICER  = { contribution = 100, service = 0 },
@@ -926,6 +643,7 @@ DefaultJobPromoteData =
 	MONOPOLY          = { contribution = 10000, service = 1800 },
 	SCIENTIST         = { contribution = 10000, service = 1800 },
 	INQUISITOR        = { contribution = 10000, service = 1800 },
+	]]
 }
 
 DefaultCharaPromoteMethod = 
@@ -1073,14 +791,21 @@ DefaultPactCond =
 		time  = 180,
 		has_opinion    = "AT_WAR",
 		duration_above = 180,
-		prob           = 50,
+		prob           = 35,
 	},
 	{
 		pact  = "PEACE",
 		time  = 180,
 		has_opinion    = "AT_WAR",
 		duration_above = 360,
-		prob           = 100,
+		prob           = 70,
+	},
+	{
+		pact  = "PEACE",
+		time  = 180,
+		has_opinion    = "AT_WAR",
+		duration_above = 1080,
+		prob           = 95,
 	},
 
 	{
@@ -1121,6 +846,115 @@ DefaultPactCond =
 }
 
 --------------------------------------------------------
+--Chara
+
+DefaultCharaTrait = 
+{
+	LIBIDO       =
+	{
+		SELFISH       = 40,
+		IRRITABLE     = 40,
+		INSIDIOUS     = 40,
+		DISPASSIONATE = -40,		
+		LOVE_MONEY    = 40,
+		LOVE_HONOR    = 40,
+	},
+	SEXLESS     =
+	{
+		SELFISH       = 40,
+		AGGRESSIVE    = 60,
+		CONSERVATIVE  = 100,
+		IRRITABLE     = -40,
+		INSIDIOUS     = 40,
+		IRRITABLE     = -40,
+		DISPASSIONATE = 40,
+		LOVE_MONEY    = -40,
+		LOVE_HONOR    = -40,
+	},
+
+	IDEAL        =
+	{
+		AGGRESSIVE    = 20,
+		HARDWORK      = 40,
+		CAREFUL       = -50, 
+		CARELESS      = 50,
+		INSIDIOUS     = -40,
+		NOBEL         = 50,
+		INSIDIOUS     = 20,
+		DISPASSIONATE = -40,
+		LOVE_MONEY    = -40,
+		LOVE_HONOR    = -40,
+	},
+	REALISM      =
+	{
+		CONSERVATIVE  = 20,
+		HARDWORK      = 40,
+		CAREFUL       = 50, 
+		CARELESS      = -50,
+		INSIDIOUS     = 40,
+		NOBEL         = -50,
+		INSIDIOUS     = -20,
+		DISPASSIONATE = 40,
+		LOVE_MONEY    = 50,
+		LOVE_HONOR    = 50,
+	},
+	ACTIVELY     =
+	{
+		AGGRESSIVE   = 50,
+		HARDWORK     = 20,
+		IRRITABLE    = 30,
+		CONSERVATIVE = -100,
+		LOVE_MONEY    = 20,
+		LOVE_HONOR    = 20,
+		HARDWORK      = 40,
+		LAZY          = -20,
+	},
+	PASSIVE      =
+	{
+		CONSERVATIVE  = 50,
+		LAZY          = 20,
+		DISPASSIONATE = 30,
+		AGGRESSIVE    = -100,
+		HARDWORK      = -100,
+		LOVE_MONEY    = -20,
+		LOVE_HONOR    = -20,
+	},
+	STRONG       =
+	{
+		CAREFUL       = -50,
+		CARELESS      = 50,
+		IRRITABLE     = 40,
+		LOVE_MONEY    = 20,
+		LOVE_HONOR    = 20,
+		SMART         = -40,
+		FOOLISH       = -40,
+	},
+	WEAK         =
+	{
+		CAREFUL       = 50,
+		CARELESS      = -50,
+		IRRITABLE     = -40,
+		SMART         = 40,
+		FOOLISH       = -40,
+	},
+	INTROVERT    =
+	{
+		CAREFUL       = 50,
+		CARELESS      = -50,
+		IRRITABLE     = -50,
+		DISPASSIONATE = 50,
+		LOVE_HONOR    = 40,
+	},
+	EXTROVERT    =
+	{
+		CARELESS      = 50,
+		CAREFUL       = -50,
+		IRRITABLE     = 40,
+		DISPASSIONATE = -40,
+		LOVE_MONEY    = 40,
+		LOVE_HONOR    = 40,
+	},
+}
 
 --"prerequisite" means these condition should always be satisfied
 --"traits" means one of every subset conditions should be satisfied
@@ -1220,6 +1054,13 @@ DefaultCharaSkill =
 		effects = { SIEGE_COMBAT_BONUS = 150, },
 		prerequisite = { pot_above, exp_above = 100 },
 		traits = { { "STRONG", "CAREFUL" } },
+	},
+}
+
+DefaultTraitData = 
+{
+	{
+
 	},
 }
 

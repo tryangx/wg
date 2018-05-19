@@ -1,5 +1,3 @@
-_trait2Skill = {}
-
 -------------------------------------------
 
 function Chara_GetLimitByGroup( group )
@@ -226,15 +224,41 @@ end
 
 local function Chara_LearnSkill( chara )
 	local numOfSkill = Asset_GetListSize( chara, CharaAssetID.SKILLS )
-	local reqNumOfSkill = Asset_Get( self, CharaAssetID.EXP ) / 100
+	local reqNumOfSkill = math.floor( Asset_Get( chara, CharaAssetID.LEVEL ) * 0.1 )
 	if reqNumOfSkill > numOfSkill then
-		return
+		return false
 	end
 
+	local skills = SkillTable_QuerySkillList( chara )
+	local skill = Random_GetListItem( skills )
+	if not skill then
+		--should diagnose what situation( triats ) won't gain new skill
+		Stat_Add( "GainSkill@Failed", chara:ToString( "TRAITS" ), StatType.LIST )
+		return false
+	end
+	InputUtil_Pause( "has")
+	chara:LearnSkill( skill )	
 end
 
 local function Chara_LevelUp( chara )
-	Chara_LearnSkill( chara )
+	if chara:LevelUp() == true then
+		if Chara_LearnSkill( chara ) then
+			Chara_GainTrait( chara )
+		end
+	end
+end
+
+local function Chara_GainTrait( chara )
+	if Random_GetInt_Sync( 1, 100 ) < 20 then
+		return
+	end
+
+	local numOfTrait = Asset_GetDictSize( chara, CharaAssetID.TRAITS )
+	local reqNumOfTrait = 6
+	if numOfTrait > reqNumOfTrait then
+		return
+	end
+	CharaCreator_GenerateTrait( chara, 1 )-- reqNumOfTrait - numOfTrait )
 end
 
 -----------------------------------------------------

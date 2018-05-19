@@ -186,7 +186,6 @@ local function Selector( behavior, node )
 		print( "Selector=" .. ( node.desc or "" ) .. " nodes=" .. #node.children )		
 	end
 	for k, child in ipairs( node.children ) do
-		behavior:SetCurrentNode( node )
 		local fn = behavior.functions[child.type]
 		if fn and fn( behavior, child ) then return true end
 	end	
@@ -198,8 +197,7 @@ local function RandomSelector( behavior, node )
 	end
 	local children = behavior:Copy( node.children )
 	behavior:Shuffle( children )
-	for k, child in pairs( children ) do		
-		behavior:SetCurrentNode( node )
+	for k, child in pairs( children ) do
 		local fn = behavior.functions[child.type]
 		if fn and fn( behavior, child ) then return true end
 	end
@@ -209,8 +207,7 @@ local function Sequence( behavior, node )
 	if DEBUG_LOG and node.desc then
 		--print( "Sequence=" .. ( node.desc or "" ) .. " nodes=" .. #node.children )
 	end
-	for k, child in pairs( node.children ) do		
-		behavior:SetCurrentNode( node )
+	for k, child in pairs( node.children ) do
 		local fn = behavior.functions[child.type]
 		if fn and fn( behavior, child ) == false then
 			return false
@@ -232,7 +229,6 @@ local function Action( behavior, node )
 	if DEBUG_LOG and node.desc then
 		print( "Action=" .. ( node.desc or "" ) .. " nodes=" .. #node.children )
 	end
-	behavior:SetCurrentNode( node )
 	if node.action then
 		if not node.action then
 			print( "No function for ACTION" )
@@ -246,10 +242,7 @@ local function Action( behavior, node )
 	return true
 end
 local function ConditionAction( behavior, node )
-	if DEBUG_LOG and node.desc then 
-		print( "ConditionAction=" .. ( node.desc or "" ) .. " nodes=" .. #node.children )		
-	end
-	behavior:SetCurrentNode( node )
+	if DEBUG_LOG and node.desc then print( "ConditionAction=" .. ( node.desc or "" ) .. " nodes=" .. #node.children ) end
 	if node.condition and node.condition() then	
 		if node.action then node.action( node.params ) end
 		return true
@@ -258,34 +251,24 @@ local function ConditionAction( behavior, node )
 end
 
 local function Successor( behavior, node )
-	if DEBUG_LOG and node.desc then 
-		print( "Successor=" .. ( node.desc or "" ) .. " nodes=" .. #node.children )		
-	end
-	behavior:SetCurrentNode( node )
-	behavior:Run( node:GetFirstChild() )
+	if DEBUG_LOG and node.desc then print( "Successor=" .. ( node.desc or "" ) .. " nodes=" .. #node.children )	end
+	local child = node:GetFirstChild()
+	if child then behavior:Run( child ) end
 	return true
 end
 local function Failure( behavior, node )
-	if DEBUG_LOG and node.desc then 
-		print( "Failure=" .. ( node.desc or "" ) .. " nodes=" .. #node.children )		
-	end
-	behavior:SetCurrentNode( node )
-	behavior:Run( node:GetFirstChild() )
+	if DEBUG_LOG and node.desc then print( "Failure=" .. ( node.desc or "" ) .. " nodes=" .. #node.children ) end
+	local child = node:GetFirstChild()
+	if child then behavior:Run( child ) end
 	return false
 end
 local function Negate( behavior, node )
-	if DEBUG_LOG and node.desc then 
-		print( "Negate=" .. ( node.desc or "" ) .. " nodes=" .. #node.children )		
-	end
-	behavior:SetCurrentNode( node )	
+	if DEBUG_LOG and node.desc then print( "Negate=" .. ( node.desc or "" ) .. " nodes=" .. #node.children ) end
 	return not behavior:Run( node:GetFirstChild() )
 end
 
 local function Filter( behavior, node )
-	if DEBUG_LOG and node.desc then 
-		print( "Filter=" .. ( node.desc or "" ) .. " nodes=" .. #node.children )		
-	end
-	behavior:SetCurrentNode( node )
+	if DEBUG_LOG and node.desc then print( "Filter=" .. ( node.desc or "" ) .. " nodes=" .. #node.children ) end
 	return node.condition and node.condition( node.params )
 end
 
@@ -306,26 +289,20 @@ function Behavior:__init( ... )
 	self.functions[BehaviorNodeType.FILTER] = Filter
 end
 
-function Behavior:SetCurrentNode( node )
-	self._checkNode = node
-end
-
-function Behavior:GetCurrentNode()
-	return self._checkNode
-end
-
 function Behavior:Run( node )
 	if not node then
 		error( "invalid behavior node" )
 		return false
 	end
 	
-	self:SetCurrentNode( node )
-	
-	--if DEBUG_LOG and node.desc then print( "desc=", node.desc, " nodes=" .. #node.children ) end	
+	if DEBUG_LOG and node.desc then
+		print( "desc=", node.desc, " nodes=" .. #node.children )
+	end
 	
 	local func = self.functions[node.type]
-	if func then return func( self, node ) end
+	if func then
+		return func( self, node )
+	end
 	
 	print( "Invalid Node Type=", node.type, func )
 	return false
@@ -399,11 +376,29 @@ function Behavior_Test()
 		]]
 	}
 
-	local tree1 = BehaviorNode( true )
-	tree1:BuildTree( data3 )
-	local tree2 = BehaviorNode( true )
-	tree2:BuildTree( data4 )
+	--decorator
+	data5 = 
+	{
+		type = "SEQUENCE", children = 
+		{
+			{ type = "NEGATE", children = 
+				{
+					{ type = "FILTER", condition = function ( ... )
+						print( "filter return true" )
+						return true
+					end },
+				},
+			},			
+			{ type = "FILTER", condition = function ( ... )
+					print( "second step, should be here" )
+				end
+			},
+			{ type = "FAILURE" },
+		},
+	}
+
+	local tree = BehaviorNode( true )
+	tree:BuildTree( data5 )
 	bev = Behavior()
-	bev:Run( tree1 )
-	bev:Run( tree2 )
+	bev:Run( tree )
 end

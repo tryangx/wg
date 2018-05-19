@@ -17,3 +17,10 @@ require "ProfileUtility"
 require "RandomizerUtility"
 require "PathUtility"
 require "StringUtility"
+
+-----------------------------------
+require "socket"
+function Util_Sleep( time )
+   socket.select( nil, nil, time )
+end
+-----------------------------------

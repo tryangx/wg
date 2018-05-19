@@ -16,7 +16,27 @@ end
 -----------------------------------------------
 
 function City_GetPopuParams( city )
-	return Scenario_GetData( "CITY_POPUSTRUCTURE_PARAMS" )[1]
+	local params = Scenario_GetData( "CITY_POPUSTRUCTURE_PARAMS" )[1]
+	if not params.POPU_NEED_RATIO.req_total or not params.POPU_NEED_RATIO.max_total then
+		local req_total = 0
+		local max_total = 0
+		for _, ratio in pairs( params.POPU_NEED_RATIO ) do
+			req_total = req_total + ratio.req
+			max_total = max_total + ratio.max
+		end
+		params.POPU_NEED_RATIO.req_total = req_total
+		params.POPU_NEED_RATIO.max_total = max_total
+		--InputUtil_Pause( "need ratio=" .. params.POPU_NEED_RATIO.req_total, params.POPU_NEED_RATIO.max_total )
+	end
+	if not params.POPU_CONSUME_FOOD._total then
+		local total = 0	
+		for _, ratio in pairs( params.POPU_CONSUME_FOOD ) do
+			total = total + ratio * params.POPU_NEED_RATIO.req_total
+		end
+		params.POPU_CONSUME_FOOD._total = total
+		--InputUtil_Pause( "food cons=" .. params.POPU_CONSUME_FOOD._total )
+	end
+	return params
 end
 
 function City_GetPopuTypeByDevIndex( id )
@@ -30,6 +50,7 @@ function City_GetPopuTypeByDevIndex( id )
 	return "NONE"
 end
 
+-- !!! VERY IMPORTANT
 -- Measure how many population in every career required by the development index.
 function City_NeedPopu( city, popuname )
 	local cityparams = City_GetPopuParams( city )
@@ -39,7 +60,7 @@ function City_NeedPopu( city, popuname )
 	--some career needs the fixed ratio of the total population
 	if needparam[popuname] then
 		local popu   = Asset_Get( city, CityAssetID.POPULATION )
-		return math.floor( needparam[popuname] * popu )
+		return math.floor( needparam[popuname].req * popu )
 	end
 
 	--some career needs the number of population per development index 
@@ -74,44 +95,45 @@ end
 -------------------------------------------------------
 
 --collet material
-local function City_Produce( city )
+function City_Produce( city )
 	local income = 0
 	local popustparams = City_GetPopuParams( city )
-	for k, v in pairs( CityPopu ) do
-		if popustparams.POPU_PRODUCE[k] then
-			income = income + popustparams.POPU_PRODUCE[k] * v
+	for type, _ in pairs( CityPopu ) do
+		local value = popustparams.POPU_PRODUCE[type]
+		if value then
+			local num = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu[type] )
+			income = income + num * value
 		end
 	end
 	Asset_Plus( city, CityAssetID.MATERIAL, income )
-	--InputUtil_Pause( "City=" .. city.name .. " collect mat=" .. income .. " Material=" .. Asset_Get( city, CityAssetID.MATERIAL ) )	
+
+	Stat_Add( "ProduceMat@" .. city.name, income, StatType.ACCUMULATION )
+	--InputUtil_Pause( "City=" .. city.name .. " produce mat=" .. income .. " Material=" .. Asset_Get( city, CityAssetID.MATERIAL ) )	
 end
 
---collect money
-local function City_CollectTax( city )
+function City_GetFoodIncome( city )
 	local income = 0
 	local popustparams = City_GetPopuParams( city )
-	for k, v in pairs( CityPopu ) do
-		if popustparams.POPU_TAX[k] then
-			income = income + popustparams.POPU_TAX[k] * v
+	local agri         = Asset_Get( city, CityAssetID.AGRICULTURE )
+	local maxAgri      = Asset_Get( city, CityAssetID.MAX_AGRICULTURE )
+	--0.5 ~ 1.5
+	local modifer      = ( agri + agri ) / maxAgri
+	for type, _ in pairs( CityPopu ) do
+		local value = popustparams.POPU_HARVEST[type]
+		if value then
+			local num = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu[type] )
+			income = income + modifer * num * value
 		end
 	end
-	Asset_Plus( city, CityAssetID.MONEY, income )
-	--InputUtil_Pause( "City=" .. city.name .. " collect tax=" .. income .. " Money=" .. Asset_Get( city, CityAssetID.MONEY ) )	
-	return income
+	return math.ceil( income )
 end
 
 --collect food
-local function City_Harvest( city )
-	local income = 0
-	local popustparams = City_GetPopuParams( city )
-	for k, v in pairs( CityPopu ) do
-		if popustparams.POPU_HARVEST[k] then
-			income = income + popustparams.POPU_HARVEST[k] * v
-		end
-	end	
-	Asset_Plus( city, CityAssetID.FOOD, income )
-	--InputUtil_Pause( "City=" .. city.name .. " collect food=" .. income .. " Food=" .. Asset_Get( city, CityAssetID.FOOD ) )
-	return income
+function City_Harvest( city )
+	local income = City_GetFoodIncome( city )
+
+	city:ReceiveFood( income )
+	Stat_Add( "FoodHarvest@" .. city.name, income, StatType.ACCUMULATION )
 end
 
 --------------------------------------
@@ -127,9 +149,8 @@ function City_InitPopuStructure( city )
 	local nums = {}	
 	local notpleb = 0
 	for k, v  in pairs( CityPopu ) do
-		if not plebparam[k] then
-			--print( k, v, needparam[k], initparam[k] )
-			local num = math.floor( popu * needparam[k] * Random_GetInt_Sync( initparam[k].min, initparam[k].max ) * 0.01 )
+		if not plebparam[k] and initparam[k] then
+			local num = math.floor( popu * needparam[k].req * Random_GetInt_Sync( initparam[k].min, initparam[k].max ) * 0.01 )
 			nums[v] = num
 			notpleb = notpleb + num
 		end
@@ -155,7 +176,7 @@ function City_InitPopuStructure( city )
 	--city:DumpPopu()
 end
 
-local function City_PopuConv( city )
+function City_PopuConv( city )
 	local security = Asset_Get( city, CityAssetID.SECURITY )
 	local dissatisfaction = Asset_Get( city, CityAssetID.DISSATISFACTION )
 
@@ -222,7 +243,7 @@ local function City_PopuConv( city )
 	--InputUtil_Pause()
 end
 
-local function City_Mental( city )	
+function City_Mental( city )	
 	local list     = Asset_GetList( city, CityAssetID.POPU_STRUCTURE )
 	local popu     = Asset_Get( city, CityAssetID.POPULATION )
 	local soldier  = list[CityPopu.RESERVES] or 0
@@ -281,7 +302,7 @@ local function City_Mental( city )
 	--if security < satisfaction then InputUtil_Pause() end
 end
 
-local function City_PopuGrow( city )
+function City_PopuGrow( city )
 	local rate  = 1 / GlobalTime.MONTH_PER_YEAR
 	local population = Asset_Get( city, CityAssetID.POPULATION )
 	local growthRate = Random_GetInt_Sync( PopulationParams.GROWTH_MIN_RATE , PopulationParams.GROWTH_MAX_RATE )
@@ -308,7 +329,7 @@ end
 
 --------------------------------------
 
-local function City_CheckFlag( city )	
+function City_CheckFlag( city )	
 	--development evalution
 	local score = 0
 	local security = Asset_Get( city, CityAssetID.SECURITY )
@@ -365,13 +386,14 @@ end
 
 --------------------------------------
 
-local function City_Event( city )	
+function City_Event( city )	
 	--System_Get( SystemType.EVENT_SYS ):Trigger( city )
 end
 
 --------------------------------------
 
-local function City_IncreaseDevelopment( city, params )
+function City_IncreaseDevelopment( city, params )
+	if 1 then return end
 	if params.agri then
 		local cur = Asset_Get( city, CityAssetID.AGRICULTURE )
 		local max = Asset_Get( city, CityAssetID.MAX_AGRICULTURE )
@@ -392,7 +414,7 @@ local function City_IncreaseDevelopment( city, params )
 	end
 end
 
-local function City_DevelopmentVary( city )
+function City_DevelopmentVary( city )
 	local security = Asset_Get( city, CityAssetID.SECURITY )
 	local isSiege = Asset_GetListItem( city, CityAssetID.STATUSES, CityStatus.IN_SIEGE )
 
@@ -467,15 +489,119 @@ function City_Develop( city, progress, id )
 	--InputUtil_Pause( "city dev", agri, comm, prod )
 end
 
-function City_LevyTax( city, progress )
-	local income = 0
+--Income
+-- 1.personal
+-- 2.commerce
+-- 3.trade
+
+function City_CalcPersonalTax( city )
+	local tax = 0
 	local popustparams = City_GetPopuParams( city )
-	for k, v in pairs( CityPopu ) do
-		if popustparams.POPU_TAX[k] then
-			income = income + popustparams.POPU_TAX[k] * v
+	for type, _ in pairs( CityPopu ) do
+		local value = popustparams.POPU_PERSONAL_TAX[type]
+		if value then
+			local num = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu[type] )
+			if num then
+				tax = tax + value * num
+				--print( MathUtil_FindName( CityPopu, type ) .. "=" .. num .. "*" .. value )
+			end
 		end
 	end
+	return math.ceil( tax )
+end
+
+function City_CalcCommerceTax( city )
+	local tax = 0
+	local popustparams = City_GetPopuParams( city )
+	local comm     = Asset_Get( city, CityAssetID.COMMERCE )
+	local maxComm  = Asset_Get( city, CityAssetID.MAX_COMMERCE )
+	local commMod  = ( comm + comm ) / maxComm
+	for type, _ in pairs( CityPopu ) do
+		local value = popustparams.POPU_COMMERCE_TAX[type]
+		if value then
+			local num = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu[type] )
+			tax = tax + commMod * num * value
+		end
+	end
+	return math.ceil( tax )
+end
+
+function City_CalcTradeTax( city )
+	local tax = 0
+	local popustparams = City_GetPopuParams( city )
+	local prod         = Asset_Get( city, CityAssetID.PRODUCTION )
+	local maxProd      = Asset_Get( city, CityAssetID.MAX_PRODUCTION )
+	local group = Asset_Get( city, CityAssetID.GROUP )
+	Asset_ForeachList( city, CityAssetID.ADJACENTS, function ( adjaCity )		
+		local factor = 0.5
+		local adjaGroup = Asset_Get( adjaCity, CityAssetID.GROUP )
+		if adjaGroup ~= group then
+			factor = factor + 0.5
+		end
+		if Dipl_IsAtWar( adjaGroup, group ) == true then
+			factor = factor * 0.25
+		end
+		local curProd = math.min( prod, Asset_Get( adjaCity, CityAssetID.PRODUCTION ) )
+		local bonus = curProd / maxProd
+		for type, _ in pairs( CityPopu ) do
+			local value = popustparams.POPU_TRADE_TAX[type]
+			if value then
+				local num = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu[type] )
+				tax = tax + num * bonus * value
+			end
+		end
+	end )
+	return math.ceil( tax )
+end
+
+function City_GetMonthTax( city )
+	local income, tradeTax, personalTax, commerTax = 0, 0, 0, 0
+	local month = g_Time:GetMonth()
+	if month == 3 or month == 6 or month == 9 or month == 12 then		
+		tradeTax = City_CalcTradeTax( city )
+		income = income + tradeTax
+	end
+	if month == 1 then
+		personalTax = City_CalcPersonalTax( city )	
+		income = income + personalTax
+	end
+	commerceTax = City_CalcCommerceTax( city )
+	income = income + commerceTax
+	return income
+end
+
+function City_GetYearTax( city )
+	local income = 0
+	income = income + City_CalcPersonalTax( city )
+	income = income + City_CalcCommerceTax( city ) * 12
+	income = income + City_CalcTradeTax( city ) * 4
+	return income
+end
+
+--collect money
+function City_CollectTax( city )	
+	local income = City_GetMonthTax( city )
+
+	city:ReceiveMoney( income )
+	Stat_Add( "CollectTax@City_" .. city.name, income, StatType.ACCUMULATION )
+end
+
+function City_PaySalary( city )
+	local salary = city:GetSalary( city )
+	local corpsSalary = city:GetCorpsSalary()
+	salary = salary + corpsSalary
+	city:UseMoney( salary )	
+	Stat_Add( "PaySalary@City_" .. city.name, salary, StatType.ACCUMULATION )
+end
+
+--levy money
+function City_LevyTax( city, progress )
+	local income = 0
+	income = income + City_CalcPersonalTax( city )
+	
+	--bonus by progress
 	income = math.ceil( income * math.min( 2.5, math.max( 0.2, progress * 0.01 ) ) )
+
 	Asset_Plus( city, CityAssetID.MONEY, income )
 	Stat_Add( city.name .. "@LevyTax", "money=" .. income, StatType.LIST )
 	--Debug_Log( "City=" .. city.name .. " Levy tax=" .. income .. " Money=" .. Asset_Get( city, CityAssetID.MONEY ) )	
@@ -540,14 +666,21 @@ function CitySystem:Update()
 		end
 
 		if day == 1 then
-			City_Produce( city )
+			--City_Produce( city )
 		end
 		
-		if day == 1 then
+		if day == 1 then			
 			City_CollectTax( city )
+			City_PaySalary( city )
 		end
 
-		if month % 9 == 0 then City_Harvest( city ) end
+		if month == 9 and day == 1 then
+			City_Harvest( city )
+		end
+
+		if day == 1 then
+			City_Produce( city )
+		end
 
 		if day % 10 == 0 then City_Mental( city ) end		
 
@@ -561,5 +694,19 @@ function CitySystem:Update()
 		if day % 10 == 0 then
 			City_CheckFlag( city )
 		end
-	end )
+
+		if day == 1 then
+			if month == 1 then				
+				--print( city:ToString( "BUDGET_YEAR" ) )
+				--print( city:ToString( "GROWTH" ) )
+				--print( city:ToString( "POPULATION" ) )
+				--print( city:ToString( "SUPPLY" ) )
+				--print( city:ToString( "TAX" ) )
+			end
+			--print( city:ToString( "BUDGET_MONTH" ) )			
+		end
+	end )	
+	if month == 1 and day == 1 then
+		--InputUtil_Pause( g_Time:ToString() )
+	end
 end

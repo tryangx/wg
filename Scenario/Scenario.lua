@@ -1,11 +1,15 @@
-require "DefaultDefine"
-require "DefaultData"
-require "DefaultCombatData"
-
 --scenario
 require "scenario_test"
 require "scenario_threekindoms"
 require "scenario_chuhan"
+
+
+FeatureOption =
+{
+	DISABLE_FOOD_SUPPLY = nil,
+	DISABLE_GOAL        = nil,
+	DISABLE_CONQUER     = nil,
+}
 
 ScenarioData = 
 {
@@ -26,6 +30,7 @@ ScenarioData =
 	--datas
 	CHARA_PROMOTE_DATA    = DefaultJobPromoteData,
 	CHARA_PROMOTE_METHOD  = DefaultCharaPromoteMethod,
+	CHARA_TRAIT_DATA      = DefaultCharaTrait,
 
 	RELATION_OPINION      = DefaultRelationOpinion,
 	RELATION_PACT         = DefaultPactCond,	
@@ -47,23 +52,38 @@ ScenarioData =
 	TECH_DATA        = DefaultTechData,
 
 	--Scenario 
+	CHARA_SKILL_DATA = DefaultCharaSkill,
+
+	--single city
+	--[[
+	BASE_DATA     = TEST_BaseData,
+	MAP_DATA      = TEST_MapData,
+	GROUP_DATA    = TEST_GroupData,
+	CITY_DATA     = TEST_CityData,
+	CHARA_DATA    = TEST_CharaData,	
+
+	TROOP_DATA    = TEST_TroopTable,
+	WEAPON_DATA   = TEST_WeaponTable,
+	CORPS_TEMPLATE = TEST_CorpsTemplate,
+	--]]
+
 	--[[
 	BASE_DATA     = RTK_BaseData,
 	MAP_DATA      = RTK_MapData,
 
 	GROUP_DATA    = RTK_GroupData,
-	CITY_DATA     = Test_CityData,
-	--CITY_DATA     = RTK_CityData,
+	CITY_DATA     = RTK_CityData,
 	CHARA_DATA    = RTK_CharaData,	
+
 	CORPS_DATA    = nil,
 	TROOP_DATA    = RTK_TroopTable,
 	WEAPON_DATA   = RTK_WeaponTable,
 	CORPS_TEMPLATE = RTK_CorpsTemplate,
 
 	EVENT_DATA    = RTK_EventData,
-	]]
-	CHARA_SKILL_DATA = DefaultCharaSkill,
+	--]]
 
+	--[[]]
 	BASE_DATA     = CHUHAN_BaseData,
 	MAP_DATA      = CHUHAN_MapData,
 
@@ -76,6 +96,7 @@ ScenarioData =
 	CORPS_TEMPLATE = CHUHAN_CorpsTemplate,
 
 	EVENT_DATA    = CHUHAN_EventData,
+	--]]
 }
 
 ------------------------------------------------------
@@ -89,6 +110,8 @@ function Scenario_InitData()
 	for id, method in pairs( _Scenario.CHARA_PROMOTE_METHOD ) do
 		_Scenario.CHARA_PROMOTE_METHOD[id] = MathUtil_ConvertDataStringToID( CharaJob, method )
 	end
+
+	_Scenario.CHARA_TRAIT_DATA = MathUtil_ConvertKeyToID( CharaTraitType, _Scenario.CHARA_TRAIT_DATA )	
 
 	_Scenario.TASK_STEP_DATA = MathUtil_ConvertKeyToID( TaskType, _Scenario.TASK_STEP_DATA )
 	for id, list in pairs( _Scenario.TASK_STEP_DATA ) do

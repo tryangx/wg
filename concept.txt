@@ -1,7 +1,8 @@
 To Do List
 
 1. Finish Chara Contribution Progress & Level Up System
-2.
+   Trigger Gain Trait in Situation, Test it in Data Configure whether is match other condition and probability
+2. 
 
 ------------------------------------------------
 

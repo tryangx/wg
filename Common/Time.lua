@@ -2,9 +2,10 @@
 -- Time
 --------------------------
 
-local DAY_IN_MONTH   = 30
-local MONTH_IN_YEAR  = 12
-local HOUR_IN_DAY    = 24
+DAY_IN_MONTH   = 30
+MONTH_IN_YEAR  = 12
+DAY_IN_YEAR    = MONTH_IN_YEAR * DAY_IN_MONTH
+HOUR_IN_DAY    = 24
 
 Simple_DayPerMonth = 
 {
@@ -146,6 +147,10 @@ function Time:CreateCurrentDateDesc( byDay, byMonth )
 	if not byMonth then byMonth = true end
 	if not byDay then byDay = true end
 	return self:CreateDateDesc( self.year, self.month, self.day, self.beforeChrist, byDay, byMonth )
+end
+
+function Time:ToString()
+	return self:CreateCurrentDateDesc()
 end
 
 -----------------------------

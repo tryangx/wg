@@ -102,7 +102,7 @@ function Entity_Number( type )
 	return mng:GetCount()
 end
 
-function Entity_GetIndex( type, index )
+function Entity_GetByIndex( type, index )
 	local mng = Entity_GetManager( type )
 	return mng:GetIndexData( index )
 end
@@ -179,6 +179,9 @@ function Entity_SetAssetAttrib( entity, attribs )
 end
 
 function Entity_GetAssetAttrib( entity, id )
+	if typeof( entity ) == "number" then
+		error( "entity=" .. entity .. " is number" )
+	end
 	local type = entity.type
 	if not _entityDatas[type] then
 		return nil

@@ -7,8 +7,9 @@
 --------------------------------------------------------------
 
 function Dipl_IsAtWar( red, blue )
-	if red == blue then return false end
-	--if 1 then return true end
+	if not red or red == blue then
+		return false
+	end
 
 	if blue then
 		local relation = System_Get( SystemType.DIPLOMACY_SYS ):GetRelation( red, blue )
@@ -18,63 +19,116 @@ function Dipl_IsAtWar( red, blue )
 	return System_Get( SystemType.DIPLOMACY_SYS ):HasOpinion( red, RelationOpinion.AT_WAR )
 end
 
-function Dipl_CanDeclareWar( relation )
+function Dipl_CanDeclareWar( relation, red )
 	if relation:HasOpinion( RelationOpinion.AT_WAR ) == true then return false end
 
 	--InputUtil_Pause("can dec", relation:ToString("ALL") )
+	if relation:HasPact( RelationPact.PEACE ) == true then return false end
 	if relation:HasPact( RelationPact.NO_WAR ) == true then return false end
 	if relation:HasPact( RelationPact.ALLY ) == true then return false end
 	if relation:HasPact( RelationPact.PROTECT ) == true then return false end
-	return true
+
+	local enemyPower = 0
+	local relations = Dipl_GetRelations( red )
+	for blue, rel in pairs( relations ) do
+		enemyPower = enemyPower + Intel_GetGroupMilPower( red, blue )
+	end
+
+	local blue = relation:GetOppGroup( red )
+	local redPower = red:GetMilitaryPower()
+	local bluePower = Intel_GetGroupMilPower( red, blue )
+	local score = 0
+	local powerScore = 
+	{
+		{ ratio = 4,   score = 90 },
+		{ ratio = 2,   score = 70 },
+		{ ratio = 1.5, score = 50 },
+		{ ratio = 1,   score = 30 },
+		{ ratio = 0.5, score = 0 },
+		{ ratio = 0,   score = -50 },
+	}
+	local ratio = redPower * 100 / ( bluePower + enemyPower )
+	local item = MathUtil_Approximate( ratio, powerScore, "ratio" )
+	score = score + item.score
+
+	if relation:HasOpinion( RelationOpinion.WAS_AT_WAR ) then
+		score = score + 10
+	end
+
+	if relation:HasOpinion( RelationOpinion.OLD_ENEMY ) then
+		score = score + 20
+	end
+
+	if redPower > 0 or enemyPower > 0 or bluePower > 0 then
+		print( "ePow=" .. enemyPower, "bPow=" .. bluePower, "rPow=" .. redPower, "score=" .. score )
+	end
+
+	if Random_GetInt_Sync( 1, 100 ) < score then
+		--InputUtil_Pause( red.name, "DeclareWar", blue.name )
+		return true
+	end
+
+	return false
 end
 
 function Dipl_GetPossiblePact( relation, pactList )
 	local datas = Scenario_GetData( "RELATION_PACT" )
 	local attitude = Asset_Get( relation, RelationAssetID.ATTITUDE )	
-	for _, item in ipairs( datas ) do
-		local match = true
-		-- prob, attitude_above, has_opinion, no_opinion, duration_above, has_pact, 
-		if match == true and item.prob and Random_GetInt_Sync( 1, 100 ) > item.prob then
-			match = false
-		end		
-		if match == true and item.attitude_above and attitude < item.attitude_above then
-			match = false
-		end
-		local opinion
-		if match == true and item.no_opinion then
-			opinion = relation:GetOpinion( RelationOpinion[item.no_opinion] )
-			if opinion then
+	for _, item in ipairs( datas ) do		
+		if relation:HasPact( item.pact ) == true then
+		else
+			local match = true
+			-- prob, attitude_above, has_opinion, no_opinion, duration_above, has_pact, 
+			if match == true and item.prob and Random_GetInt_Sync( 1, 100 ) > item.prob then
 				match = false
 			end
-		end
-		if match == true and item.has_opinion then
-			opinion = relation:GetOpinion( RelationOpinion[item.has_opinion] )
-			if not opinion then
+			if item.pact == "PEACE" and match == true then
+				--InputUtil_Pause( "prob=", item.prob, match, g_Time:ToString() )
+			end
+			if match == true and item.attitude_above and attitude < item.attitude_above then
 				match = false
 			end
-		end
-		if match == true and item.duration_above and opinion then
-			if opinion.duration < item.duration_above then
-				match = false
+			local opinion
+			if match == true and item.no_opinion then
+				opinion = relation:GetOpinion( RelationOpinion[item.no_opinion] )
+				if opinion then
+					match = false
+				end
 			end
-		end
-		local pact
-		if match == true and item.has_pact then
-			pact = relation:GetPact( RelationPact[item.has_pact] )
-			if not pact then
-				match = false
+			if match == true and item.has_opinion then
+				opinion = relation:GetOpinion( RelationOpinion[item.has_opinion] )
+				if not opinion then
+					match = false
+				end
 			end
-		end
-		if match == true and item.no_pact then
-			pact = relation:GetPact( RelationPact[item.no_pact] )
-			if pact then
-				match = false
+			if match == true and item.duration_above and opinion then
+				if opinion.duration < item.duration_above then
+					match = false
+				end
 			end
-		end
-		if match == true then
-			table.insert( pactList, { pact = item.pact, time = item.time } )
+			local pact
+			if match == true and item.has_pact then
+				pact = relation:GetPact( RelationPact[item.has_pact] )
+				if not pact then
+					match = false
+				end
+			end
+			if match == true and item.no_pact then
+				pact = relation:GetPact( RelationPact[item.no_pact] )
+				if pact then
+					match = false
+				end
+			end
+			if match == true then
+				--if item.pact == "PEACE" then InputUtil_Pause( relation:ToString( "ALL" ) ) 		end			
+				table.insert( pactList, { pact = item.pact, time = item.time } )
+			end
 		end
 	end
+end
+
+function Dipl_GetRelation( red, blue )
+	return System_Get( SystemType.DIPLOMACY_SYS ):GetRelation( red, blue )
 end
 
 function Dipl_GetRelations( group )

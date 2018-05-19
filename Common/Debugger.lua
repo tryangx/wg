@@ -65,8 +65,9 @@ end
 --		DBG_Watch( "test", "vip", DBGLevel.IMPORTANT )
 --
 function DBG_Watch( key, content, lv )
-	if not lv then lv = DBGLevel.NORMAL end	
-	local curlv = _watchers[key] or DBGLevel.IMPORTANT
+	if not lv then lv = DBGLevel.NORMAL end
+	--to check all, make "curlv" lower than given "lv"
+	local curlv = _watchers[key] or DBGLevel.NORMAL
 
 	if lv == DBGLevel.FATAL then
 		InputUtil_Pause( content )
@@ -80,7 +81,7 @@ end
 
 function DBG_SetWatcher( key, lv )
 	if MathUtil_FindName( DBGLevel, lv ) == "" then
-		InputUtil_Pause( "wrong key-->" .. key )
+		error( "Invalid watcher-->" .. key, lv )
 	end
 	_watchers[key] = lv
 end

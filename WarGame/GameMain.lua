@@ -56,7 +56,6 @@ function Game_Init()
 	Entity_Setup( EntityType.CHARA,    Chara )
 	Entity_Setup( EntityType.CORPS,    Corps )
 	Entity_Setup( EntityType.TROOP,    Troop )
-	Entity_Setup( EntityType.SKILL,    Skill )
 	Entity_Setup( EntityType.WEAPON,   Weapon )
 	Entity_Setup( EntityType.COMBAT,   Combat )
 	Entity_Setup( EntityType.MAP,      Map )
@@ -86,7 +85,7 @@ function Game_Init()
 	TacticTable_Load      ( Scenario_GetData( "TACTIC_DATA" ), EntityType )
 	BattlefieldTable_Load ( Scenario_GetData( "BATTLEFIELD_DATA" ), EntityType )
 	WeaponTable_Load      ( Scenario_GetData( "WEAPON_DATA" ), EntityType )
-	SkillTable_Load       ( Scenario_GetData( "WEAPON_DATA" ), EntityType )
+	SkillTable_Load       ( Scenario_GetData( "CHARA_SKILL_DATA" ), EntityType )
 
 	--init weapon pointers
 	TroopTable_Init()
@@ -170,11 +169,14 @@ function Game_Init()
 	Entity_Foreach( EntityType.CITY, function( data )
 		--Entity_Dump( data )
 	end )
+
+	--set watcher
+	DBG_SetWatcher( "Debug_Meeting", DBGLevel.NORMAL )
 end
 
 function Game_Test()
 	--test chara sys
-	--local chara = System_Get( SystemType.CHARA_CREATOR_SYS ):GenerateFictionalChara()
+	--local chara = CharaCreator_GenerateFictionalChara()
 	--Entity_Dump( chara )
 
 	--[[
@@ -262,6 +264,14 @@ function Game_Start()
 		end
 	end )
 
+	Entity_Foreach( EntityType.CITY, function ( entity )
+		--print( entity:ToString( "BUDGET_YEAR" ) )
+		--print( entity:ToString( "GROWTH" ) )
+		print( entity:ToString( "POPULATION" ) )
+		print( entity:ToString( "SUPPLY" ) )
+		--print( entity:ToString( "TAX" ) )	
+	end)		
+
 --	Debug_Normal( "Troop==>" ) Entity_Foreach( EntityType.TROOP, function ( entity ) Debug_Normal( entity:ToString( "ALL" ) ) end )
 	Debug_Normal( "Chara==>" .. Entity_Number( EntityType.CHARA ) ) Entity_Foreach( EntityType.CHARA, function ( entity ) Debug_Normal( entity:ToString( "ALL" ) ) end )
 	Debug_Normal( "Corps==>" .. Entity_Number( EntityType.CORPS ) ) Entity_Foreach( EntityType.CORPS, function ( entity ) Debug_Normal( entity:ToString( "ALL" ) ) end )
@@ -270,5 +280,5 @@ function Game_Start()
 	Debug_Normal( "Task==>" .. Entity_Number( EntityType.TASK ) ) Entity_Foreach( EntityType.TASK, function( entity ) Debug_Normal( entity:ToString(), "exist" ) end )
 	Debug_Normal( "Move==>" .. Entity_Number( EntityType.MOVE ) ) Entity_Foreach( EntityType.MOVE, function( entity ) Debug_Normal( entity:ToString(), "still" ) end )
 
-	InputUtil_Pause( g_Time:CreateCurrentDateDesc(), "win=" .. ( g_winner and g_winner.name or "[NONE]" ) )
+	print( g_Time:CreateCurrentDateDesc(), "win=" .. ( g_winner and g_winner.name or "[NONE]" ) )
 end

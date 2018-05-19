@@ -84,7 +84,11 @@ end
 
 function Troop:ToString( type )
 	local content = "[" .. self.name .. "](" .. self.id .. ")"
-	if type == "SIMPLE" then
+
+	if type == "COMBAT" then
+		content = content .. ( self._combatSide and ( self._combatSide == CombatSide.ATTACKER and "-ATK" or "-DEF" ) or "" )		
+	elseif type == "SIMPLE" then
+
 	elseif type == "BREIF" then
 		content = content .. " n=" .. Asset_Get( self, TroopAssetID.SOLDIER )
 	else
@@ -136,23 +140,16 @@ function Troop:TestGenerate()
 
 end
 
-
-function Troop:Starvation()
+function Troop:Starve()
 	local cur = Asset_GetListItem( self, TroopAssetID.STATUSES, TroopStatus.STARVATION )
 	if not cur then cur = 1 end
-	Asset_SetListItem( self, TroopAssetID.STATUSES, TroopStatus.STARVATION, cur + 1 )
-	--morale reduce
-	Asset_Reduce( self, TroopAssetID.MORALE, cur + cur + 5 )
-	--InputUtil_Pause( self.id, self.name, "Starvation=" .. cur, "mor=" .. Asset_Get( self, TroopAssetID.MORALE ) )
+	Asset_SetListItem( self, TroopAssetID.STATUSES, TroopStatus.STARVATION, math.ceil( cur * 1.5 ) )
 end
 
-function Troop:ConsumeFood( food )
-	--print( self.id, self.name, "consume food=", food )
+function Troop:EatFood( food )
 	local value = Asset_GetListItem( self, TroopAssetID.STATUSES, TroopStatus.STARVATION )
 	if not value or value == 0 then return end
-	
-	value = math.floor( value * 0.5 )
-	Asset_SetListItem( self, TroopAssetID.STATUSES, TroopStatus.STARVATION, value )	
+	Asset_SetListItem( self, TroopAssetID.STATUSES, TroopStatus.STARVATION, math.floor( value * 0.5 ) )
 end
 
 function Troop:GetWeaponBy( name, value )

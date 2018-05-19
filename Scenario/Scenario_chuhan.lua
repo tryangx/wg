@@ -61,7 +61,7 @@ CHUHAN_CharaData =
 		potential   = 80,
 		grade       = "BEST",
 		purpose     = 0,
-		job         = "KING",
+		job         = "LEADER",
 		home        = 100,
 		skills      = { 1000, 1030 },
 		politics    = { 0, 10, 1000 },
@@ -137,7 +137,7 @@ CHUHAN_CharaData =
 		potential   = 90,	
 		grade       = "PERFECT",	
 		purpose     = 0,		
-		job         = "KING",
+		job         = "LEADER",
 		home        = 200,
 		skills      = { 1001, 1010, 1040 },
 		politics    = { 0, 10, 1000 },
@@ -192,9 +192,9 @@ CHUHAN_CityData =
 {
 	[101] = 
 	{
-		name = "Xian Yan",
+		name = "Xian Yang",
 		coordinate = { x = 42, y = 6 },
-		level = 10,
+		level = 16,
 		charas = {},
 		adjacents = { 100, 200 },
 		defenses = { 15000, 10000, 15000 },
@@ -203,7 +203,7 @@ CHUHAN_CityData =
 	{
 		name = "Guan Zhong",
 		coordinate = { x = 36, y = 12 },
-		level = 10,
+		level = 12,
 		charas = { 100, 101, 102, 103, 104 },
 		adjacents = { 101 },
 		defenses = { 15000, 10000, 15000 },
@@ -214,7 +214,16 @@ CHUHAN_CityData =
 		coordinate = { x = 48, y = 12 },
 		level = 10,
 		charas = { 200, 201, 202, 203 },
-		adjacents = { 101 },
+		adjacents = { 101, 201 },
+		defenses = { 15000, 10000, 15000 },
+	},
+	[201] = 
+	{
+		name = "Jiu Jiang",
+		coordinate = { x = 51, y = 16 },
+		level = 4,
+		charas = {},
+		adjacents = { 101, 201 },
 		defenses = { 15000, 10000, 15000 },
 	},
 	--[[

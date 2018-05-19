@@ -14,6 +14,14 @@ MathCompareMethod =
 }
 
 
+function MathUtil_Size( dict )
+	local size = 0
+	for _, _ in pairs( dict ) do
+		size = size + 1
+	end
+	return size
+end
+
 --[[
 	Clamp the given value
 	
@@ -139,13 +147,14 @@ function MathUtil_ToString( source )
 			content = content .. "{"
 			brackets = true
 		elseif typeof( v ) == "number" then
-			content = content .. " " .. k .. "=" .. v
-		end				
-
+			content = content .. k .. "=" .. v .. ","
+		elseif typeof( v ) == "string" then
+			content = content .. v .. ","
+		end
 		if brackets == true then
 			brackets = content .. "}"
 		end
-	end
+	end	
 	return content
 end
 
@@ -282,8 +291,8 @@ end
 	@return return index of the item in the table
 	
 	@usage 
-		table = { 1, 2, 3 }
-		if MathUtil_IndexOf( table, 2 ) then
+		list = { 1, 2, 3 }
+		if MathUtil_IndexOf( list, 2 ) then
 			print( "find" )
 		end
 --]]
@@ -474,10 +483,17 @@ end
 	}
 	print( MathUtil_SumIf( datas2, "prob", 10, "ret" ) )
 	--4
+
+	local datas3 =
+	{
+		prob = 10, { a = 10, b = 15, c = 20 }
+	}
+	print( MathUtil_SumIf( datas3[1] ) )
+	--4	
 --]]
 function MathUtil_SumIf( datas, itemName, itemValue, countName )
 	local ret = 0	
-	for k, data in pairs( datas ) do
+	for _, data in pairs( datas ) do
 		local cur = itemName and data[itemName] or data
 		if not itemValue or cur == itemValue then
 			ret = ret + ( countName and data[countName] or data )
@@ -745,4 +761,86 @@ function MathUtil_ConvertKey2ID( oldDatas, enumlist )
 		newDatas[enumlist[k]] = v
 	end
 	return newDatas
+end
+
+
+--Permutation a list
+--@usage
+--  local list = { "A", "B", "C" }
+--  MathUtil_Permutation( list, 1, #a, function() print( MathUtil_ToString( list ) ) end )
+--  A,B,C
+--  A,C,B  
+--  B,A,C
+--  B,C,A
+--  C,B,A
+--  C,A,B
+function MathUtil_Permutation( list, first, last, fn )
+	if first == last then
+		fn( list )
+		return		
+	end
+
+	function SwapPos( list, p1, p2, comment )
+		if p1 == p2 then return end
+		--print( "#" .. MathUtil_ToString( list ), p1, p2, list[p1], list[p2], comment )
+		local t  = list[p1]
+		list[p1] = list[p2]
+		list[p2] = t
+	end
+
+	for k = first, last do
+		SwapPos( list, k, first )
+		MathUtil_Permutation( list, first + 1, last, fn )
+		SwapPos( list, k, first )
+	end
+end
+
+--Find list item by given value, in default descend, return the item when given value is bigger than item's value
+--@usage
+--[[
+list1 = 
+{
+	{ score = 90, grade = "A", },
+	{ score = 70, grade = "B", },
+	{ score = 50, grade = "C", },
+	{ score = 0, grade = "D", },
+}
+list2 = 
+{
+	{ score = 50, grade = "D", },
+	{ score = 70, grade = "C", },
+	{ score = 90, grade = "B", },
+	{ score = 100, grade = "A", },
+}
+print( MathUtil_Approximate( 90, list1, "score" ).grade )
+print( MathUtil_Approximate( 60, list1, "score" ).grade )
+print( MathUtil_Approximate( 30, list1, "score" ).grade )
+print( MathUtil_Approximate( 90, list2, "score", true ).grade )
+print( MathUtil_Approximate( 60, list2, "score", true ).grade )
+print( MathUtil_Approximate( 30, list2, "score", true ).grade )
+--A
+--C
+--D
+--A
+--C
+--D
+]]
+function MathUtil_Approximate( value, list, name, ascend )
+	local default
+	if not ascend then
+		for key, item in pairs( list ) do
+			if value >= ( name and item[name] or key ) then
+				return item
+			end
+			default = item
+		end
+	else
+		for key, item in pairs( list ) do
+			if value < ( name and item[name] or key ) then
+				return item
+			end
+			default = item
+		end
+	end
+	return default
 end

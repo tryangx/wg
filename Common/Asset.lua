@@ -3,9 +3,11 @@ AssetAttribType =
 	NUMBER       = 0,
 	STRING       = 1,
 	LIST         = 2,
-	POINTER_LIST = 3,
-	POINTER      = 4,
-	DATA         = 5,
+	DICT         = 3,
+	POINTER_LIST = 4,
+	POINTER_DICT = 5,
+	POINTER      = 6,
+	DATA         = 7,
 	TEMPORARY    = 10,	
 }
 
@@ -76,12 +78,34 @@ function AssetAttrib_SetList( params )
 	}
 end
 
+function AssetAttrib_SetDict( params )
+	return 
+	{ 
+		id         = params.id,
+		type       = params.type,
+		value_type = AssetAttribType.DICT,
+		setter     = params.setter,
+		changer    = params.changer,
+	}
+end
+
 function AssetAttrib_SetPointerList( params )
 	return 
 	{ 
 		id         = params.id,
 		type       = params.type,
 		value_type = AssetAttribType.POINTER_LIST,
+		setter     = params.setter,
+		changer    = params.changer,
+	}
+end
+
+function AssetAttrib_SetPointerDict( params )
+	return 
+	{ 
+		id         = params.id,
+		type       = params.type,
+		value_type = AssetAttribType.POINTER_DICT,
 		setter     = params.setter,
 		changer    = params.changer,
 	}
@@ -126,10 +150,14 @@ end
 ----------------------------------
 
 function Asset_GetList( entity, id )
-	if not id then error( "id is invalid" ) end
-	if typeof( entity ) == "number" then
-		print( "entity=", entity, " is ", typeof(entity) )
-		return nil
+	if ASSET_DEBUG_SWITCH then
+		if not id then
+			error( "id is invalid" )
+		end
+		if typeof( entity ) == "number" then
+			print( "entity=", entity, " is ", typeof(entity) )
+			return nil
+		end
 	end
 	local list = entity[id]
 	if not list then
@@ -235,7 +263,6 @@ function Asset_SetListItem( entity, id, index, item )
 	if attrib and attrib.changer then
 		attrib.changer( entity, id, item )
 	end
-	--debug
 	entity[id][index] = item
 
 	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "set index=", index ) end	
@@ -354,6 +381,65 @@ function Asset_VerifyList( entity, id )
 	end
 end
 
+----------------------------------
+-- Asset Attrib : Dict
+----------------------------------
+
+function Asset_GetDict( entity, id )
+	if ASSET_DEBUG_SWITCH then
+		if not id then
+			error( "id is invalid" )
+		end
+		if typeof( entity ) == "number" then
+			print( "entity=", entity, " is ", typeof(entity) )
+			return nil
+		end
+	end
+	local list = entity[id]
+	if not list then
+		local attrib = Entity_GetAssetAttrib( entity, id )
+		if attrib and ( attrib.value_type == AssetAttribType.DICT or attrib.value_type == AssetAttribType.POINTER_DICT ) then
+			entity[id] = {}
+			list = entity[id]
+		else
+			error( "what's wrong?" .. entity.type .. "," .. id )
+		end
+	end
+	return list
+end
+
+-- Use this to add item into the dictionary
+function Asset_SetDictItem( entity, id, name, item )
+	if ASSET_DEBUG_SWITCH then
+		if not name or not item then
+			error( "name or item is invalid" )
+		end
+	end
+
+	local dict = Asset_GetDict( entity, id )
+	
+	local attrib = Entity_GetAssetAttrib( entity, id )
+	if attrib then
+		if attrib.setter and typeof( item ) == "number" then
+			item = attrib.setter( entity, id, item )
+		end
+		if attrib.changer then
+			attrib.changer( entity, id, item )
+		end
+	end
+	entity[id][name] = item
+
+	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "set name=", index ) end	
+end
+
+function Asset_GetDictSize( entity, id )
+	local dict = Asset_GetDict( entity, id )
+	local size = 0
+	for _, _ in pairs( dict ) do
+		size = size + 1
+	end
+	return size
+end
 
 ----------------------------------
 --	Asset Attrib : Pointer
@@ -433,20 +519,27 @@ end
 
 
 function Asset_Get( entity, id )
-	if not entity then
-		if ASSET_DEBUG_SWITCH then error( "invalid entity in Asset_Get()" ) end
-		return nil
-	end
 	if ASSET_DEBUG_SWITCH then
+		if not entity then
+			error( "invalid entity in Asset_Get()" )
+		end
 		local attrib = Entity_GetAssetAttrib( entity, id )
 		if attrib.value_type == AssetAttribType.LIST or attrib.value_type == AssetAttribType.POINTER_LIST then
-			error( "don't use Asset_Get() in list" )
+			error( "please use Asset_GetList()" )
+		end
+		if attrib.value_type == AssetAttribType.DICT or attrib.value_type == AssetAttribType.POINTER_DICT then
+			error( "please use Asset_GetDict()" )
+		end
+		if not id then
+			error( "id is invalid" )
+		end
+		if typeof( entity ) == "number" then
+			return nil
 		end
 	end
-	if not id then error( "id is invalid" ) end
-	if typeof( entity ) == "number" then return nil end
+
 	local ret = entity[id]
-	if not ret then		
+	if not ret then	
 		local attrib = Entity_GetAssetAttrib( entity, id )
 		if attrib then
 			if attrib.value_type == AssetAttribType.DATA then

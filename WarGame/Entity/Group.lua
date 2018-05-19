@@ -20,6 +20,7 @@ GroupAssetID =
 	TECH_LIST      = 301,
 	GOAL_LIST      = 302,
 	TAG_LIST       = 303,
+	SPY_LIST       = 304,
 }
 
 GroupAssetAttrib =
@@ -38,6 +39,7 @@ GroupAssetAttrib =
 	techs     = AssetAttrib_SetList          ( { id = GroupAssetID.TECH_LIST,     type = GroupAssetType.GROWTH_ATTRIB } ),
 	goals     = AssetAttrib_SetList          ( { id = GroupAssetID.GOAL_LIST,     type = GroupAssetType.GROWTH_ATTRIB } ),
 	tags      = AssetAttrib_SetPointerList   ( { id = GroupAssetID.TAG_LIST,      type = GroupAssetType.GROWTH_ATTRIB } ),
+	spys      = AssetAttrib_SetList          ( { id = GroupAssetID.SPY_LIST,      type = GroupAssetType.GROWTH_ATTRIB } ),
 }
 
 -------------------------------------------
@@ -147,8 +149,28 @@ end
 function Group:Update( ... )
 end
 
+function Group:UpdateSpy()
+	--clear current list
+	Asset_ClearList( self, GroupAssetID.SPY_LIST )
+
+	Asset_ForeachList( self, GroupAssetID.CITY_LIST, function ( city )
+		Asset_ForeachList( city, CityAssetID.SPY_LIST, function( spy )
+			local existSpy = self:GetSpy( spy.city )
+			if not existSpy or existSpy.grade < spy.grade then
+				Asset_SetListItem( self, GroupAssetID.SPY_LIST, city, spy )
+			end
+		end )
+	end)
+	--InputUtil_Pause( "group spy=" .. Asset_GetListSize( self, GroupAssetID.CITY_LIST ))
+end
 
 ----------------------------------------------------------
+
+function Group:GetSpy( city )
+	return Asset_FindListItem( self, GroupAssetID.SPY_LIST, function( s )
+		return s.city == city
+	end )
+end
 
 function Group:GetSoldier()
 	--corps in city
@@ -168,6 +190,14 @@ function Group:GetVacancyCityList()
 		end
 	end)
 	return list
+end
+
+function Group:GetMilitaryPower()
+	local power = 0
+	Asset_ForeachList( self, GroupAssetID.CITY_LIST, function ( city )
+		power = power + city:GetMilitaryPower()
+	end)
+	return power
 end
 
 ----------------------------------------------------------
@@ -211,13 +241,13 @@ function Group:LoseCity( city, toCity )
 	Asset_ClearList( city, CityAssetID.OFFICER_LIST )
 
 	--corps retreat
-	local reserve = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES )
+	local reserves = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES )
 	Asset_ForeachList( city, CityAssetID.CORPS_LIST, function( corps )
 		if corps:IsAtHome() then
 			--dismiss corps
 			local soldier = corps:GetSoldier()
 			--put soldier into reserve
-			reserve = reserve + soldier
+			reserves = reserves + soldier
 		elseif toCity then
 			--retreat to nearby city
 			--print( Move_Track( corps ) )
@@ -226,7 +256,7 @@ function Group:LoseCity( city, toCity )
 		end
 	end )
 	Asset_ClearList( city, CityAssetID.CORPS_LIST )
-	Asset_SetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES, reserve )
+	Asset_SetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES, reserves )
 end
 
 function Group:OccupyCity( city )

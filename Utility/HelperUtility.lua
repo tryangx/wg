@@ -7,7 +7,7 @@ debugMeeting = false
 
 local HelperLog = nil
 local function HelperUtil_GetLog()
-	if not HelperLog then HelperLog = LogUtility( "log/HelperUtil_" .. g_gameId .. ".log", LogWarningLevel.IMPORTANT, true ) end
+	if not HelperLog then HelperLog = LogUtility( "run/HelperUtil_" .. g_gameId .. ".log", LogWarningLevel.IMPORTANT, true ) end
 	return HelperLog
 end
 

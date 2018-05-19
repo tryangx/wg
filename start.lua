@@ -1,6 +1,7 @@
 package.path = package.path .. ";Lib/?.lua"
 package.path = package.path .. ";Utility/?.lua"
 package.path = package.path .. ";Common/?.lua"
+package.path = package.path .. ";Constant/?.lua"
 package.path = package.path .. ";Scenario/?.lua"
 package.path = package.path .. ";WarGame/?.lua"
 package.path = package.path .. ";WarGame/Entity/?.lua"
@@ -17,6 +18,9 @@ require "Utility"
 
 --Common may use some Utility
 require "Common"
+
+--Constant
+require "Constant"
 
 --Scenario has datas
 require "Scenario"

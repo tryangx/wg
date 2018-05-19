@@ -50,7 +50,7 @@ function Entity_SetTroop( entity, id, value )
 end
 
 function Entity_SetSkill( entity, id, value )
-	return Entity_Get( EntityType.SKILL, value ) or value
+	--return Entity_Get( EntityType.SKILL, value ) or value
 end
 
 function Entity_SetPlot( entity, id, value )
@@ -73,7 +73,6 @@ require "Entity/Chara"
 require "Entity/Corps"
 require "Entity/Troop"
 require "Entity/Weapon"
-require "Entity/Skill"
 
 require "Entity/Plot"
 require "Entity/Map"

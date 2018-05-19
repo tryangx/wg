@@ -160,7 +160,7 @@ local function Warfare_OnCombatRemove( msg )
 		error( "why no combat to remove?" )
 	end
 
-	Stat_Add( "Combat" .. combat.id .. "@DurDay", Asset_Get( combat, CombatAssetID.DAY ), StatType.VALUE )
+	Stat_Add( "CombatDur@" .. combat.id, Asset_Get( combat, CombatAssetID.DAY ), StatType.VALUE )
 
 	Asset_ForeachList( combat, CombatAssetID.ATK_CORPS_LIST, function ( corps )
 		Asset_SetListItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_COMBAT, nil )
@@ -194,7 +194,7 @@ local function Warfare_OnFieldCombatTrigger( msg )
 	end
 	Message_Post( MessageType.COMBAT_TRIGGERRED, { task = task, combat = combat, atk = atk, def = def } )
 
-	--Stat_Add( "Combat@Field", combat:ToString(), StatType.LIST )
+	Stat_Add( "Combat@Field", 1, StatType.TIMES )
 end
 
 local function Warfare_OnSiegeCombatTrigger( msg )
@@ -204,7 +204,7 @@ local function Warfare_OnSiegeCombatTrigger( msg )
 
 	Message_Post( MessageType.COMBAT_TRIGGERRED, { task = task, combat = combat, atk = atk } )
 
-	--Stat_Add( "Combat@Siege", combat:ToString(), StatType.LIST )
+	Stat_Add( "Combat@Siege", 1, StatType.TIMES )
 end
 
 -------------------------------------
@@ -300,7 +300,7 @@ function WarfareSystem:UpdateCombat( combat )
 
 	Asset_ForeachList( combat, CombatAssetID.CORPS_LIST, function  ( corps )
 		if corps:GetSoldier() == 0 then
-			Corps_Dismiss( corps )
+			Corps_Dismiss( corps, "neutralized" )
 			Stat_Add( "Corps@Vanished", corps:ToString( "SIMPLE"), StatType.LIST )
 		end
 	end )

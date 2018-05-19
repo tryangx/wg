@@ -124,26 +124,45 @@ function Plot:InitGrowth( params )
 		end
 	end
 
-	--2nd, determine the current development indexs by any method
-	local min, max = 30, 60
+	--2nd, determine the current development indexs by any method	
+	local min, max = 60, 90--30, 60
 	Asset_Set( self, PlotAssetID.AGRICULTURE, math.ceil( Random_GetInt_Sync( min, max ) * 0.01 * Asset_Get( self, PlotAssetID.MAX_AGRICULTURE ) ) )
 	Asset_Set( self, PlotAssetID.COMMERCE,    math.ceil( Random_GetInt_Sync( min, max ) * 0.01 * Asset_Get( self, PlotAssetID.MAX_COMMERCE ) ) )
 	Asset_Set( self, PlotAssetID.PRODUCTION,  math.ceil( Random_GetInt_Sync( min, max ) * 0.01 * Asset_Get( self, PlotAssetID.MAX_PRODUCTION ) ) )
 	
 	--3rd, determine the population of each career in the population struction depends on the development indexs
-	local agr = Asset_Get( self, PlotAssetID.AGRICULTURE )
-	local foodOutput = agr * PlotParams.FOOD_PER_AGRICULTURE
-	local supportPopu = foodOutput / GlobalTime.TIME_PER_YEAR
-	local popu = math.ceil( supportPopu * Random_GetInt_Sync( 50, 80 ) * 0.01 )
+	local agr    = Asset_Get( self, PlotAssetID.AGRICULTURE )
+	local popuType = "FARMER"
+	local outputFood = DefaultCityPopuHarvest[popuType] * DefaultCityPopuPerUnit[popuType] * agr
+	local supplyPopu = math.ceil( outputFood / DAY_IN_YEAR )
+
+	function CalcPopu()
+		local ret = Cache_Get( "SUPPLY_RATIO" )
+		if ret then return ret end
+		--travel all popu need
+		local totalRatio = 0
+		for type, ratio in pairs( DefaultCityPopuNeed ) do
+			--find who will consume the food
+			if DefaultCityPopuConsumeFood[type] then
+				totalRatio = totalRatio + ratio.req
+			end
+		end
+		--now we get how many ratio in population will consume the food
+		Cache_Set( "SUPPLY_RATIO", totalRatio )
+		return totalRatio		
+	end
+	local totalPopu = supplyPopu / CalcPopu()
+	local popu = math.ceil( totalPopu * Random_GetInt_Sync( 40, 80 ) * 0.01 )
 	Asset_Set( self, PlotAssetID.POPULATION, popu )
+	--print( "set popu=" .. totalPopu )
 
 	--[[
 	print( "agr=" .. Asset_Get( self, PlotAssetID.AGRICULTURE ) )
 	print( "prd=" .. Asset_Get( self, PlotAssetID.PRODUCTION ) )
-	print( "com=" .. Asset_Get( self, PlotAssetID.COMMERCE ) )	
+	print( "com=" .. Asset_Get( self, PlotAssetID.COMMERCE ) )		
+	InputUtil_Pause( PlotParams.FOOD_PER_AGRICULTURE / GlobalTime.TIME_PER_YEAR )
+	InputUtil_Pause( "agr=" .. agr, "plotpopu="..popu )
 	--]]
-	--InputUtil_Pause( PlotParams.FOOD_PER_AGRICULTURE / GlobalTime.TIME_PER_YEAR )
-	--InputUtil_Pause( "agr=" .. agr, "plotpopu="..popu )
 end
 
 function Plot:Update()	

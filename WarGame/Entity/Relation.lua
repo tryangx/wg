@@ -48,11 +48,9 @@ function Relation:ToString( type )
 	content = content .. " & "
 	content = content .. blue:ToString()
 	content = content .. " at=" .. Asset_Get( self, RelationAssetID.ATTITUDE )
-	if type == "ALL" then
-	end
 	if type == "PACT" or type == "ALL" then
 		Asset_ForeachList( self, RelationAssetID.PACT_LIST, function ( data, pact )
-			content = content .. " " .. MathUtil_FindName( RelationPact, pact ) .. "+" .. data.time
+			content = content .. " " .. MathUtil_FindName( RelationPact, pact ) .. "+" .. ( data.time and data.item or "?" )
 		end)
 	end
 	if type == "OPINION" or type == "ALL" then
@@ -66,7 +64,9 @@ end
 function Relation:Update()
 	local attitude = 0
 
-	--update optnion
+	--update opinion
+	--  1.increase duration
+	--  2.alter attitude
 	Asset_ForeachList( self, RelationAssetID.OPINION_LIST, function ( data, type )
 		data.duration = data.duration + 1
 		if data.time > 1 then
@@ -87,7 +87,7 @@ function Relation:Update()
 	Asset_ForeachList( self, RelationAssetID.PACT_LIST, function ( data, pact )
 		data.remain = data.remain - g_elapsed
 		if data.remain < 0 then			
-			InputUtil_Pause( "pact over", MathUtil_FindName( RelationPact, pact ) )
+			--InputUtil_Pause( "pact over", MathUtil_FindName( RelationPact, pact ) )
 			Asset_SetListItem( self, RelationAssetID.PACT_LIST, pact, nil )			
 		end
 	end)
@@ -123,6 +123,10 @@ end
 
 -------------------------------------------------
 
+function Relation:RemoveOpinion( type )
+	Asset_SetListItem( self, RelationAssetID.OPINION_LIST, type, nil )
+end
+
 function Relation:ImproveRelation( attitude )
 	local cur = Asset_Get( self, RelationAssetID.ATTITUDE )
 	cur = cur + attitude	
@@ -146,5 +150,12 @@ end
 
 function Relation:SignPact( pact, time )
 	Asset_SetListItem( self, RelationAssetID.PACT_LIST, pact, { remain = time } )
+
+	--special process
+	if pact == RelationPact.PEACE then
+		self:RemoveOpinion( RelationOpinion.AT_WAR )
+		self:AddOpinion( RelationOpinion.WAS_AT_WAR )
+		--InputUtil_Pause( "peace", self:ToString( "ALL" ) )
+	end	
 	--InputUtil_Pause( "sign pact", MathUtil_FindName( RelationPact, pact ), time )
 end

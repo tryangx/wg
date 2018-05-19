@@ -17,7 +17,7 @@ StatType =
 
 ----------------------------------------------
 
-local _log = LogUtility( "stat_" .. g_gameId .. ".log", LogWarningLevel.LOG, true )
+local _log = LogUtility( "run/stat_" .. g_gameId .. ".log", LogWarningLevel.LOG, true )
 
 local _stats = {}
 

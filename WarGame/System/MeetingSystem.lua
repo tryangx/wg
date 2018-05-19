@@ -74,8 +74,9 @@ local function Meeting_Update( meeting )
 			return numofproposer <= 0
 		end )
 		
+		--print( "free=" .. freeParticiants, "submit=" .. submitProposal )
 		if freeParticiants == 0 or submitProposal == 0 then
-			--InputUtil_Pause( freeParticiants, submitProposal, MathUtil_FindName( MeetingTopic, topic ) )
+			--InputUtil_Pause( "executive submit proposal", MathUtil_FindName( MeetingTopic, topic ) )
 			--let superior submit proposal
 			if superior:IsBusy() == false then
 				CharaAI_SubmitMeetingProposal( superior, meeting )
@@ -88,7 +89,7 @@ local function Meeting_Update( meeting )
 		local numofproposal = Entity_Number( EntityType.PROPOSAL )		
 		if numofproposal > 0 then
 			local index =  Random_GetInt_Sync( 1, numofproposal )
-			local proposal = Entity_GetIndex( EntityType.PROPOSAL, index )
+			local proposal = Entity_GetByIndex( EntityType.PROPOSAL, index )
 			--print( "update proposal" .. MathUtil_FindName( ProposalType, Asset_Get( proposal, ProposalAssetID.TYPE ) ) )
 			Proposal_Respond( proposal )
 		end
@@ -101,6 +102,8 @@ local function Meeting_Update( meeting )
 		topic = topic + 1
 	end
 	--Stat_Add( "Meeting@End_Times", nil, StatType.TIMES )
+
+	DBG_Watch( "Debug_Meeting", g_Time:ToString() .. " " .. city.name .. " meeting over, participants=" .. Asset_GetListSize( meeting, MeetingAssetID.PARTICIPANTS ) )
 end
 
 function Meeting_Hold( city, topic, target )
@@ -163,6 +166,9 @@ function Meeting_Hold( city, topic, target )
 
 	Stat_Add( "Meeting@HoldTimes", 1, StatType.TIMES )
 	Stat_Add( "Meeting@CityHold_" .. city.name, 1, StatType.TIMES )
+
+	--print( city:ToString( "OFFICER" ) )
+	--InputUtil_Pause( g_Time:ToString(), city.name, "hold meeting participants=", #participants )
 end
 
 --------------------------------------

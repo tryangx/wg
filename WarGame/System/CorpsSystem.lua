@@ -18,11 +18,6 @@ function Troop_Remove( troop )
 	Entity_Remove( troop )
 end
 
-function Troop_GetConsumeFood( troop )
-	local table = Asset_Get( troop, TroopAssetID.TABLEDATA )
-	return table and table.consume.FOOD
-end
-
 -------------------------------------------
 
 function Corps_GetTroopMaxNumberLv( city )
@@ -70,7 +65,7 @@ function Corps_Join( corps, city )
 	end )
 end
 
-function Corps_Dismiss( corps )	
+function Corps_Dismiss( corps, reason )	
 	--remove from old city
 	local encampment = Asset_Get( corps, CorpsAssetID.ENCAMPMENT )
 	if encampment then
@@ -90,7 +85,7 @@ function Corps_Dismiss( corps )
 		Task_Terminate( task )
 	end
 
-	Stat_Add( "Corps@Dismiss", corps:ToString(), StatType.LIST )
+	Stat_Add( "Corps@Dismiss", corps:ToString() .. " reason=" .. reason, StatType.LIST )
 
 	Entity_Remove( corps )
 end
@@ -107,10 +102,13 @@ local function Corps_QueryRequirementResource( city )
 	for _, type in pairs( TroopRequirement ) do
 		if type == TroopRequirement.MONEY then
 			resources[type] = Asset_Get( city, CityAssetID.MONEY )
+
 		elseif type == TroopRequirement.MATERIAL then
 			resources[type] = Asset_Get( city, CityAssetID.MATERIAL )		
+
 		elseif type == TroopRequirement.SOLDIER then
 			resources[type] = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES )
+
 		elseif type == TroopRequirement.TECH then
 		else
 			error( "Unhandle troop requirement" )
@@ -136,7 +134,7 @@ local function Corps_CanEstablishTroop( city, table, soldier, resources )
 	--print( "Establish Troop=" .. table.name .. "*" .. number )
 	if table.requirement.MIN_SOLDIER then
 		if soldier < table.requirement.MIN_SOLDIER then
-			--print( "minimum number limit", soldierPerTroop )
+			print( "minimum number limit", soldierPerTroop )
 			return false
 		end
 	end
@@ -152,7 +150,7 @@ local function Corps_CanEstablishTroop( city, table, soldier, resources )
 	if table.requirement.MONEY then
 		local need = soldier * table.requirement.MONEY
 		if resources[TroopRequirement.MONEY] < need then
-			DBG_Watch( "est troop", "no money" .. resources[TroopRequirement.MONEY] .. "/" .. need )
+			--DBG_Watch( "est troop", "no money " .. resources[TroopRequirement.MONEY] .. "/" .. need )
 			return false
 		end
 		needs[TroopRequirement.MONEY] = need
@@ -160,7 +158,7 @@ local function Corps_CanEstablishTroop( city, table, soldier, resources )
 	if table.requirement.MATERIAL then
 		local need = soldier * table.requirement.MATERIAL
 		if resources[TroopRequirement.MATERIAL] < need then
-			DBG_Watch( "est troop", "no material" .. resources[TroopRequirement.MATERIAL] .. "/" .. need )
+			DBG_Watch( "est troop", "no material " .. resources[TroopRequirement.MATERIAL] .. "/" .. need )
 			return false
 		end		
 		needs[TroopRequirement.MATERIAL] = need
@@ -246,9 +244,12 @@ local function Corps_EstablishTroop( city, corps, numberOfReqTroop, soldierPerTr
 		Asset_Set( troop, TroopAssetID.CORPS, corps )
 		Asset_AppendList( corps, CorpsAssetID.TROOP_LIST, troop )
 
+		--decrease the reserves
+		city:ReducePopu( CityPopu.RESERVES, soldierPerTroop )
+
 		local group = Asset_Get( corps, CorpsAssetID.GROUP )
 		if group then
-			Stat_Add( group:ToString() .. "@Soldier", soldierPerTroop, StatType.ACCUMULATION )
+			Stat_Add( "IncSoldier@" .. group:ToString(), soldierPerTroop, StatType.ACCUMULATION )
 		end
 		--Debug_Log( "Add troop ", troopTable.name, soldierPerTroop )
 		return true
@@ -329,11 +330,15 @@ function Corps_EstablishInCity( city, leader, purpose, troopNumber )
 		corps.name = city.name .. "_Corps_" .. corps.id
 	end
 
+	if leader then
+		Stat_Add( "Corps@Leader", leader:ToString() .. "->" .. corps:ToString(), StatType.LIST )
+	end
+
 	--query resource for requirements
 	local resources = Corps_QueryRequirementResource( city )
 
 	--get how many soldier in the city
-	local soldier = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES )
+	local reserves = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES )
 	local numberOfReqTroop = 1
 	local soldierPerTroop = 0
 	
@@ -345,7 +350,7 @@ function Corps_EstablishInCity( city, leader, purpose, troopNumber )
 		numberOfReqTroop = troopNumber
 	end
 	--calculate minimum soldier per required troop
-	soldierPerTroop = math.floor( soldier / numberOfReqTroop )
+	soldierPerTroop = math.floor( reserves / numberOfReqTroop )
 
 	--limit by the tech/theory/etc.
 	local maxSoldier = Corps_GetTroopMaxNumber( city, nil )
@@ -356,8 +361,8 @@ function Corps_EstablishInCity( city, leader, purpose, troopNumber )
 	--boundary checks
 	local minSoldier = Scenario_GetData( "TROOP_PARAMS" ).MIN_TROOP_SOLDIER
 	if soldierPerTroop < minSoldier then
-		numberOfReqTroop = math.max( 1, math.floor( soldier / minSoldier ) )
-		soldierPerTroop = math.floor( soldier / numberOfReqTroop )
+		numberOfReqTroop = math.max( 1, math.floor( reserves / minSoldier ) )
+		soldierPerTroop = math.floor( reserves / numberOfReqTroop )
 	end
 
 	Corps_EstablishTroop( city, corps, numberOfReqTroop, soldierPerTroop )
@@ -391,7 +396,7 @@ function Corps_ReinforceTroop( corps, soldier )
 		Stat_Add( "Reinforce@Troop", 1, StatType.ACCUMULATION )
 		Stat_Add( "Reinforce@Corps", soldier, StatType.ACCUMULATION )
 		local group = Asset_Get( corps, CorpsAssetID.GROUP )
-		Stat_Add( group:ToString() .. "@Reinforce", soldier, StatType.ACCUMULATION )
+		Stat_Add( "Reinforce@" .. group:ToString(), soldier, StatType.ACCUMULATION )
 		return soldier <= 0
 	end )
 end
@@ -404,10 +409,10 @@ function Corps_EnrollInCity( corps, city )
 	end
 
 	local numberOfTroop = 1
-	local soldier = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES )
+	local reserves = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES )
 	local soldierPerTroop = Corps_GetTroopMaxNumber( city, nil )
-	if soldier < soldierPerTroop then
-		soldierPerTroop = soldier
+	if reserves < soldierPerTroop then
+		soldierPerTroop = reserves
 	end
 	Corps_EstablishTroop( city, corps, numberOfTroop, soldierPerTroop )
 end
@@ -471,8 +476,6 @@ function Corps_EstablishTest( params )
 		troop:LoadFromTable( troopTable )
 		corps:AddTroop( troop )
 	end
-
-	Asset_Set( corps, CorpsAssetID.FOOD, corps:GetConsumeFood() * 30 )
 
 	return corps
 end

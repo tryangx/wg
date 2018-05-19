@@ -6,9 +6,10 @@ function Intel_GetMilPower( city, fromCity )
 	
 	local power = city:GetMilitaryPower()
 	if level == 1 then
-		return math.ceil( power * Random_GetInt_Sync( 50, 150 ) * 0.01 )
+		return math.ceil( power * Random_GetInt_Sync( 100, 150 ) * 0.01 )
 	elseif level == 2 then
-		--unknown
+		return math.ceil( power * Random_GetInt_Sync( 100, 120 ) * 0.01 )
+	elseif level == 3 then
 		return power
 	end
 	--unknown
@@ -23,11 +24,27 @@ function Intel_GetSoldier( city, fromCity )
 
 	local power = city:GetSoldier()
 	if level == 1 then
-		return math.ceil( power * Random_GetInt_Sync( 50, 150 ) * 0.01 )
+		return math.ceil( power * Random_GetInt_Sync( 100, 150 ) * 0.01 )
 	elseif level == 2 then
+		return math.ceil( power * Random_GetInt_Sync( 100, 120 ) * 0.01 )
+	elseif level == 3 then
 		return power
 	end
 	return -1
+end
+
+function Intel_GetGroupMilPower( dest, sour )
+	local power = 0
+	Asset_ForeachList( dest, GroupAssetID.CITY_LIST, function ( city )
+		local spy = sour:GetSpy( city )
+		if spy then
+			local cityPower = Intel_GetMilPower( spy.city, spy.sour )
+			if cityPower ~= -1 then
+				power = power + cityPower
+			end
+		end
+	end )
+	return power
 end
 
 ---------------------------------------------------

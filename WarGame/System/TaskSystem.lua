@@ -142,7 +142,7 @@ local function carryfood()
 		--corps carry food		
 		local corps = Asset_Get( task, TaskAssetID.ACTOR )
 		local city = Asset_Get( task, TaskAssetID.DESTINATION )
-		if Supply_CorpsCarryFood( corps, city ) == false then
+		if Supply_CorpsCarryFood( corps, city ) == false or Supply_CorpsCarryMaterial( corps, city ) == false then
 			--cancel task
 			Asset_Set( task, TaskAssetID.DURATION, 0 )
 			return true
@@ -351,7 +351,8 @@ local function Task_DoConvReserves( task )
 	local workload = Asset_Get( task, TaskAssetID.WORKLOAD )	
 	if Asset_Get( task, TaskAssetID.PROGRESS ) >= workload then		
 		--InputUtil_Pause( task.id, Asset_Get( task, TaskAssetID.PROGRESS ) , workload )
-		local number = City_ConvReserves( Asset_Get( task, TaskAssetID.DESTINATION ), params )				
+		local city = Asset_Get( task, TaskAssetID.DESTINATION )
+		local number = City_ConvReserves( city, params )				
 		Asset_Set( task, TaskAssetID.PROGRESS, 0 )
 
 		if type == TaskType.CONSCRIPT then
@@ -377,14 +378,14 @@ local _workOnTask =
 		local workload = Asset_Get( task, TaskAssetID.WORKLOAD )
 		if Asset_Get( task, TaskAssetID.PROGRESS ) >= workload then
 			local city    = Asset_Get( task, TaskAssetID.DESTINATION )
-			local soldier = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES )
-			local number  = soldier < workload and soldier or workload
+			local reserves= Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES )
+			local number  = reserves < workload and reserves or workload
 			local corps   = Asset_GetListItem( task, TaskAssetID.PARAMS, "corps" )
 			--Debug_Log( "reinforce", corps:ToString(), "+" .. number )
 			Corps_ReinforceTroop( corps, number )
-			soldier = soldier - number
-			Asset_SetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES, soldier )
-			if soldier == 0 then
+			reserves = reserves - number
+			Asset_SetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES, reserves )
+			if reserves == 0 then
 				Asset_Set( task, TaskAssetID.DURATION, 0 )
 			else
 				Asset_Set( task, TaskAssetID.PROGRESS, 0 )
@@ -523,7 +524,7 @@ local _finishTask =
 			local city  = Asset_Get( task, TaskAssetID.DESTINATION )
 			local actor = Asset_Get( task, TaskAssetID.ACTOR )
 			local group = Asset_Get( task, TaskAssetID.GROUP )
-			local chara = System_Get( SystemType.CHARA_CREATOR_SYS ):GenerateFictionalChara( city )
+			local chara = CharaCreator_GenerateFictionalChara( city )
 			if not chara then DBG_Trace( "no chara to hire" ) end
 			Chara_Serve( chara, group, city )
 			Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
@@ -609,7 +610,11 @@ local _finishTask =
 			local oppGroup = Asset_GetListItem( task, TaskAssetID.PARAMS, "group" )
 			local pact     = Asset_GetListItem( task, TaskAssetID.PARAMS, "pact" )
 			local time     = Asset_GetListItem( task, TaskAssetID.PARAMS, "time" )
-			Dipl_SignPact( group, oppGroup, pact, time )
+
+			local relation = Dipl_GetRelation( group, oppGroup )
+			if not relation:HasPact( pact ) then
+				Dipl_SignPact( group, oppGroup, pact, time )
+			end
 			Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
 			Stat_Add( "Dipl@SignPact", g_Time:CreateCurrentDateDesc() .. " " .. group:ToString() .. "-->" .. oppGroup:ToString() .. "=" .. MathUtil_FindName( RelationPact, pact ), StatType.LIST )
 			return Task_Contribute( task, "success" )
@@ -785,6 +790,8 @@ function Task_Create( taskType, actor, location, destination, params )
 	--Debug_Log( "issue task--" .. task:ToString() )	
 	Stat_Add( "Task@Issue", task:ToString( "DETAIL" ), StatType.LIST )
 	--Stat_Add( "Task@" .. MathUtil_FindName( TaskType, type ), 1, StatType.TIMES )
+
+	DBG_Watch( "Debug_Meeting", "execute task=" .. task:ToString() )
 end
 
 function Task_IssueByProposal( proposal )		
@@ -842,10 +849,12 @@ local function Task_Move2Destination( task )
 		--move
 		local actor     = Asset_Get( task, TaskAssetID.ACTOR )
 		local actorType = Asset_Get( task, TaskAssetID.ACTOR_TYPE )		
-		if actorType == TaskActorType.CHARA then			
-			Move_Chara( actor, Asset_Get( task, TaskAssetID.DESTINATION ) )
-		elseif actorType == TaskActorType.CORPS then
-			Move_Corps( actor, Asset_Get( task, TaskAssetID.DESTINATION ) )
+		local loc       = Asset_Get( task, TaskAssetID.DESTINATION )
+		if actorType == TaskActorType.CHARA then
+			Move_Chara( actor, loc )
+		elseif actorType == TaskActorType.CORPS then			
+			Move_Corps( actor, loc )
+			Supply_CorpsCarryFood( actor, loc )
 		end
 	end
 end

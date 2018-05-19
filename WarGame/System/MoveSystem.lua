@@ -268,8 +268,13 @@ function MoveSystem:Update()
 	for _, move in ipairs( _plotMoves ) do
 		if move and Move_DoAction( move ) == true then
 			local actor = Asset_Get( move, MoveAssetID.ACTOR )
+			if Asset_Get( move, MoveAssetID.ROLE ) == MoveRole.CORPS then
+				if actor:IsAtHome() then
+					Asset_SetListItem( actor, CorpsAssetID.STATUSES, CorpsStatus.DEPATURE_TIME, nil )
+				end
+			end
 			self._actors[actor] = nil
-			Entity_Remove( move )
+			Entity_Remove( move )			
 		end
 	end
 
@@ -324,10 +329,11 @@ function MoveSystem:MoveC2C( actor, fromCity, toCity, type )
 end
 
 function MoveSystem:CorpsMove( actor, destination )
+	actor:Dispatch()
 	self:MoveC2C( actor, Asset_Get( actor, CorpsAssetID.LOCATION ), destination, MoveRole.CORPS )
 end
 
-function MoveSystem:CharaMove( actor, destination )
+function MoveSystem:CharaMove( actor, destination )	
 	self:MoveC2C( actor, Asset_Get( actor, CharaAssetID.LOCATION ), destination, MoveRole.CHARA )
 end
 
