@@ -14,7 +14,7 @@ MessageAssetID =
 MessageAssetAttrib = 
 {
 	type     = AssetAttrib_SetPointer( { id = MessageAssetID.TYPE,   type = MessageAssetType.BASE_ATTRIB } ),
-	params   = AssetAttrib_SetList   ( { id = MessageAssetID.PARAMS, type = MessageAssetType.BASE_ATTRIB } ),
+	params   = AssetAttrib_SetDict   ( { id = MessageAssetID.PARAMS, type = MessageAssetType.BASE_ATTRIB } ),
 }
 
 

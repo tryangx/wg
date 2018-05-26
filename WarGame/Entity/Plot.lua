@@ -160,7 +160,6 @@ function Plot:InitGrowth( params )
 	print( "agr=" .. Asset_Get( self, PlotAssetID.AGRICULTURE ) )
 	print( "prd=" .. Asset_Get( self, PlotAssetID.PRODUCTION ) )
 	print( "com=" .. Asset_Get( self, PlotAssetID.COMMERCE ) )		
-	InputUtil_Pause( PlotParams.FOOD_PER_AGRICULTURE / GlobalTime.TIME_PER_YEAR )
 	InputUtil_Pause( "agr=" .. agr, "plotpopu="..popu )
 	--]]
 end

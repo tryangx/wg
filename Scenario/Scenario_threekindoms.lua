@@ -569,7 +569,7 @@ RTK_GroupData =
 	[1] =
 	{
 		name = "SHU",
-		goals = { { type="DOMINATION_TERRIORITY", target = 100 } },
+		goals = { { type="TERRIORITY", target = 1 } },
 		leader = 100,
 		capital = 1000,
 		cities = { 1000 },		
@@ -584,7 +584,7 @@ RTK_GroupData =
 	[2] =
 	{
 		name = "WEI",
-		goals = { { type="DOMINATION_TERRIORITY", target = 100 } },
+		goals = { { type="DOMINATION", target = 1 } },
 		leader = 200,
 		capital = 200,
 		cities = { 200 },
@@ -596,7 +596,7 @@ RTK_GroupData =
 	[3] =
 	{
 		name = "WU",
-		goals = { { type="DOMINATION_TERRIORITY", target = 100 } },
+		goals = { { type="DOMINATION", target = 1 } },
 		leader = 300,		
 		money = 10000,
 		capital = 500,
@@ -637,14 +637,6 @@ RTK_GroupRelationData =
 
 RTK_WeaponTable = 
 {
-	[10] = { name = "fork",      level = "1", dmg = "NORMAL",    range = "CLOSE",   power = 40, accuracy = 25,  duration = 30, },
-	[20] = { name = "sword",     level = "3", dmg = "NORMAL",    range = "CLOSE",   power = 35, accuracy = 35,  duration = 30, },
-	[30] = { name = "spear",     level = "3", dmg = "PIERCE",    range = "LONG",    power = 30, accuracy = 45,  duration = 30, },
-	[31] = { name = "lance",     level = "4", dmg = "PIERCE",    range = "LONG",    power = 50, accuracy = 40,  duration = 30, },
-	[40] = { name = "bow",       level = "4", dmg = "PIERCE",    range = "MISSILE", power = 20, accuracy = 25,  duration = 20, },
-	[41] = { name = "slingshot", level = "2", dmg = "NORMAL",    range = "MISSILE", power = 10, accuracy = 30,  duration = 20, },
-	[50] = { name = "stone",     level = "5", dmg = "FORTIFIED", range = "MISSILE", power = 80, accuracy = 80,  duration = 20, },
-	[51] = { name = "ram",       level = "5", dmg = "FORTIFIED", range = "CLOSE",   power = 50, accuracy = 100, duration = 20, },
 }
 
 
@@ -658,192 +650,10 @@ RTK_WeaponTable =
 -- requirment.MIN_SOLDER should be restricted by TroopConstant
 RTK_TroopTable = 
 {
-	[1] =
-	{
-		name      = "Strong", category  = "INFANTRY", conveyance = "FOOT",
-		melee = 90, shoot = 90, charge = 90, siege = 90, armor = 90, toughness = 90, movement  = 25,
-		skills    = {},
-		potential = 20,
-		capacity = { FOOD = 300, MATERIAL = 100 },
-		consume = { FOOD = 10, MONEY = 10, },		
-		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
-		weapons = { 10 },
-	},
-	[2] =
-	{
-		name      = "Weak", category  = "INFANTRY", conveyance = "FOOT",
-		melee = 25, shoot = 25, charge = 25, siege = 25, armor = 25, toughness = 20, movement  = 25,		
-		skills    = {},
-		potential = 20,
-		capacity = { FOOD = 300, MATERIAL = 100 },
-		consume = { FOOD = 10, MONEY = 10, },		
-		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
-		weapons = { 30 },
-	},
-
-	[10] =
-	{
-		name      = "Military", category  = "INFANTRY", conveyance = "FOOT",
-		melee = 25, shoot = 25, charge = 25, siege = 0, armor = 25, toughness = 20, movement  = 25,		
-		skills    = {},
-		potential = 20,
-		capacity = { FOOD = 300, MATERIAL = 100 },
-		consume = { FOOD = 10, MONEY = 10, },		
-		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
-		weapons = { 10 },
-	},
-
-	[11] =
-	{	
-		name      = "Guard", category  = "INFANTRY", conveyance = "FOOT",
-		melee = 35, shoot = 30, charge = 30, siege = 0, armor = 35, toughness = 35, movement  = 25,
-		skills    = {},
-		potential = 20,
-		capacity = { FOOD = 300, MATERIAL = 100 },
-		consume = { FOOD = 10, MONEY = 5, },
-		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
-		weapons = { 30 },
-	},
-
-	[100] =
-	{
-		name      = "Footman", category  = "INFANTRY", conveyance = "FOOT",
-		melee = 50, shoot = 35, charge = 40, siege = 0, armor = 50, toughness = 45, movement  = 25,
-		skills    = {},
-		potential = 25,
-		capacity = { FOOD = 300, MATERIAL = 100 },
-		consume = { FOOD = 10, MONEY = 15, },		
-		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
-		weapons = { 20 },
-	},
-	[101] =
-	{
-		name      = "Regular Footman", category  = "INFANTRY", conveyance = "FOOT",
-		melee = 75, shoot = 0, charge = 65, siege = 0, armor = 65, toughness = 60, movement  = 20,
-		skills    = {},
-		potential = 30,
-		capacity = { FOOD = 300, MATERIAL = 100 },
-		consume = { FOOD = 10, MONEY = 20, },		
-		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
-		weapons = { 30 },
-	},	
-	
-	-- SS = 110 / S = 95 / A = 85 / B = 75 / C = 65 / D = 45 / E = 30 / F = -999
-	[200] =
-	{
-		name      = "Archer", category  = "MISSILE_UNIT", conveyance = "FOOT",
-		melee = 45, shoot = 75, charge = 0, siege = 0, armor = 60, toughness = 55, movement  = 25,
-		skills    = {},
-		potential = 25,
-		capacity = { FOOD = 300, MATERIAL = 100 },
-		consume = { FOOD = 10, MONEY = 16, },
-		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
-		weapons = { 20, 40 },
-	},
-
-	[300] =
-	{
-		name      = "Scout", category  = "CAVALRY", conveyance = "HORSE",
-		melee = 45, shoot = 35, charge = 45, siege = 0, armor = 40, toughness = 55, movement  = 90,
-		skills    = {},
-		potential = 25,
-		capacity = { FOOD = 300, MATERIAL = 100 },
-		consume = { FOOD = 10, MONEY = 28, },		
-		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
-		weapons = { 20, 41 },
-	},
-	[301] =
-	{
-		name      = "Cavalry", category  = "CAVALRY", conveyance = "HORSE",
-		melee = 75, shoot = 0, charge = 85, siege = 0, armor = 85, toughness = 80, movement  = 65,
-		skills    = {},
-		potential = 40,
-		capacity = { FOOD = 300, MATERIAL = 100 },
-		consume = { FOOD = 20, MONEY = 60, },		
-		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
-		weapons = { 31 },
-	},	
-	--[[
-	[310] =
-	{
-		name      = "Chariot", category  = "CAVALRY", conveyance = "CHARIOT",
-		melee = 50, shoot = 30, charge = 90, siege = 50, armor = 65, toughness = 70, movement  = 45,
-		skills    = {},
-		potential = 35,
-		consume = { FOOD = 40, MONEY = 100, POPULATION = 3 },		
-		requirement = { MONEY = 90, MATERIAL = 120, TECH = 999 },
-	},
-	]]
-	[400] =
-	{
-		name      = "BatteringRam", category  = "SIEGE_WEAPON", conveyance = "FOOT",
-		melee = 35, shoot = 0, charge = 0, siege = 85, armor = 85, toughness = 60, movement  = 20,
-		skills    = {},
-		potential = 40,
-		consume = { FOOD = 10, MONEY = 120, },		
-		requirement = { MONEY = 1, MATERIAL = 1, TECH = 999, SOLDIER = 1, MIN_SOLDIER = 100 },
-		weapons = { 51 },
-	},
-	[401] =
-	{
-		name      = "Catapult", category  = "SIEGE_WEAPON", conveyance = "FOOT",
-		melee = 35, shoot = 80, charge = 0, siege = 80, armor = 85, toughness = 60, movement  = 15,
-		skills    = {},
-		potential = 40,
-		consume = { FOOD = 10, MONEY = 150, },		
-		requirement = { MONEY = 1, MATERIAL = 1, TECH = 999, SOLDIER = 1, MIN_SOLDIER = 100 },
-		weapons = { 50 },
-	},
 }
 
 RTK_CorpsTemplate =
 {
-	--[[
-	{
-		prob = 50, purpose = CorpsPurpose.FIELD_COMBAT,
-		priority_troop_category = 
-		{
-			{ category = TroopCategory.INFANTRY,     number = 2, },
-			{ category = TroopCategory.CAVALRY,      number = 0, },
-			{ category = TroopCategory.MISSILE_UNIT, number = 0, },
-			{ category = TroopCategory.SIEGE_WEAPON, number = 0, },
-		},
-		tendency_troop_category = 
-		{
-			{ prob = 50, category = TroopCategory.INFANTRY },
-			{ prob = 50, category = TroopCategory.MISSILE_UNIT },
-		},
-	},
-	]]
-
-	{
-		prob = 50, purpose = CorpsPurpose.FIELD_COMBAT,
-		priority_troop_category = 
-		{
-			{ category = TroopCategory.INFANTRY,     number = 2, },
-			{ category = TroopCategory.MISSILE_UNIT, number = 2, },
-			{ category = TroopCategory.INFANTRY,     number = 1, },
-			{ category = TroopCategory.MISSILE_UNIT, number = 1, },
-			{ category = TroopCategory.CAVALRY,      number = 2, },
-		},
-		tendency_troop_category = 
-		{
-			{ prob = 50, category = TroopCategory.INFANTRY },
-			{ prob = 35, category = TroopCategory.MISSILE_UNIT },
-			{ prob = 15, category = TroopCategory.CAVALRY },
-		},
-	},
-
-	{
-		prob = 50, purpose = CorpsPurpose.SIEGE_COMBAT,
-		min_troop_category = 
-		{
-			INFANTRY     = 2,
-			CAVALRY      = 0,
-			MISSILE_UNIT = 0,
-			SIEGE_WEAPON = 2,
-		},
-	},
 }
 
 

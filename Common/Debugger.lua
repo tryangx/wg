@@ -9,8 +9,6 @@ DBGLevel =
 
 local _level = DBGLevel.IMPORTANT
 
-local _logs = {}
-
 local _watchers = {}
 
 local _warnings = {}
@@ -43,8 +41,6 @@ function DBG_Trace( content, cond, lv )
 				print( content )
 			end
 		end
-
-		table.insert( _logs, "[DBG]" .. content )
 	end
 end
 
@@ -57,6 +53,7 @@ end
 
 --
 -- print content when key is switch on, default switch is off
+-- @param lv More higher lv means not to watch
 --
 -- @usage
 --		DBG_Set
@@ -67,15 +64,16 @@ end
 function DBG_Watch( key, content, lv )
 	if not lv then lv = DBGLevel.NORMAL end
 	--to check all, make "curlv" lower than given "lv"
-	local curlv = _watchers[key] or DBGLevel.NORMAL
+	local curlv = _watchers[key] or DBGLevel.IMPORTANT
 
 	if lv == DBGLevel.FATAL then
 		InputUtil_Pause( content )
-	elseif lv >= curlv then
+	elseif curlv > lv  then
 		print( content )
 	end
-	if lv > DBGLevel.NORMAL then
-		table.insert( _logs, "[WTH]" .. content )
+
+	if curlv > DBGLevel.NORMAL then
+		Log_Write( "watcher", "[WTH]" .. content )
 	end
 end
 
@@ -94,14 +92,31 @@ CorrectLevel =
 	IMPORTANT = 1,
 }
 
-local _logs = {}
-
 function CRR_Tolerate( content, lv )
 	if not lv then lv = CorrectLevel.NORMAL end
 	if lv ~= CorrectLevel.NORMAL then 
 		InputUtil_Pause( "[TOLERATE]" .. content )
 	else
-		print( "[TOLERATE]" .. content )
+		Log_Write( "tolerate", content )
 	end
-	table.insert( _logs, content )	
+end
+
+----------------------------------------------
+
+local _logger = {}
+
+function Log_Create( type )
+	local logger = _logger[type]
+	if not logger then
+		logger = LogUtility( "run/" .. type .. "_" .. g_gameId .. ".log", LogWarningLevel.LOG, false )
+		_logger[type] = logger
+	end
+	return logger
+end
+
+function Log_Write( type, content )
+	local logger = Log_Create( type )
+	if logger then
+		logger:WriteLog( content )
+	end
 end

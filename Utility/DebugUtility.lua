@@ -1,11 +1,7 @@
-require "LogUtility"
-
 local enableDebug = true
-local DebugLog = nil
 
-local function Debug_GetLog()
-	if not DebugLog then DebugLog = LogUtility( "run/debug_" .. g_gameId .. ".log", LogWarningLevel.LOG, true ) end
- 	return DebugLog
+local function Debug_GetLog()	
+	return Log_Create( "dbg" )
 end
 
 function Debug_Level( level )

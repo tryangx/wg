@@ -283,7 +283,7 @@ function Entity_Dump( entity, fn )
 			if attrib.value_type == AssetAttribType.LIST then
 				local content = ""
 				local number = 0
-				Asset_ForeachList( entity, attrib.id, function( item )
+				Asset_Foreach( entity, attrib.id, function( item )
 					number = number + 1
 					if typeof( item ) == "table" then
 						for itemName, itemValue in pairs( item ) do
@@ -300,7 +300,7 @@ function Entity_Dump( entity, fn )
 			elseif attrib.value_type == AssetAttribType.POINTER_LIST then
 				local content = ""
 				local number = 0
-				Asset_ForeachList( entity, attrib.id, function( item )
+				Asset_Foreach( entity, attrib.id, function( item )
 					number = number + 1
 					if typeof( item ) == "number" then
 						content = content .. item .. ", "

@@ -2,18 +2,11 @@
 ----------------------------------------------
 -- City population structure
 
-DefaultCityPopuPleb = 
-{
-	ALL      = 1,
-	FARMER   = 1,
-	WORKER   = 1,
-	MERCHANT = 1,
-}
-
 DefaultCityPopuHarvest = 
 {
 	FARMER   = 100,
 }
+
 DefaultCityPopuConsumeFood = 
 {
 	RESERVES = 2,
@@ -37,6 +30,7 @@ DefaultCityPopuSalary =
 
 	NOBLE    = 100,
 }
+
 DefaultCityPopuPersonalTax = 
 {
 	FARMER   = 1,
@@ -57,50 +51,58 @@ DefaultCityPopuTradeTax =
 {
 	MERCHANT = 5,
 }
+
 DefaultCityPopuProduce = 
 {
 	WORKER   = 1,
 }
-DefaultCityPopuTransport = 
+
+DefaultCityPopuDevelopCost = 
 {
-	WORKER   = 10,
+	FARMER   = 0.5,
+	WORKER   = 0.5,
+	MERCHANT = 0.5,
 }
 
 DefaultCityPopuInit = 
 {
-	RESERVES = { min = 60, max = 120 },
+	RESERVES = { min = 60, max = 120 },	
 
 	HOBO     = { min = 60, max = 240 },
 	CHILDREN = { min = 60, max = 120 },
-	OLD      = { min = 60, max = 120 },	
+	OLD      = { min = 60, max = 120 },
+
+	CORVEE   = { min = 40, max = 80 },
 
 	MIDDLE   = { min = 80, max = 120 },
 
 	BACHELOR = { min = 40, max = 120 },
 	OFFICER  = { min = 40, max = 120 },
+	GUARD    = { min = 40, max = 120 },
 
 	RICH     = { min = 20, max = 120 },
 	NOBLE    = { min = 20, max = 120 },
 }
 
-
 --IMPT, affect initialize of the population structure
 DefaultCityPopuNeed = 
 {
-	RESERVES = { req = 0.02, max = 0.1 },
+	RESERVES = { req = 0.01, limit = 0.1 },
 
-	HOBO     = { req = 0.05, max = 0.1 },
-	CHILDREN = { req = 0.15, max = 0.3 },
-	OLD      = { req = 0.05, max = 0.2 },	
+	HOBO     = { req = 0.05, limit = 0.1 },
+	CHILDREN = { req = 0.15, limit = 0.3 },
+	OLD      = { req = 0.05, limit = 0.2 },	
 
-	MIDDLE   = { req = 0.05, max = 0.2 },
+	CORVEE   = { req = 0.01, limit = 0.1 },
 
-	OFFICER  = { req = 0.05, max = 0.05 },
-	BACHELOR = { req = 0.01, max = 0.05 },
-	GUARD    = { req = 0.01, max = 0.02 },
+	MIDDLE   = { req = 0.05, limit = 0.2 },
 
-	RICH     = { req = 0.005, max = 0.01 },
-	NOBLE    = { req = 0.001, max = 0.005 },
+	OFFICER  = { req = 0.05, limit = 0.1 },
+	BACHELOR = { req = 0.01, limit = 0.05 },
+	GUARD    = { req = 0.01, limit = 0.05 },
+
+	RICH     = { req = 0.005, limit = 0.01 },
+	NOBLE    = { req = 0.001, limit = 0.005 },
 }
 
 DefaultCityPopuMental = 
@@ -148,12 +150,15 @@ DefaultCityPopuPerUnit =
 
 DefaultCityPopuConv = 
 {
+	--guard 
+	{ from = "HOBO",     to = "GUARD",    need_popu = "GUARD", prob = 50, sec = -1 },
+
 	{ from = "CHILDREN", to = "HOBO",     ratio = 0.018, force_conv = true },
 
 	--low to high
-	{ from = "HOBO",     to = "FARMER",   sec_more_than = 40, prob = 90, sec = -1 },
-	{ from = "HOBO",     to = "WORKER",   sec_more_than = 40, prob = 80, sec = -1 },
-	{ from = "HOBO",     to = "MERCHANT", sec_more_than = 40, prob = 70, sec = -1 },
+	{ from = "HOBO",     to = "FARMER",   sec_more_than = 40, prob = 90, sec = -1, debug = 1 },
+	{ from = "HOBO",     to = "WORKER",   sec_more_than = 40, prob = 80, sec = -1, debug = 1  },
+	{ from = "HOBO",     to = "MERCHANT", sec_more_than = 40, prob = 70, sec = -1, debug = 1  },
 
 	{ from = "FARMER",   to = "MIDDLE",   sat_more_than = 60, prob = 30, sec = -1  },
 	{ from = "WORKER",   to = "MIDDLE",   sat_more_than = 60, prob = 35, sec = -1  },
@@ -198,15 +203,14 @@ DefaultCityPopuStructureParams =
 {
 	[1] = 
 	{
-		IS_PLEB      = DefaultCityPopuPleb,
-		POPU_HARVEST = DefaultCityPopuHarvest,
-		POPU_PRODUCE = DefaultCityPopuProduce,
-		POPU_TRANSPORT    = DefaultCityPopuTransport,
+		POPU_HARVEST      = DefaultCityPopuHarvest,
+		POPU_PRODUCE      = DefaultCityPopuProduce,
 		POPU_PERSONAL_TAX = DefaultCityPopuPersonalTax,	
 		POPU_COMMERCE_TAX = DefaultCityPopuCommerceTax,
 		POPU_TRADE_TAX    = DefaultCityPopuTradeTax,
 		POPU_SALARY       = DefaultCityPopuSalary,
 		POPU_CONSUME_FOOD = DefaultCityPopuConsumeFood,
+		POPU_DEVELOP_COST = DefaultCityPopuDevelopCost,
 
 		--use to initialize population structure in city
 		POPU_INIT         = DefaultCityPopuInit,
@@ -224,7 +228,7 @@ DefaultCityPopuStructureParams =
 	},
 }
 
-DefaultCityDevelopParams =
+DefaultCityDevelopResult =
 {
 	{
 		conditions = { progress_min = 100 },
@@ -267,7 +271,7 @@ DefaultCityDevelopParams =
 	},
 }
 
-DefaultCityDevelopmentVaryParams = 
+DefaultCityDevelopmentVaryResult = 
 {
 	{
 		conditions = { security_more_than = 80, trigger_prob = 50, },
@@ -332,4 +336,65 @@ DefaultCityDevelopmentVaryParams =
 			{ prob = 50, agri = -2, comm = -2, prod = -2, },
 		},
 	},
+}
+
+
+--------------------------------------------------------
+--  City Params
+
+CitySpyParams = 
+{
+	--G1 known base intel popu, charas
+	--G2 known roughly charas info
+	--G3 known roughly military intel, exactly charas info( like loyality etc )
+	--G4 known everything 
+	--G5 improve op success probability
+	INIT_GRADE  = 1,
+	REQ_GRADE   = 3,
+	MAX_GRADE   = 5,	
+	GRADE_INTEL = { 100, 200, 400, 1000 },
+
+	--Grade Level
+	--3 Know everything
+	--2 Know 50~90% exactly
+	--1 know 20~50%
+	--0 unknown
+	GRADE_DATA  = 
+	{
+		[1] = { BASE = 1, GROWTH = 0, MILITARY = 1 },
+		[2] = { BASE = 2, GROWTH = 1, MILITARY = 1 },
+		[3] = { BASE = 3, GROWTH = 1, MILITARY = 2 },
+		[4] = { BASE = 3, GROWTH = 2, MILITARY = 3 },
+		[5] = { BASE = 3, GROWTH = 3, MILITARY = 3 },
+	},
+	GRADE_OP_BONUS = { 0, 0, 5, 10, 25 }
+}
+
+PopulationParams =
+{
+	-- Growth rate per Year, rate one per thousand
+	GROWTH_MIN_RATE    = 12,
+	GROWTH_MAX_RATE    = 24,
+}
+
+PlotParams = 
+{
+	-- [Discard]
+	-- 360 * 100 means 1 agr support 100 popu
+	-- it relate with CityPopuStructureParams.POPU_PER_UNIT
+	--FOOD_PER_AGRICULTURE = 360 * 100,
+}
+
+CityLevelParams = 
+{
+	{
+		lv = 1, guard = 100,
+	},	
+}
+
+--------------------------------------------
+
+CityBuildingData =
+{
+	[1] = { name = "wall", },
 }

@@ -133,7 +133,7 @@ function CharaCreator_GenerateAtomicTrait( chara )
 					--print( traitName, prob )
 					if rand < prob then
 						local trait = CharaTraitType[traitName]
-						--print( "add atomic", traitName, chara.name )
+						--InputUtil_Pause( "add atomic", traitName, chara.name )
 						chara:GainTrait( trait )
 						reqNumOfTrait = reqNumOfTrait - 1
 						break

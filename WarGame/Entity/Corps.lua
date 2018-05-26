@@ -51,7 +51,7 @@ CorpsAssetAttrib =
 	template   = AssetAttrib_SetPointer    ( { id = CorpsAssetID.TEMPLATE,      type = CorpsAssetType.BASE_ATTRIB } ),
 	movement   = AssetAttrib_SetNumber     ( { id = CorpsAssetID.MOVEMENT,      type = CorpsAssetType.BASE_ATTRIB, default = 0 } ),
 
-	statuses   = AssetAttrib_SetPointerList( { id = CorpsAssetID.STATUSES,      type = CorpsAssetType.BASE_ATTRIB } ),
+	statuses   = AssetAttrib_SetDict       ( { id = CorpsAssetID.STATUSES,      type = CorpsAssetType.BASE_ATTRIB } ),
 	tasks      = AssetAttrib_SetPointerList( { id = CorpsAssetID.TASKS,         type = CorpsAssetType.BASE_ATTRIB } ),
 
 	food       = AssetAttrib_SetNumber     ( { id = CorpsAssetID.FOOD,          type = CorpsAssetType.PROPERTY_ATTRIB, default = 0 } ),
@@ -101,14 +101,14 @@ function Corps:ToString( type )
 			content = content .. leader:ToString()
 		end
 		content = content .. " soldier=" .. self:GetSoldier()
-		Asset_ForeachList( self, CorpsAssetID.TROOP_LIST, function( troop )
+		Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function( troop )
 			content = content .. " " .. troop:ToString( type )
 		end)
 	elseif type == "MILITARY" then
 		content = content .. " trp=" .. Asset_GetListSize( self, CorpsAssetID.TROOP_LIST )
 		content = content .. " soldier=" .. self:GetSoldier()
 	elseif type == "POSITION" then
-		content = content .. " loc=" .. Asset_Get( self, CorpsAssetID.LOCATION ):ToString()
+		content = content .. " @" .. Asset_Get( self, CorpsAssetID.LOCATION ):ToString()
 	elseif type == "MAINTAIN" then
 		local food = Asset_Get( self, CorpsAssetID.FOOD )
 		local consume = self:GetConsumeFood()
@@ -126,7 +126,7 @@ end
 function Corps:GetTraining()
 	local total = 0
 	local number = 0
-	Asset_ForeachList( self, CorpsAssetID.TROOP_LIST, function ( troop )
+	Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function ( troop )
 		total = total + Asset_Get( troop, TroopAssetID.TRAINING )
 		number = number + 1
 	end )
@@ -139,7 +139,7 @@ end
 function Corps:GetSoldier()
 	local number = 0
 	local maxNumber = 0
-	Asset_ForeachList( self, CorpsAssetID.TROOP_LIST, function ( troop )
+	Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function ( troop )
 		number = number + Asset_Get( troop, TroopAssetID.SOLDIER )
 		maxNumber = maxNumber + Asset_Get( troop, TroopAssetID.MAX_SOLDIER )
 	end )
@@ -148,7 +148,7 @@ end
 
 function Corps:GetCapacity( typename )
 	local capacity = 0
-	Asset_ForeachList( self, CorpsAssetID.TROOP_LIST, function( troop )
+	Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function( troop )
 		local soldier = Asset_Get( troop, TroopAssetID.SOLDIER )
 		local troopTable = Asset_Get( troop, TroopAssetID.TABLEDATA )
 		capacity = capacity + soldier * troopTable.capacity[typename]
@@ -158,7 +158,7 @@ end
 
 function Corps:GetConsume( typename )
 	local consume = 0
-	Asset_ForeachList( self, CorpsAssetID.TROOP_LIST, function( troop )
+	Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function( troop )
 		local soldier = Asset_Get( troop, TroopAssetID.SOLDIER )
 		local troopTable = Asset_Get( troop, TroopAssetID.TABLEDATA )
 		consume = consume + soldier * troopTable.consume[typename]
@@ -192,7 +192,7 @@ function Corps:IsAtHome()
 end
 
 function Corps:IsBusy()
-	local status = Asset_GetListItem( self, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )
+	local status = Asset_GetDictItem( self, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )
 	if not status then return false end
 	return status ~= false
 end
@@ -221,21 +221,21 @@ end
 
 --dispatch 
 function Corps:Dispatch()
-	Asset_SetListItem( self, CorpsAssetID.STATUSES, CorpsStatus.DEPATURE_TIME, g_Time:GetDateValue() )
+	Asset_SetDictItem( self, CorpsAssetID.STATUSES, CorpsStatus.DEPATURE_TIME, g_Time:GetDateValue() )
 end
 
 function Corps:EnterCity()
-	Asset_SetListItem( self, CorpsAssetID.STATUSES, CorpsStatus.DEPATURE_TIME, nil )
+	Asset_SetDictItem( self, CorpsAssetID.STATUSES, CorpsStatus.DEPATURE_TIME, nil )
 end
 
 function Corps:Starve()
-	Asset_ForeachList( self, CorpsAssetID.TROOP_LIST, function( troop )
+	Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function( troop )
 		troop:Starve()
 	end )
 end
 
 function Corps:EatFood()
-	Asset_ForeachList( self, CorpsAssetID.TROOP_LIST, function( troop )
+	Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function( troop )
 		troop:EatFood()
 	end )
 end

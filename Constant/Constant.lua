@@ -11,6 +11,11 @@ require "EventDefine"
 
 
 --data
+require "MapData"
 require "CombatData"
 require "CityData"
+require "CharaData"
+require "GroupData"
+require "MeetingData"
+require "DiplomacyData"
 require "DefaultData"

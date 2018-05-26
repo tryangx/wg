@@ -47,53 +47,60 @@ local function SubmitProposal( params )
 	Asset_Set( proposal, ProposalAssetID.ACTOR,       actor )
 	
 	if params.type == "ATTACK_CITY" then		
-		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "corps_list", _registers["ATTACK_CORPS"] )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "corps_list", _registers["ATTACK_CORPS"] )
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
+	
 	elseif params.type == "HARASS_CITY" then
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
+	
 	elseif params.type == "INTERCEPT" then
 		local enemyCorps = _registers["TARGET_CORPS"]
 		local city = Asset_Get( enemyCorps, CorpsAssetID.LOCATION )
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, city )
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
+	
 	elseif params.type == "DISPATCH_CORPS" then
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
-		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "corps", _registers["CORPS"] )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "corps", _registers["CORPS"] )
 
 	elseif params.type == "ESTABLISH_CORPS" then
-		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "leader", _registers["CORPS_LEADER"] )
-		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.COMMANDER )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "leader", _registers["CORPS_LEADER"] )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.COMMANDER )
 	
 	elseif params.type == "REINFORCE_CORPS"
 		or params.type == "DISMISS_CORPS"
 		or params.type == "TRAIN_CORPS"
 		or params.type == "UPGRADE_CORPS"
 		or params.type == "ENROLL_CORPS" then
-		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "corps", _registers["CORPS"] )
-		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.COMMANDER )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "corps", _registers["CORPS"] )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.COMMANDER )
 
 	elseif params.type == "PROMOTE_CHARA" then
-		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "job", _registers["JOB"] )
-		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.HR )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "job", _registers["JOB"] )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.HR )
 	elseif params.type == "HIRE_CHARA" then
-		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.HR )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.HR )
 	elseif params.type == "DISPATCH_CHARA" then
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
 	elseif params.type == "CALL_CHARA" then		
 		Asset_Set( proposal, ProposalAssetID.LOCATION, _registers["TARGET_CITY"] )
 	
 	elseif params.type == "DEV_AGRICULTURE" or params.type == "DEV_COMMERCE" or params.type == "DEV_PRODUCTION" 
-		or params.type == "BUILD_CITY" or params.type == "LEVY_TAX" then
-		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.AFFAIRS )
+		or params.type == "BUILD_CITY" or params.type == "LEVY_TAX"
+		then
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.AFFAIRS )
+	elseif params.type == "TRANSPORT" then
+		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.AFFAIRS )
 
 	elseif params.type == "RECONNOITRE" 
 		or params.type == "SABOTAGE"
 		then
-		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.STAFF )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.STAFF )
 
 	elseif params.type == "RESEARCH" then
-		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "tech", _registers["TARGET_TECH"] )
-		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.TECHNICIAN )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "tech", _registers["TARGET_TECH"] )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.TECHNICIAN )
 
 	elseif params.type == "IMPROVE_RELATION"
 		or params.type == "DECLARE_WAR"
@@ -101,26 +108,33 @@ local function SubmitProposal( params )
 		local oppGroup = _registers["TARGET_GROUP"]
 		local capital  = Asset_Get( oppGroup, GroupAssetID.CAPITAL )
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, capital )
-		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "group", oppGroup )
-		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.DIPLOMATIC )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "group", oppGroup )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.DIPLOMATIC )
 
 	elseif params.type == "SIGN_PACT" then
 		local oppGroup = _registers["TARGET_GROUP"]
 		local capital  = Asset_Get( oppGroup, GroupAssetID.CAPITAL )
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, capital )
-		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "pact", _registers["PACT"] )		
-		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "time", _registers["TIME"] )
-		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "group", oppGroup )
-		Asset_SetListItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.DIPLOMATIC )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "pact", _registers["PACT"] )		
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "time", _registers["TIME"] )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "group", oppGroup )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.DIPLOMATIC )
+
+	elseif params.type == "SET_GOAL" then
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "goalType", _registers["GOALTYPE"] )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "goalData", _registers["GOALDATA"] )
+
+	elseif params.type == "INSTRUCT_CITY" then
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "instructCityList", _registers["INSTRUCT_CITY_LIST"] )		
 
 	elseif params.type == "" then
 	end
 
-	DBG_Watch( "Debug_Meeting", "submit proposal=" .. proposal:ToString() )
+	--DBG_Watch( "Debug_Meeting", "    submit proposal=" .. proposal:ToString() )
 
 	Stat_Add( "Proposal@Submit_Times", 1, StatType.TIMES )
 
-	Asset_SetListItem( _proposer, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD, Random_GetInt_Sync( 30, 50 ) )
+	Asset_SetDictItem( _proposer, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD, Random_GetInt_Sync( 30, 50 ) )
 end
 
 ----------------------------------------
@@ -138,9 +152,8 @@ local function IsCityCapital()
 	return Asset_Get( group, GroupAssetID.CAPITAL ) == _city
 end
 
-local function IsCityInstruction( params )
-	local citydata = Asset_Get( _city, CityAssetID.INSTRUCTION )
-	return citydata == CityInstruction[params.instruction]
+local function IsGroupLeader()
+	return _proposer:IsGroupLeader()
 end
 
 local function IsTopic( params )
@@ -157,14 +170,22 @@ local function IsProposalCD()
 end
 
 local function HasCityStatus( params )
-	local ret = Asset_GetListItem( _city, CityAssetID.STATUSES, CityStatus[params.status] )
-	return ret == true
+	local ret = _city:HasStatus( CityStatus[params.status] )
+	if ret == true then
+		InputUtil_Pause( _city.name, params.status, CityStatus[params.status] )
+	end
+	return ret
 end
 
 local function HasGroupGoal( params )
 	if not _group then return false end
-	if _group:HasGoal( GroupGoalType[params.goal] ) == false then return false end
-	return true
+	local goalData = _group:GetGoal( GroupGoalType[params.goal] )	
+	if params.excludeCity then
+		return goalData ~= nil
+	end
+	--print( params.goal, _group:ToString( "GOAL" ), goalData, goalData.city )
+	if not goalData then return false end
+	return not goalData.city or goalData.city == city
 end
 
 local function QueryJob( topic )
@@ -238,8 +259,7 @@ local function IsResponsible()
 	local job = QueryJob( _topic )
 	--print( "check responsible=" .. _proposer.name, "needjob=" .. MathUtil_FindName( CityJob, job ) )
 	if _city:IsCharaOfficer( job, _proposer ) then
-		--InputUtil_Pause( "is reson" )
-		print( _proposer.name, "is job=" .. MathUtil_FindName( CityJob, job ) )
+		--print( _proposer.name, "is job=" .. MathUtil_FindName( CityJob, job ) )
 		return true
 	end
 	return false
@@ -267,7 +287,7 @@ local function CanEstablishCorps()
 		return false
 	end
 	if Corps_CanEstablishCorps( _city, reserves ) == false then
-		print( "cann't est corps" )
+		--print( "cann't est corps" )
 		return false
 	end
 
@@ -453,10 +473,10 @@ local function NeedMoreReserves( score )
 	--default score
 	if not score then score = 0 end
 
-	if Asset_GetListItem( _city, CityAssetID.STATUSES, CityStatus.MILITARY_DANGER ) then
+	if Asset_GetDictItem( _city, CityAssetID.STATUSES, CityStatus.MILITARY_DANGER ) then
 		score = score + 50
 	end
-	if Asset_GetListItem( _city, CityAssetID.STATUSES, CityStatus.MILITARY_WEAK ) then
+	if Asset_GetDictItem( _city, CityAssetID.STATUSES, CityStatus.MILITARY_WEAK ) then
 		score = score + 35
 	end
 
@@ -475,22 +495,27 @@ local function NeedMoreReserves( score )
 	return Random_GetInt_Sync( 1, 100 ) < score
 end
 
-local function IsBudgetSafe()
-	if City_CalcCommerceTax( _city ) < _city:GetSalary() then
+local function IsBudgetSafe( params )
+	local req = _city:GetSalary() + ( params and params.money or 0 )
+	if City_CalcCommerceTax( _city ) < req then
 		--print( "budget exceeded")
 		return false
 	end
 	--print( _city:ToString( "POPULATION" ) )
 	--print( "budget" .. _city:ToString( "BUDGET_MONTH" ) )
 
+	local req_food, req_money = _city:GetReqProperty()
+
 	--check salary reserve
-	if _city:GetSalary() * 3 > Asset_Get( _city, CityAssetID.MONEY ) then
+	req_money = req_money + ( params and params.money or 0 )
+	if Asset_Get( _city, CityAssetID.MONEY ) < req_money then
 		--InputUtil_Pause( _city.name, "danger money reserve" )
 		return false
 	end
 
 	--check food reserve
-	if ( _city:GetConsumeFood() + _city:GetSupplyFood() ) * 6 > Asset_Get( _city, CityAssetID.FOOD ) then
+	req_food = req_food+ ( params and params.food or 0 )
+	if Asset_Get( _city, CityAssetID.FOOD ) < req_food then
 		--InputUtil_Pause( _city.name, "danger food reserve" )
 		return false
 	end
@@ -537,6 +562,32 @@ local function CanRecruit()
 	end
 end
 
+local function CanReinforceAdvancedBase()
+	local corpsList = _city:GetFreeCorps()
+	if #corpsList == 0 then
+		--print( "no corps" )
+		return false
+	end
+
+	local goalData = _group:GetGoal( GroupGoalType.DEFEND_CITY )
+	if not goalData or not goalData.city then
+		print( "no goal", _group:ToString( "GOAL" ) )
+		return false
+	end
+
+	if goalData.city == _city then
+		return false
+	end
+
+	_registers["ACTOR"] = Random_GetListItem( corpsList )
+	_registers["CORPS"] = _registers["ACTOR"]
+	_registers["TARGET_CITY"] = goalData.city
+
+	--InputUtil_Pause( "reinforce military base", _registers["TARGET_CITY"].name, _registers["CORPS"].name )
+
+	return true
+end
+
 local function NeedCorps( city, score )
 	if not score then score = 0 end
 	if Asset_GetListItem( city, CityAssetID.STATUSES, CityStatus.MILITARY_WEAK ) == true then
@@ -552,7 +603,7 @@ local function NeedCorps( city, score )
 	return Random_GetInt_Sync( 1, 100 ) < score
 end
 
-local function CanDispatchCorps()
+local function CanDispatchCorps()	
 	if _city:IsCapital() == false then
 		return false
 	end
@@ -561,21 +612,21 @@ local function CanDispatchCorps()
 	if #corpsList == 0 then return false end
 
 	local score = 0
-	if Asset_GetListItem( _city, CityAssetID.STATUSES, CityStatus.SAFETY ) == true then
+	if Asset_GetDictItem( _city, CityAssetID.STATUSES, CityStatus.SAFETY ) == true then
 		score = score + 50
 	end
-	if Asset_GetListItem( _city, CityAssetID.STATUSES, CityStatus.BATTLEFRONT ) == true then
+	if Asset_GetDictItem( _city, CityAssetID.STATUSES, CityStatus.BATTLEFRONT ) == true then
 		score = score - 50
 	end	
-	if Asset_GetListItem( _city, CityAssetID.STATUSES, CityStatus.MILITARY_WEAK ) == true then
+	if Asset_GetDictItem( _city, CityAssetID.STATUSES, CityStatus.MILITARY_WEAK ) == true then
 		score = score - 10
 	end
-	if Asset_GetListItem( _city, CityAssetID.STATUSES, CityStatus.MILITARY_DANGER ) == true then
+	if Asset_GetDictItem( _city, CityAssetID.STATUSES, CityStatus.MILITARY_DANGER ) == true then
 		score = score - 20
 	end
 
 	local cityList = {}
-	Asset_ForeachList( _group, GroupAssetID.CITY_LIST, function ( city )
+	Asset_Foreach( _group, GroupAssetID.CITY_LIST, function ( city )
 		if city:IsCapital() == true then return end
 		if Corps_GetLimityByCity( city ) <= Asset_GetListSize( city, CityAssetID.CORPS_LIST ) then return end
 		if NeedCorps( city, score ) == false then return end		
@@ -625,6 +676,41 @@ local function CanLevyTax()
 	return true
 end
 
+local function CanTransport()
+	--has enough corvee to do this job
+	if _city:GetPopu( CityPopu.CORVEE ) < Scenario_GetData( "TROOP_PARAMS" ).MIN_TROOP_SOLDIER then		
+		print( "not enough corvee")
+		return false
+	end
+
+	--has enough food/moeny for self
+	if IsBudgetSafe() == false then
+		print( "budget danger")
+		return false
+	end
+
+	--find advanced base
+	local cityList = {}
+	Asset_Foreach( _group, GroupAssetID.CITY_LIST, function ( city )
+		if _city ~= city and city:HasStatus( CityStatus.ADVANCED_BASE ) then
+			table.insert( cityList, city )
+		end
+	end )
+
+	if #cityList <= 0 then
+		print( "no advanced" )
+		return false
+	end
+
+	local city = Random_GetListItem( cityList )
+
+	_registers["TARGET_CITY"] = city
+
+	InputUtil_Pause( "transport" )
+
+	return true
+end
+
 local function CanHireChara()
 	local limit
 	if _city then
@@ -660,7 +746,7 @@ local function CanDispatchChara()
 	local chara = Random_GetListItem( charaList )
 
 	_registers["TARGET_CITY"] = city
-	_registers["ACTOR"]         = chara
+	_registers["ACTOR"]       = chara
 
 	--print( _city:ToString( "OFFICER") )
 
@@ -676,7 +762,7 @@ local function CanCallChara()
 	if Asset_GetListSize( _city, CityAssetID.CHARA_LIST ) >= limit then return false end
 
 	local charaList = {}	
-	Asset_ForeachList( _group, GroupAssetID.CITY_LIST, function ( city )
+	Asset_Foreach( _group, GroupAssetID.CITY_LIST, function ( city )
 		if city:IsCapital() then return end
 		--print( city.name, Asset_GetListSize( city, CityAssetID.CHARA_LIST ), Asset_GetListSize( city, CityAssetID.OFFICER_LIST ), Chara_GetReqNumOfOfficer( city ) )
 		if Asset_GetListSize( city, CityAssetID.OFFICER_LIST ) >= Chara_GetReqNumOfOfficer( city ) then
@@ -690,206 +776,102 @@ local function CanCallChara()
 	local city = Asset_Get( chara, CharaAssetID.HOME )
 
 	_registers["TARGET_CITY"] = city
-	_registers["ACTOR"]          = chara
+	_registers["ACTOR"]       = chara
 
 	return true
 end
 
-
 local function CanDevelop( params )
-	local id = params.id
-	local cur = Asset_Get( _city, id )
-	local need = City_NeedPopu( _city, City_GetPopuTypeByDevIndex( id ) )
-	--InputUtil_Pause( "Check " .. MathUtil_FindName( CityAssetID, id ), cur, need )	
-	return cur < need
+	local score = 0
+	local ratio
+
+	local tax      = City_GetMonthTax( _city, g_Time:GetMonth( g_Time:GetMonth() + 1 ) )
+	local salary   = _city:GetSalary()
+	local cost     = _city:GetDevelopCost()
+	local hasMoney = Asset_Get( _city, CityAssetID.MONEY )
+	local totalHas = tax + hasMoney
+	local totalUse = cost + salary
+	
+	ratio = totalHas * 100 / totalUse
+	if ratio < 1 then
+		return false
+	end
+
+	local item
+
+	local feeScores = 
+	{
+		{ ratio = 110, score = -10 },
+		{ ratio = 120, score = 0   },
+		{ ratio = 150, score = 20  },
+	}
+	item = MathUtil_Approximate( ratio, feeScores, "ratio" )
+	score = score + item.score
+	
+	ratio = _city:GetDevelopScore( params.assetId )
+	local devScores = 
+	{
+		{ ratio = 40,   score = 100 },
+		{ ratio = 50,   score = 80 },
+		{ ratio = 60,   score = 60 },
+		{ ratio = 70,   score = 40 },
+		{ ratio = 80,   score = 30 },
+		{ ratio = 90,   score = 20 },
+	}
+	item = MathUtil_Approximate( ratio, devScores, "ratio" )
+	score = score + item.score
+
+	if Random_GetInt_Sync( 1, 100 ) < score then
+		return true 
+	end
+
+	--InputUtil_Pause( "dev", score, totalHas / totalUse, ratio )
+
+	return false
+end
+
+local function CanResearch()
+	if _city:IsCapital() == false then return false end
+
+	if Asset_Get( _city, CityAssetID.RESEARCH ) ~= nil then return false end
+	
+	if _proposer:IsGroupLeader() == false and _city:GetOfficer( CityJob.CHIEF_TECHNICIAN ) ~= _proposer then return false end
+
+	local techList = {}
+	local techData = Scenario_GetData( "TECH_DATA" )
+	for _, tech in pairs( techData ) do
+		local valid = true
+		if tech.prerequisite then
+			if valid == true and tech.prerequisite.tech then
+				for _, id in ipairs( tech.prerequisite.tech ) do
+					if _group:HasTech( id ) == false then
+						valid = false
+						break
+					end
+				end
+			end
+		end
+		if valid == true then
+			table.insert( techList, tech )
+		end
+	end
+
+	if #techList == 0 then return false end
+
+	--print( "resear", g_Time:CreateCurrentDateDesc(), _city.name, _proposer.name )
+
+	local tech = techList[Random_GetInt_Sync( 1, #techList )]
+	_registers["TARGET_TECH"] = tech
+
+	return true
 end
 
 ------------------------------
--- AI
-
-local _HRPlans = 
-{
-	{ type = "SEQUENCE", children = 
-		{
-			{ type = "FILTER", condition = CanCallChara },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "CALL_CHARA" } },
-		},
-	},	
-	{ type = "SEQUENCE", children = 
-		{
-			{ type = "FILTER", condition = CanDispatchChara },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "DISPATCH_CHARA" } },
-		},
-	},	
-	{ type = "SEQUENCE", children = 
-		{
-			{ type = "FILTER", condition = CanHireChara },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "HIRE_CHARA" } },
-		},
-	},
-	--[[
-	{ type = "SEQUENCE", children = 
-		{
-			{ type = "FILTER", condition = CanPromoteChara },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "PROMOTE_CHARA" } },
-		},
-	},
-	]]
-		--ENCOURGAE CHARA
-		--SUPERVISE CHARA
-}
-
-local EstablishCorpsProposal = 
-{
-	type = "SEQUENCE", children = 
-	{
-		{ type = "FILTER", condition = CanEstablishCorps },
-		{ type = "ACTION", action = SubmitProposal, params = { type = "ESTABLISH_CORPS" } },
-	},
-}
-
-local ReinforceProposal = 
-{
-	type = "SEQUENCE", children = 
-	{
-		{ type = "FILTER", condition = CanReinforceCorps },
-		{ type = "ACTION", action = SubmitProposal, params = { type = "REINFORCE_CORPS" } },
-	},
-}
-
-local EnrollProposal = 
-{
-	type = "SEQUENCE", children = 
-	{
-		{ type = "FILTER", condition = CanEnrollCorps },
-		{ type = "ACTION", action = SubmitProposal, params = { type = "ENROLL_CORPS" } },
-	},
-}
-
-local TrainProposal = 
-{
-	type = "SEQUENCE", children = 
-	{
-		{ type = "FILTER", condition = CanTrainCorps },
-		{ type = "ACTION", action = SubmitProposal, params = { type = "TRAIN_CORPS" } },
-	},
-}
-
-local DispatchCorpsProposal =
-{
-	type = "SEQUENCE", children = 
-	{
-		{ type = "FILTER", condition = CanDispatchCorps },
-		{ type = "ACTION", action = SubmitProposal, params = { type = "DISPATCH_CORPS" } },
-	},
-}
-
-local ConscriptProposal =
-{
-	type = "SEQUENCE", children = 
-	{
-		{ type = "FILTER", condition = CanConscript },
-		{ type = "ACTION", action = SubmitProposal, params = { type = "CONSCRIPT" } },
-	},
-}
-
-local RecruitProposal = 
-{
-	type = "SEQUENCE", children = 
-	{
-		{ type = "FILTER", condition = CanRecruit },
-		{ type = "ACTION", action = SubmitProposal, params = { type = "RECRUIT" } },
-	},
-}
-
-local _AggressivePlans = 
-{
-	type = "SEQUENCE", children =
-	{
-		{ type = "FILTER", condition = TestProbability, params = { prob = 5000 } },
-		{ type = "FILTER", condition = HasGroupGoal, params = { goal = "DOMINATION_TERRIORITY" } },		
-		{ type = "SELECTOR", children = 
-			{
-				RecruitProposal,
-				ConscriptProposal,		
-				ReinforceProposal,
-				EstablishCorpsProposal,
-				EnrollProposal,		
-				DispatchCorpsProposal,
-				TrainProposal,
-			},
-		},
-	}	
-}
-
-local _CommanderPlans = 
-{
-	type = "RANDOM_SELECTOR", children = 
-	{ 
-		EstablishCorpsProposal,
-		ReinforceProposal,
-		EnrollProposal,
-		TrainProposal,
-		DispatchCorpsProposal,
-		ConscriptProposal,
-		RecruitProposal,
-	},
-}
-
-local _StrategyPlans = 
-{
-	{ type = "SEQUENCE", children = 
-		{
-			{ type = "FILTER", condition = CanHarassCity },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "HARASS_CITY" } },
-		},
-	},
-	{ type = "SEQUENCE", children = 
-		{		
-			{ type = "FILTER", condition = CanAttackCity },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "ATTACK_CITY" } },
-		},
-	},
-}
-
-local _AffairsPlans =
-{
-	{ type = "SEQUENCE", children = 
-		{
-			{ type = "FILTER", condition = CanDevelop, params = { id = CityAssetID.AGRICULTURE } },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "DEV_AGRICULTURE" } },
-		},
-	},
-	{ type = "SEQUENCE", children = 
-		{
-			{ type = "FILTER", condition = CanDevelop, params = { id = CityAssetID.COMMERCE } },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "DEV_COMMERCE" } },
-		},
-	},
-	{ type = "SEQUENCE", children = 
-		{
-			{ type = "FILTER", condition = CanDevelop, params = { id = CityAssetID.PRODUCTION } },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "DEV_PRODUCTION" } },
-		},
-	},
-	{ type = "SEQUENCE", children = 
-		{
-			{ type = "FILTER", condition = CanBuildCity },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "BUILD_CITY" } },
-		},
-	},
-	{ type = "SEQUENCE", children = 
-		{
-			{ type = "FILTER", condition = CanLevyTax },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "LEVY_TAX" } },
-		},
-	},
-}
 
 local function CanReconnoitre()
 	--whether to reconnoitre
 	local list = {}
-	Asset_ForeachList( _city, CityAssetID.SPY_LIST, function( spy )
+	Asset_Foreach( _city, CityAssetID.SPY_LIST, function( spy )
 		if spy.grade <= CitySpyParams.REQ_GRADE then
 			table.insert( list, spy )
 		end
@@ -905,7 +887,7 @@ end
 
 local function CanSabotage()
 	local list = {}
-	Asset_ForeachList( _city, CityAssetID.SPY_LIST, function( spy )
+	Asset_Foreach( _city, CityAssetID.SPY_LIST, function( spy )
 		if spy.grade >= CitySpyParams.REQ_GRADE then
 			table.insert( list, spy )
 		end
@@ -919,23 +901,139 @@ local function CanSabotage()
 	return true
 end
 
-local _StaffPlans = 
-{
-	--COLLECT INTELS
-	--EXECUTE OP
-	{ type = "SEQUENCE", children = 
-		{		
-			{ type = "FILTER", condition = CanReconnoitre },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "RECONNOITRE" } },
-		},
-	},
-	{ type = "SEQUENCE", children = 
-		{
-			{ type = "FILTER", condition = CanSabotage },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "SABOTAGE" } },
-		},
-	},
-}
+
+
+local function DetermineDefendGoal( ... )
+	local goalData = _group:GetGoal( GroupGoalType.DEFEND_CITY )
+	if not goalData or not goalData then
+		return false
+	end
+
+	local baseList = {}
+	Asset_Foreach( _group, GroupAssetID.CITY_LIST, function ( city )
+		--print( city:ToString( "STAUTS" ) )
+		--InputUtil_Pause( city.name, goalData.city.name )
+		if goalData.city == city then
+			table.insert( baseList, { city = city, type = CityStatus.ADVANCED_BASE } )
+		
+		elseif city:HasStatus( CityStatus.SAFETY ) then
+			--where support the advanced base
+			if city:IsAdjaCity( goalData.city ) then
+				table.insert( baseList, { city = city, type = CityStatus.MILITARY_BASE } )
+			elseif city:HasStatus( CityStatus.SAFETY ) then
+				table.insert( baseList, { city = city, type = CityStatus.PRODUCTION_BASE } )
+			end
+
+		else
+			table.insert( baseList, { city = city, type = nil } )
+		end
+	end)
+
+	_registers["INSTRUCT_CITY_LIST"] = baseList
+
+	return true	
+end
+
+local function DetermineEnhanceGoal( ... )
+	local goalData = _group:GetGoal( GroupGoalType.ENHANCE_CITY )
+	if not goalData or not goalData then
+		return false
+	end
+
+	local baseList = {}
+	Asset_Foreach( _group, GroupAssetID.CITY_LIST, function ( city )
+		if goalData.city == city then
+			table.insert( baseList, { city = city, type = CityStatus.MILITARY_BASE } )
+
+		elseif city:HasStatus( CityStatus.SAFETY ) then
+			table.insert( baseList, { city = city, type = CityStatus.PRODUCTION_BASE } )
+
+		else
+			table.insert( baseList, { city = city, type = nil } )
+		end
+	end)
+
+	_registers["INSTRUCT_CITY_LIST"] = baseList
+
+	return true
+end
+
+
+local function DetermineDevelopGoal( ... )
+	local goalData = _group:GetGoal( GroupGoalType.DEVELOP_CITY )
+	if not goalData or not goalData then
+		return false
+	end
+
+	local baseList = {}
+	Asset_Foreach( _group, GroupAssetID.CITY_LIST, function ( city )
+		if goalData.city == city then
+			table.insert( baseList, { city = city, type = CityStatus.PRODUCTION_BASE } )
+
+		elseif city:HasStatus( CityStatus.SAFETY ) then
+			table.insert( baseList, { city = city, type = CityStatus.PRODUCTION_BASE } )
+		
+		else
+			table.insert( baseList, { city = city, type = nil } )
+		end
+	end)
+
+	_registers["INSTRUCT_CITY_LIST"] = baseList
+
+	return true
+end
+
+local function DetermineOccupyGoal( ... )
+	local goalData = _group:GetGoal( GroupGoalType.OCCUPY_CITY )
+	if not goalData or not goalData.city then
+		return false
+	end
+
+	local baseList = {}	
+	local cityList = {}
+
+	--set advanced base
+	local advanceBase = Asset_FindListItem( goalData.city, CityAssetID.ADJACENTS, function ( adjaCity )
+		if Asset_Get( adjaCity, CityAssetID.GROUP ) ~= _group then
+			return
+		end
+		if adjaCity:HasStatus( CityStatus.ADVANCED_BASE ) then
+			return true
+		end
+		table.insert( cityList, adjaCity )
+		return false
+	end )
+	if not advanceBase then
+		advanceBase = Random_GetListItem( cityList )
+		table.insert( baseList, { city = advanceBase, type = CityStatus.ADVANCED_BASE } )
+	end
+
+	--for all city, determine what kind of base they are.
+	--basically, battlefront is none, safety is production, frontier is military
+	cityList = {}
+	Asset_Foreach( _group, GroupAssetID.CITY_LIST, function ( city )
+		if city == goalData.city then
+			return
+		end
+
+		if city:HasStatus( CityStatus.SAFETY ) then
+			table.insert( baseList, { city = city, type = CityStatus.PRODUCTION_BASE } )
+		
+		elseif city:HasStatus( CityStatus.BATTLEFRONT ) then
+			table.insert( baseList, { city = city, type = CityStatus.MILITARY_BASE } )
+		
+		elseif city:HasStatus( CityStatus.FRONTIER ) then
+			table.insert( baseList, { city = city, type = nil } )
+		
+		else
+			table.insert( baseList, { city = city, type = nil } )	
+		end
+	end)
+
+	_registers["INSTRUCT_CITY_LIST"] = baseList	
+
+	return true
+end
 
 local function CanImproveRelation()
 	if 1 then return false end
@@ -1007,74 +1105,349 @@ local function CanSignPact()
 	return true
 end
 
-local _DiplomatciPlans = 
-{
-	{ type = "SEQUENCE", children = 
-		{
-			{ type = "FILTER", condition = CanImproveRelation },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "IMPROVE_RELATION" } },
-		},
-	},
-	{ type = "SEQUENCE", children = 
-		{
-			{ type = "FILTER", condition = CanDeclareWar },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "DECLARE_WAR" } },
-		},
-	},
-	{ type = "SEQUENCE", children = 
-		{
-			{ type = "FILTER", condition = CanSignPact },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "SIGN_PACT" } },
-		},
-	},
-}
+------------------------------
 
-local function CanResearch()
-	if _city:IsCapital() == false then return false end
+local function DetermineGoal()
+	local goals = {}
+	local totalProb = 0
 
-	if Asset_Get( _city, CityAssetID.RESEARCH ) ~= nil then return false end
-	
-	if _proposer:IsGroupLeader() == false and _city:GetOfficer( CityJob.CHIEF_TECHNICIAN ) ~= _proposer then return false end
+	local devScore   = _city:GetDevelopScore()
+	local soldier    = _city:GetSoldier()
+	local incScore
+	local incSoldier
 
-	local techList = {}
-	local techData = Scenario_GetData( "TECH_DATA" )
-	for _, tech in pairs( techData ) do
-		local valid = true
-		if tech.prerequisite then
-			if valid == true and tech.prerequisite.tech then
-				for _, id in ipairs( tech.prerequisite.tech ) do
-					if _group:HasTech( id ) == false then
-						valid = false
-						break
-					end
+	function AddGoal( goalType, prob )
+		--[[
+		if goalType == GroupGoalType.DEVELOP_CITY then
+			if not incScore then
+				local item = MathUtil_Approximate( devTargets, scores, "dev" )
+				if item.target <= 0 then
+					InputUtil_Pause( "too high" )
+					return
 				end
+				incScore = item.target
 			end
+			if incScore <= 0 then
+				return
+			end
+			
+		elseif goalType == GroupGoalType.ENHANCE_CITY then
+			if not incSoldier then
+				incSoldier = _city:GetPopu( CityPopu.RESERVES )
+			end
+			if incSoldier and incSoldier <= Scenario_GetData( "TROOP_PARAMS" ).MIN_TROOP_SOLDIER then
+				return
+			end
+			
 		end
-		if valid == true then
-			table.insert( techList, tech )
+		]]
+		if goals[goalType] then
+			goals[goalType] = goals[goalType] + prob
+		else
+			goals[goalType] = prob			
+		end
+		totalProb = totalProb + prob
+	end
+
+	local trait
+	
+	trait = _proposer:GetTrait( CharaTraitType.AGGRESSIVE )
+	if trait then AddGoal( GroupGoalType.OCCUPY_CITY, trait ) end
+
+	trait = _proposer:GetTrait( CharaTraitType.CONSERVATIVE )
+	if trait then AddGoal( GroupGoalType.OCCUPY_CITY, trait ) end
+
+	AddGoal( GroupGoalType.OCCUPY_CITY, 50 )
+
+	local job = _city:GetCharaJob( _proposer )		
+	if job == CityJob.CHIEF_COMMANDER then
+		AddGoal( GroupGoalType.OCCUPY_CITY,  100 )
+	
+	elseif job == CityJob.CHIEF_STAFF then
+		AddGoal( GroupGoalType.ENHANCE_CITY, 50 )
+	
+	elseif job == CityJob.CHIEF_HR then
+	
+	elseif job == CityJob.CHIEF_AFFAIRS then
+		AddGoal( GroupGoalType.DEVELOP_CITY, 100 )
+	
+	elseif job == CityJob.CHIEF_DIPLOMATIC then
+		AddGoal( GroupGoalType.DEFEND_CITY, 50 )
+	
+	elseif job == CityJob.CHIEF_TECHNICIAN then
+		AddGoal( GroupGoalType.DEVELOP_CITY, 50 )
+	
+	elseif job == CityJob.CHIEF_EXECUTIVE then
+		AddGoal( GroupGoalType.ENHANCE_CITY, 50 )
+		AddGoal( GroupGoalType.DEFEND_CITY, 50 )
+	end
+
+	--choice one
+	--print( "totalProb =", totalProb )
+
+	--MathUtil_Dump( goals )
+
+	local findGoalType
+	local prob = Random_GetInt_Sync( 1, totalProb )
+	for goalType, goalProb in pairs( goals ) do
+		if prob < goalProb then
+			findGoalType = goalType
+			break
+		else
+			prob = prob - goalProb
 		end
 	end
 
-	if #techList == 0 then return false end
+	if not findGoalType then
+		return false
+	end
 
-	--print( "resear", g_Time:CreateCurrentDateDesc(), _city.name, _proposer.name )
+	local goalData = {}
+	goalData.time = DAY_IN_YEAR
 
-	local tech = techList[Random_GetInt_Sync( 1, #techList )]
-	_registers["TARGET_TECH"] = tech
+	if findGoalType == GroupGoalType.OCCUPY_CITY then
+		local cityList = {}
+		Asset_Foreach( _group, GroupAssetID.CITY_LIST, function ( city )
+			if city:HasStatus( CityStatus.BATTLEFRONT ) == false then
+				return
+			end
+			Asset_Foreach( city, CityAssetID.ADJACENTS, function ( adjaCity )
+				if city:IsEnemeyCity( adjaCity ) then
+					table.insert( cityList, adjaCity )
+				end
+			end)
+		end)
+		if #cityList > 0 then
+			goalData.city = Random_GetListItem( cityList )
+		else
+			findGoalType = GroupGoalType.DEFEND_CITY
+		end
+	end
+
+	if findGoalType == GroupGoalType.DEFEND_CITY then
+		local cityList = {}
+		Asset_Foreach( _group, GroupAssetID.CITY_LIST, function ( city )
+			if city:HasStatus( CityStatus.BATTLEFRONT ) == true then
+				table.insert( cityList, city )
+			end
+		end)
+		if #cityList > 0 then
+			goalData.city = Random_GetListItem( cityList )
+		else
+			findGoalType = GroupGoalType.DEVELOP_CITY
+		end
+	end
+	
+	if findGoalType == GroupGoalType.ENHANCE_CITY then
+		local cityList = {}
+		local minSoldier = Scenario_GetData( "TROOP_PARAMS" ).MIN_TROOP_SOLDIER
+		Asset_Foreach( _group, GroupAssetID.CITY_LIST, function ( city )
+			--print( "enhance", city:GetPopu( CityPopu.RESERVES ), minSoldier )
+			if city:HasStatus( CityStatus.FRONTIER ) == true or city:HasStatus( CityStatus.BATTLEFRONT ) == true then
+				table.insert( cityList, city )
+			end
+		end )
+		if #cityList > 0 then
+			goalData.city    = Random_GetListItem( cityList )
+			goalData.soldier = soldier + goalData.city:GetPopu( CityPopu.RESERVES )
+			--InputUtil_Pause( "find enhance CITY", goalData.city.name, goalData.soldier )
+		else
+			findGoalType = GroupGoalType.DEVELOP_CITY
+		end
+	end
+
+	local devTargets = 
+	{
+		{ dev = 100, target = 10 },
+		{ dev = 150, target = 8 },
+		{ dev = 200, target = 5 },
+		{ dev = 240, target = 3 },
+		{ dev = 270, target = 0 },
+		{ dev = 300, target = 0 },
+	}
+	if findGoalType == GroupGoalType.DEVELOP_CITY then
+		local cityList = {}
+		Asset_Foreach( _group, GroupAssetID.CITY_LIST, function ( city )
+			local developScore = city:GetDevelopScore()
+			local item = MathUtil_Approximate( developScore, devTargets, "dev" )
+			if item.target > 0 then
+				table.insert( cityList, { city = city, target = item.target } )
+			end
+		end )
+		if #cityList > 0 then
+			local item = Random_GetListItem( cityList )
+			goalData.city     = item.city
+			goalData.devScore = devScore + item.target
+		else
+			findGoalType = nil
+		end
+	end
+
+	if not findGoalType then
+		InputUtil_Pause( "none goal" )
+		return
+	end
+
+	--InputUtil_Pause( "goal", MathUtil_FindName( GroupGoalType, findGoalType ), goalData )
+	
+	_registers["GOALTYPE"] = findGoalType
+	_registers["GOALDATA"] = goalData
 
 	return true
 end
 
-local _TechnicianPlans = 
+------------------------------
+-- AI
+
+local EstablishCorpsProposal = 
 {
-	{ type = "SEQUENCE", children = 
-		{
-			{ type = "FILTER", condition = CanResearch },
-			{ type = "ACTION", action = SubmitProposal, params = { type = "RESEARCH" } },
-		},
+	type = "SEQUENCE", children = 
+	{
+		{ type = "FILTER", condition = CanEstablishCorps },
+		{ type = "ACTION", action = SubmitProposal, params = { type = "ESTABLISH_CORPS" } },
 	},
 }
 
+local ReinforceProposal = 
+{
+	type = "SEQUENCE", children = 
+	{
+		{ type = "FILTER", condition = CanReinforceCorps },
+		{ type = "ACTION", action = SubmitProposal, params = { type = "REINFORCE_CORPS" } },
+	},
+}
+
+local EnrollProposal = 
+{
+	type = "SEQUENCE", children = 
+	{
+		{ type = "FILTER", condition = CanEnrollCorps },
+		{ type = "ACTION", action = SubmitProposal, params = { type = "ENROLL_CORPS" } },
+	},
+}
+
+local TrainProposal = 
+{
+	type = "SEQUENCE", children = 
+	{
+		{ type = "FILTER", condition = CanTrainCorps },
+		{ type = "ACTION", action = SubmitProposal, params = { type = "TRAIN_CORPS" } },
+	},
+}
+
+local EnhanceMilitaryBaseProposal =
+{
+	type = "SEQUENCE", children = 
+	{
+		{ type = "FILTER", condition = CanEnhanceAdavanceBase },
+		{ type = "ACTION", action = SubmitProposal, params = { type = "DISPATCH_CORPS" } },
+	},
+}
+
+local DispatchCorpsProposal =
+{
+	type = "SEQUENCE", children = 
+	{
+		{ type = "SELECTOR", children = 
+			{
+				{ type = "SEQUENCE", children = 
+					{
+						{ type = "FILTER", condition = HasCityStatus, params = { status = "MILITARY_BASE" } },
+						{ type = "FILTER", condition = HasGroupGoal, params = { goal = "DEFEND_CITY", excludeCity = true } },						
+						{ type = "FILTER", condition = CanReinforceAdvancedBase },
+						{ type = "ACTION", action = SubmitProposal, params = { type = "DISPATCH_CORPS" } },
+					}
+				},
+				{ type = "SEQUENCE", children = 
+					{
+						{ type = "FILTER", condition = CanDispatchCorps },
+						{ type = "ACTION", action = SubmitProposal, params = { type = "DISPATCH_CORPS" } },
+					}
+				},
+			},
+		}
+	},
+}
+
+local ConscriptProposal =
+{
+	type = "SEQUENCE", children = 
+	{
+		{ type = "FILTER", condition = CanConscript },
+		{ type = "ACTION", action = SubmitProposal, params = { type = "CONSCRIPT" } },
+	},
+}
+
+local RecruitProposal = 
+{
+	type = "SEQUENCE", children = 
+	{
+		{ type = "FILTER", condition = CanRecruit },
+		{ type = "ACTION", action = SubmitProposal, params = { type = "RECRUIT" } },
+	},
+}
+
+local _BuildProposal = 
+{
+	type = "SEQUENCE", children = 
+	{
+		{ type = "FILTER", condition = CanBuildCity },
+		{ type = "ACTION", action = SubmitProposal, params = { type = "BUILD_CITY" } },
+	},
+}
+
+local _BuildDefensiveProposal = 
+{
+	type = "SEQUENCE", children = 
+	{
+		{ type = "FILTER", condition = CanBuildCity },
+		{ type = "ACTION", action = SubmitProposal, params = { type = "BUILD_CITY" } },
+	},	
+}
+
+local _TransportProposal = 
+{
+	type = "SEQUENCE", children = 
+	{
+		{ type = "FILTER", condition = HasCityStatus, params = { status = "PRODUCTION_BASE" } },
+		{ type = "FILTER", condition = CanTransport },
+		{ type = "ACTION", action = SubmitProposal, params = { type = "TRANSPORT" } },
+	},
+}
+
+local _TaxProposal =
+{
+	type = "SEQUENCE", children = 
+	{
+		{ type = "FILTER", condition = CanLevyTax },
+		{ type = "ACTION", action = SubmitProposal, params = { type = "LEVY_TAX" } },
+	},
+}
+
+local _DevelopProposal = 
+{
+	type = "SELECTOR", children =
+	{
+		{ type = "SEQUENCE", children = 
+			{
+				{ type = "FILTER", condition = CanDevelop, params = { assetId = CityAssetID.AGRICULTURE } },
+				{ type = "ACTION", action = SubmitProposal, params = { type = "DEV_AGRICULTURE" } },
+			},
+		},
+		{ type = "SEQUENCE", children = 
+			{
+				{ type = "FILTER", condition = CanDevelop, params = { assetId = CityAssetID.COMMERCE } },
+				{ type = "ACTION", action = SubmitProposal, params = { type = "DEV_COMMERCE" } },
+			},
+		},
+		{ type = "SEQUENCE", children = 
+			{
+				{ type = "FILTER", condition = CanDevelop, params = { assetId = CityAssetID.PRODUCTION } },
+				{ type = "ACTION", action = SubmitProposal, params = { type = "DEV_PRODUCTION" } },
+			},
+		},
+	}
+}
 
 -------------------------------------------------------
 
@@ -1083,8 +1456,39 @@ local _SubmitHRProposal =
 	type = "SEQUENCE", children = 
 	{
 		{ type = "FILTER", condition = CanSubmitPlan, params = { topic = "HR" } },
-		{ type = "RANDOM_SELECTOR", children = _HRPlans },
-	}
+		{ type = "RANDOM_SELECTOR", children = 
+			{
+				{ type = "SEQUENCE", children = 
+					{
+						{ type = "FILTER", condition = CanCallChara },
+						{ type = "ACTION", action = SubmitProposal, params = { type = "CALL_CHARA" } },
+					},
+				},	
+				{ type = "SEQUENCE", children = 
+					{
+						{ type = "FILTER", condition = CanDispatchChara },
+						{ type = "ACTION", action = SubmitProposal, params = { type = "DISPATCH_CHARA" } },
+					},
+				},	
+				{ type = "SEQUENCE", children = 
+					{
+						{ type = "FILTER", condition = CanHireChara },
+						{ type = "ACTION", action = SubmitProposal, params = { type = "HIRE_CHARA" } },
+					},
+				},
+				--[[
+				{ type = "SEQUENCE", children = 
+					{
+						{ type = "FILTER", condition = CanPromoteChara },
+						{ type = "ACTION", action = SubmitProposal, params = { type = "PROMOTE_CHARA" } },
+					},
+				},
+				]]
+					--ENCOURGAE CHARA
+					--SUPERVISE CHARA
+			}
+		},
+	},
 }
 
 local _SubmitStaffProposal =
@@ -1092,7 +1496,24 @@ local _SubmitStaffProposal =
 	type = "SEQUENCE", children = 
 	{
 		{ type = "FILTER", condition = CanSubmitPlan, params = { topic = "STAFF" } },	
-		{ type = "RANDOM_SELECTOR", children = _StaffPlans },
+		{ type = "RANDOM_SELECTOR", children = 
+			{
+				--COLLECT INTELS
+				--EXECUTE OP
+				{ type = "SEQUENCE", children = 
+					{		
+						{ type = "FILTER", condition = CanReconnoitre },
+						{ type = "ACTION", action = SubmitProposal, params = { type = "RECONNOITRE" } },
+					},
+				},
+				{ type = "SEQUENCE", children = 
+					{
+						{ type = "FILTER", condition = CanSabotage },
+						{ type = "ACTION", action = SubmitProposal, params = { type = "SABOTAGE" } },
+					},
+				},
+			}
+		},
 	}
 }
 
@@ -1101,7 +1522,33 @@ local _SubmitAffairsProposal =
 	type = "SEQUENCE", children = 
 	{
 		{ type = "FILTER", condition = CanSubmitPlan, params = { topic = "AFFAIRS" } },
-		{ type = "RANDOM_SELECTOR", children = _AffairsPlans },	
+
+		{ type = "SELECTOR", children = 
+			{
+				{ type = "SEQUENCE", children =
+					{
+						{ type = "FILTER", condition = HasCityStatus, params = { status = "PRODUCTION_BASE" } },
+						_DevelopProposal,
+					},
+				},
+				{ type = "SEQUENCE", children = 
+					{
+						{ type = "FILTER", condition = HasCityStatus, params = { status = "PRODUCTION_BASE" } },
+						{ type = "FILTER", condition = HasGroupGoal, params = { goal = "DEFEND_CITY" , excludeCity = true } },
+						_TransportProposal,
+					}
+				},
+				{ type = "RANDOM_SELECTOR", children =
+					{
+						_TransportProposal,
+						_DevelopProposal,
+						_BuildProposal,
+						_TransportProposal,
+						_TaxProposal,
+					}
+				},	
+			},
+		},
 	}
 }
 
@@ -1109,9 +1556,18 @@ local _SubmitMilitaryProposal =
 {
 	type = "SEQUENCE", children = 
 	{
-		{ type = "FILTER", condition = CanSubmitPlan, params = { topic = "COMMANDER" } },
-		_AggressivePlans,
-		_CommanderPlans,
+		{ type = "FILTER", condition = CanSubmitPlan, params = { topic = "COMMANDER" } },		
+		{ type = "SELECTOR", children = 
+			{ 
+				EstablishCorpsProposal,
+				ReinforceProposal,
+				EnrollProposal,
+				TrainProposal,
+				DispatchCorpsProposal,
+				ConscriptProposal,
+				RecruitProposal,
+			},
+		}
 	}
 }
 
@@ -1121,7 +1577,28 @@ local _SubmitDiplomaticProposal =
 	{
 		{ type = "FILTER", condition = IsCityCapital },
 		{ type = "FILTER", condition = CanSubmitPlan, params = { topic = "DIPLOMATIC" } },
-		{ type = "RANDOM_SELECTOR", children = _DiplomatciPlans },
+		{ type = "RANDOM_SELECTOR", children =
+			{
+				{ type = "SEQUENCE", children = 
+					{
+						{ type = "FILTER", condition = CanImproveRelation },
+						{ type = "ACTION", action = SubmitProposal, params = { type = "IMPROVE_RELATION" } },
+					},
+				},
+				{ type = "SEQUENCE", children = 
+					{
+						{ type = "FILTER", condition = CanDeclareWar },
+						{ type = "ACTION", action = SubmitProposal, params = { type = "DECLARE_WAR" } },
+					},
+				},
+				{ type = "SEQUENCE", children = 
+					{
+						{ type = "FILTER", condition = CanSignPact },
+						{ type = "ACTION", action = SubmitProposal, params = { type = "SIGN_PACT" } },
+					},
+				},
+			}
+		},
 	}
 }
 
@@ -1130,8 +1607,17 @@ local _SubmitTechnicianProposal =
 	type = "SEQUENCE", children = 
 	{
 		{ type = "FILTER", condition = CanSubmitPlan, params = { topic = "TECHNICIAN" } },
-		{ type = "RANDOM_SELECTOR", children = _TechnicianPlans },
-	}
+		{ type = "RANDOM_SELECTOR", children = 
+			{
+				{ type = "SEQUENCE", children = 
+					{
+						{ type = "FILTER", condition = CanResearch },
+						{ type = "ACTION", action = SubmitProposal, params = { type = "RESEARCH" } },
+					},
+				},
+			}
+		},
+	},
 }
 
 local _SubmitStrategyProposal =
@@ -1139,8 +1625,23 @@ local _SubmitStrategyProposal =
 	type = "SEQUENCE", children = 
 	{
 		{ type = "FILTER", condition = CanSubmitPlan, params = { topic = "STRATEGY" } },
-		{ type = "RANDOM_SELECTOR", children = _StrategyPlans },
-	}	
+		{ type = "RANDOM_SELECTOR", children = 
+			{
+				{ type = "SEQUENCE", children = 
+					{
+						{ type = "FILTER", condition = CanHarassCity },
+						{ type = "ACTION", action = SubmitProposal, params = { type = "HARASS_CITY" } },
+					},
+				},
+				{ type = "SEQUENCE", children = 
+					{		
+						{ type = "FILTER", condition = CanAttackCity },
+						{ type = "ACTION", action = SubmitProposal, params = { type = "ATTACK_CITY" } },
+					},
+				},
+			},
+		},
+	}
 }
 
 local _QualificationChecker = 
@@ -1157,20 +1658,12 @@ local _QualificationChecker =
 	},
 }
 
-local _PriorityProposals = 
+local _UnderAttackProposal =
 {
-	-----------------------------
-	--at war
 	type = "SELECTOR", children = 
 	{
-		{ type = "SEQUENCE", children = 
-			{
-				{ type = "FILTER", condition = CanSubmitPlan, params = { topic = "UNDER_HARASS" } },	
-				{ type = "ACTION", action = PassProposal },
-			},
-		},
-
-
+		-----------------------------
+		--under attack
 		{ type = "SEQUENCE", children = 
 			{
 				{ type = "FILTER", condition = IsTopic, params = { topic = "UNDER_HARASS" } },
@@ -1186,8 +1679,69 @@ local _PriorityProposals =
 				{ type = "ACTION", action = SubmitProposal, params = { type = "INTERCEPT" } },
 			},
 		},
+	}
+}
 
---[[
+local _GoalProposal = 
+{
+	type = "SEQUENCE", children = 
+	{
+		{ type = "FILTER", condition = IsCityCapital },
+		{ type = "FILTER", condition = IsTopic, params = { topic = "GOAL" } },
+		{ type = "FILTER", condition = DetermineGoal },
+		{ type = "ACTION", action = SubmitProposal, params = { type = "SET_GOAL" } },
+	},
+}
+
+local _PriorityProposals = 
+{
+	type = "SELECTOR", children = 
+	{
+		-----------------------------
+		-- goal priority
+
+		--startegy priority
+		--build defensive in DEFEND_CITY goal	
+		--receive resources
+		{ type = "SELECTOR", children =
+			{
+				{ type = "SEQUENCE", children = 
+					{
+						{ type = "FILTER", condition = HasCityStatus, params = { status = "ADVANCED_BASE" } },
+						{ type = "FILTER", condition = HasGroupGoal, params = { goal = "DEFEND_CITY" } },
+						_BuildDefensiveProposal,
+					}
+				},
+				{ type = "SEQUENCE", children = 
+					{
+						{ type = "FILTER", condition = HasCityStatus, params = { status = "ADVANCED_BASE" } },
+						{ type = "FILTER", condition = HasGroupGoal, params = { goal = "OCCUPY_CITY", excludeCity = true } },
+						_SubmitStrategyProposal,
+					}
+				},
+			}
+		},
+
+		--affairs priority
+		--transport resource to advanced_base
+		{ type = "SEQUENCE", children = 
+			{
+				{ type = "FILTER", condition = HasCityStatus, params = { status = "MILITARY_BASE" } },
+				_SubmitMilitaryProposal,
+			},
+		},
+
+		--commander priority
+		--dispatch corps to adanvaced_base
+		{ type = "SEQUENCE", children = 
+			{
+				{ type = "FILTER", condition = HasCityStatus, params = { status = "PRODUCTION_BASE" } },
+				_SubmitAffairsProposal,
+			}
+		},
+
+		-----------------------------
+		-- status priority
 		{ type = "SEQUENCE", children = 
 			{
 				{ type = "FILTER", condition = HasCityStatus, params = { status = "MILITARY_DANGER" } },
@@ -1201,36 +1755,68 @@ local _PriorityProposals =
 				_SubmitAffairsProposal,
 			}
 		},
-
-		{ type = "SEQUENCE", children = 
-			{
-				{ type = "FILTER", condition = IsCityInstruction, params = { instruction = "MILITARY_PRIORITY" } },
-				_SubmitMilitaryProposal,
-			},
-		},
-
-		{ type = "SEQUENCE", children = 
-			{
-				{ type = "FILTER", condition = IsCityInstruction, params = { instruction = "DEVELOPMENT_PRIORITY" } },
-				_SubmitAffairsProposal,
-			}
-		},
-		]]
 	}
 	-----------------------------
+}
+
+local _InstructProposal =
+{
+	type = "SELECTOR", children = 			
+	{
+		{ type = "SEQUENCE", children = 
+			{
+				{ type = "FILTER", condition = DetermineOccupyGoal },
+				{ type = "ACTION", action = SubmitProposal, params = { type = "INSTRUCT_CITY" } }
+			}
+		},
+		{ type = "SEQUENCE", children = 
+			{
+				{ type = "FILTER", condition = DetermineDefendGoal },
+				{ type = "ACTION", action = SubmitProposal, params = { type = "INSTRUCT_CITY" } }
+			}
+		},
+		{ type = "SEQUENCE", children = 
+			{
+				{ type = "FILTER", condition = DetermineEnhanceGoal },
+				{ type = "ACTION", action = SubmitProposal, params = { type = "INSTRUCT_CITY" } }
+			}
+		},
+		{ type = "SEQUENCE", children = 
+			{
+				{ type = "FILTER", condition = DetermineDevelopGoal },
+				{ type = "ACTION", action = SubmitProposal, params = { type = "INSTRUCT_CITY" } }
+			}
+		},
+	},
+}
+
+local _CapitalProposal =
+{
+	type = "SEQUENCE", children = 
+	{
+		{ type = "FILTER", condition = IsTopic, params = { topic = "CAPITAL" } },
+		_InstructProposal,
+	}
 }
 
 --Main entrance to submit proposal
 local _MeetingProposal = 
 {
 	type = "SELECTOR", desc = "entrance", children = 
-	{	
+	{
 		_QualificationChecker,
 
-		_PriorityProposals,
+		_UnderAttackProposal,
+
+		_GoalProposal,
+
+		_CapitalProposal,
+
+		--_PriorityProposals,
 
 		--test slot
 
+		--default
 		--[[]]
 		_SubmitTechnicianProposal,
 		_SubmitDiplomaticProposal,

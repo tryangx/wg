@@ -60,9 +60,11 @@ function Corps_Join( corps, city )
 		city:AddCorps( corps )
 	end
 
-	Asset_ForeachList( corps, CorpsAssetID.OFFICER_LIST, function ( chara )
+	Asset_Foreach( corps, CorpsAssetID.OFFICER_LIST, function ( chara )
 		Chara_Join( chara, city )
 	end )
+
+	Debug_Log( corps.name .. " join " .. city.name )
 end
 
 function Corps_Dismiss( corps, reason )	
@@ -75,12 +77,12 @@ function Corps_Dismiss( corps, reason )
 	end
 
 	--killed the leaders
-	Asset_ForeachList( corps, CorpsAssetID.OFFICER_LIST, function ( chara )
+	Asset_Foreach( corps, CorpsAssetID.OFFICER_LIST, function ( chara )
 		Chara_Die( chara )
 	end )
 
 	--remove task
-	local task = Asset_GetListItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )
+	local task = Asset_GetDictItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )
 	if task then
 		Task_Terminate( task )
 	end
@@ -213,7 +215,7 @@ local function Corps_EstablishTroop( city, corps, numberOfReqTroop, soldierPerTr
 	local numberOfCategory = {}
 	local numberOfTroop = Asset_GetListSize( corps, CorpsAssetID.TROOP_LIST )
 	if numberOfTroop > 0 then
-		Asset_ForeachList( corps, CorpsAssetID.TROOP_LIST, function ( troop )
+		Asset_Foreach( corps, CorpsAssetID.TROOP_LIST, function ( troop )
 			local t = Asset_Get( troop, TroopAssetID.TABLEDATA )
 			if not numberOfCategory[t.category] then
 				numberOfCategory[t.category] = 0
@@ -369,7 +371,7 @@ function Corps_EstablishInCity( city, leader, purpose, troopNumber )
 
 	--set leader to troop
 	local officer = leader
-	Asset_ForeachList( corps, CorpsAssetID.TROOP_LIST, function ( troop )
+	Asset_Foreach( corps, CorpsAssetID.TROOP_LIST, function ( troop )
 		if officer then
 			Asset_Set( troop, TroopAssetID.OFFICER, officer )
 			officer = nil
@@ -418,14 +420,15 @@ function Corps_EnrollInCity( corps, city )
 end
 
 function Corps_Train( corps, progress )
-	Asset_ForeachList( corps, CorpsAssetID.TROOP_LIST, function ( troop )
+	Asset_Foreach( corps, CorpsAssetID.TROOP_LIST, function ( troop )
 		Asset_Plus( troop, TroopAssetID.TRAINING, progress )
 	end )
 	--InputUtil_Pause( "train corps", corps:GetTraining() )
 end
 
 function Corps_Dispatch( corps, city )
-	Corps_Join( corps, city )	
+	Corps_Join( corps, city )
+	InputUtil_Pause( corps.name, "join", city.name )
 end
 
 function Corps_AttackCity( corps, city, task )

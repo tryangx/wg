@@ -14,6 +14,9 @@ ProposalStatus =
 
 ProposalType = 
 {
+	SET_GOAL        = 10,
+	INSTRUCT_CITY   = 11,
+
 	HARASS_CITY     = 110,
 	ATTACK_CITY     = 111,
 	INTERCEPT       = 112,
@@ -35,8 +38,7 @@ ProposalType =
 	DEV_PRODUCTION  = 312,		
 	BUILD_CITY      = 320,
 	LEVY_TAX        = 321,
-	CONSCRIPT       = 330,
-	RECRUIT         = 331,
+	TRANSPORT       = 330,	
 
 	HIRE_CHARA      = 400,
 	PROMOTE_CHARA   = 401,
@@ -77,6 +79,7 @@ TaskType =
 	DEV_PRODUCTION  = 312,
 	BUILD_CITY      = 320,
 	LEVY_TAX        = 321,
+	TRANSPORT       = 330,
 
 	HIRE_CHARA      = 400,
 	PROMOTE_CHARA   = 401,
@@ -142,32 +145,37 @@ MeetingTopic =
 	UNDER_ATTACK          = 1,
 	UNDER_HARASS          = 2,
 
+	GOAL                  = 3,
+
 	---------------------------------
+	--
 	MEETING_LOOP          = 11,
 
 	--CHIEF_EXECUTIVE       = 10,
+	CAPITAL               = 11,
 
 	--research
-	TECHNICIAN            = 11,
+	TECHNICIAN            = 12,
 
 	--declare war, sign pact
-	DIPLOMATIC            = 12,
+	DIPLOMATIC            = 13,
 
 	--hire, encourage
-	HR                    = 13,
+	HR                    = 14,
 
 	--agriculture, commerce, production
-	AFFAIRS               = 14,
+	AFFAIRS               = 15,
 
 	--establish corps, reinforce corps
-	COMMANDER             = 15,	
+	COMMANDER             = 16,	
 
-	STAFF                 = 16,
+	--operation
+	STAFF                 = 17,
 
 	--harass, attack
-	STRATEGY              = 17,
+	STRATEGY              = 18,
 
-	--should be the last topic + 1
-	MEETING_END           = 18,
+	--Always should be the last topic + 1
+	MEETING_END           = 19,
 	---------------------------------
 }

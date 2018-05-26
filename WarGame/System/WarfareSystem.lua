@@ -114,7 +114,7 @@ function Warefare_SiegeCombatOccur( corps, city )
 		Asset_Set( combat, CombatAssetID.CITY, city )
 
 		--add defender
-		Asset_ForeachList( city, CityAssetID.CORPS_LIST, function ( def )
+		Asset_Foreach( city, CityAssetID.CORPS_LIST, function ( def )
 			if def:IsAtHome() then
 				combat:AddCorps( def, CombatSide.DEFENDER )	
 			end
@@ -143,8 +143,88 @@ function Warefare_SiegeCombatOccur( corps, city )
 
 	--Debug_Log( corps:ToString(), "try siege" )
 	Debug_Log( "siege combat occur", combat:ToString( "DEBUG_CORPS" ), city:ToString( "MILITARY" ) )
+	--InputUtil_Pause( "p" )
 
 	return combat
+end
+
+local function Warfare_UpdateCombat( combat )
+	combat:NextDay()
+	local result = combat:GetResult()
+	if result == CombatResult.UNKNOWN then return false end
+
+	combat:Dump()
+
+	local type   = Asset_Get( combat, CombatAssetID.TYPE )
+	local winner = Asset_Get( combat, CombatAssetID.WINNER )
+	local city   = Asset_Get( combat, CombatAssetID.CITY )
+
+	--Debug_Log( "CombatResult=" .. MathUtil_FindName( CombatResult, result ) )
+
+	Stat_Add( "Combat@Result", combat:ToString( "RESULT" ), StatType.LIST )
+
+	if type == CombatType.SIEGE_COMBAT then
+		--reset in-siege status
+		Asset_SetListItem( city, CityAssetID.STATUSES, CityStatus.IN_SIEGE, nil )
+
+		--dismiss guard
+		local guard = 0
+		Asset_Foreach( combat, CombatAssetID.DEFENDER_LIST, function ( troop )
+			if Asset_GetDictItem( troop, TroopAssetID.STATUSES, TroopStatus.GUARD ) == true then
+				guard = guard + Asset_Get( troop, TroopAssetID.SOLDIER )
+			end
+		end )
+		local old = city:GetPopu( CityPopu.GUARD )
+		city:SetPopu( CityPopu.GUARD, guard )
+		--InputUtil_Pause( "set guard", city.name, guard, old )
+		Stat_Add( "Guard@Lose", old - guard, StatType.ACCUMULATION )
+
+		--Seize city
+		if winner == CombatSide.ATTACKER then
+			local group = combat:GetGroup( winner )
+			if group then
+				group:OccupyCity( city )
+			end
+			
+			local corpsList = combat:GetCorpsList( winner )
+			for _, corps in ipairs( corpsList ) do
+				Corps_Join( corps, city )
+			end
+
+			Debug_Log( city:ToString() .. " occupied by " .. ( group and group:ToString() or "" ), g_Time:CreateCurrentDateDesc() )
+			Stat_Add( "City@Occupy", city:ToString() .. " occupied by " .. ( group and group:ToString() or "" ) .. " " .. g_Time:CreateCurrentDateDesc(), StatType.LIST )
+			--InputUtil_Pause( "occupy", city:ToString(), group:ToString() )
+		end
+	elseif type == CombatType.FIELD_COMBAT then		
+	end
+
+	Stat_Add( MathUtil_FindName( CombatType, Asset_Get( combat, CombatAssetID.TYPE ) ) .. "@" .. MathUtil_FindName( CombatSide, winner ), StatType.TIMES )
+	Stat_Add( "Combat@Winner", combat:ToString() .. " winner=" .. combat:GetGroupName( winner ), StatType.LIST )
+
+	local group = combat:GetGroup( winner )
+	local oppGroup = combat:GetGroup( combat:GetOppSide( winner ) )
+	if group then
+		group:ElectLeader()
+	end
+	if oppGroup then
+		oppGroup:ElectLeader()
+	end
+
+	Debug_Log( combat:ToString( "DEBUG_CORPS" ) )
+	Debug_Log( combat:ToString( "RESULT" ), "combat end!!!" )
+
+	Asset_Foreach( combat, CombatAssetID.CORPS_LIST, function  ( corps )
+		if corps:GetSoldier() == 0 then
+			Corps_Dismiss( corps, "neutralized" )
+			Stat_Add( "Corps@Vanished", corps:ToString( "SIMPLE"), StatType.LIST )
+		end
+	end )
+
+	Message_Post( MessageType.COMBAT_ENDED, { combat = combat } )
+
+	--InputUtil_Pause( "combat end", combat:ToString() )
+
+	return true
 end
 
 -------------------------------------
@@ -162,11 +242,11 @@ local function Warfare_OnCombatRemove( msg )
 
 	Stat_Add( "CombatDur@" .. combat.id, Asset_Get( combat, CombatAssetID.DAY ), StatType.VALUE )
 
-	Asset_ForeachList( combat, CombatAssetID.ATK_CORPS_LIST, function ( corps )
-		Asset_SetListItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_COMBAT, nil )
+	Asset_Foreach( combat, CombatAssetID.ATK_CORPS_LIST, function ( corps )
+		Asset_SetDictItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_COMBAT, nil )
 	end )
-	Asset_ForeachList( combat, CombatAssetID.DEF_CORPS_LIST, function ( corps )
-		Asset_SetListItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_COMBAT, nil )
+	Asset_Foreach( combat, CombatAssetID.DEF_CORPS_LIST, function ( corps )
+		Asset_SetDictItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_COMBAT, nil )
 	end )
 
 	--don't remove combat now, should after combat_end message was processed
@@ -227,95 +307,12 @@ function WarfareSystem:Start()
 end
 
 function WarfareSystem:UpdateCombat( combat )
-	combat:NextDay()
-	local result = combat:GetResult()
-	if result == CombatResult.UNKNOWN then return false end
-
-	combat:Dump()
-
-	local type   = Asset_Get( combat, CombatAssetID.TYPE )
-	local winner = Asset_Get( combat, CombatAssetID.WINNER )
-	local city   = Asset_Get( combat, CombatAssetID.CITY )
-
-	--Debug_Log( "CombatResult=" .. MathUtil_FindName( CombatResult, result ) )
-
-	Stat_Add( "Combat@Result", combat:ToString( "RESULT" ), StatType.LIST )
-
-	if type == CombatType.SIEGE_COMBAT then
-		--reset in-siege status
-		Asset_SetListItem( city, CityAssetID.STATUSES, CityStatus.IN_SIEGE, nil )
-
-		--Seize city
-		if winner == CombatSide.ATTACKER then
-			local group = combat:GetGroup( winner )
-			if group then
-				group:OccupyCity( city )
-			end
-			
-			local corpsList = combat:GetCorpsList( winner )
-			for _, corps in ipairs( corpsList ) do
-				Corps_Join( corps, city )
-			end
-
-			Debug_Log( city:ToString() .. " occupied by " .. ( group and group:ToString() or "" ), g_Time:CreateCurrentDateDesc() )
-			Stat_Add( "City@Occupy", city:ToString() .. " occupied by " .. ( group and group:ToString() or "" ) .. " " .. g_Time:CreateCurrentDateDesc(), StatType.LIST )
-
-			--InputUtil_Pause( "occupy", city:ToString(), group:ToString() )
-		end
-
-		if winner == CombatSide.ATTACKER then
-			Stat_Add( "Combat@Siege_Atk_Win", nil, StatType.TIMES )
-			--Stat_Add( "Combat@Winner_" .. combat.id, "Siege Atk Win=" .. combat:GetGroupName( winner ), StatType.LIST )
-		elseif winner == CombatSide.DEFENDER then
-			Stat_Add( "Combat@Siege_Def_Win", nil, StatType.TIMES )
-			--Stat_Add( "Combat@Winner_" .. combat.id, "Siege Def Win=" .. combat:GetGroupName( winner ), StatType.LIST )
-		else
-			Stat_Add( "Combat@Siege_Draw", nil, StatType.TIMES )
-			--Stat_Add( "Combat@Winner_" .. combat.id, "Siege Draw", StatType.LIST )
-		end
-	elseif type == CombatType.FIELD_COMBAT then
-		if winner == CombatSide.ATTACKER then
-			Stat_Add( "Combat@Field_Atk_Win", nil, StatType.TIMES )
-			--Stat_Add( "Combat@Winner_" .. combat.id, "Field Atk Win=" .. combat:GetGroupName( winner ), StatType.LIST )
-		elseif winner == CombatSide.DEFENDER then
-			Stat_Add( "Combat@Field_Def_Win", nil, StatType.TIMES )
-			--Stat_Add( "Combat@Winner_" .. combat.id, "Field Def Win=" .. combat:GetGroupName( winner ), StatType.LIST )
-		else
-			Stat_Add( "Combat@Field_Draw", nil, StatType.TIMES )
-			--Stat_Add( "Combat@Winner_" .. combat.id, "Field Draw", StatType.LIST )
-		end
-	end
-
-	local group = combat:GetGroup( winner )
-	local oppGroup = combat:GetGroup( combat:GetOppSide( winner ) )
-	if group then
-		group:ElectLeader()
-	end
-	if oppGroup then
-		oppGroup:ElectLeader()
-	end
-
-	Debug_Log( combat:ToString( "DEBUG_CORPS" ) )
-	Debug_Log( combat:ToString( "RESULT" ), "combat end!!!" )
-
-	Asset_ForeachList( combat, CombatAssetID.CORPS_LIST, function  ( corps )
-		if corps:GetSoldier() == 0 then
-			Corps_Dismiss( corps, "neutralized" )
-			Stat_Add( "Corps@Vanished", corps:ToString( "SIMPLE"), StatType.LIST )
-		end
-	end )
-
-	Message_Post( MessageType.COMBAT_ENDED, { combat = combat } )
-
-	--InputUtil_Pause( "combat end", combat:ToString() )
-
-	return true
 end
 
 function WarfareSystem:Update()
 	local lists = {}
 	for plot, combat in pairs( self._combats ) do				
-		if self:UpdateCombat( combat ) == true then
+		if Warfare_UpdateCombat( combat ) == true then
 			Stat_Add( "Combat@Duration", Asset_Get( combat, CombatAssetID.TIME ), StatType.ACCUMULATION )
 			self._combats[plot] = nil
 		end

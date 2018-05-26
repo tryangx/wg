@@ -1,6 +1,7 @@
 ---------------------------------------
 
 --function City_GetCity
+--[[
 function City_GetSupportPopu( city )
 	local popustparams = Scenario_GetData( "CITY_POPUSTRUCTURE_PARAMS" )[1]
 	local agr = Asset_Get( city, CityAssetID.AGRICULTURE )
@@ -12,20 +13,20 @@ function City_GetSupportPopu( city )
 	print( city.name .. "popu=" .. popu .. "/" .. supportPopu .. "(" .. math.ceil( popu * 100 / supportPopu ) .. "%)" .. " Max:" .. maxSupport .. "(" .. math.ceil( popu * 100 / maxSupport ) .. "%)" )
 	return popu
 end
-
+]]
 -----------------------------------------------
 
 function City_GetPopuParams( city )
 	local params = Scenario_GetData( "CITY_POPUSTRUCTURE_PARAMS" )[1]
-	if not params.POPU_NEED_RATIO.req_total or not params.POPU_NEED_RATIO.max_total then
+	if not params.POPU_NEED_RATIO.req_total or not params.POPU_NEED_RATIO.limit_total then
 		local req_total = 0
-		local max_total = 0
+		local limit_total = 0
 		for _, ratio in pairs( params.POPU_NEED_RATIO ) do
 			req_total = req_total + ratio.req
-			max_total = max_total + ratio.max
+			limit_total = limit_total + ratio.limit
 		end
 		params.POPU_NEED_RATIO.req_total = req_total
-		params.POPU_NEED_RATIO.max_total = max_total
+		params.POPU_NEED_RATIO.limit_total = limit_total
 		--InputUtil_Pause( "need ratio=" .. params.POPU_NEED_RATIO.req_total, params.POPU_NEED_RATIO.max_total )
 	end
 	if not params.POPU_CONSUME_FOOD._total then
@@ -39,7 +40,7 @@ function City_GetPopuParams( city )
 	return params
 end
 
-function City_GetPopuTypeByDevIndex( id )
+function City_GetPopuTypeByAssetID( id )
 	if id == CityAssetID.AGRICULTURE then
 		return "FARMER"
 	elseif id == CityAssetID.COMMERCE then
@@ -47,12 +48,23 @@ function City_GetPopuTypeByDevIndex( id )
 	elseif id == CityAssetID.PRODUCTION then
 		return "WORKER"
 	end
-	return "NONE"
 end
 
+function City_GetAssetIDByPopuName( popuname )
+	if popuname == "FARMER" then
+		return CityAssetID.MAX_AGRICULTURE
+	elseif popuname == "WORKER" then
+		return CityAssetID.MAX_PRODUCTION
+	elseif popuname == "MERCHANT" then
+		return CityAssetID.MAX_COMMERCE
+	end	
+end
+
+----------------------------------------------------------------------------------
 -- !!! VERY IMPORTANT
 -- Measure how many population in every career required by the development index.
 function City_NeedPopu( city, popuname )
+	--get params
 	local cityparams = City_GetPopuParams( city )
 	local needparam  = cityparams.POPU_NEED_RATIO
 	local unitparam  = cityparams.POPU_PER_UNIT
@@ -64,17 +76,16 @@ function City_NeedPopu( city, popuname )
 	end
 
 	--some career needs the number of population per development index 
-	if popuname == "FARMER" then
-		return Asset_Get( city, CityAssetID.AGRICULTURE ) * unitparam[popuname]
-	elseif popuname == "WORKER" then
-		return Asset_Get( city, CityAssetID.PRODUCTION ) * unitparam[popuname]
-	elseif popuname == "MERCHANT" then
-		return Asset_Get( city, CityAssetID.COMMERCE ) * unitparam[popuname]
+
+	local assetid = City_GetAssetIDByPopuName( popuname )
+	if not assetid then
+		return 0
 	end
-	
-	return 0
+
+	return Asset_Get( city, assetid ) * unitparam[popuname]
 end
 
+--[[
 function City_NeedDevIndex( city, id )
 	local cityparams = City_GetPopuParams( city )
 	local unitparam  = cityparams.POPU_PER_UNIT
@@ -89,6 +100,7 @@ function City_NeedDevIndex( city, id )
 
 	return 0
 end
+]]
 
 -------------------------------------------------------
 
@@ -116,13 +128,12 @@ function City_GetFoodIncome( city )
 	local popustparams = City_GetPopuParams( city )
 	local agri         = Asset_Get( city, CityAssetID.AGRICULTURE )
 	local maxAgri      = Asset_Get( city, CityAssetID.MAX_AGRICULTURE )
-	--0.5 ~ 1.5
-	local modifer      = ( agri + agri ) / maxAgri
+	local modifier     = ( agri + agri ) / maxAgri
 	for type, _ in pairs( CityPopu ) do
 		local value = popustparams.POPU_HARVEST[type]
 		if value then
 			local num = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu[type] )
-			income = income + modifer * num * value
+			income = income + modifier * num * value
 		end
 	end
 	return math.ceil( income )
@@ -143,13 +154,12 @@ function City_InitPopuStructure( city )
 	local popu   = Asset_Get( city, CityAssetID.POPULATION )
 	local popustparams = City_GetPopuParams( city )
 	local needparam  = popustparams.POPU_NEED_RATIO
-	local plebparam  = popustparams.IS_PLEB
 	local initparam  = popustparams.POPU_INIT
 	
 	local nums = {}	
 	local notpleb = 0
 	for k, v  in pairs( CityPopu ) do
-		if not plebparam[k] and initparam[k] then
+		if initparam[k] then
 			local num = math.floor( popu * needparam[k].req * Random_GetInt_Sync( initparam[k].min, initparam[k].max ) * 0.01 )
 			nums[v] = num
 			notpleb = notpleb + num
@@ -169,11 +179,9 @@ function City_InitPopuStructure( city )
 	nums[CityPopu.HOBO] = nums[CityPopu.HOBO] + ( leftpopu - nums[CityPopu.FARMER] - nums[CityPopu.WORKER] - nums[CityPopu.MERCHANT] )
 
 	for k, v in pairs( CityPopu ) do
-		Asset_SetListItem( city, CityAssetID.POPU_STRUCTURE, v, nums[v] )
+		city:SetPopu( v, nums[v] )
 		--InputUtil_Pause( k, v, nums[v], Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, v ) )
 	end
-
-	--city:DumpPopu()
 end
 
 function City_PopuConv( city )
@@ -182,16 +190,14 @@ function City_PopuConv( city )
 
 	local lv       = Asset_Get( city, CityAssetID.LEVEL )	
 	local list     = Asset_GetList( city, CityAssetID.POPU_STRUCTURE )
-	local popu     = Asset_Get( city, CityAssetID.POPULATION )
-	local unit     = lv * 5 + 5
+	local popu     = Asset_Get( city, CityAssetID.POPULATION )	
 
 	local popustparams = City_GetPopuParams( city )
 	local unitparam  = popustparams.POPU_PER_UNIT
 	local needparam = popustparams.POPU_NEED_RATIO
 	
-	Track_Reset()
-
 	local needlist = {}
+	Track_Reset()	
 	for k, v  in pairs( CityPopu ) do
 		needlist[v] = City_NeedPopu( city, k )
 		Track_Data( k,   list[v],   needlist[v] )	
@@ -203,13 +209,14 @@ function City_PopuConv( city )
 			--print( "no need to conv", target, need, current )
 			return target, current, need
 		end
+		--print( target, current, need, max )
 		local inc = math.floor( math.min( target, need - current ) * Random_GetInt_Sync( 60, 100 ) * 0.01 )	
 		if max then inc = math.min( max, inc ) end
 		inc = math.floor( inc * Random_GetInt_Sync( 60, 100 ) * 0.01 )
 		target  = target - inc
 		need    = need - inc
-		current = current + inc
-		return target, current, need
+		current = current + inc		
+		return target, current, need, inc
 	end
 
 	local security_delta = 0
@@ -217,6 +224,14 @@ function City_PopuConv( city )
 		local fromid = CityPopu[flow.from]
 		if needlist[fromid] > list[fromid] * 0.5 then
 			local valid = true
+			local inc = 0
+			if valid == true and flow.need_popu then
+				local poputype = CityPopu[flow.need_popu]				
+				if needlist[poputype] < list[poputype] then
+					--InputUtil_Pause( "enough", flow.need_popu, needlist[poputype], list[poputype] )
+					valid = false
+				end
+			end
 			if valid == true and flow.sec_more_than and security < flow.sec_more_than then valid = false end
 			if valid == true and flow.sec_less_than and security > flow.sec_less_than then valid = false end
 			--if valid == true and flow.sat_more_than and satisfaction < flow.sat_more_than then valid = false end			
@@ -224,11 +239,16 @@ function City_PopuConv( city )
 			if valid == true and flow.prob and Random_GetInt_Sync( 1, 100 ) > flow.prob then valid = false end
 			if valid == true then				
 				local toid   = CityPopu[flow.to]
-				list[fromid], list[toid] = ConvPopu( list[fromid], list[toid], flow.force_conv and -1 or needlist[toid], flow.ratio and math.floor( flow.ratio * list[fromid] ) or unit )
+				local convRatio = flow.ratio or ( lv + 10 ) * 0.0005				
+				list[fromid], list[toid], _, inc = ConvPopu( list[fromid], list[toid], flow.force_conv and -1 or needlist[toid], math.floor( convRatio * list[fromid] ) )
 				if flow.sec then
 					security_delta = security_delta + flow.sec
 				end
 				--if flow.ratio then print( flow.from, flow.to, list[fromid], list[toid], math.floor( flow.ratio * list[fromid] ) ) end
+			end
+			if valid == true and flow.debug then
+				--InputUtil_Pause( flow.from .. "->" .. flow.to )
+				Stat_Add( flow.from .. "->" .. flow.to, inc, StatType.ACCUMULATION)
 			end
 		end
 	end
@@ -239,8 +259,6 @@ function City_PopuConv( city )
 		Track_Data( k, list[v] )
 	end
 	--Track_Dump()
-
-	--InputUtil_Pause()
 end
 
 function City_Mental( city )	
@@ -317,7 +335,7 @@ function City_PopuGrow( city )
 	Track_Data( "children", children )
 	Track_Data( "popu", population )
 
-	Asset_SetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.CHILDREN, children + increase )
+	city:SetPopu( CityPopu.CHILDREN, children + increase )
 	Asset_Plus( city, CityAssetID.POPULATION, increase )
 
 	Track_Data( "children", Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.CHILDREN ) )
@@ -344,8 +362,8 @@ function City_CheckFlag( city )
 	if prod < maxprod * 0.5 then score = score + 1 end
 	if security < 70 then score = score + 1 end
 	if security < 50 then score = score + 1 end
-	Asset_SetListItem( city, CityAssetID.STATUSES, CityStatus.DEVELOPMENT_WEAK, score > 3 )
-	Asset_SetListItem( city, CityAssetID.STATUSES, CityStatus.DEVELOPMENT_DANGER, score > 6 )
+	Asset_SetDictItem( city, CityAssetID.STATUSES, CityStatus.DEVELOPMENT_WEAK, score > 3 )
+	Asset_SetDictItem( city, CityAssetID.STATUSES, CityStatus.DEVELOPMENT_DANGER, score > 6 )
 
 	--military evaluation
 	local score = 0
@@ -353,14 +371,25 @@ function City_CheckFlag( city )
 	local power = city:GetMilitaryPower( city )
 	if power == 0 then score = 4 end
 
-	Asset_SetListItem( city, CityAssetID.STATUSES, CityStatus.SAFETY, true )
-	Asset_ForeachList( city, CityAssetID.ADJACENTS, function( adjaCity )
+	--set default flag
+	Asset_SetDictItem( city, CityAssetID.STATUSES, CityStatus.SAFETY, true )
+	Asset_SetDictItem( city, CityAssetID.STATUSES, CityStatus.BATTLEFRONT, nil )
+	Asset_SetDictItem( city, CityAssetID.STATUSES, CityStatus.FRONTIER, nil )
+
+	--Asset_SetDictItem( city, CityAssetID.STATUSES, CityStatus.PRODUCTION_BASE, true )
+	Asset_Foreach( city, CityAssetID.ADJACENTS, function( adjaCity )
 		local adjaGroup = Asset_Get( adjaCity, CityAssetID.GROUP )
 		if adjaGroup ~= group then
-			Asset_SetListItem( city, CityAssetID.STATUSES, CityStatus.SAFETY, nil )
-
+			Asset_SetDictItem( city, CityAssetID.STATUSES, CityStatus.SAFETY, nil )
 			if Dipl_IsAtWar( adjaGroup, group ) then
-				Asset_SetListItem( city, CityAssetID.STATUSES, CityStatus.BATTLEFRONT, true )
+				--print( String_ToStr( city, "name" ), String_ToStr( adjaCity, "name" ), String_ToStr( adjaGroup, "name" ), String_ToStr( group, "name" ) )
+				--Asset_SetDictItem( city, CityAssetID.STATUSES, CityStatus.PRODUCTION_BASE, nil )
+				--Asset_SetDictItem( city, CityAssetID.STATUSES, CityStatus.ADVANCED_BASE, true )
+				Asset_SetDictItem( city, CityAssetID.STATUSES, CityStatus.BATTLEFRONT, true )
+				--print( adjaCity.name, adjaGroup.name, city.name, String_ToStr( group, "name" ) )
+				--print( "battlefront", city.name )
+			else
+				Asset_SetDictItem( city, CityAssetID.STATUSES, CityStatus.FRONTIER, true )
 			end			
 
 			if typeof( adjaCity ) ~= "table" then
@@ -373,11 +402,11 @@ function City_CheckFlag( city )
 			if adjaPower > power * 1.2 then score = score + 1 end
 		end
 	end )
-	Asset_SetListItem( city, CityAssetID.STATUSES, CityStatus.MILITARY_WEAK,   score > 3 )
-	Asset_SetListItem( city, CityAssetID.STATUSES, CityStatus.MILITARY_DANGER, score > 6 )
+	Asset_SetDictItem( city, CityAssetID.STATUSES, CityStatus.MILITARY_WEAK,   score > 3 )
+	Asset_SetDictItem( city, CityAssetID.STATUSES, CityStatus.MILITARY_DANGER, score > 6 )
 
 	--debug flag
-	Asset_ForeachList( city, CityAssetID.STATUSES, function ( value, status )
+	Asset_Foreach( city, CityAssetID.STATUSES, function ( value, status )
 		if value == true then
 			--print( city.name .. "_" .. MathUtil_FindName( CityStatus, status ) .. "=", value )
 		end
@@ -393,7 +422,6 @@ end
 --------------------------------------
 
 function City_IncreaseDevelopment( city, params )
-	if 1 then return end
 	if params.agri then
 		local cur = Asset_Get( city, CityAssetID.AGRICULTURE )
 		local max = Asset_Get( city, CityAssetID.MAX_AGRICULTURE )
@@ -412,14 +440,16 @@ function City_IncreaseDevelopment( city, params )
 		Asset_Set( city, CityAssetID.PRODUCTION, math.min( max, cur + params.prod ) )		
 		Stat_Add( "Dev@Prod_" .. ( params.prod > 0 and "INC" or "DEC" ), params.prod, StatType.TIMES )
 	end
+	--InputUtil_Pause( "dev", params.agri, params.comm, params.prod )
 end
 
+--development natural change
 function City_DevelopmentVary( city )
 	local security = Asset_Get( city, CityAssetID.SECURITY )
 	local isSiege = Asset_GetListItem( city, CityAssetID.STATUSES, CityStatus.IN_SIEGE )
 
 	local methods
-	for _, item in pairs( Scenario_GetData( "CITY_DEVELOPMENT_VARY_PARAMS" ) ) do
+	for _, item in pairs( Scenario_GetData( "CITY_DEVELOPMENT_VARY_RESULT" ) ) do
 		local match = true
 		local conditions = item.conditions
 		MathUtil_Dump( conditions )
@@ -451,9 +481,10 @@ function City_DevelopmentVary( city )
 	City_IncreaseDevelopment( city, { agri = selectMethod.agri, comm = selectMethod.comm, prod = selectMethod.prod } )
 end
 
+--development changed by task
 function City_Develop( city, progress, id )
 	local methods
-	for _, item in pairs( Scenario_GetData( "CITY_DEVELOP_PARAMS" ) ) do
+	for _, item in pairs( Scenario_GetData( "CITY_DEVELOP_RESULT" ) ) do
 		local match = true
 		local conditions = item.conditions
 		if conditions.progress_min and conditions.progress_min > progress then match = false end
@@ -515,12 +546,12 @@ function City_CalcCommerceTax( city )
 	local popustparams = City_GetPopuParams( city )
 	local comm     = Asset_Get( city, CityAssetID.COMMERCE )
 	local maxComm  = Asset_Get( city, CityAssetID.MAX_COMMERCE )
-	local commMod  = ( comm + comm ) / maxComm
+	local modifier = ( comm + comm ) / maxComm
 	for type, _ in pairs( CityPopu ) do
 		local value = popustparams.POPU_COMMERCE_TAX[type]
 		if value then
 			local num = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu[type] )
-			tax = tax + commMod * num * value
+			tax = tax + modifier * num * value
 		end
 	end
 	return math.ceil( tax )
@@ -532,7 +563,7 @@ function City_CalcTradeTax( city )
 	local prod         = Asset_Get( city, CityAssetID.PRODUCTION )
 	local maxProd      = Asset_Get( city, CityAssetID.MAX_PRODUCTION )
 	local group = Asset_Get( city, CityAssetID.GROUP )
-	Asset_ForeachList( city, CityAssetID.ADJACENTS, function ( adjaCity )		
+	Asset_Foreach( city, CityAssetID.ADJACENTS, function ( adjaCity )		
 		local factor = 0.5
 		local adjaGroup = Asset_Get( adjaCity, CityAssetID.GROUP )
 		if adjaGroup ~= group then
@@ -542,21 +573,23 @@ function City_CalcTradeTax( city )
 			factor = factor * 0.25
 		end
 		local curProd = math.min( prod, Asset_Get( adjaCity, CityAssetID.PRODUCTION ) )
-		local bonus = curProd / maxProd
+		local modifier = curProd / maxProd
 		for type, _ in pairs( CityPopu ) do
 			local value = popustparams.POPU_TRADE_TAX[type]
 			if value then
 				local num = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu[type] )
-				tax = tax + num * bonus * value
+				tax = tax + num * modifier * factor * value
 			end
 		end
 	end )
 	return math.ceil( tax )
 end
 
-function City_GetMonthTax( city )
+function City_GetMonthTax( city, month )
 	local income, tradeTax, personalTax, commerTax = 0, 0, 0, 0
-	local month = g_Time:GetMonth()
+	if not month then
+		month = g_Time:GetMonth()
+	end
 	if month == 3 or month == 6 or month == 9 or month == 12 then		
 		tradeTax = City_CalcTradeTax( city )
 		income = income + tradeTax
@@ -603,7 +636,8 @@ function City_LevyTax( city, progress )
 	income = math.ceil( income * math.min( 2.5, math.max( 0.2, progress * 0.01 ) ) )
 
 	Asset_Plus( city, CityAssetID.MONEY, income )
-	Stat_Add( city.name .. "@LevyTax", "money=" .. income, StatType.LIST )
+	--Stat_Add( city.name .. "@LevyTax", "money=" .. income, StatType.LIST )
+	Stat_Add( city.name .. "@LevyTax", income, StatType.ACCUMULATION )
 	--Debug_Log( "City=" .. city.name .. " Levy tax=" .. income .. " Money=" .. Asset_Get( city, CityAssetID.MONEY ) )	
 	return income
 end
@@ -613,10 +647,11 @@ function City_Build( city )
 end
 
 function City_Pillage( city )
-	local agri = math.ceil( Asset_Get( city, CityAssetID.AGRICULTURE ) * -0.1 )
-	local comm = math.ceil( Asset_Get( city, CityAssetID.COMMERCE ) * -0.1 )
-	local prod = math.ceil( Asset_Get( city, CityAssetID.PRODUCTION ) * -0.1 )
-	City_IncreaseDevelopment( city, { agri = agri, comm = comm, prod = prod } )
+	local agri = math.ceil( Asset_Get( city, CityAssetID.AGRICULTURE ) * -0.01 )
+	local comm = math.ceil( Asset_Get( city, CityAssetID.COMMERCE ) * -0.01 )
+	local prod = math.ceil( Asset_Get( city, CityAssetID.PRODUCTION ) * -0.01 )
+	City_IncreaseDevelopment( city, { agri = agri, comm = comm, prod = prod } )	
+	Stat_Add( "Pillage@" .. city.name, 1, StatType.TIMES )
 	--InputUtil_Pause( "pillage")
 end
 
@@ -631,12 +666,23 @@ function City_ConvReserves( city, params )
 			local new  = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, to )
 			local number = math.ceil( old * rate * 0.0001 )
 			totalNum = totalNum + number
-			Asset_SetListItem( city, CityAssetID.POPU_STRUCTURE, from, old - number )
-			Asset_SetListItem( city, CityAssetID.POPU_STRUCTURE, to,   new + number )
+			city:SetPopu( from, old - number )
+			city:SetPopu( to,   new + number )
 			--Debug_Log( "Conv " .. item.from .. ":" .. old .. "-" .. number .. " --> " .. item.to .. ":" .. new .. "+" .. number )
 		end
 	end
 	return totalNum
+end
+
+function City_Instruct( city, baseType )
+	if baseType then
+		Asset_SetDictItem( city, CityAssetID.STATUSES, baseType, true )
+		Debug_Log( "instruct city=" .. city.name, " -->" .. MathUtil_FindName( CityStatus, baseType ) )
+	else
+		Asset_SetDictItem( city, CityAssetID.STATUSES, CityStatus.ADVANCED_BASE, nil )
+		Asset_SetDictItem( city, CityAssetID.STATUSES, CityStatus.PRODUCTION_BASE, nil )
+		Asset_SetDictItem( city, CityAssetID.STATUSES, CityStatus.MILITARY_BASE, nil )
+	end
 end
 
 --------------------------------------
@@ -656,7 +702,6 @@ function CitySystem:Update()
 	Entity_Foreach( EntityType.CITY, function ( city )
 		--print( "##############################" )
 		--city:DumpStats()
-		--city:DumpPopu()
 		--city:DumpGrowthAttrs()
 		--city:DumpProperty()
 		city:Update()

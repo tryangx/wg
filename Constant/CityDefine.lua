@@ -45,6 +45,7 @@ CityPopu =
 	FARMER   = 20,
 	WORKER   = 21,
 	MERCHANT = 22,
+	CORVEE   = 23,
 
 	MIDDLE   = 30,
 	
@@ -64,24 +65,27 @@ CityStatus =
 	IN_SIEGE           = 20,
 	STARVATION         = 21,
 
+	--startegy priority
+	--build defensive in DEFEND_CITY goal	
+	--receive resources
+	ADVANCED_BASE      = 30,	
+	--affairs priority
+	--transport resource to advanced_base
+	PRODUCTION_BASE    = 31,
+	--commander priority
+	--dispatch corps to adanvaced_base
+	MILITARY_BASE      = 32,
+	
+
 	MILITARY_WEAK      = 100,
 	MILITARY_DANGER    = 101,
 
 	DEVELOPMENT_WEAK   = 110,
 	DEVELOPMENT_DANGER = 111,
 
-	BATTLEFRONT        = 120,
-	SAFETY             = 121,
-}
-
-CityInstruction = 
-{
-	--no set
-	DEFAULT              = 0,
-
-	MILITARY_PRIORITY    = 1,
-
-	DEVELOPMENT_PRIORITY = 2,
+	BATTLEFRONT        = 120,	
+	FRONTIER           = 121,
+	SAFETY             = 122,
 }
 
 CityJob = 

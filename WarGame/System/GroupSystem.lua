@@ -38,6 +38,8 @@ function GroupSystem:Update()
 	Entity_Foreach( EntityType.GROUP, function ( group )
 		if day == DAY_IN_MONTH then
 			group:UpdateSpy()
+
+			Stat_Add( "GroupStatus@" .. group.name, g_Time:ToString() .. " " .. group:ToString( "POWER" ), StatType.LIST )
 		end
 	end )
 end

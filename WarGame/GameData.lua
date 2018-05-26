@@ -48,7 +48,6 @@ function Game_NextTurn()
 	g_turnIdx = math.min( g_turnIdx + g_turnStep, g_turnEnd )
 
 	--InputUtil_Pause()
-	--Debug_Log( "Turn=" .. g_turnIdx .. " Date=" .. g_Time:CreateDesc( true ) )
 end
 
 -------------------------------------------------

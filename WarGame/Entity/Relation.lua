@@ -47,14 +47,14 @@ function Relation:ToString( type )
 	content = content .. red:ToString()
 	content = content .. " & "
 	content = content .. blue:ToString()
-	content = content .. " at=" .. Asset_Get( self, RelationAssetID.ATTITUDE )
+	content = content .. " att=" .. Asset_Get( self, RelationAssetID.ATTITUDE )
 	if type == "PACT" or type == "ALL" then
-		Asset_ForeachList( self, RelationAssetID.PACT_LIST, function ( data, pact )
+		Asset_Foreach( self, RelationAssetID.PACT_LIST, function ( data, pact )
 			content = content .. " " .. MathUtil_FindName( RelationPact, pact ) .. "+" .. ( data.time and data.item or "?" )
 		end)
 	end
 	if type == "OPINION" or type == "ALL" then
-		Asset_ForeachList( self, RelationAssetID.OPINION_LIST, function ( data, opinion )
+		Asset_Foreach( self, RelationAssetID.OPINION_LIST, function ( data, opinion )
 			content = content .. " " .. MathUtil_FindName( RelationOpinion, opinion ) .. "=" .. data.attitude
 		end)
 	end
@@ -67,7 +67,7 @@ function Relation:Update()
 	--update opinion
 	--  1.increase duration
 	--  2.alter attitude
-	Asset_ForeachList( self, RelationAssetID.OPINION_LIST, function ( data, type )
+	Asset_Foreach( self, RelationAssetID.OPINION_LIST, function ( data, type )
 		data.duration = data.duration + 1
 		if data.time > 1 then
 			data.time = data.time - 1		
@@ -84,7 +84,7 @@ function Relation:Update()
 	Asset_Set( self, RelationAssetID.ATTITUDE, attitude )
 
 	--update pact
-	Asset_ForeachList( self, RelationAssetID.PACT_LIST, function ( data, pact )
+	Asset_Foreach( self, RelationAssetID.PACT_LIST, function ( data, pact )
 		data.remain = data.remain - g_elapsed
 		if data.remain < 0 then			
 			--InputUtil_Pause( "pact over", MathUtil_FindName( RelationPact, pact ) )

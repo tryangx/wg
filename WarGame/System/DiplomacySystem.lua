@@ -6,6 +6,10 @@
 --
 --------------------------------------------------------------
 
+function Dipl_IsBelong( red, blue )
+	return false
+end
+
 function Dipl_IsAtWar( red, blue )
 	if not red or red == blue then
 		return false
@@ -31,8 +35,11 @@ function Dipl_CanDeclareWar( relation, red )
 	local enemyPower = 0
 	local relations = Dipl_GetRelations( red )
 	for blue, rel in pairs( relations ) do
-		enemyPower = enemyPower + Intel_GetGroupMilPower( red, blue )
-	end
+		if rel:HasOpinion( RelationOpinion.AT_WAR ) then
+			--print( "other=", blue.name, rel:ToString() )
+			enemyPower = enemyPower + Intel_GetGroupMilPower( red, blue )
+		end
+	end	
 
 	local blue = relation:GetOppGroup( red )
 	local redPower = red:GetMilitaryPower()
@@ -47,7 +54,7 @@ function Dipl_CanDeclareWar( relation, red )
 		{ ratio = 0.5, score = 0 },
 		{ ratio = 0,   score = -50 },
 	}
-	local ratio = redPower * 100 / ( bluePower + enemyPower )
+	local ratio = redPower / ( bluePower + enemyPower )
 	local item = MathUtil_Approximate( ratio, powerScore, "ratio" )
 	score = score + item.score
 
@@ -60,7 +67,7 @@ function Dipl_CanDeclareWar( relation, red )
 	end
 
 	if redPower > 0 or enemyPower > 0 or bluePower > 0 then
-		print( "ePow=" .. enemyPower, "bPow=" .. bluePower, "rPow=" .. redPower, "score=" .. score )
+		--print( "ePow=" .. enemyPower, "bPow=" .. bluePower, "rPow=" .. redPower, "ratio=" .. ratio, "score=" .. score )
 	end
 
 	if Random_GetInt_Sync( 1, 100 ) < score then
@@ -128,6 +135,7 @@ function Dipl_GetPossiblePact( relation, pactList )
 end
 
 function Dipl_GetRelation( red, blue )
+	if not red or not blue then return nil end
 	return System_Get( SystemType.DIPLOMACY_SYS ):GetRelation( red, blue )
 end
 

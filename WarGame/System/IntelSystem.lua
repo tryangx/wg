@@ -35,7 +35,7 @@ end
 
 function Intel_GetGroupMilPower( dest, sour )
 	local power = 0
-	Asset_ForeachList( dest, GroupAssetID.CITY_LIST, function ( city )
+	Asset_Foreach( dest, GroupAssetID.CITY_LIST, function ( city )
 		local spy = sour:GetSpy( city )
 		if spy then
 			local cityPower = Intel_GetMilPower( spy.city, spy.sour )
@@ -66,7 +66,7 @@ end
 
 function Intel_Update( intel )	
 	local type = Asset_Get( intel, IntelAssetID.TYPE )
-	Asset_ForeachList( intel, IntelAssetID.SPYS_DURATION, function( dur, group )
+	Asset_Foreach( intel, IntelAssetID.SPYS_DURATION, function( dur, group )
 		if dur > 0 then
 			dur = dur - g_elapsed
 			Asset_SetListItem( intel, IntelAssetID.SPYS_DURATION, group, dur )

@@ -29,7 +29,7 @@ ProposalAssetAttrib =
 	actor     = AssetAttrib_SetPointer  ( { id = ProposalAssetID.ACTOR,      type = ProposalAssetType.BASE_ATTRIB } ),
 	location  = AssetAttrib_SetPointer  ( { id = ProposalAssetID.LOCATION,   type = ProposalAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
 	destination = AssetAttrib_SetPointer( { id = ProposalAssetID.DESTINATION,type = ProposalAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
-	params    = AssetAttrib_SetList     ( { id = ProposalAssetID.PARAMS,     type = ProposalAssetType.BASE_ATTRIB } ),
+	params    = AssetAttrib_SetDict     ( { id = ProposalAssetID.PARAMS,     type = ProposalAssetType.BASE_ATTRIB } ),
 	
 	status    = AssetAttrib_SetNumber   ( { id = ProposalAssetID.STATUS,     type = ProposalAssetType.BASE_ATTRIB, default = ProposalStatus.SUBMITTED } ),
 	time      = AssetAttrib_SetNumber   ( { id = ProposalAssetID.TIME,       type = ProposalAssetType.BASE_ATTRIB } ),
@@ -50,10 +50,10 @@ end
 function Proposal:ToString()
 	local type = Asset_Get( self, ProposalAssetID.TYPE )
 	local content = ""
-	content = content .. " type=" .. MathUtil_FindName( ProposalType, type )
-	content = content .. " pser=" .. String_ToStr( Asset_Get( self, ProposalAssetID.PROPOSER ), "name" )
-	content = content .. " actr=" .. String_ToStr( Asset_Get( self, ProposalAssetID.ACTOR ), "name" )
-	content = content .. " loc=" .. String_ToStr( Asset_Get( self, ProposalAssetID.DESTINATION ), "name" )
+	content = content .. " " .. MathUtil_FindName( ProposalType, type )
+	content = content .. " p=[" .. String_ToStr( Asset_Get( self, ProposalAssetID.PROPOSER ), "name" ) .. "]"
+	content = content .. " a=[" .. String_ToStr( Asset_Get( self, ProposalAssetID.ACTOR ), "name" ) .. "]"
+	content = content .. " @" .. String_ToStr( Asset_Get( self, ProposalAssetID.DESTINATION ), "name" )
 	if type == ProposalType.HARASS_CITY or type == ProposalType.ATTACK_CITY then
 	end
 	return content

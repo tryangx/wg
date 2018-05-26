@@ -17,8 +17,6 @@ StatType =
 
 ----------------------------------------------
 
-local _log = LogUtility( "run/stat_" .. g_gameId .. ".log", LogWarningLevel.LOG, true )
-
 local _stats = {}
 
 local _types = {}
@@ -36,6 +34,9 @@ end
 --  Stat_Add( "Bonus", Asset_Get( combat, CombatAssetID.TIME ), StatType.ACCUMULATION )
 --  Stat_Add( "Times", "standup", StatType.TIMES )
 function Stat_Add( name, data, type )
+	if not data and type ~= StatType.TIMES then
+		error( "statistic item should be valid" )
+	end
 	local stats
 	stats, type = Stat_Get( type, name )
 	_types[name] = type	
@@ -54,13 +55,12 @@ function Stat_Add( name, data, type )
 	end
 end
 
-function Stat_Dump( type )
-	_log:WriteDebug( "####STAT_DUMP####" )
+function Stat_Dump( type )	
 	--output
 	for t, list in pairs( _stats ) do
-		if not type or t == type then
-			_log:WriteDebug( "" )
-			_log:WriteDebug( "#" .. MathUtil_FindName( StatType, t ) )
+		if not type or t == type then			
+			Log_Write( "stat",  "" )
+			Log_Write( "stat",  "#" .. MathUtil_FindName( StatType, t ) )
 			local namelist = {}
 			for name, data in pairs( list ) do
 				table.insert( namelist, name )
@@ -70,35 +70,35 @@ function Stat_Dump( type )
 				local data = list[name]
 				local dumper = list[name] and list[name]._DUMPER or nil
 				if t == StatType.LIST then
-					_log:WriteDebug( name .. ":" .. " cnt=" .. #data, dumper )
+					Log_Write( "stat",  name .. ":" .. " cnt=" .. #data, dumper )
 					if dumper then
 						for _, item in ipairs( data ) do
 							dumper( item )
 						end
 					else
 						for _, item in ipairs( data ) do
-							_log:WriteDebug( item )
+							Log_Write( "stat",  item )
 						end
 					end
 				elseif t == StatType.DESC then
-					_log:WriteDebug( name .. "=" .. data.desc )
+					Log_Write( "stat",  name .. "=" .. data.desc )
 				elseif t == StatType.TIMES  then
-					_log:WriteDebug( name .. "=" .. data.times )
+					Log_Write( "stat",  name .. "=" .. data.times )
 				elseif t == StatType.DATA then
 					if dumper then
 						dumper( name, data )
 					else
-						_log:WriteDebug( name .. "=" .. data.data )
+						Log_Write( "stat",  name .. "=" .. data.data )
 					end
 				elseif t == StatType.VALUE then
-					_log:WriteDebug( name .. "=" .. data.value )
+					Log_Write( "stat",  name .. "=" .. data.value )
 				elseif t == StatType.ACCUMULATION then
-					_log:WriteDebug( name .. "=" .. data.accumulation )
+					Log_Write( "stat",  name .. "=" .. data.accumulation )
 				end
 			end
 		end
 	end
-	_log:WriteDebug( "####END_DUMP####" )	
+	Log_Write( "stat",  "####END_DUMP####" )	
 end
 
 function Stat_SetDumper( name, fn, type )

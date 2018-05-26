@@ -76,11 +76,12 @@ function Track_Dump()
 		if delta ~= 0 then
 			local content = StringUtil_Abbreviate( k, 10 ) .. "= " .. v.init .. "->" .. v.current .. ( delta >= 0 and " +" or " " ) .. delta .. "(" .. ( math.ceil( delta * 100 / v.init ) ) .. "%)"
 			if v.need then
-				content = content .. " ==>" ..  v.need
+				content = content .. " req=" ..  v.need
 			end
 			print( content )
 		end		
 	end
+	InputUtil_Pause()
 end
 
 function Track_Reset( dump )

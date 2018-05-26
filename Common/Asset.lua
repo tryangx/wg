@@ -306,7 +306,7 @@ function Asset_ClearList( entity, id )
 	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "clear list" ) end
 end
 
-function Asset_ForeachList( entity, id, fn )
+function Asset_Foreach( entity, id, fn )
 	local list = Asset_GetList( entity, id )
 	if not list then return end
 	for k, item in pairs( list ) do
@@ -317,11 +317,16 @@ end
 function Asset_FindListItem( entity, id, fn )
 	local list = Asset_GetList( entity, id )
 	if not list then return nil end
-	for k, item in pairs( list ) do
-		if fn( item, k ) == true then
-			return item
-		end
-	end
+	--pairs should be ipairs
+	for k, item in pairs( list ) do if fn( item, k ) == true then return item end end
+	return nil
+end
+
+function Asset_FindDictItem( entity, id, fn )
+	local list = Asset_GetDict( entity, id )
+	if not list then return nil end
+	--pairs should be ipairs
+	for k, item in pairs( list ) do if fn( item, k ) == true then return item end end
 	return nil
 end
 
@@ -411,8 +416,8 @@ end
 -- Use this to add item into the dictionary
 function Asset_SetDictItem( entity, id, name, item )
 	if ASSET_DEBUG_SWITCH then
-		if not name or not item then
-			error( "name or item is invalid" )
+		if not name then
+			error( "name is invalid" )
 		end
 	end
 
@@ -430,6 +435,11 @@ function Asset_SetDictItem( entity, id, name, item )
 	entity[id][name] = item
 
 	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "set name=", index ) end	
+end
+
+function Asset_GetDictItem( entity, id, name )
+	local dict = Asset_GetDict( entity, id )
+	return dict and dict[name] or nil
 end
 
 function Asset_GetDictSize( entity, id )

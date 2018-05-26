@@ -131,16 +131,13 @@ CombatLog =
 	MAP          = 5,
 }
 
-local logUtility
-logUtility = LogUtility( "run/combat_" .. g_gameId .. ".log", LogWarningLevel.DEBUG, false )
-
 local function WriteCombatLog( type, ... )
 	if type == CombatLog.DEBUG then return end
 	if type == CombatLog.MAP then return end
 	if type == CombatLog.DESC then return end
 	if type == CombatLog.INITIAL then return end
 	--print( ... )
-	logUtility:WritedLog( ... )
+	Log_Write( "combat",  ... )
 end
 
 local function DebugCombat( ... )
@@ -283,21 +280,21 @@ function Combat:ToString( type )
 	local content = "combatid=" .. self.id
 	local city = Asset_Get( self, CombatAssetID.CITY )
 	if city then
-		content = content .. " loc=" .. String_ToStr( city, "name" )
+		content = content .. " @" .. String_ToStr( city, "name" )
 	else
 		content = content .. " pt=" .. Asset_Get( self, CombatAssetID.PLOT ):ToString()
 	end
 	content = content .. " typ=" .. MathUtil_FindName( CombatType, Asset_Get( self, CombatAssetID.TYPE ) )
 	if type == "DEBUG_CORPS" then
 		content = content .. " corps="
-		Asset_ForeachList( self, CombatAssetID.ATK_CORPS_LIST, function( corps )
+		Asset_Foreach( self, CombatAssetID.ATK_CORPS_LIST, function( corps )
 			content = content .. corps:ToString( "SIMPLE" ) .. ","
 		end )
-		Asset_ForeachList( self, CombatAssetID.DEF_CORPS_LIST, function ( corps )
+		Asset_Foreach( self, CombatAssetID.DEF_CORPS_LIST, function ( corps )
 			content = content .. corps:ToString( "SIMPLE" ) .. ","
 		end )
 		content = content .. " troops="
-		Asset_ForeachList( self, CombatAssetID.TROOP_LIST, function ( troop )
+		Asset_Foreach( self, CombatAssetID.TROOP_LIST, function ( troop )
 			content = content .. troop:ToString( "SIMPLE" ) .. ","
 		end )
 	elseif type == "RESULT" then
@@ -377,19 +374,19 @@ function Combat:AddCorps( corps, side )
 
 	Asset_AppendList( self, CombatAssetID.CORPS_LIST, corps )
 
-	Asset_ForeachList( corps, CorpsAssetID.TROOP_LIST, function( troop )
+	Asset_Foreach( corps, CorpsAssetID.TROOP_LIST, function( troop )
 		self:AddTroop( troop, side )
 	end )
 
-	Asset_SetListItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_COMBAT, true )
+	Asset_SetDictItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_COMBAT, true )
 end
 
 function Combat:RemoveTroopOfficer( troop, isKilled )
 	local officer = Asset_Get( troop, TroopAssetID.OFFICER )
 	Asset_Set( troop, TroopAssetID.OFFICER, nil )
 
-	local corps  = Asset_Get( troop, TroopAssetID.CORPS )
-	local leader = Asset_Get( corps, CorpsAssetID.LEADER )
+	local corps  = Asset_Get( troop, TroopAssetID.CORPS )	
+	local leader = corps and Asset_Get( corps, CorpsAssetID.LEADER ) or nil
 	if isKilled then		
 		if officer then
 			InputUtil_Pause( "remove troop ld")
@@ -461,11 +458,11 @@ end
 function Combat:RemoveCorps( corps )
 	Asset_RemoveListItem( self, CombatAssetID.CORPS_LIST, corps )
 
-	Asset_ForeachList( corps, CorpsAssetID.TROOP_LIST, function( troop )
+	Asset_Foreach( corps, CorpsAssetID.TROOP_LIST, function( troop )
 		self:TroopLeave( troop )
 	end )
 
-	Asset_SetListItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_COMBAT, nil )
+	Asset_SetDictItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_COMBAT, nil )
 end
 
 
@@ -557,6 +554,15 @@ function Combat:GetCorpsGroupName( corps )
 	return group and group.name or "[UNKNOWN]"
 end
 
+function Combat:GetTroopGroupName( troop )
+	local corps  = Asset_Get( troop, TroopAssetID.CORPS )
+	if corps then return self:GetCorpsGroupName( corps ) end
+	if Asset_GetDictItem( troop, TroopAssetID.STATUSES, TroopStatus.GUARD ) == true then
+		return self:GetGroupName( CombatSide.DEFENDER )
+	end
+	return "[UNKNOWN]"
+end
+
 function Combat:GetGroupName( side )
 	local group = self:GetGroup( side )
 	return group and group.name or "[UNKNOWN]"
@@ -619,7 +625,7 @@ function Combat:Dump()
 end
 
 function Combat:DumpStatistic()
-	Asset_ForeachList( self, CombatAssetID.TROOP_LIST, function ( troop )
+	Asset_Foreach( self, CombatAssetID.TROOP_LIST, function ( troop )
 		self:DumpTroop( troop )
 	end )
 
@@ -660,7 +666,7 @@ function Combat:DumpStatistic()
 	end
 	for k, v in pairs( CombatStatistic ) do
 		if v >= CombatStatistic.ACCUMULATE_TYPE then
-			Asset_ForeachList( self, CombatAssetID.TROOP_LIST, function ( troop )
+			Asset_Foreach( self, CombatAssetID.TROOP_LIST, function ( troop )
 				if self._stat[troop] and self._stat[troop][v] then
 					DebugCombat( troop:ToString( "COMBAT" ) .. " " .. " " .. k .. "=" .. self._stat[troop][v] )
 				end
@@ -846,7 +852,7 @@ function Combat:Embattle()
 	EmbattleSide( CombatSide.DEFENDER )
 
 	--statistics
-	Asset_ForeachList( self, CombatAssetID.CORPS_LIST, function ( corps )
+	Asset_Foreach( self, CombatAssetID.CORPS_LIST, function ( corps )
 		--Stat_Add( "Corps@Combat", g_Time:CreateCurrentDateDesc() .. " " .. corps:ToString(), StatType.LIST )
 	end)
 
@@ -877,7 +883,7 @@ function Combat:Prepare()
 	local combatType = Asset_Get( self, CombatAssetID.TYPE )
 
 	self:ClearReferenceStats()
-	Asset_ForeachList( self, CombatAssetID.TROOP_LIST, function ( troop )
+	Asset_Foreach( self, CombatAssetID.TROOP_LIST, function ( troop )
 		troop._prepared = nil
 		if Combat_IsPrepared( troop ) then
 			troop._prepared = true
@@ -897,10 +903,10 @@ function Combat:Prepare()
 		self:AddStat( troop._combatSide, CombatStatistic.EXPOSURE_POWER,  math.ceil( soldier * exposure * 0.01 ) * TroopTable_GetPower( troop ) )		
 	end )
 
-	Asset_ForeachList( self, CombatAssetID.ATK_CORPS_LIST, function( corps )
+	Asset_Foreach( self, CombatAssetID.ATK_CORPS_LIST, function( corps )
 		self:AddStat( CombatSide.ATTACKER, CombatStatistic.HAS_FOOD, Asset_Get( corps, CorpsAssetID.FOOD ) )
 	end )
-	Asset_ForeachList( self, CombatAssetID.DEF_CORPS_LIST, function ( corps )
+	Asset_Foreach( self, CombatAssetID.DEF_CORPS_LIST, function ( corps )
 		self:AddStat( CombatSide.DEFENDER, CombatStatistic.HAS_FOOD, Asset_Get( corps, CorpsAssetID.FOOD ) )
 	end )
 	if combatType == CombatType.SIEGE_COMBAT then
@@ -1013,7 +1019,7 @@ function Combat:Prepare()
 		end
 		if self:GetStatus( withdrawSide, CombatStatus.SURROUNDED ) == true then
 			local oppSide = self:GetOppSide( withdrawSide )
-			Asset_ForeachList( self, CombatAssetID.TROOP_LIST, function( troop )
+			Asset_Foreach( self, CombatAssetID.TROOP_LIST, function( troop )
 				Asset_AppendList( self, CombatAssetID.PRISONER, { side = oppSide, prisoner = troop } )				
 			end )
 		end
@@ -1112,9 +1118,9 @@ function Combat:PrepareDefense()
 	--InputUtil_Pause()
 
 	--guard
-	local guardTable = TroopTable_Get( 2 )
-	local guard = Asset_Get( city, CityAssetID.GUARD )
-	local security = Asset_Get( city, CityAssetID.SECURITY )
+	local guardTable = TroopTable_Get( Scenario_GetData( "TROOP_PARAMS" ).GUARD_ID )
+	local guard      = city:GetPopu( CityPopu.GUARD )
+	local security   = Asset_Get( city, CityAssetID.SECURITY )
 	
 	--MathUtil_Dump( guardTable.requirement )
 	local maxSoldier = 1000
@@ -1122,20 +1128,20 @@ function Combat:PrepareDefense()
 	local numpertroop = math.floor( guard / numoftroop )
 	for n = 1, numoftroop do
 		local troop = Entity_New( EntityType.TROOP )
-		Asset_Set( troop, TroopAssetID.ENCAMPMENT, city )
+		--Asset_Set( troop, TroopAssetID.ENCAMPMENT, city )
 		Asset_Set( troop, TroopAssetID.SOLDIER, numpertroop )
 		Asset_Set( troop, TroopAssetID.MAX_SOLDIER, numpertroop )
 		Asset_Set( troop, TroopAssetID.ORGANIZATION, math.ceil( numpertroop * security * 0.01 ) )
+		Asset_SetDictItem( troop, TroopAssetID.STATUSES, TroopStatus.GUARD, true )
 		troop:LoadFromTable( guardTable )
 		troop._prepared = true
-		troop._exposure = math.min( 100, troop._exposure + 20 )
 		self:AddTroop( troop, CombatSide.DEFENDER )
-		InputUtil_Pause( "add guard", troop:ToString( "COMBAT" ) )
+		--InputUtil_Pause( "add guard", troop:ToString( "COMBAT" ), numpertroop )
 	end
 end
 
 function Combat:PrepareSide( side )
-	Asset_ForeachList( self, CombatAssetID.TROOP_LIST, function ( troop )
+	Asset_Foreach( self, CombatAssetID.TROOP_LIST, function ( troop )
 		if troop._combatSide == side then
 			troop._prepared = true
 			troop._exposure = math.min( 100, troop._exposure + 20 )
@@ -1146,7 +1152,7 @@ end
 function Combat:CheckStatus()
 	local type = Asset_Get( self, CombatAssetID.TYPE )
 	if type == CombatType.SIEGE_COMBAT then
-		Asset_ForeachList( self, CombatAssetID.TROOP_LIST, function ( troop )
+		Asset_Foreach( self, CombatAssetID.TROOP_LIST, function ( troop )
 			if self:GetStatus( CombatSide.DEFENDER, CombatStatus.SURROUNDED ) == false then	
 			end
 		end )
@@ -1268,7 +1274,7 @@ function Combat:NextDay()
 		local defIntense = self:GetStat( CombatSide.DEFENDER, CombatStatistic.COMBAT_INTENSE )
 		local atk = atkIntense
 		local def = defIntense
-		--Debug_Log( "combat prepared failed", atk, def, self:ToString() )
+		DebugCombat( "combat prepared failed", atk, def, self:ToString() )
 	end
 
 	--Feedback
@@ -1287,7 +1293,7 @@ end
 
 --no combat
 function Combat:Rest()
-	Asset_ForeachList( self, CombatAssetID.TROOP_LIST, function ( troop )
+	Asset_Foreach( self, CombatAssetID.TROOP_LIST, function ( troop )
 		self:Reform( troop )
 		self:Courage( troop )
 	end )
@@ -1295,7 +1301,7 @@ end
 
 function Combat:Order()
 	--Each troop determine the order by them self
-	Asset_ForeachList( self, CombatAssetID.TROOP_LIST, function ( troop )
+	Asset_Foreach( self, CombatAssetID.TROOP_LIST, function ( troop )
 		CombatAI_Order( troop )
 	end )
 end
@@ -1333,7 +1339,7 @@ function Combat:UpdateResult()
 	function CheckAttendance( side )
 		local attend = false
 		local list = side == CombatSide.ATTACKER and CombatAssetID.ATTACKER_LIST or CombatAssetID.DEFENDER_LIST
-		Asset_ForeachList( self, list, function( troop )
+		Asset_Foreach( self, list, function( troop )
 			if troop._attend == true then
 				attend = true
 			end
@@ -1430,7 +1436,7 @@ function Combat:UpdateStatistic()
 		end
 	end
 	
-	Asset_ForeachList( self, CombatAssetID.TROOP_LIST, function( troop )
+	Asset_Foreach( self, CombatAssetID.TROOP_LIST, function( troop )
 		local soldier = Asset_Get( troop, TroopAssetID.SOLDIER )
 		self:AddStat( troop._combatSide, CombatStatistic.SOLDIER, soldier )
 	end )
@@ -1919,8 +1925,8 @@ function Combat:DealDamage( attacker, defender, params )
 	-- Damage( Kill ) Statistic	
 	local atkcorps = Asset_Get( attacker, TroopAssetID.CORPS )
 	local defcorps = Asset_Get( defender, TroopAssetID.CORPS )
-	Stat_Add( "KILL@" .. self:GetCorpsGroupName( atkcorps ), kill, StatType.ACCUMULATION )	
-	Stat_Add( "DIE@" .. self:GetCorpsGroupName( defcorps ), kill, StatType.ACCUMULATION )	
+	Stat_Add( "KILL@" .. self:GetTroopGroupName( attacker ), kill, StatType.ACCUMULATION )	
+	Stat_Add( "DIE@" .. self:GetTroopGroupName( defender ), kill, StatType.ACCUMULATION )	
 	--Stat_Add( "Combat@" .. self.id .. "_KILL", kill, StatType.ACCUMULATION )
 	Stat_Add( "Combat@Kill", kill, StatType.ACCUMULATION )
 	--Stat_Add( "DIE@" .. atkcorps.name,  kill, StatType.ACCUMULATION )

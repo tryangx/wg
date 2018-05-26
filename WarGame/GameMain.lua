@@ -171,7 +171,7 @@ function Game_Init()
 	end )
 
 	--set watcher
-	DBG_SetWatcher( "Debug_Meeting", DBGLevel.NORMAL )
+	DBG_SetWatcher( "Debug_Meeting",  DBGLevel.NORMAL )--IMPORTANT )
 end
 
 function Game_Test()
@@ -268,8 +268,9 @@ function Game_Start()
 		--print( entity:ToString( "BUDGET_YEAR" ) )
 		--print( entity:ToString( "GROWTH" ) )
 		print( entity:ToString( "POPULATION" ) )
-		print( entity:ToString( "SUPPLY" ) )
+		print( entity:ToString( "DEVELOP" ) )
 		--print( entity:ToString( "TAX" ) )	
+		--InputUtil_Pause()
 	end)		
 
 --	Debug_Normal( "Troop==>" ) Entity_Foreach( EntityType.TROOP, function ( entity ) Debug_Normal( entity:ToString( "ALL" ) ) end )

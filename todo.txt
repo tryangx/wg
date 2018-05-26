@@ -1,0 +1,44 @@
+To Do List
+
+[ok] Finish Chara Contribution Progress & Level Up System
+[ok] Trigger Gain Trait in Situation, Test it in Data Configure whether is match other condition and probability
+[ok] refactor GUARD popu
+[ok] add transport task
+[ok] refactor AGRI/COMM/PROD, make population relatie with MAX-VALUE, not CUR-VALUE
+[ok] safe city support military city( transport food,money,material)
+
+[in] finish goal sys, make short-goal every year.
+[in] change Asset_SetListItem() into Asset_SetDictItem(), refactor list / dict ASSET.
+[in] full logger
+
+redesign CITY.SECURITY, CITY.SATISFACTION -> CITY.DISS, CITY.SECURITY
+
+build upgarde(level up)
+
+build construction
+
+add solider limit, reduce the complex of algorithm about Establish CROPS/TROOP
+
+reputation system( 1. can inc/dec, 2. affect all things like san5 )
+
+influence system( 1. only increase, 2. dec in event or special situ )
+
+add new move_actor transport, refugee
+
+*Eventful, just like surrender/fraud -> choose accept/decline/accpet-overwatch -> result
+
+------------------------------------------------
+
+[Goal]
+
+Final Goal
+	Domination
+
+Short Goal
+	Develop
+	Warpreparedness
+	Seize
+
+	
+------------------------------------------------
+

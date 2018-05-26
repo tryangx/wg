@@ -114,7 +114,7 @@ function Chara:__init()
 end
 
 function Chara:Remove()
-	Asset_ForeachList( self, CharaAssetID.TASKS, function ( task )
+	Asset_Foreach( self, CharaAssetID.TASKS, function ( task )
 		Asset_RemoveIndexItem( task, TaskAssetID.CONTRIBUTORS, self )
 	end)
 end
@@ -198,6 +198,10 @@ end
 
 function Chara:GetTask()
 	return Asset_GetListItem( self, CharaAssetID.STATUSES, CharaStatus.IN_TASK )
+end
+
+function Chara:GetTrait( traitType )
+	return Asset_SetDictItem( self, CharaAssetID.TRAITS, traitType )
 end
 
 ------------------------------------------

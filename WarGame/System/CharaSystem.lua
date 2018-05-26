@@ -110,7 +110,7 @@ function Chara_Serve( chara, group, city )
 			DBG_Trace( "chara_serve", chara.name .. " serve " .. executive.name )
 		end
 
-		Stat_Add( "Chara@Hire", chara.name, StatType.LIST )
+		Stat_Add( "Chara@Hire", chara.name .. " " .. g_Time:ToString(), StatType.LIST )
 	end
 end
 
@@ -210,7 +210,7 @@ local function Chara_ExecuteTask( chara )
 	local loc = Asset_Get( chara, CharaAssetID.LOCATION )
 
 	local list = {}
-	Asset_ForeachList( chara, CharaAssetID.TASKS, function( task )
+	Asset_Foreach( chara, CharaAssetID.TASKS, function( task )
 		if Asset_Get( task, TaskAssetID.DESTINATION ) == loc then
 			table.insert( list, task )
 		end
@@ -243,16 +243,14 @@ end
 local function Chara_LevelUp( chara )
 	if chara:LevelUp() == true then
 		if Chara_LearnSkill( chara ) then
-			Chara_GainTrait( chara )
+			if Random_GetInt_Sync( 1, 100 ) < 20 then
+				Chara_GainTrait( chara )
+			end
 		end
 	end
 end
 
 local function Chara_GainTrait( chara )
-	if Random_GetInt_Sync( 1, 100 ) < 20 then
-		return
-	end
-
 	local numOfTrait = Asset_GetDictSize( chara, CharaAssetID.TRAITS )
 	local reqNumOfTrait = 6
 	if numOfTrait > reqNumOfTrait then
@@ -270,8 +268,6 @@ function CharaSystem:__init()
 end
 
 function CharaSystem:Start()
-	DBG_SetWatcher( "chara_proposal", DBGLevel.NORMAL )
-
 	--init trait->skills caches
 	local datas = Scenario_GetData( "CHARA_SKILL_DATA" )
 	for _, skill in pairs( datas ) do

@@ -52,7 +52,7 @@ TaskAssetAttrib =
 	
 	location     = AssetAttrib_SetPointer( { id = TaskAssetID.LOCATION,   type = TaskAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
 	destination  = AssetAttrib_SetPointer( { id = TaskAssetID.DESTINATION,type = TaskAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
-	params       = AssetAttrib_SetList   ( { id = TaskAssetID.PARAMS,     type = TaskAssetType.BASE_ATTRIB } ),	
+	params       = AssetAttrib_SetDict   ( { id = TaskAssetID.PARAMS,     type = TaskAssetType.BASE_ATTRIB } ),	
 
 	duration     = AssetAttrib_SetNumber ( { id = TaskAssetID.DURATION,   type = TaskAssetType.BASE_ATTRIB, default = 0 } ),
 	workload     = AssetAttrib_SetNumber ( { id = TaskAssetID.WORKLOAD,   type = TaskAssetType.BASE_ATTRIB, default = 100 } ),
@@ -80,29 +80,29 @@ function Task:ToString( type )
 	content = content .. " " .. String_ToStr( Asset_Get( self, TaskAssetID.GROUP ), "name" )
 	if type == "SIMPLE" then
 		content = content .. " beg=" .. g_Time:CreateDateDescByValue( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )
-	elseif type == "DEBUG_UPDATE" then
+	elseif type == "DEBUG" then
 		content = content .. " atr=" .. ( Asset_Get( self, TaskAssetID.ACTOR ):ToString() )
 		content = content .. " dur=" .. Asset_Get( self, TaskAssetID.DURATION )
+		content = content .. " stp=" .. MathUtil_FindName( TaskStep, self:GetStepType() )
+		content = content .. " sts=" .. MathUtil_FindName( TaskStatus, Asset_Get( self, TaskAssetID.STATUS ) )		
+		content = content .. " prg=" .. Asset_Get( self, TaskAssetID.PROGRESS )
 	elseif type == "END" then
 		content = content .. " atr=" .. ( Asset_Get( self, TaskAssetID.ACTOR ):ToString() )
 		content = content .. " beg=" .. g_Time:CreateDateDescByValue( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )
 		content = content .. " end=" .. g_Time:CreateDateDescByValue( Asset_Get( self, TaskAssetID.END_TIME ) )
 		content = content .. " pas=" .. g_Time:CalcDiffDayByDate( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )
 	elseif type == "PLAN" then
-		content = content .. " pln=" .. MathUtil_FindName( CityPlan, Asset_GetListItem( self, TaskAssetID.PARAMS, "plan" ) )
+		content = content .. " pln=" .. MathUtil_FindName( CityPlan, Asset_GetDictItem( self, TaskAssetID.PARAMS, "plan" ) )
 	elseif type == "DETAIL" then
 		content = content .. " atr=" .. ( Asset_Get( self, TaskAssetID.ACTOR ):ToString() )
-		content = content .. " loc=" .. String_ToStr( Asset_Get( self, TaskAssetID.LOCATION ), "name" )	
+		content = content .. " @" .. String_ToStr( Asset_Get( self, TaskAssetID.LOCATION ), "name" )	
 		content = content .. " dst=" .. String_ToStr( Asset_Get( self, TaskAssetID.DESTINATION ), "name" )
 		content = content .. " beg=" .. g_Time:CreateDateDescByValue( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )
 	else
 		content = content .. " atr=" .. ( Asset_Get( self, TaskAssetID.ACTOR ):ToString() )
-		content = content .. " loc=" .. String_ToStr( Asset_Get( self, TaskAssetID.LOCATION ), "name" )	
+		content = content .. " @" .. String_ToStr( Asset_Get( self, TaskAssetID.LOCATION ), "name" )	
 		content = content .. " dst=" .. String_ToStr( Asset_Get( self, TaskAssetID.DESTINATION ), "name" )		
-		content = content .. " stp=" .. MathUtil_FindName( TaskStep, self:GetStepType() )
-		content = content .. " sts=" .. MathUtil_FindName( TaskStatus, Asset_Get( self, TaskAssetID.STATUS ) )
-		content = content .. " pas=" .. g_Time:CalcDiffDayByDate( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )
-		content = content .. " prg=" .. Asset_Get( self, TaskAssetID.PROGRESS )
+		content = content .. " pas=" .. g_Time:CalcDiffDayByDate( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )		
 	end	
 	local result = Asset_Get( self, TaskAssetID.RESULT )
 	if result ~= TaskResult.UNKNOWN then
@@ -116,7 +116,7 @@ function Task:Remove()
 	local type = Asset_Get( self, TaskAssetID.TYPE )
 	
 	--remove from all contributor
-	Asset_ForeachList( self, TaskAssetID.CONTRIBUTORS, function ( value, chara )		
+	Asset_Foreach( self, TaskAssetID.CONTRIBUTORS, function ( value, chara )		
 		Asset_RemoveListItem( chara, CharaAssetID.TASKS, self )
 	end )
 end

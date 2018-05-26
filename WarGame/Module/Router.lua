@@ -33,7 +33,8 @@ local function Route_DumpPath( plot1, plot2, path )
 	for _, plot in ipairs( path ) do
 		--print( plot.id, Asset_Get( plot, PlotAssetID.X ) .. "," .. Asset_Get( plot, PlotAssetID.Y ) )
 	end
-	--verify
+	
+	--debug verify
 	if path[1] ~= plot1 or path[#path] ~= plot2 then
 		error( "List path=" .. plot1:ToString() .. "->" .. plot2:ToString() .. " path=" .. #path, "Verify Failed" )
 	else
@@ -290,7 +291,7 @@ end
 function Route_Make()
 	Entity_Foreach( EntityType.CITY, function ( city )
 		if not _cityRelativeRoutes[city] then _cityRelativeRoutes[city] = {} end
-		Asset_ForeachList( city, CityAssetID.ADJACENTS, function( adjaCity )
+		Asset_Foreach( city, CityAssetID.ADJACENTS, function( adjaCity )
 			if not adjaCity or type( adjaCity ) == "number" then return end
 
 			local route = _cityRelativeRoutes[city][adjaCity] or _cityRelativeRoutes[city][adjaCity]

@@ -1,3 +1,6 @@
+--------------------------------------------
+--
+
 TechType = 
 {
 	WEAPON      = 100,
@@ -9,30 +12,49 @@ TechType =
 	PRODUCTION  = 220,
 }
 
+
 ----------------------------------------------------------------------------------------
 --
 --
 --
 ----------------------------------------------------------------------------------------
 
+GroupDomin = 
+{
+
+	DOMINATION,
+}
+
+GroupRepuation = 
+{
+
+}
+
 GroupGoalType = 
 {
+	---------------------------------
 	--Final goal
 	
 	--Control terriority percent
-	DOMINATION_TERRIORITY = 10,	
+	TERRIORITY        = 11,
+
+	--no enemy group
+	DOMINATION        = 12,
+
+	DOMINATION_TERRIORITY = 10,
 
 	---------------------------------
 	SHORT_GOAL_SEPARATOR  = 100,
 
-	--improve growth ability in city 
-	DEVELOP_CITY      = 101,
-	--improve growth ability in all city
-	DEVELOP_GROUP     = 102,
-
-	--
-	ENHANCE_CITY      = 110,
-	ENHANCE_GROUP     = 102,
+	--commander
+	--aggressive, occupy enemy city
+	OCCUPY_CITY       = 101,
+	--aggressive, increase soldier
+	ENHANCE_CITY      = 102,
+	--aggressive, increase the dev score
+	DEVELOP_CITY      = 103,
+	--defe
+	DEFEND_CITY       = 104,	
 }
 
 GroupGovernment = 

@@ -2,36 +2,6 @@
 -- Helper
 
 debugAddRemoveData = true
-quickSimulate = true
-debugMeeting = false
-
-local HelperLog = nil
-local function HelperUtil_GetLog()
-	if not HelperLog then HelperLog = LogUtility( "run/HelperUtil_" .. g_gameId .. ".log", LogWarningLevel.IMPORTANT, true ) end
-	return HelperLog
-end
-
-function IsSimulating()
-	return quickSimulate or not g_game:IsGameEnd()
-end
-
-function ShowDebug( ... )
-	HelperUtil_GetLog():WriteDebug( ... )
-end
-
-function ShowText( ... )
-	HelperUtil_GetLog():WriteLog( ... )
-	--if not IsSimulating() then print( ... ) end
-end
-
-function ShowImpText( ... )
-	HelperUtil_GetLog():WriteImportant( ... )
-end
-
-function EndShowText()
-	quickSimulate = false
-	debugLog:CloseFile()
-end
 
 -- Randomizer
 function Random_LocalGetRange( min, max, desc )

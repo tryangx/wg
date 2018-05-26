@@ -37,8 +37,8 @@ ScenarioData =
 
 	--Params
 	CITY_POPUSTRUCTURE_PARAMS    = DefaultCityPopuStructureParams,
-	CITY_DEVELOP_PARAMS          = DefaultCityDevelopParams,
-	CITY_DEVELOPMENT_VARY_PARAMS = DefaultCityDevelopmentVaryParams,
+	CITY_DEVELOP_RESULT          = DefaultCityDevelopResult,
+	CITY_DEVELOPMENT_VARY_RESULT = DefaultCityDevelopmentVaryResult,
 	CITY_CONSCRIPT_PARAMS        = DefaultCityConscript,
 	CITY_RECRUIT_PARAMS          = DefaultCityRecruit,
 	CORPS_PARAMS                 = DefaultCorpsParams,
@@ -54,17 +54,18 @@ ScenarioData =
 	--Scenario 
 	CHARA_SKILL_DATA = DefaultCharaSkill,
 
+	TROOP_DATA       = DefaultTroopTable,
+	WEAPON_DATA      = DefaultWeaponTable,
+	CORPS_TEMPLATE   = DefaultCorpsTemplate,
+
 	--single city
 	--[[
 	BASE_DATA     = TEST_BaseData,
 	MAP_DATA      = TEST_MapData,
-	GROUP_DATA    = TEST_GroupData,
+
+	GROUP_DATA    = TEST_GroupData,	
 	CITY_DATA     = TEST_CityData,
 	CHARA_DATA    = TEST_CharaData,	
-
-	TROOP_DATA    = TEST_TroopTable,
-	WEAPON_DATA   = TEST_WeaponTable,
-	CORPS_TEMPLATE = TEST_CorpsTemplate,
 	--]]
 
 	--[[
@@ -76,10 +77,6 @@ ScenarioData =
 	CHARA_DATA    = RTK_CharaData,	
 
 	CORPS_DATA    = nil,
-	TROOP_DATA    = RTK_TroopTable,
-	WEAPON_DATA   = RTK_WeaponTable,
-	CORPS_TEMPLATE = RTK_CorpsTemplate,
-
 	EVENT_DATA    = RTK_EventData,
 	--]]
 
@@ -90,12 +87,9 @@ ScenarioData =
 	GROUP_DATA    = CHUHAN_GroupData,
 	CITY_DATA     = CHUHAN_CityData,
 	CHARA_DATA    = CHUHAN_CharaData,	
-	CORPS_DATA    = nil,
-	TROOP_DATA    = CHUHAN_TroopTable,
-	WEAPON_DATA   = CHUHAN_WeaponTable,
-	CORPS_TEMPLATE = CHUHAN_CorpsTemplate,
 
 	EVENT_DATA    = CHUHAN_EventData,
+	CORPS_DATA    = nil,	
 	--]]
 }
 

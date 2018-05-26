@@ -226,11 +226,11 @@ local function Move_OnCombatEnded( msg )
 	local combat  = Asset_GetListItem( msg, MessageAssetID.PARAMS, "combat" )
 	if not combat then return end
 
-	Asset_ForeachList( combat, CombatAssetID.CORPS_LIST, function ( corps )
+	Asset_Foreach( combat, CombatAssetID.CORPS_LIST, function ( corps )
 		if corps:IsBusy() == false then
 			System_Get( SystemType.MOVE_SYS ):StopMoving( corps )
 		else
-			local task = Asset_GetListItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )
+			local task = Asset_GetDictItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )
 			Debug_Log( corps:ToString(), "is busying", task:ToString() )
 		end
 	end )

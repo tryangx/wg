@@ -203,7 +203,7 @@ end
 
 function Map:FindPlotSuitable( conditions )
 	local plotList = {}
-	Asset_ForeachList( self, MapAssetID.PLOTS, function ( plot )
+	Asset_Foreach( self, MapAssetID.PLOTS, function ( plot )
 		local res = Asset_Get( plot, PlotAssetID.RESOURCE )
 		if res then return end
 		local matchCondition = true
@@ -263,7 +263,7 @@ function Map:Generate( datas )
 	end
 
 	--set plot type
-	Asset_ForeachList( self, MapAssetID.PLOTS, function ( plot )		
+	Asset_Foreach( self, MapAssetID.PLOTS, function ( plot )		
 		Asset_Set( plot, PlotAssetID.TEMPLATE, GeneratePlotType( datas.plotTypes ) )
 		plot:InitName()
 	end )
@@ -321,7 +321,6 @@ function Map:AllocateToCity()
 		--allocate adjacent plot to the city
 		local leftPlot = Asset_Get( city, CityAssetID.LEVEL ) - 1
 		
-		--ShowText( city.name, x, y, left, #PlotAdjacentOffsets )
 		for k, offset in ipairs( PlotAdjacentOffsets ) do
 			if leftPlot > 0 and offset.distance < maxDistance then
 				local plot = self:GetPlot( x + offset.x, y + offset.y )
@@ -353,7 +352,7 @@ function Map:AllocateToCity()
 	end )	
 
 	--2nd, init plot assets, gather people
-	Asset_ForeachList( self, MapAssetID.PLOTS, function ( plot )
+	Asset_Foreach( self, MapAssetID.PLOTS, function ( plot )
 		plot:InitGrowth()
 	end )
 end
@@ -361,7 +360,7 @@ end
 -------------------------------------------
 
 function Map:Update()
-	Asset_ForeachList( self, MapAssetID.PLOTS, function ( plot )
+	Asset_Foreach( self, MapAssetID.PLOTS, function ( plot )
 		plot:Update()
 	end )
 end

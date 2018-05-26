@@ -185,6 +185,7 @@ local function Selector( behavior, node )
 	if DEBUG_LOG and node.desc then
 		print( "Selector=" .. ( node.desc or "" ) .. " nodes=" .. #node.children )		
 	end
+	if #node.children == 0 then error( "no selector children" ) end
 	for k, child in ipairs( node.children ) do
 		local fn = behavior.functions[child.type]
 		if fn and fn( behavior, child ) then return true end
@@ -195,6 +196,8 @@ local function RandomSelector( behavior, node )
 	if DEBUG_LOG and node.desc then
 		print( "RandomSelector=" .. ( node.desc or "" ) .. " nodes=" .. #node.children )		
 	end
+	if #node.children == 0 then error( "no randomselector children" ) end
+
 	local children = behavior:Copy( node.children )
 	behavior:Shuffle( children )
 	for k, child in pairs( children ) do
@@ -207,6 +210,7 @@ local function Sequence( behavior, node )
 	if DEBUG_LOG and node.desc then
 		--print( "Sequence=" .. ( node.desc or "" ) .. " nodes=" .. #node.children )
 	end
+	if #node.children == 0 then error( "no sequence children" ) end
 	for k, child in pairs( node.children ) do
 		local fn = behavior.functions[child.type]
 		if fn and fn( behavior, child ) == false then

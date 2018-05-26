@@ -1,4 +1,24 @@
 local function Proposal_Execute( proposal )
+	Log_Write( "meeting", "  proposal=" .. proposal:ToString() )
+
+	--some proposal will execute immediately, no need to issue a task
+	local type = Asset_Get( proposal, ProposalAssetID.TYPE )
+	if type == ProposalType.SET_GOAL then
+		local loc   = Asset_Get( proposal, ProposalAssetID.LOCATION )
+		local group = Asset_Get( loc, CityAssetID.GROUP )
+		local goalType = Asset_GetDictItem( proposal, ProposalAssetID.PARAMS, "goalType" )
+		local goalData = Asset_GetDictItem( proposal, ProposalAssetID.PARAMS, "goalData" )
+		group:AddGoal( goalType, goalData )
+		--InputUtil_Pause( "goal", MathUtil_FindName( GroupGoalType, goalType ) )
+		return
+	elseif type == ProposalType.INSTRUCT_CITY then
+		local list = Asset_GetDictItem( proposal, ProposalAssetID.PARAMS, "instructCityList" )
+		for _, item in ipairs( list ) do
+			City_Instruct( item.city, item.type )
+		end
+		return
+	end
+
 	--issue task include initializing actortype, issue task to every subordinates
 	Task_IssueByProposal( proposal )
 
@@ -10,8 +30,7 @@ local function Proposal_Respond( proposal )
 	local city = Asset_Get( proposal, ProposalAssetID.DESTINATION )
 	if not city then
 		--InputUtil_Pause( "Invalid proposal location" )
-		print( proposal:ToString() )
-		k.p = 1
+		error( proposal:ToString() )
 		return
 	end
 	local isAccepted = true
@@ -48,7 +67,7 @@ local function Meeting_Update( meeting )
 
 	local city = Asset_Get( meeting, MeetingAssetID.LOCATION )
 	local superior = Asset_Get( meeting, MeetingAssetID.SUPERIOR )
-
+	local totalSubmit = 0
 	while topic < endTopic do
 		--print( "cur_topic=", MathUtil_FindName( MeetingTopic, topic ) )
 		Asset_Set( meeting, MeetingAssetID.TOPIC, topic )
@@ -70,6 +89,7 @@ local function Meeting_Update( meeting )
 			if CharaAI_SubmitMeetingProposal( chara, meeting ) then
 				numofproposer  = numofproposer - 1
 				submitProposal = submitProposal + 1
+				totalSubmit    = totalSubmit + 1
 			end
 			return numofproposer <= 0
 		end )
@@ -79,7 +99,9 @@ local function Meeting_Update( meeting )
 			--InputUtil_Pause( "executive submit proposal", MathUtil_FindName( MeetingTopic, topic ) )
 			--let superior submit proposal
 			if superior:IsBusy() == false then
-				CharaAI_SubmitMeetingProposal( superior, meeting )
+				if CharaAI_SubmitMeetingProposal( superior, meeting ) then
+					totalSubmit    = totalSubmit + 1
+				end
 			end
 			--Stat_Add( "Meeting@Cancel_Times", nil, StatType.TIMES )
 			--print( "end meeting" )
@@ -90,7 +112,7 @@ local function Meeting_Update( meeting )
 		if numofproposal > 0 then
 			local index =  Random_GetInt_Sync( 1, numofproposal )
 			local proposal = Entity_GetByIndex( EntityType.PROPOSAL, index )
-			--print( "update proposal" .. MathUtil_FindName( ProposalType, Asset_Get( proposal, ProposalAssetID.TYPE ) ) )
+			--print( "update proposal" .. MathUtil_FindName( ProposalType, Asset_Get( proposal, ProposalAssetID.TYPE ) ) )			
 			Proposal_Respond( proposal )
 		end
 
@@ -103,12 +125,15 @@ local function Meeting_Update( meeting )
 	end
 	--Stat_Add( "Meeting@End_Times", nil, StatType.TIMES )
 
-	DBG_Watch( "Debug_Meeting", g_Time:ToString() .. " " .. city.name .. " meeting over, participants=" .. Asset_GetListSize( meeting, MeetingAssetID.PARTICIPANTS ) )
+	local content = g_Time:ToString() .. " " .. city.name .. " meeting over, attent=" .. Asset_GetListSize( meeting, MeetingAssetID.PARTICIPANTS ) .. " pros=" .. totalSubmit
+	Log_Write( "meeting", content )
+	DBG_Watch( "Debug_Meeting", content )
 end
 
 function Meeting_Hold( city, topic, target )
-	if Asset_GetListItem( city, CityAssetID.STATUSES, CityStatus.IN_SIEGE ) == true then
-		Debug_Log( city.name, "in siege, cann't hold meeting" )
+	if Asset_GetDictItem( city, CityAssetID.STATUSES, CityStatus.IN_SIEGE ) == true then
+		--Debug_Log( city.name, "in siege, cann't hold meeting" )
+		Stat_Add( "Meeting@Siege", 1, StatType.TIMES )
 		return
 	end
 
@@ -146,7 +171,7 @@ function Meeting_Hold( city, topic, target )
 
 	--find participants
 	local participants = {}
-	Asset_ForeachList( city, CityAssetID.CHARA_LIST, function ( chara )
+	Asset_Foreach( city, CityAssetID.CHARA_LIST, function ( chara )
 		if chara:IsBusy() == true then
 			--print( chara.name, " is busy" )
 			return
@@ -168,7 +193,7 @@ function Meeting_Hold( city, topic, target )
 	Stat_Add( "Meeting@CityHold_" .. city.name, 1, StatType.TIMES )
 
 	--print( city:ToString( "OFFICER" ) )
-	--InputUtil_Pause( g_Time:ToString(), city.name, "hold meeting participants=", #participants )
+	Log_Write( "meeting", g_Time:ToString() .. " " .. city.name .. " hold meeting participants=" .. #participants )
 end
 
 --------------------------------------

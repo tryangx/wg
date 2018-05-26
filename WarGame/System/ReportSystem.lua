@@ -1,5 +1,5 @@
 function Report_Feedback( content )
-	print( content )
+	Debug_Log( "[FDB]" .. content )
 end
 
 -----------------------------------------

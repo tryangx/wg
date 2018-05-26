@@ -2,10 +2,11 @@
 -- Time
 --------------------------
 
-DAY_IN_MONTH   = 30
-MONTH_IN_YEAR  = 12
-DAY_IN_YEAR    = MONTH_IN_YEAR * DAY_IN_MONTH
-HOUR_IN_DAY    = 24
+MONTH_IN_YEAR   = 12
+MONTH_IN_SEASON = 3
+DAY_IN_MONTH    = 30
+DAY_IN_YEAR     = MONTH_IN_YEAR * DAY_IN_MONTH
+HOUR_IN_DAY     = 24
 
 Simple_DayPerMonth = 
 {
@@ -90,8 +91,15 @@ function Time:GetYear()
 end
 
 --month from 1 ~ 12
-function Time:GetMonth()
-	return self.month
+function Time:GetMonth( delta )
+	local month = self.month
+	if delta then
+		month = month + delta
+		while month > MONTH_IN_YEAR do
+			month = month - MONTH_IN_YEAR
+		end
+	end
+	return month
 end
 
 --day from 1~31

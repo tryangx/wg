@@ -82,7 +82,7 @@ function TroopTable_GetPower( troop )
 	local armor     = Asset_Get( troop, TroopAssetID.ARMOR )
 	local toughness = Asset_Get( troop, TroopAssetID.TOUGHNESS )
 	local atk = 0
-	Asset_ForeachList( troop, TroopAssetID.WEAPONS, function( weapon )
+	Asset_Foreach( troop, TroopAssetID.WEAPONS, function( weapon )
 		atk = atk + math.ceil( Asset_Get( weapon, WeaponAssetID.POWER ) * Asset_Get( weapon, WeaponAssetID.ACCURACY ) * 0.01 )
 	end )
 	local def = armor + toughness

@@ -73,7 +73,7 @@ local function Supply_CorpsReplenish( corps )
 	if not encampment then
 		return
 	end
-	local depatureTime = Asset_SetListItem( corps, CorpsAssetID.STATUSES, CorpsStatus.DEPATURE_TIME )
+	local depatureTime = Asset_SetDictItem( corps, CorpsAssetID.STATUSES, CorpsStatus.DEPATURE_TIME )
 	local diffDays = g_Time:CalcDiffDayByDate( depatureTime )
 	if diffDays % 10 == 1 then
 		
@@ -81,12 +81,12 @@ local function Supply_CorpsReplenish( corps )
 		local corpsMat  = Asset_Get( corps, CorpsAssetID.MATERIAL )
 		local hasFood   = Asset_Get( encampment, CityAssetID.FOOD )
 		local hasMat    = Asset_Get( encampment, CityAssetID.MATERIAL )		
-		local transport = encampment:GetTransport()
+		local transFood, transMoney, transMat = encampment:GetTransCapacity()
 		local transEff  = 0.8
-		local needFood  = math.min( transport, corps:GetFoodCapacity() - corpsFood )
-		local needMat   = math.min( transport, corps:GetMaterialCapacity() - corpsMat )
+		local needFood  = math.min( transFood, corps:GetFoodCapacity() - corpsFood )
+		local needMat   = math.min( transMat, corps:GetMaterialCapacity() - corpsMat )
 		Asset_Set( corps, CorpsAssetID.FOOD, corpsFood + math.ceil( needFood * transEff ) )
-		Asset_Set( corps, CorpsAssetID.MATERIAL, corpsMat + needMat )
+	Asset_Set( corps, CorpsAssetID.MATERIAL, corpsMat + needMat )
 		Asset_Set( encampment, CityAssetID.FOOD, hasFood - needFood )
 		Asset_Set( encampment, CityAssetID.MATERIAL, hasMat - needMat )
 

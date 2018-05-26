@@ -13,7 +13,6 @@ MathCompareMethod =
 	LESS_THAN_AND_EQUALS = 4,
 }
 
-
 function MathUtil_Size( dict )
 	local size = 0
 	for _, _ in pairs( dict ) do

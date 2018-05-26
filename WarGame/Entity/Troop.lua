@@ -62,7 +62,7 @@ TroopAssetAttrib =
 	glory        = AssetAttrib_SetNumber ( { id = TroopAssetID.GLORY,         type = TroopAssetType.GROWTH_ATTRIB, } ),
 	
 	skills       = AssetAttrib_SetPointerList ( { id = TroopAssetID.SKILLS,   type = TroopAssetType.GROWTH_ATTRIB, setter = Entity_SetSkill } ),
-	statuses     = AssetAttrib_SetList   ( { id = TroopAssetID.STATUSES,      type = TroopAssetType.GROWTH_ATTRIB } ),
+	statuses     = AssetAttrib_SetDict   ( { id = TroopAssetID.STATUSES,      type = TroopAssetType.GROWTH_ATTRIB } ),
 
 	--ability
 	armor        = AssetAttrib_SetNumber ( { id = TroopAssetID.ARMOR,         type = TroopAssetType.COMBAT_ATTRIB, min = 0, max = 1000 } ),
@@ -94,11 +94,13 @@ function Troop:ToString( type )
 	else
 		content = content .. " n=" .. Asset_Get( self, TroopAssetID.SOLDIER )
 		local corps = Asset_Get( self, TroopAssetID.CORPS )
-		content = content .. " corp=" .. corps.name
-		local group = Asset_Get( corps, CorpsAssetID.GROUP )
-		if group then
-			content = content .. " grp=" .. group.name
-		end		
+		if corps then
+			content = content .. " corp=" .. corps.name
+			local group = corps and Asset_Get( corps, CorpsAssetID.GROUP ) or nil
+			if group then
+				content = content .. " grp=" .. group.name
+			end
+		end
 	end
 	return content
 end
@@ -141,15 +143,15 @@ function Troop:TestGenerate()
 end
 
 function Troop:Starve()
-	local cur = Asset_GetListItem( self, TroopAssetID.STATUSES, TroopStatus.STARVATION )
+	local cur = Asset_GetDictItem( self, TroopAssetID.STATUSES, TroopStatus.STARVATION )
 	if not cur then cur = 1 end
-	Asset_SetListItem( self, TroopAssetID.STATUSES, TroopStatus.STARVATION, math.ceil( cur * 1.5 ) )
+	Asset_SetDictItem( self, TroopAssetID.STATUSES, TroopStatus.STARVATION, math.ceil( cur * 1.5 ) )
 end
 
 function Troop:EatFood( food )
-	local value = Asset_GetListItem( self, TroopAssetID.STATUSES, TroopStatus.STARVATION )
+	local value = Asset_GetDictItem( self, TroopAssetID.STATUSES, TroopStatus.STARVATION )
 	if not value or value == 0 then return end
-	Asset_SetListItem( self, TroopAssetID.STATUSES, TroopStatus.STARVATION, math.floor( value * 0.5 ) )
+	Asset_SetDictItem( self, TroopAssetID.STATUSES, TroopStatus.STARVATION, math.floor( value * 0.5 ) )
 end
 
 function Troop:GetWeaponBy( name, value )

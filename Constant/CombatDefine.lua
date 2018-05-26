@@ -56,6 +56,9 @@ TroopRequirement =
 
 TroopStatus = 
 {
+	--is guard
+	GUARD      = 1,
+
 	--range: 1-10
 	STARVATION = 10,
 
