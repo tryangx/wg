@@ -25,8 +25,9 @@ end
 
 -------------------------------------------
 
-local _randomizer = Randomizer()
+local _randomizer       = Randomizer()
 local _unsyncRandomizer = Randomizer()
+local _constRandomizer  = Randomizer()
 
 function Random_SetSeed_Sync( seed )
 	_randomizer:SetSeed( seed )
@@ -48,6 +49,12 @@ function Random_GetInt( min, max )
 end
 
 -------------------------------------------------
+
+function Random_GetInt_Const( min, max, seed )
+	if not seed then error( "no seed" ) end
+	_constRandomizer:SetSeed( seed )
+	return _constRandomizer:GetInt( min, max )
+end
 
 --[[
 	@usage

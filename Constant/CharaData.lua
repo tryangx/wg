@@ -176,14 +176,20 @@ DefaultCharaSkill =
 		id=2000, name="HR expert",
 		effects = { HIRE_CHARA_BONUS = 150, },
 		prerequisite = { pot_above, exp_above = 100 },
-		traits  = { { "OPEN" } },
+		traits  = 
+		{
+			{ "OPEN" }
+		},
 	},
 
 	{
 		id=3010, name="Agri expert",
 		effects = { AGRICULTURE_BONUS = 150, },
 		prerequisite = { pot_above, exp_above = 100 },
-		traits  = { { "HARDWORK" } },
+		traits  = 
+		{
+			{ "HARDWORK" }
+		},
 	},
 	{
 		id=3020, name="Comm expert",

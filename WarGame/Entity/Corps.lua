@@ -83,18 +83,21 @@ end
 
 function Corps:ToString( type )
 	local content = "[" .. self.name .. "]"	
+	local leader = Asset_Get( self, CorpsAssetID.LEADER )
+	if leader then
+		content = content .. leader:ToString()
+	end
+
 	if type == "SIMPLE"	then
 		content = content .. Asset_Get( self, CorpsAssetID.LOCATION ):ToString()
 		--content = content .. " trp=" .. Asset_GetListSize( self, CorpsAssetID.TROOP_LIST )
+	
 	elseif type == "ALL"	then
-		content = content .. " grp=" .. String_ToStr( Asset_Get( self, CorpsAssetID.GROUP ), "name" )
-		local leader = Asset_Get( self, CorpsAssetID.LEADER )
-		if leader then
-			content = content .. leader:ToString()
-		end
+		content = content .. " grp=" .. String_ToStr( Asset_Get( self, CorpsAssetID.GROUP ), "name" )		
 		content = content .. Asset_Get( self, CorpsAssetID.LOCATION ):ToString()
 		content = content .. " trp=" .. Asset_GetListSize( self, CorpsAssetID.TROOP_LIST )
 		content = content .. " soldier=" .. self:GetSoldier()
+	
 	elseif type == "BRIEF" then		
 		local leader = Asset_Get( self, CorpsAssetID.LEADER )
 		if leader then
@@ -104,11 +107,22 @@ function Corps:ToString( type )
 		Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function( troop )
 			content = content .. " " .. troop:ToString( type )
 		end)
+	
 	elseif type == "MILITARY" then
 		content = content .. " trp=" .. Asset_GetListSize( self, CorpsAssetID.TROOP_LIST )
 		content = content .. " soldier=" .. self:GetSoldier()
+	
 	elseif type == "POSITION" then
 		content = content .. " @" .. Asset_Get( self, CorpsAssetID.LOCATION ):ToString()
+
+	elseif type == "STATUS" then
+		local task = Asset_GetDictItem( self, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )
+		if task then
+			content = content .. " task=" .. task:ToString()
+		end
+		content = content .. " " .. ( self:IsAtHome() and "athome" or "outside" )
+		content = content .. " " .. ( self:IsBusy() and "busy" or "idle" )
+	
 	elseif type == "MAINTAIN" then
 		local food = Asset_Get( self, CorpsAssetID.FOOD )
 		local consume = self:GetConsumeFood()

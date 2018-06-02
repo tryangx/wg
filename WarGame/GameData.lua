@@ -16,7 +16,7 @@ g_turnEnd  = 360 * 5
 --every step update in main(), always is daily
 g_turnStep = 1
 
---elapsed in last update
+--elapsed in last update, can be changed in every update
 g_elapsed = 1
 
 -------------------------
@@ -47,7 +47,7 @@ function Game_NextTurn()
 
 	g_turnIdx = math.min( g_turnIdx + g_turnStep, g_turnEnd )
 
-	--InputUtil_Pause()
+--InputUtil_Pause()
 end
 
 -------------------------------------------------

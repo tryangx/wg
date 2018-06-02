@@ -1,30 +1,38 @@
 -------------------------------------------
 
+function Chara_GetRatingCharaSuitJob( chara, job )
+	--to do
+	return 100
+end
+
 function Chara_GetLimitByGroup( group )
 	if not group then return 0 end
 	local government = Asset_Get( group, GroupAssetID.GOVERNMENT )
 	--print( "gov=" .. MathUtil_FindName( GroupGovernment, government ) )
-	return GroupGovernmentData[government].CAPITAL_CHARA_LIMIT
+	local number = GroupGovernmentData[government].CAPITAL_CHARA_LIMIT
+
+	local lv = 0
+	Asset_Foreach( group, GroupAssetID.CITY_LIST, function ( city )
+		lv = lv + Asset_Get( city, CityAssetID.LEVEL )
+	end )
+	number = number + math.floor( lv * 0.1 )
+	return number
 end
 
 function Chara_GetLimitByCity( city )
 	if not city then return 0 end
-	if city:IsCapital() then
-		return Chara_GetLimitByGroup( Asset_Get( city, CityAssetID.GROUP ) )
-	end
+	--if city:IsCapital() then return Chara_GetLimitByGroup( Asset_Get( city, CityAssetID.GROUP ) ) end
 	local lv = Asset_Get( city, CityAssetID.LEVEL )	
 	local ret = math.ceil( lv / 4 ) + 1
+	if city:IsCapital() then
+		ret = ret + ret
+	end
 	--DBG_Warning( "chara_limit_bycity", ret )
 	return ret
 end
 
 function Chara_GetReqNumOfOfficer( city )
 	return 2
-end
-
-function Chara_GetSurplusNumOfChara( city )
-	local list = city:FindVacancyOfficerPositions()
-	return #list - city:GetNumOfOfficerSlot()
 end
 
 function Chara_FindLeader( charaList )
@@ -51,7 +59,7 @@ function Chara_Die( chara )
 	end
 
 	--remove task
-	local task = Asset_GetListItem( chara, CharaAssetID.STATUSES, CharaStatus.IN_TASK )
+	local task = Asset_GetDictItem( chara, CharaAssetID.STATUSES, CharaStatus.IN_TASK )
 	if task then
 		Task_Terminate( task )
 	end
@@ -83,7 +91,7 @@ function Chara_Serve( chara, group, city )
 	if not chara then return end
 
 	if group then
-		Asset_AppendList( group, GroupAssetID.CHARA_LIST, chara )
+		group:AddChara( chara )
 		DBG_Trace( "chara_serve", chara.name .. " serve " .. group.name )
 
 		Asset_Set( chara, CharaAssetID.GROUP, group )
@@ -101,7 +109,7 @@ function Chara_Serve( chara, group, city )
 		Asset_Set( chara, CharaAssetID.JOB, CharaJob.OFFICER )
 
 		--to set relation
-		local executive = Asset_GetListItem( Asset_Get( chara, CharaAssetID.LOCATION ), CityAssetID.OFFICER_LIST, CityJob.CHIEF_EXECUTIVE )
+		local executive = Asset_GetDictItem( Asset_Get( chara, CharaAssetID.LOCATION ), CityAssetID.OFFICER_LIST, CityJob.EXECUTIVE )
 		if executive then
 			Asset_Set( chara, CharaAssetID.SUPERIOR, executive )
 			DBG_Trace( "chara_serve", executive.name .. " manage " .. chara.name )
@@ -110,7 +118,7 @@ function Chara_Serve( chara, group, city )
 			DBG_Trace( "chara_serve", chara.name .. " serve " .. executive.name )
 		end
 
-		Stat_Add( "Chara@Hire", chara.name .. " " .. g_Time:ToString(), StatType.LIST )
+		Stat_Add( "Chara@Hire", chara.name .. " join " .. city.name .. " " .. g_Time:ToString(), StatType.LIST )
 	end
 end
 
@@ -167,19 +175,19 @@ end
 -----------------------------------------------------
 
 function Chara_JobToPlan( job )
-	if job == CityJob.CHIEF_EXECUTIVE then
+	if job == CityJob.EXECUTIVE then
 		return CityPlan.ALL
-	elseif job == CityJob.CHIEF_COMMANDER then
+	elseif job == CityJob.COMMANDER then
 		return CityPlan.COMMANDER
-	elseif job == CityJob.CHIEF_STAFF then
+	elseif job == CityJob.STAFF then
 		return CityPlan.STAFF		
-	elseif job == CityJob.CHIEF_HR then
+	elseif job == CityJob.HR then
 		return CityPlan.HR
-	elseif job == CityJob.CHIEF_AFFAIRS then
+	elseif job == CityJob.AFFAIRS then
 		return CityPlan.AFFAIRS
-	elseif job == CityJob.CHIEF_DIPLOMATIC then
+	elseif job == CityJob.DIPLOMATIC then
 		return CityPlan.DIPLOMATIC
-	elseif job == CityJob.CHIEF_TECHNICIAN then
+	elseif job == CityJob.TECHNICIAN then
 		return CityPlan.TECHNICIAN
 	end
 	return CityPlan.NONE
@@ -194,11 +202,12 @@ local function Chara_WorkForJob( chara )
 	plan = Chara_JobToPlan( job )	
 	local task
 	if plan == CityPlan.NONE then
-		return
+		return		
 	elseif plan == CityPlan.ALL then
-		task = Random_GetDictData( home, CityAssetID.PLANS )
+		--InputUtil_Pause( "all job",  )
+		return
 	else
-		task = Asset_GetListItem( home, CityAssetID.PLANS, plan )
+		task = Asset_GetDictItem( home, CityAssetID.PLANS, plan )
 	end
 	if not task then return end
 	--print( MathUtil_FindName( CityJob, job ), MathUtil_FindName( CityPlan, plan ), task  )

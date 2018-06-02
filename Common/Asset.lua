@@ -166,7 +166,7 @@ function Asset_GetList( entity, id )
 			entity[id] = {}
 			list = entity[id]
 		else
-			error( "what's wrong?" .. entity.type .. "," .. id )
+			error( "what's wrong?" .. entity.type .. "," .. id .. " attrib.type=" .. attrib.value_type )
 		end
 	end
 	return list
@@ -196,7 +196,7 @@ end
 --simply 
 function Asset_CopyDict( entity, id, source, fn )
 	if not source then return end
-	Asset_ClearList( entity, id )
+	Asset_Clear( entity, id )
 	local list = Asset_GetList( entity, id )
 	for k, v in pairs( source ) do
 		list[k] = v
@@ -206,7 +206,7 @@ end
 -- list is just a list, not dictionary
 function Asset_CopyList( entity, id, source, fn )
 	if not source then return end
-	Asset_ClearList( entity, id )
+	Asset_Clear( entity, id )
 	local list = Asset_GetList( entity, id )
 
 	local attrib = Entity_GetAssetAttrib( entity, id )
@@ -257,6 +257,9 @@ function Asset_SetListItem( entity, id, index, item )
 	local list = Asset_GetList( entity, id )
 	
 	local attrib = Entity_GetAssetAttrib( entity, id )
+	if attrib and attrib.type == AssetAttribType.DICT then
+		error( entity.type, entity.id )
+	end
 	if attrib and attrib.setter and typeof( item ) == "number" then
 		item = attrib.setter( entity, id, item )
 	end
@@ -296,7 +299,7 @@ function Asset_RemoveIndexItem( entity, id, index )
 	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "remove index=", index ) end
 end
 
-function Asset_ClearList( entity, id )
+function Asset_Clear( entity, id )
 	if not id then error( "id is invalid" ) end
 	if typeof( entity ) == "number" then
 		print( "entity=", entity, "type=", typeof(entity), " or id=", id, " is invalid" )
@@ -307,11 +310,22 @@ function Asset_ClearList( entity, id )
 end
 
 function Asset_Foreach( entity, id, fn )
-	local list = Asset_GetList( entity, id )
+	--[[]]
+	local datas = entity[id]
+	if not datas then
+		datas = {}
+	end
+	for k, item in pairs( datas ) do
+		fn( item , k )
+	end
+	--]]
+	--[[
+	local list = Asset_GetList( entity, id )	
 	if not list then return end
-	for k, item in pairs( list ) do
+	for k, item in pairs( datas ) do
 		fn( item, k )
 	end
+	--]]
 end
 
 function Asset_FindListItem( entity, id, fn )
@@ -434,7 +448,7 @@ function Asset_SetDictItem( entity, id, name, item )
 	end
 	entity[id][name] = item
 
-	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "set name=", index ) end	
+	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, item ) end	
 end
 
 function Asset_GetDictItem( entity, id, name )

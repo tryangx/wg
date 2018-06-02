@@ -41,6 +41,7 @@ ScenarioData =
 	CITY_DEVELOPMENT_VARY_RESULT = DefaultCityDevelopmentVaryResult,
 	CITY_CONSCRIPT_PARAMS        = DefaultCityConscript,
 	CITY_RECRUIT_PARAMS          = DefaultCityRecruit,
+	CITY_JOB_PARAMS              = DefaultCityJobProb,
 	CORPS_PARAMS                 = DefaultCorpsParams,
 	TROOP_PARAMS                 = DefaultTroopParams,
 

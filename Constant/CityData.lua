@@ -199,6 +199,16 @@ DefaultCityRecruit =
 	{ from = "MERCHANT", to = "RESERVES", prob = 100, min_rate = 5, max_rate = 15 },	
 }
 
+DefaultCityJobProb = 
+{
+	{ prob = 50, job = CityPopu.COMMANDER, },
+	{ prob = 50, job = CityPopu.STAFF },
+	{ prob = 50, job = CityPopu.HR },
+	{ prob = 50, job = CityPopu.AFFAIRS },
+	{ prob = 50, job = CityPopu.DIPLOMATIC, capital = 1 },
+	{ prob = 50, job = CityPopu.TECHNICIAN, capital = 1 },
+}
+
 DefaultCityPopuStructureParams = 
 {
 	[1] = 

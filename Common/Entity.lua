@@ -332,3 +332,9 @@ function Entity_Dump( entity, fn )
 		end
 	end
 end
+
+function Entity_GetSeed( entity )
+	local type = entity.type
+	local id   = entity.id
+	return id * 10000 + id
+end

@@ -209,12 +209,12 @@ end
 
 
 local function Move_OnStartMoving( msg )
-	local actor = Asset_GetListItem( msg, MessageAssetID.PARAMS, "actor" )
+	local actor = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "actor" )
 	System_Get( SystemType.MOVE_SYS ):StartMoving( actor )
 end
 
 local function Move_OnStopMoving( msg )
-	local actor = Asset_GetListItem( msg, MessageAssetID.PARAMS, "actor" )
+	local actor = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "actor" )
 	System_Get( SystemType.MOVE_SYS ):StopMoving( actor )
 end
 
@@ -223,7 +223,7 @@ local function Move_OnCancelMoving( msg )
 end
 
 local function Move_OnCombatEnded( msg )
-	local combat  = Asset_GetListItem( msg, MessageAssetID.PARAMS, "combat" )
+	local combat  = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "combat" )
 	if not combat then return end
 
 	Asset_Foreach( combat, CombatAssetID.CORPS_LIST, function ( corps )
@@ -270,7 +270,7 @@ function MoveSystem:Update()
 			local actor = Asset_Get( move, MoveAssetID.ACTOR )
 			if Asset_Get( move, MoveAssetID.ROLE ) == MoveRole.CORPS then
 				if actor:IsAtHome() then
-					Asset_SetListItem( actor, CorpsAssetID.STATUSES, CorpsStatus.DEPATURE_TIME, nil )
+					Asset_SetDictItem( actor, CorpsAssetID.STATUSES, CorpsStatus.DEPATURE_TIME, nil )
 				end
 			end
 			self._actors[actor] = nil

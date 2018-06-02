@@ -50,6 +50,8 @@ end
 ---------------------------------------------------
 
 local function Meeting_Update( meeting )
+	Log_Write( "meeting", g_Time:ToString() .. " hold" .. meeting:ToString() )
+
 	--determine topic	
 	local topic = Asset_Get( meeting, MeetingAssetID.TOPIC )
 	local begTopic, endTopic
@@ -125,20 +127,22 @@ local function Meeting_Update( meeting )
 	end
 	--Stat_Add( "Meeting@End_Times", nil, StatType.TIMES )
 
-	local content = g_Time:ToString() .. " " .. city.name .. " meeting over, attent=" .. Asset_GetListSize( meeting, MeetingAssetID.PARTICIPANTS ) .. " pros=" .. totalSubmit
+	if totalSubmit == 0 then Stat_Add( "Meeting@Waste", g_Time:ToString() .. " " .. city.name .. " n=" .. Asset_GetListSize( meeting, MeetingAssetID.PARTICIPANTS ), StatType.LSIT ) end
+
+	local content = g_Time:ToString() .. " " .. city.name .. " meeting over, n=" .. Asset_GetListSize( meeting, MeetingAssetID.PARTICIPANTS ) .. " num_p=" .. totalSubmit
 	Log_Write( "meeting", content )
 	DBG_Watch( "Debug_Meeting", content )
 end
 
 function Meeting_Hold( city, topic, target )
-	if Asset_GetDictItem( city, CityAssetID.STATUSES, CityStatus.IN_SIEGE ) == true then
-		--Debug_Log( city.name, "in siege, cann't hold meeting" )
+if Asset_GetDictItem( city, CityAssetID.STATUSES, CityStatus.IN_SIEGE ) == true then
+	--Debug_Log( city.name, "in siege, cann't hold meeting" )
 		Stat_Add( "Meeting@Siege", 1, StatType.TIMES )
 		return
 	end
 
 	if not topic then topic = MeetingTopic.NONE end
-	local executive = city:GetOfficer( CityJob.CHIEF_EXECUTIVE )
+	local executive = city:GetOfficer( CityJob.EXECUTIVE )
 	if topic == MeetingTopic.UNDER_HARASS or topic == MeetingTopic.UNDER_ATTACK then		
 		--Debug_Log( "gain intel need to intercept" .. target:ToString() )
 		--find highest rank		
@@ -187,21 +191,20 @@ function Meeting_Hold( city, topic, target )
 	--InputUtil_Pause( meeting, MeetingAssetID.PARTICIPANTS, #participants )
 	Asset_CopyList( meeting, MeetingAssetID.PARTICIPANTS, participants )
 
-	--print( "hold meeting in=" .. city.name, "chara=" .. Asset_GetListSize( city, CityAssetID.CHARA_LIST ), #participants )
-
 	Stat_Add( "Meeting@HoldTimes", 1, StatType.TIMES )
 	Stat_Add( "Meeting@CityHold_" .. city.name, 1, StatType.TIMES )
 
 	--print( city:ToString( "OFFICER" ) )
-	Log_Write( "meeting", g_Time:ToString() .. " " .. city.name .. " hold meeting participants=" .. #participants )
+	--local group = Asset_Get( city, CityAssetID.GROUP )	
+	--Log_Write( "meeting", g_Time:ToString() .. " " .. city.name .. " hold meeting t=" .. MathUtil_FindName( MeetingTopic, topic ) .. " p=" .. #participants .. ( group and " g=" .. group:ToString( "GOAL" ) or "" ) )
 end
 
 --------------------------------------
 
 local function Meeting_CityHold( msg )
-	local city   = Asset_GetListItem( msg, MessageAssetID.PARAMS, "city" )
-	local topic  = Asset_GetListItem( msg, MessageAssetID.PARAMS, "topic" )
-	local target = Asset_GetListItem( msg, MessageAssetID.PARAMS, "target" )
+	local city   = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "city" )
+	local topic  = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "topic" )
+	local target = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "target" )
 	Meeting_Hold( city, topic, target )
 end
 

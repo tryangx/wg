@@ -38,3 +38,11 @@ function Meeting:Load( data )
 	Asset_Set( self, MeetingAssetID.TOPIC,        data.topic )
 	Asset_Set( self, MeetingAssetID.PARTICIPANTS, data.participants )
 end
+
+function Meeting:ToString()
+	local content = ""
+	content = content .. " @" .. Asset_Get( self, MeetingAssetID.LOCATION ).name
+	content = content .. " t=" .. MathUtil_FindName( MeetingTopic, Asset_Get( self, MeetingAssetID.TOPIC ) )
+	content = content .. " n=" .. Asset_GetListSize( self, MeetingAssetID.PARTICIPANTS )
+	return content
+end

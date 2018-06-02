@@ -81,10 +81,28 @@ CharaJob =
 
 CharaStatus = 
 {
-	EXP               = 1,
-	PROPOSAL_CD       = 10,
+	----------------------------
+	--Flag / Data
+	IN_TASK           = 1,
 
-	IN_TASK           = 20,
+
+	----------------------------
+	--ACCUMULATION
+	EXP               = 100,
+
+	----------------------------
+	-- Time Status( use to gain new trait )
+	CD_STATUS_BEG     = 1000,
+
+	PROPOSAL_CD       = 1000,
+	WORK              = 1010,
+	WORK_ON_AGRI      = 1011,
+	WORK_ON_COMM      = 1012,
+	WORK_ON_PROD      = 1013,
+	COMBAT            = 1011,
+
+	CD_STATUS_END     = 2000,
+	----------------------------
 }
 
 
@@ -97,7 +115,7 @@ CharaStatus =
 CharaTraitType = 
 {
 	------------------------
-	--atomic
+	--atomic( won't changed after initialize except trigger event )
 
 	LIBIDO       = 10,
 	SEXLESS      = 20,
@@ -115,7 +133,7 @@ CharaTraitType =
 	WEAK         = 510,
 
 	------------------------
-	--extension
+	--extension( leads by atomic trait when level up )
 	EXTENSION_TRAIT = 1000,
 
 	--mental
@@ -145,4 +163,9 @@ CharaTraitType =
 
 	OPEN       = 2040,
 	CLOSE      = 2041,
+
+
+	-----------------------
+	--Normally ( which will leads to extension )
+	NORMAL_TRAIT   = 10000,
 }

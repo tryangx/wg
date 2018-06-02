@@ -46,7 +46,7 @@ GroupAssetAttrib =
 	techs     = AssetAttrib_SetList          ( { id = GroupAssetID.TECH_LIST,     type = GroupAssetType.GROWTH_ATTRIB } ),
 	goals     = AssetAttrib_SetDict          ( { id = GroupAssetID.GOAL_LIST,     type = GroupAssetType.GROWTH_ATTRIB } ),
 	tags      = AssetAttrib_SetPointerList   ( { id = GroupAssetID.TAG_LIST,      type = GroupAssetType.GROWTH_ATTRIB } ),
-	spys      = AssetAttrib_SetList          ( { id = GroupAssetID.SPY_LIST,      type = GroupAssetType.GROWTH_ATTRIB } ),
+	spys      = AssetAttrib_SetDict          ( { id = GroupAssetID.SPY_LIST,      type = GroupAssetType.GROWTH_ATTRIB } ),
 }
 
 -------------------------------------------
@@ -59,24 +59,33 @@ end
 
 function Group:ToString( type )
 	local content = "[" .. self.name .. "]"
-	if type == "SIMPLE" then
+	if type == "SIMPLE" or type == "ALL" then
 		content = content .. " city=" .. Asset_GetListSize( self, GroupAssetID.CITY_LIST )
 		content = content .. " chara=" .. Asset_GetListSize( self, GroupAssetID.CHARA_LIST )
 		content = content .. " corps=" .. Asset_GetListSize( self, GroupAssetID.CORPS_LIST )
-	elseif type == "MILITARY" then
-		content = content .. " pow=" .. self:GetSoldier()
-	elseif type == "ALL" then
-		content = content .. " pow=" .. self:GetSoldier()
-	elseif type == "GOAL" then
+	end
+	if type == "POWER" or type == "ALL" then
+		content = content ..  " sldr=" .. self:GetPopu( CityPopu.SOLDIER )		
+		content = content ..  " food=" .. self:GetProperty( CityAssetID.FOOD )
+		content = content ..  " money=" .. self:GetProperty( CityAssetID.MONEY )		
+		content = content ..  " mat=" .. self:GetProperty( CityAssetID.MATERIAL )
+	end	
+	if type == "DIPLOMACY" then
+		local rels = Dipl_GetRelations( self )
+		for _, rel in pairs( rels ) do
+			content = content .. rel:ToString( "ALL" )
+		end
+	end
+	if type == "GOAL" or type == "ALL" then
 		Asset_Foreach( self, GroupAssetID.GOAL_LIST, function ( goalData, goalType )
 			content = content .. " " .. MathUtil_FindName( GroupGoalType, goalType )
 		end)
 	end
-	if type == "POWER" then
-		content = content ..  " sldr=" .. self:GetPopu( CityPopu.SOLDIER )
-		content = content ..  " food=" .. self:GetProperty( CityAssetID.FOOD )
-		content = content ..  " money=" .. self:GetProperty( CityAssetID.MONEY )		
-		content = content ..  " mat=" .. self:GetProperty( CityAssetID.MATERIAL )
+	if type == "SPY" or type == "ALL" then
+		content = content .. " spy="
+		Asset_Foreach( self, GroupAssetID.SPY_LIST, function ( spy, city )
+			content = content .. city.name .. "=" .. spy.grade .. ","
+		end)
 	end
 	return content
 end
@@ -161,13 +170,13 @@ end
 
 function Group:UpdateSpy()
 	--clear current list
-	Asset_ClearList( self, GroupAssetID.SPY_LIST )
+	Asset_Clear( self, GroupAssetID.SPY_LIST )
 
 	Asset_Foreach( self, GroupAssetID.CITY_LIST, function ( city )
 		Asset_Foreach( city, CityAssetID.SPY_LIST, function( spy )
 			local existSpy = self:GetSpy( spy.city )
 			if not existSpy or existSpy.grade < spy.grade then
-				Asset_SetListItem( self, GroupAssetID.SPY_LIST, city, spy )
+				Asset_SetDictItem( self, GroupAssetID.SPY_LIST, city, spy )
 			end
 		end )
 	end)
@@ -193,11 +202,12 @@ function Group:GetProperty( cityAssetid )
 end
 
 function Group:GetSpy( city )
-	return Asset_FindListItem( self, GroupAssetID.SPY_LIST, function( s )
+	return Asset_FindDictItem( self, GroupAssetID.SPY_LIST, function( s )
 		return s.city == city
 	end )
 end
 
+--[[
 function Group:GetSoldier()
 	--corps in city
 	local soldier = 0
@@ -206,14 +216,19 @@ function Group:GetSoldier()
 	end )
 	return soldier
 end
-
+]]
 
 function Group:GetVacancyCityList()
 	local list = {}
 	Asset_Foreach( self, GroupAssetID.CITY_LIST, function ( city )
-		if Asset_GetListSize( city, CityAssetID.CHARA_LIST ) < Chara_GetReqNumOfOfficer( city ) then
-			table.insert( list, city )
+		local has = Asset_GetListSize( city, CityAssetID.CHARA_LIST )
+		if has >= Chara_GetReqNumOfOfficer( city ) then
+			return
 		end
+		if has >= Chara_GetLimitByCity( _city ) then
+			return
+		end
+		table.insert( list, city )
 	end)
 	return list
 end
@@ -263,11 +278,11 @@ function Group:LoseCity( city, toCity )
 		end
 	end )
 	--clear list
-	Asset_ClearList( city, CityAssetID.CHARA_LIST )
-	Asset_ClearList( city, CityAssetID.OFFICER_LIST )
+	Asset_Clear( city, CityAssetID.CHARA_LIST )
+	Asset_Clear( city, CityAssetID.OFFICER_LIST )
 
 	--corps retreat
-	local reserves = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES )
+	local reserves = city:GetPopu( CityPopu.RESERVES )
 	Asset_Foreach( city, CityAssetID.CORPS_LIST, function( corps )
 		if corps:IsAtHome() then
 			--dismiss corps
@@ -281,7 +296,7 @@ function Group:LoseCity( city, toCity )
 			toCity:AddCorps( corps )
 		end
 	end )
-	Asset_ClearList( city, CityAssetID.CORPS_LIST )
+	Asset_Clear( city, CityAssetID.CORPS_LIST )
 	city:SetPopu( CityPopu.RESERVES, reserves )
 end
 
@@ -316,14 +331,20 @@ function Group:OccupyCity( city )
 	Asset_AppendList( self, GroupAssetID.CITY_LIST, city )
 end
 
+function Group:AddChara( chara )
+	Asset_AppendList( self, GroupAssetID.CHARA_LIST, chara )
+end
+
 function Group:LoseChara( chara )
 	Asset_RemoveListItem( self, GroupAssetID.CHARA_LIST, chara )
 end
 
 function Group:AddCorps( corps )	
+	Asset_AppendList( self, GroupAssetID.CORPS_LIST, corps )
 end
 
 function Group:RemoveCorps( corps )
+	Asset_RemoveListItem( self, GroupAssetID.CORPS_LIST, corps )
 end
 
 function Group:ElectLeader()
@@ -356,9 +377,9 @@ end
 function Group:AddGoal( goalType, goalData )
 	--MathUtil_Dump( goalData )
 	--InputUtil_Pause( "add goal", MathUtil_FindName( GroupGoalType, goalType ), goalType, goalData )
-	Asset_SetListItem( self, GroupAssetID.GOAL_LIST, goalType, goalData )
+	Asset_SetDictItem( self, GroupAssetID.GOAL_LIST, goalType, goalData )
 
-	Stat_Add( "SetGoal@" .. self.name, 1, StatType.TIMES )
+	Stat_Add( "SetGoal@" .. self.name, g_Time:ToString() .. " " .. MathUtil_FindName( GroupGoalType, goalType ), StatType.LIST )
 end
 
 function Group:MasterTech( tech )

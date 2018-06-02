@@ -47,7 +47,7 @@ function GoalSystem:Update()
 					end
 
 				elseif goalType == GroupGoalType.ENHANCE_CITY then
-					if goalData.city:GetPopu( CiytPopu.SOLDIER ) >= goalData.soldier then
+					if goalData.city:GetPopu( CityPopu.SOLDIER ) >= goalData.soldier then
 						achieveGoal = true
 					end
 
@@ -68,7 +68,7 @@ function GoalSystem:Update()
 				end
 
 				--remove goal
-				Asset_SetListItem( group, GroupAssetID.GOAL_LIST, goalType, nil )
+				Asset_SetDictItem( group, GroupAssetID.GOAL_LIST, goalType, nil )
 			end
 		end )
 

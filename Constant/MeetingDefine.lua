@@ -151,7 +151,7 @@ MeetingTopic =
 	--
 	MEETING_LOOP          = 11,
 
-	--CHIEF_EXECUTIVE       = 10,
+	--EXECUTIVE       = 10,
 	CAPITAL               = 11,
 
 	--research

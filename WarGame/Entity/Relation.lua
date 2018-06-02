@@ -24,8 +24,8 @@ RelationAssetAttrib =
 	
 	attitude     = AssetAttrib_SetNumber ( { id = RelationAssetID.ATTITUDE,       type = RelationAssetType.BASE_ATTRIB, default = 0 } ),
 	
-	opinion_list = AssetAttrib_SetList   ( { id = RelationAssetID.OPINION_LIST,   type = RelationAssetType.BASE_ATTRIB } ),
-	pact_list    = AssetAttrib_SetList   ( { id = RelationAssetID.PACT_LIST,      type = RelationAssetType.BASE_ATTRIB } ),
+	opinion_list = AssetAttrib_SetDict   ( { id = RelationAssetID.OPINION_LIST,   type = RelationAssetType.BASE_ATTRIB } ),
+	pact_list    = AssetAttrib_SetDict   ( { id = RelationAssetID.PACT_LIST,      type = RelationAssetType.BASE_ATTRIB } ),
 }
 
 -------------------------------------------
@@ -78,7 +78,7 @@ function Relation:Update()
 			end
 		elseif data.time == 0 then
 			InputUtil_Pause( "op over", MathUtil_FindName( RelationOpinion, type ) )
-			Asset_SetListItem( self, RelationAssetID.OPINION_LIST, type, nil )
+			Asset_SetDictItem( self, RelationAssetID.OPINION_LIST, type, nil )
 		end
 	end)
 	Asset_Set( self, RelationAssetID.ATTITUDE, attitude )
@@ -88,13 +88,13 @@ function Relation:Update()
 		data.remain = data.remain - g_elapsed
 		if data.remain < 0 then			
 			--InputUtil_Pause( "pact over", MathUtil_FindName( RelationPact, pact ) )
-			Asset_SetListItem( self, RelationAssetID.PACT_LIST, pact, nil )			
+			Asset_SetDictItem( self, RelationAssetID.PACT_LIST, pact, nil )			
 		end
 	end)
 end
 
 function Relation:GetPact( type )
-	return Asset_GetListItem( self, RelationAssetID.PACT_LIST, type )
+	return Asset_GetDictItem( self, RelationAssetID.PACT_LIST, type )
 end
 
 function Relation:GetOppGroup( group )
@@ -105,18 +105,18 @@ function Relation:GetOppGroup( group )
 end
 
 function Relation:GetOpinion( type )
-	return Asset_GetListItem( self, RelationAssetID.OPINION_LIST, type )
+	return Asset_GetDictItem( self, RelationAssetID.OPINION_LIST, type )
 end
 
 function Relation:HasPact( type )
-	local pact = Asset_GetListItem( self, RelationAssetID.PACT_LIST, type )
+	local pact = Asset_GetDictItem( self, RelationAssetID.PACT_LIST, type )
 	if not pact then return false end
 	if pact.remain and pact.remain > 0 then return true end
 	return false
 end
 
 function Relation:HasOpinion( type )
-	local opinion = Asset_GetListItem( self, RelationAssetID.OPINION_LIST, type )
+	local opinion = Asset_GetDictItem( self, RelationAssetID.OPINION_LIST, type )
 	if not opinion then return false end
 	return opinion ~= 0
 end
@@ -124,7 +124,7 @@ end
 -------------------------------------------------
 
 function Relation:RemoveOpinion( type )
-	Asset_SetListItem( self, RelationAssetID.OPINION_LIST, type, nil )
+	Asset_SetDictItem( self, RelationAssetID.OPINION_LIST, type, nil )
 end
 
 function Relation:ImproveRelation( attitude )
@@ -141,21 +141,22 @@ function Relation:AddOpinion( type )
 	opinion.attitude = data.def
 	opinion.time     = data.time
 	opinion.duration = 1
-	Asset_SetListItem( self, RelationAssetID.OPINION_LIST, type, opinion )
+	Asset_SetDictItem( self, RelationAssetID.OPINION_LIST, type, opinion )
 end
 
 function Relation:DeclareWar()
 	self:AddOpinion( RelationOpinion.AT_WAR )
+	--InputUtil_Pause( "declarewar", self:ToString( "ALL" ) )
 end
 
 function Relation:SignPact( pact, time )
-	Asset_SetListItem( self, RelationAssetID.PACT_LIST, pact, { remain = time } )
+	Asset_SetDictItem( self, RelationAssetID.PACT_LIST, pact, { remain = time } )
 
 	--special process
 	if pact == RelationPact.PEACE then
 		self:RemoveOpinion( RelationOpinion.AT_WAR )
 		self:AddOpinion( RelationOpinion.WAS_AT_WAR )
-		--InputUtil_Pause( "peace", self:ToString( "ALL" ) )
+		InputUtil_Pause( "peace", self:ToString( "ALL" ) )
 	end	
 	--InputUtil_Pause( "sign pact", MathUtil_FindName( RelationPact, pact ), time )
 end

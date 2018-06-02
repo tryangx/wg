@@ -25,6 +25,8 @@ TaskAssetID =
 	--target
 	PARAMS       = 25,
 
+	DESC         = 26,
+
 	--remain time to finish the task
 	DURATION     = 30,
 	--how many works need to finish
@@ -54,11 +56,13 @@ TaskAssetAttrib =
 	destination  = AssetAttrib_SetPointer( { id = TaskAssetID.DESTINATION,type = TaskAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
 	params       = AssetAttrib_SetDict   ( { id = TaskAssetID.PARAMS,     type = TaskAssetType.BASE_ATTRIB } ),	
 
+	desc         = AssetAttrib_SetDict   ( { id = TaskAssetID.DESC,       type = TaskAssetType.BASE_ATTRIB } ),	
+
 	duration     = AssetAttrib_SetNumber ( { id = TaskAssetID.DURATION,   type = TaskAssetType.BASE_ATTRIB, default = 0 } ),
 	workload     = AssetAttrib_SetNumber ( { id = TaskAssetID.WORKLOAD,   type = TaskAssetType.BASE_ATTRIB, default = 100 } ),
 	progress     = AssetAttrib_SetNumber ( { id = TaskAssetID.PROGRESS,   type = TaskAssetType.BASE_ATTRIB, default = 0 } ),	
 	
-	contributors = AssetAttrib_SetList   ( { id = TaskAssetID.CONTRIBUTORS,  type = TaskAssetType.BASE_ATTRIB } ),
+	contributors = AssetAttrib_SetDict   ( { id = TaskAssetID.CONTRIBUTORS,  type = TaskAssetType.BASE_ATTRIB } ),
 
 	begtime      = AssetAttrib_SetNumber( { id = TaskAssetID.BEGIN_TIME,  type = TaskAssetType.BASE_ATTRIB } ),
 	endtime      = AssetAttrib_SetNumber( { id = TaskAssetID.END_TIME,    type = TaskAssetType.BASE_ATTRIB } ),
@@ -86,6 +90,7 @@ function Task:ToString( type )
 		content = content .. " stp=" .. MathUtil_FindName( TaskStep, self:GetStepType() )
 		content = content .. " sts=" .. MathUtil_FindName( TaskStatus, Asset_Get( self, TaskAssetID.STATUS ) )		
 		content = content .. " prg=" .. Asset_Get( self, TaskAssetID.PROGRESS )
+		content = content .. " wrk=" .. Asset_Get( self, TaskAssetID.WORKLOAD )
 	elseif type == "END" then
 		content = content .. " atr=" .. ( Asset_Get( self, TaskAssetID.ACTOR ):ToString() )
 		content = content .. " beg=" .. g_Time:CreateDateDescByValue( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )
@@ -164,10 +169,10 @@ function Task:ElpasedTime( time )
 end
 
 function Task:Contribute( actor, contribution )
-	local cur = Asset_GetListItem( self, TaskAssetID.CONTRIBUTORS, actor )
+	local cur = Asset_GetDictItem( self, TaskAssetID.CONTRIBUTORS, actor )
 	cur = cur and cur + contribution or contribution
-	Asset_SetListItem( self, TaskAssetID.CONTRIBUTORS, actor, cur )
-	--InputUtil_Pause( actor.name, contribution, Asset_GetListItem( self, TaskAssetID.CONTRIBUTORS, actor ) )
+	Asset_SetDictItem( self, TaskAssetID.CONTRIBUTORS, actor, cur )
+	--InputUtil_Pause( actor.name, contribution, Asset_GetDictItem( self, TaskAssetID.CONTRIBUTORS, actor ) )
 end
 
 function Task:DoTask( progress )

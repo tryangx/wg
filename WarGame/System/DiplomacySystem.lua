@@ -37,13 +37,13 @@ function Dipl_CanDeclareWar( relation, red )
 	for blue, rel in pairs( relations ) do
 		if rel:HasOpinion( RelationOpinion.AT_WAR ) then
 			--print( "other=", blue.name, rel:ToString() )
-			enemyPower = enemyPower + Intel_GetGroupMilPower( red, blue )
+			enemyPower = enemyPower + Intel_GetGroup( red, blue, CityIntelType.MILITARY )
 		end
 	end	
 
 	local blue = relation:GetOppGroup( red )
 	local redPower = red:GetMilitaryPower()
-	local bluePower = Intel_GetGroupMilPower( red, blue )
+	local bluePower = Intel_GetGroup( red, blue, CityIntelType.MILITARY )
 	local score = 0
 	local powerScore = 
 	{

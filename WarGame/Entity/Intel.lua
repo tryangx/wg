@@ -17,8 +17,8 @@ IntelAssetAttrib =
 {
 	type     = AssetAttrib_SetPointer( { id = IntelAssetID.TYPE,   type = IntelAssetType.BASE_ATTRIB } ),
 	source   = AssetAttrib_SetPointer( { id = IntelAssetID.SOURCE, type = IntelAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
-	params   = AssetAttrib_SetList   ( { id = IntelAssetID.PARAMS, type = IntelAssetType.BASE_ATTRIB } ),
-	spy_durs = AssetAttrib_SetList   ( { id = IntelAssetID.SPYS_DURATION,   type = IntelAssetType.BASE_ATTRIB } ),
+	params   = AssetAttrib_SetDict   ( { id = IntelAssetID.PARAMS, type = IntelAssetType.BASE_ATTRIB } ),
+	spy_durs = AssetAttrib_SetDict   ( { id = IntelAssetID.SPYS_DURATION,   type = IntelAssetType.BASE_ATTRIB } ),
 }
 
 

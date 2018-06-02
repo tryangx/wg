@@ -9,7 +9,7 @@ MapAssetAttrib =
 {
 	AssetAttrib_SetNumber ( { id = MapAssetID.WIDTH,   nil, min = 1, max = 4000 } ),
 	AssetAttrib_SetNumber ( { id = MapAssetID.HEIGHT,  nil, min = 1, max = 4000 } ),
-	AssetAttrib_SetList   ( { id = MapAssetID.PLOTS,   nil } ),
+	AssetAttrib_SetDict   ( { id = MapAssetID.PLOTS,   nil } ),
 }
 
 PlotRouteOffsets = 
@@ -80,7 +80,7 @@ end
 
 function Map:GetPlot( x, y )
 	local key = self:CreateKey( x, y )
-	return Asset_GetListItem( self, MapAssetID.PLOTS, key )
+	return Asset_GetDictItem( self, MapAssetID.PLOTS, key )
 end
 
 -------------------------------------------
@@ -248,7 +248,7 @@ end
 
 function Map:Generate( datas )
 	-- initialize
-	Asset_ClearList( self, MapAssetID.PLOTS )
+	Asset_Clear( self, MapAssetID.PLOTS )
 	Asset_Set( self, MapAssetID.WIDTH,  datas.width )
 	Asset_Set( self, MapAssetID.HEIGHT, datas.height )
 	self._size = datas.width * datas.height
@@ -258,7 +258,7 @@ function Map:Generate( datas )
 			Asset_Set( plot, PlotAssetID.X, x )
 			Asset_Set( plot, PlotAssetID.Y, y )
 			local key = self:CreateKey( x, y )
-			Asset_SetListItem( self, MapAssetID.PLOTS, key, plot )
+			Asset_SetDictItem( self, MapAssetID.PLOTS, key, plot )
 		end
 	end
 

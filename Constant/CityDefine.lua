@@ -74,36 +74,47 @@ CityStatus =
 	PRODUCTION_BASE    = 31,
 	--commander priority
 	--dispatch corps to adanvaced_base
-	MILITARY_BASE      = 32,
+	MILITARY_BASE      = 32,	
+
+	-------------------------
+
+	BATTLEFRONT        = 40,
+	FRONTIER           = 41,
+	SAFETY             = 42,
+	BUDGET_DANGER      = 50,
+
+	-----------------------------------
+	--sabotage success or something else will trigger this for at least 3 mons
+	VIGILANT           = 100,
+
+	-----------------------------------
+	--not enough aggressive military power
+	AGGRESSIVE_WEAK    = 1000,
+	AGGRESSIVE_ADV     = 1001,
+	--not enough defender military power
+	DEFENSIVE_WEAK      = 1010,	
+	DEFENSIVE_DANGER    = 1011,
 	
-
-	MILITARY_WEAK      = 100,
-	MILITARY_DANGER    = 101,
-
-	DEVELOPMENT_WEAK   = 110,
-	DEVELOPMENT_DANGER = 111,
-
-	BATTLEFRONT        = 120,	
-	FRONTIER           = 121,
-	SAFETY             = 122,
+	DEVELOPMENT_WEAK   = 1020,
+	DEVELOPMENT_DANGER = 1021,
 }
 
 CityJob = 
 {
-	NONE             = 0,
+	NONE            = 0,
 	--All city
-	CHIEF_EXECUTIVE  = 1,
+	EXECUTIVE       = 1,
 
-	POSITION_BEGIN   = 10,
-	CHIEF_COMMANDER  = 11,
-	CHIEF_STAFF      = 12,
-	CHIEF_HR         = 13,
-	CHIEF_AFFAIRS    = 14,
-	POSITION_END     = 15,
+	POSITION_BEGIN  = 10,
+	COMMANDER       = 11,
+	STAFF           = 12,
+	HR              = 13,
+	AFFAIRS         = 14,
+	POSITION_END    = 15,
 
 	--capital
-	CHIEF_DIPLOMATIC = 15,
-	CHIEF_TECHNICIAN = 16,
+	DIPLOMATIC      = 15,
+	TECHNICIAN      = 16,
 	CAPITAL_POSITION_END = 17,
 }
 
@@ -119,4 +130,12 @@ CityPlan =
 	TECHNICIAN = 6,
 
 	ALL        = 10,
+}
+
+CityIntelType = 
+{
+	--potential aggressive military power( exclude defend )
+	MILITARY  = 10,
+	SOLDIER   = 11,
+	DEFENDER  = 12,
 }

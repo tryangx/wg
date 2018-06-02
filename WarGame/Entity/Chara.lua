@@ -75,7 +75,7 @@ CharaAssetAttrib =
 	location   = AssetAttrib_SetPointer( { id = CharaAssetID.LOCATION,   type = CharaAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
 	corps      = AssetAttrib_SetPointer( { id = CharaAssetID.CORPS,      type = CharaAssetType.BASE_ATTRIB, setter = Entity_SetCorps } ),
 	troop      = AssetAttrib_SetPointer( { id = CharaAssetID.TROOP,      type = CharaAssetType.BASE_ATTRIB, setter = Entity_SetTroop } ),
-	statuses   = AssetAttrib_SetList   ( { id = CharaAssetID.STATUSES,   type = CityAssetType.BASE_ATTRIB } ),
+	statuses   = AssetAttrib_SetDict   ( { id = CharaAssetID.STATUSES,   type = CityAssetType.BASE_ATTRIB } ),
 	tasks      = AssetAttrib_SetPointerList( { id = CharaAssetID.TASKS,  type = CityAssetType.BASE_ATTRIB } ),
 
 	--action
@@ -197,7 +197,7 @@ end
 ------------------------------------------
 
 function Chara:GetTask()
-	return Asset_GetListItem( self, CharaAssetID.STATUSES, CharaStatus.IN_TASK )
+	return Asset_GetDictItem( self, CharaAssetID.STATUSES, CharaStatus.IN_TASK )
 end
 
 function Chara:GetTrait( traitType )
@@ -219,7 +219,7 @@ function Chara:IsAtHome()
 end
 
 function Chara:IsBusy()
-	local status = Asset_GetListItem( self, CharaAssetID.STATUSES, CharaStatus.IN_TASK )
+	local status = Asset_GetDictItem( self, CharaAssetID.STATUSES, CharaStatus.IN_TASK )
 	if not status then return false end	
 	return status ~= false
 end
@@ -228,7 +228,7 @@ function Chara:CanLevelUp()
 	local level     = Asset_Get( self, CharaAssetID.LEVEL )
 	local potential = Asset_Get( self, CharaAssetID.POTENTIAL )
 	if level >= potential then return false end
-	local exp = Asset_GetListItem( self, CharaAssetID.STATUSES, CharaStatus.EXP )
+	local exp = Asset_GetDictItem( self, CharaAssetID.STATUSES, CharaStatus.EXP )
 	if not exp or exp < 100 then return false end
 	return true
 end
@@ -237,9 +237,9 @@ function Chara:LevelUp()
 	if self:CanLevelUp() == false then
 		return false
 	end
-	local exp = Asset_GetListItem( self, CharaAssetID.STATUSES, CharaStatus.EXP )
+	local exp = Asset_GetDictItem( self, CharaAssetID.STATUSES, CharaStatus.EXP )
 	exp = exp - 100
-	Asset_SetListItem( self, CharaAssetID.STATUSES, CharaStatus.EXP, exp )
+	Asset_SetDictItem( self, CharaAssetID.STATUSES, CharaStatus.EXP, exp )
 	Asset_Plus( self, CharaAssetID.LEVEL, 1 )
 
 	Stat_Add( "CharaLevelUp@" .. self.name, 1, StatType.TIMES )
@@ -248,11 +248,12 @@ end
 
 -------------------------------------------
 
-function Chara:Update()
-	local proposalcd = Asset_GetListItem( self, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD )
-	if proposalcd and proposalcd > 0 then
-		Asset_SetListItem( self, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD, proposalcd - 1 )
-	end
+function Chara:Update()	
+	Asset_Foreach( self, CharaAssetID.STATUSES, function( value, status )
+		if status > CharaStatus.CD_STATUS_BEG then
+			Asset_SetDictItem( self, CharaAssetID.STATUSES, status, value > 1 and value - 1 or nil )
+		end
+	end )
 
 	Asset_Plus( self, CharaAssetID.SERVICE_DAY, g_elapsed )
 end
@@ -260,10 +261,10 @@ end
 -------------------------------------------
 
 function Chara:Contribute( value )
-	local exp = Asset_GetListItem( self, CharaAssetID.STATUSES, CharaStatus.EXP )
+	local exp = Asset_GetDictItem( self, CharaAssetID.STATUSES, CharaStatus.EXP )
 	if not exp then exp = 0 end
 	exp = exp + value
-	Asset_SetListItem( self, CharaAssetID.STATUSES, CharaStatus.EXP, exp )
+	Asset_SetDictItem( self, CharaAssetID.STATUSES, CharaStatus.EXP, exp )
 	
 	Asset_Plus( self, CharaAssetID.CONTRIBUTION, value )
 	Stat_Add( "Chara@Contribute", value, StatType.ACCUMULATION )

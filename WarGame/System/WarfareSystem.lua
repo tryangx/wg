@@ -139,7 +139,7 @@ function Warefare_SiegeCombatOccur( corps, city )
 	Message_Post( MessageType.SIEGE_COMBAT_OCCURED, { combat = combat } )
 	Message_Post( MessageType.COMBAT_OCCURED, { combat = combat } )
 
-	Asset_SetListItem( city, CityAssetID.STATUSES, CityStatus.IN_SIEGE, true )
+	city:SetStatus( CityStatus.IN_SIEGE, true )
 
 	--Debug_Log( corps:ToString(), "try siege" )
 	Debug_Log( "siege combat occur", combat:ToString( "DEBUG_CORPS" ), city:ToString( "MILITARY" ) )
@@ -165,7 +165,7 @@ local function Warfare_UpdateCombat( combat )
 
 	if type == CombatType.SIEGE_COMBAT then
 		--reset in-siege status
-		Asset_SetListItem( city, CityAssetID.STATUSES, CityStatus.IN_SIEGE, nil )
+		city:SetStatus( city, CityStatus.IN_SIEGE, nil )
 
 		--dismiss guard
 		local guard = 0
@@ -198,7 +198,7 @@ local function Warfare_UpdateCombat( combat )
 	elseif type == CombatType.FIELD_COMBAT then		
 	end
 
-	Stat_Add( MathUtil_FindName( CombatType, Asset_Get( combat, CombatAssetID.TYPE ) ) .. "@" .. MathUtil_FindName( CombatSide, winner ), StatType.TIMES )
+	Stat_Add( MathUtil_FindName( CombatType, Asset_Get( combat, CombatAssetID.TYPE ) ) .. "@WIN=" .. MathUtil_FindName( CombatSide, winner ), 1, StatType.TIMES )
 	Stat_Add( "Combat@Winner", combat:ToString() .. " winner=" .. combat:GetGroupName( winner ), StatType.LIST )
 
 	local group = combat:GetGroup( winner )
@@ -235,7 +235,7 @@ local function Warfare_OnCombatEnded( msg )
 end
 
 local function Warfare_OnCombatRemove( msg )
-	local combat = Asset_GetListItem( msg, MessageAssetID.PARAMS, "combat" )
+	local combat = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "combat" )
 	if not combat then
 		error( "why no combat to remove?" )
 	end
@@ -255,11 +255,11 @@ local function Warfare_OnCombatRemove( msg )
 end
 
 local function Warfare_OnFieldCombatTrigger( msg )
-	local city = Asset_GetListItem( msg, MessageAssetID.PARAMS, "city" )
-	local plot = Asset_GetListItem( msg, MessageAssetID.PARAMS, "plot" )
-	local atk  = Asset_GetListItem( msg, MessageAssetID.PARAMS, "atk" )
-	local def  = Asset_GetListItem( msg, MessageAssetID.PARAMS, "def" )
-	local task = Asset_GetListItem( msg, MessageAssetID.PARAMS, "task" )
+	local city = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "city" )
+	local plot = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "plot" )
+	local atk  = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "atk" )
+	local def  = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "def" )
+	local task = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "task" )
 
 	local combat
 	if plot then
@@ -278,8 +278,8 @@ local function Warfare_OnFieldCombatTrigger( msg )
 end
 
 local function Warfare_OnSiegeCombatTrigger( msg )
-	local atk   = Asset_GetListItem( msg, MessageAssetID.PARAMS, "atk" )
-	local city  = Asset_GetListItem( msg, MessageAssetID.PARAMS, "city" )
+	local atk   = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "atk" )
+	local city  = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "city" )
 	local combat = Warefare_SiegeCombatOccur( atk, city )
 
 	Message_Post( MessageType.COMBAT_TRIGGERRED, { task = task, combat = combat, atk = atk } )

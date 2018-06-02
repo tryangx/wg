@@ -79,8 +79,8 @@ CombatAssetID =
 CombatAssetAttrib = 
 {
 	type        = AssetAttrib_SetNumber     ( { id = CombatAssetID.TYPE,            type = CombatAssetType.BASE_ATTRIB } ),
-	atkstatuses = AssetAttrib_SetList       ( { id = CombatAssetID.ATK_STATUS,      type = CombatAssetType.BASE_ATTRIB } ),
-	defstatuses = AssetAttrib_SetList       ( { id = CombatAssetID.DEF_STATUS,      type = CombatAssetType.BASE_ATTRIB } ),
+	atkstatuses = AssetAttrib_SetDict       ( { id = CombatAssetID.ATK_STATUS,      type = CombatAssetType.BASE_ATTRIB } ),
+	defstatuses = AssetAttrib_SetDict       ( { id = CombatAssetID.DEF_STATUS,      type = CombatAssetType.BASE_ATTRIB } ),
 
 	plot        = AssetAttrib_SetPointer    ( { id = CombatAssetID.PLOT,            type = CombatAssetType.BASE_ATTRIB, setter = Entity_SetPlot } ),
 	city        = AssetAttrib_SetPointer    ( { id = CombatAssetID.CITY,            type = CombatAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
@@ -132,10 +132,12 @@ CombatLog =
 }
 
 local function WriteCombatLog( type, ... )
+	--[[
 	if type == CombatLog.DEBUG then return end
 	if type == CombatLog.MAP then return end
 	if type == CombatLog.DESC then return end
 	if type == CombatLog.INITIAL then return end
+	--]]
 	--print( ... )
 	Log_Write( "combat",  ... )
 end
@@ -497,9 +499,9 @@ function Combat:KillGridTroop( grid, troop )
 		grid.side = CombatSide.UNKNOWN
 		--mean ranks broken
 		if troop._combatSide == CombatSide.ATTACKER then
-			Asset_SetListItem( self, CombatAssetID.ATK_STATUS, CombatStatus.RANK_BROKEN, true )
+			Asset_SetDictItem( self, CombatAssetID.ATK_STATUS, CombatStatus.RANK_BROKEN, true )
 		elseif troop._combatSide == CombatSide.DEFENDER then
-			Asset_SetListItem( self, CombatAssetID.DEF_STATUS, CombatStatus.RANK_BROKEN, true )
+			Asset_SetDictItem( self, CombatAssetID.DEF_STATUS, CombatStatus.RANK_BROKEN, true )
 		end
 	end
 end
@@ -519,9 +521,9 @@ function Combat:AddGridTroop( grid, troop )
 
 	--mean ranks broken
 	if troop._combatSide == CombatSide.ATTACKER then
-		Asset_SetListItem( self, CombatAssetID.ATK_STATUS, CombatStatus.RANK_BROKEN, false )
+		Asset_SetDictItem( self, CombatAssetID.ATK_STATUS, CombatStatus.RANK_BROKEN, false )
 	elseif troop._combatSide == CombatSide.DEFENDER then
-		Asset_SetListItem( self, CombatAssetID.DEF_STATUS, CombatStatus.RANK_BROKEN, false )
+		Asset_SetDictItem( self, CombatAssetID.DEF_STATUS, CombatStatus.RANK_BROKEN, false )
 	end
 end
 
@@ -775,9 +777,9 @@ end
 
 function Combat:GetStatus( side, status )
 	if side == CombatSide.ATTACKER then
-		return Asset_GetListItem( self, CombatAssetID.ATK_STATUS, status )
+		return Asset_GetDictItem( self, CombatAssetID.ATK_STATUS, status )
 	elseif side == CombatSide.DEFENDER then
-		return Asset_GetListItem( self, CombatAssetID.DEF_STATUS, status )
+		return Asset_GetDictItem( self, CombatAssetID.DEF_STATUS, status )
 	end
 	return nil
 end
@@ -843,7 +845,7 @@ function Combat:Embattle()
 				self:AddGridTroop( grid, troop )
 				troop._grid = grid
 
-				WriteCombatLog( CombatLog.INITIAL, "put", troop._x, troop._y, troop:ToString( "COMBAT" ), MathUtil_FindName( CombatSide, troop._combatSide ), Asset_Get( troop, TroopAssetID.SOLDIER ) )
+				--WriteCombatLog( CombatLog.INITIAL, "put", troop._x, troop._y, troop:ToString( "COMBAT" ), MathUtil_FindName( CombatSide, troop._combatSide ), Asset_Get( troop, TroopAssetID.SOLDIER ) )
 			end
 		end
 	end
@@ -951,12 +953,12 @@ function Combat:Prepare()
 		if params.power == params.exposurePower then
 			if params.ratio > 0.8 then
 				--InputUtil_Pause( MathUtil_FindName( CombatSide, params.side ), "Surrounded")
-				Asset_SetListItem( self, params.statuslist, CombatStatus.SURROUNDED, true )
+				Asset_SetDictItem( self, params.statuslist, CombatStatus.SURROUNDED, true )
 			elseif params.ratio < 0.65 then
-				Asset_SetListItem( self, params.statuslist, CombatStatus.SURROUNDED, false )
+				Asset_SetDictItem( self, params.statuslist, CombatStatus.SURROUNDED, false )
 			end
 		else
-			Asset_SetListItem( self, params.statuslist, CombatStatus.SURROUNDED, false )
+			Asset_SetDictItem( self, params.statuslist, CombatStatus.SURROUNDED, false )
 		end
 	end
 	CheckSurrounded( { side = CombatSide.DEFENDER, power = defPower, exposurePower = defExposurePower, ratio = atkPower / ( defPower + atkPower ), statuslist = CombatAssetID.DEF_STATUS } )
@@ -1312,7 +1314,7 @@ function Combat:Feedback()
 		local city = Asset_Get( self, CombatAssetID.CITY )
 		for _, grid in pairs( self._grids ) do
 			if grid.isWall == true then
-				Asset_SetListItem( city, CityAssetID.DEFENSES, grid.x, grid.defense )
+				Asset_SetDictItem( city, CityAssetID.DEFENSES, grid.x, grid.defense )
 				DebugCombat( "DEFENSE-" .. grid.x .. "=" .. grid.defense )
 			end
 		end
@@ -1956,11 +1958,11 @@ function Combat:DestroyDefense( atk, def, params )
 		def.defense = 0
 		if def.isWall == true then
 			if def.side == CombatSide.ATTACKER then
-				Asset_SetListItem( self, CombatAssetID.ATK_STATUS, CombatStatus.DEFENSE_BROKEN, true )
-				--print( Asset_GetListItem( self, CombatAssetID.ATK_STATUS, CombatStatus.DEFENSE_BROKEN ) )
+				Asset_SetDictItem( self, CombatAssetID.ATK_STATUS, CombatStatus.DEFENSE_BROKEN, true )
+				--print( Asset_GetDictItem( self, CombatAssetID.ATK_STATUS, CombatStatus.DEFENSE_BROKEN ) )
 			elseif def.side == CombatSide.DEFENDER then
-				Asset_SetListItem( self, CombatAssetID.DEF_STATUS, CombatStatus.DEFENSE_BROKEN, true )
-				--print( Asset_GetListItem( self, CombatAssetID.DEF_STATUS, CombatStatus.DEFENSE_BROKEN ) )
+				Asset_SetDictItem( self, CombatAssetID.DEF_STATUS, CombatStatus.DEFENSE_BROKEN, true )
+				--print( Asset_GetDictItem( self, CombatAssetID.DEF_STATUS, CombatStatus.DEFENSE_BROKEN ) )
 			end			
 			--InputUtil_Pause( "break def", def.side, def.x, def.y )
 			if Asset_Get( self, CombatAssetID.TYPE ) == CombatType.SIEGE_COMBAT then

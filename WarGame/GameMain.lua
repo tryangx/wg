@@ -34,9 +34,17 @@ function Game_Init()
 				--print( entity.name, MathUtil_FindName( CityAssetID, id ), operation or "unkown" )
 			elseif id == CityAssetID.DISSATISFACTION then
 				--print( entity.name, MathUtil_FindName( CityAssetID, id ), operation or "unkown" )
+			elseif id == CityAssetID.STATUSES then
+				--InputUtil_Pause( "set statuses", operation )
 			end			
 		elseif entity.type == EntityType.CHARA then
 			--print( entity.name .." ".. MathUtil_FindName( CharaAssetID, id ) .. " " ..( operation or "unkown" ) )
+
+		elseif entity.type == EntityType.RELATION then
+			if id == RelationAssetID.OPINION_LIST then
+				--print( "set rel", operation )
+			end
+
 		end		
 	end)
 
@@ -166,12 +174,17 @@ function Game_Init()
 	--init combat params
 	Combat_Init()
 
+	--init datas, prevent any "crashed" caused by init-data leak 
 	Entity_Foreach( EntityType.CITY, function( data )
 		--Entity_Dump( data )
+		--harvest at first
+		City_Harvest( data )
 	end )
 
-	--set watcher
-	DBG_SetWatcher( "Debug_Meeting",  DBGLevel.NORMAL )--IMPORTANT )
+	--set debugger watcher( print on the console )
+	DBG_SetWatcher( "Debug_Meeting",  DBGLevel.NORMAL )
+	--DBG_SetWatcher( "Debug_Meeting",  DBGLevel.IMPORTANT )
+
 end
 
 function Game_Test()
@@ -265,11 +278,13 @@ function Game_Start()
 	end )
 
 	Entity_Foreach( EntityType.CITY, function ( entity )
-		--print( entity:ToString( "BUDGET_YEAR" ) )
+		print( entity:ToString( "BUDGET_YEAR" ) )
 		--print( entity:ToString( "GROWTH" ) )
 		print( entity:ToString( "POPULATION" ) )
 		print( entity:ToString( "DEVELOP" ) )
 		--print( entity:ToString( "TAX" ) )	
+		print( entity:ToString( "SUPPLY" ) )	
+		print( entity:ToString( "CHARA" ) )	
 		--InputUtil_Pause()
 	end)		
 
@@ -278,8 +293,9 @@ function Game_Start()
 	Debug_Normal( "Corps==>" .. Entity_Number( EntityType.CORPS ) ) Entity_Foreach( EntityType.CORPS, function ( entity ) Debug_Normal( entity:ToString( "ALL" ) ) end )
 	Debug_Normal( "City==>" .. Entity_Number( EntityType.CITY ) ) Entity_Foreach( EntityType.CITY, function ( entity ) Debug_Normal( entity:ToString( "ALL" ) ) end )
 	Debug_Normal( "Group==>" .. Entity_Number( EntityType.GROUP ) ) Entity_Foreach( EntityType.GROUP, function ( entity ) Debug_Normal( entity:ToString( "ALL" ) ) end )	
-	Debug_Normal( "Task==>" .. Entity_Number( EntityType.TASK ) ) Entity_Foreach( EntityType.TASK, function( entity ) Debug_Normal( entity:ToString(), "exist" ) end )
+	Debug_Normal( "Task==>" .. Entity_Number( EntityType.TASK ) ) Entity_Foreach( EntityType.TASK, function( entity ) Debug_Normal( entity:ToString( "DEBUG" ), "exist" ) end )
 	Debug_Normal( "Move==>" .. Entity_Number( EntityType.MOVE ) ) Entity_Foreach( EntityType.MOVE, function( entity ) Debug_Normal( entity:ToString(), "still" ) end )
+	Debug_Normal( "Dipl==>" .. Entity_Number( EntityType.RELATION ) ) Entity_Foreach( EntityType.RELATION, function( entity ) Debug_Normal( entity:ToString( "ALL" ) ) end )
 
 	print( g_Time:CreateCurrentDateDesc(), "win=" .. ( g_winner and g_winner.name or "[NONE]" ) )
 end

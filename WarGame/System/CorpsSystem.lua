@@ -109,7 +109,7 @@ local function Corps_QueryRequirementResource( city )
 			resources[type] = Asset_Get( city, CityAssetID.MATERIAL )		
 
 		elseif type == TroopRequirement.SOLDIER then
-			resources[type] = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES )
+			resources[type] = city:GetPopu( CityPopu.RESERVES )
 
 		elseif type == TroopRequirement.TECH then
 		else
@@ -136,7 +136,7 @@ local function Corps_CanEstablishTroop( city, table, soldier, resources )
 	--print( "Establish Troop=" .. table.name .. "*" .. number )
 	if table.requirement.MIN_SOLDIER then
 		if soldier < table.requirement.MIN_SOLDIER then
-			print( "minimum number limit", soldierPerTroop )
+			--print( "minimum number limit", soldier )
 			return false
 		end
 	end
@@ -340,7 +340,7 @@ function Corps_EstablishInCity( city, leader, purpose, troopNumber )
 	local resources = Corps_QueryRequirementResource( city )
 
 	--get how many soldier in the city
-	local reserves = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES )
+	local reserves = city:GetPopu( CityPopu.RESERVES )
 	local numberOfReqTroop = 1
 	local soldierPerTroop = 0
 	
@@ -411,7 +411,7 @@ function Corps_EnrollInCity( corps, city )
 	end
 
 	local numberOfTroop = 1
-	local reserves = Asset_GetListItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.RESERVES )
+	local reserves = city:GetPopu( CityPopu.RESERVES )
 	local soldierPerTroop = Corps_GetTroopMaxNumber( city, nil )
 	if reserves < soldierPerTroop then
 		soldierPerTroop = reserves
@@ -428,7 +428,7 @@ end
 
 function Corps_Dispatch( corps, city )
 	Corps_Join( corps, city )
-	InputUtil_Pause( corps.name, "join", city.name )
+	Debug_Log( corps.name, "join", city.name )
 end
 
 function Corps_AttackCity( corps, city, task )
