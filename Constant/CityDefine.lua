@@ -65,16 +65,17 @@ CityStatus =
 	IN_SIEGE           = 20,
 	STARVATION         = 21,
 
+	OLD_CAPITAL        = 30,
 	--startegy priority
 	--build defensive in DEFEND_CITY goal	
 	--receive resources
-	ADVANCED_BASE      = 30,	
+	ADVANCED_BASE      = 31,	
 	--affairs priority
 	--transport resource to advanced_base
-	PRODUCTION_BASE    = 31,
+	PRODUCTION_BASE    = 32,
 	--commander priority
 	--dispatch corps to adanvaced_base
-	MILITARY_BASE      = 32,	
+	MILITARY_BASE      = 33,
 
 	-------------------------
 
@@ -86,6 +87,13 @@ CityStatus =
 	-----------------------------------
 	--sabotage success or something else will trigger this for at least 3 mons
 	VIGILANT           = 100,
+	MOBILE_MERCHANT    = 101,
+
+	FLOOD              = 110,
+	LOCUSTS_PLAGUE     = 111,
+	PLAGUE             = 114,
+	TYPHOON            = 112,
+	BLIZZARD           = 113,
 
 	-----------------------------------
 	--not enough aggressive military power

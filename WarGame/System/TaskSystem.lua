@@ -247,7 +247,7 @@ local _prepareTask =
 		local dur = Move_CalcIntelTransDuration( Asset_Get( task, TaskAssetID.GROUP ), Asset_Get( task, TaskAssetID.LOCATION ), Asset_Get( task, TaskAssetID.DESTINATION ) )
 		Asset_Set( task, TaskAssetID.DURATION, dur )
 		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WAITING )
-	end,
+	end,	
 
 	DECLARE_WAR     = function ( task )
 		local group    = Asset_Get( task, TaskAssetID.GROUP )
@@ -295,6 +295,10 @@ local _executeTask =
 		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WORKING )
 	end,
 	RECRUIT         = function ( task )
+		Asset_Set( task, TaskAssetID.DURATION, DEFAULT_TASK_DURATION )
+		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WORKING )
+	end,
+	HIRE_GUARD      = function ( task )
 		Asset_Set( task, TaskAssetID.DURATION, DEFAULT_TASK_DURATION )
 		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WORKING )
 	end,
@@ -390,13 +394,15 @@ local _executeTask =
 	end,
 }
 
-local function Task_DoConvReserves( task )
+local function Task_DoConvPopu( task )
 	local type = Asset_Get( task, TaskAssetID.TYPE )
 	local params
 	if type == TaskType.CONSCRIPT then
 		params = Scenario_GetData( "CITY_CONSCRIPT_PARAMS" )
 	elseif type == TaskType.RECRUIT then
 		params = Scenario_GetData( "CITY_RECRUIT_PARAMS" )
+	elseif type == TaskType.HIRE_GUARD then		
+		params = Scenario_GetData( "CITY_HIREGUARD_PARAMS" )
 	end
 	local progress = Random_GetInt_Sync( 15, 35 )
 	task:DoTask( progress )
@@ -411,6 +417,8 @@ local function Task_DoConvReserves( task )
 			Stat_Add( "Conscript@Num", number, StatType.ACCUMULATION )			
 		elseif type == TaskType.RECRUIT then
 			Stat_Add( "Recruit@Num",   number, StatType.ACCUMULATION )
+		elseif type == TaskType.HIRE_GUARD then
+			Stat_Add( "HireGuard@Num", number, StatType.ACCUMULATION )
 		end
 		local old = Asset_GetDictItem( task, TaskAssetID.PARAMS, "number" )
 		if not old then old = 0 end
@@ -458,8 +466,9 @@ local _workOnTask =
 		end
 		return Task_Contribute( task, "work" )
 	end,
-	CONSCRIPT       = Task_DoConvReserves,
-	RECRUIT         = Task_DoConvReserves,
+	CONSCRIPT       = Task_DoConvPopu,
+	RECRUIT         = Task_DoConvPopu,
+	HIRE_GUARD      = Task_DoConvPopu,
 
 	DEV_AGRICULTURE = Task_DoDefault,
 	DEV_COMMERCE    = Task_DoDefault,
@@ -496,6 +505,12 @@ local _workOnTask =
 
 local function Task_MoveChara( task )
 	local actor = Asset_Get( task, TaskAssetID.ACTOR )
+	
+	--chara in corps, won't leave single
+	if Asset_Get( actor, CharaAssetID.CORPS ) then
+		error( actor:ToString() .. " has corps" )
+	end
+
 	local home = Asset_Get( actor, CharaAssetID.HOME )
 	if home then
 		home:CharaLeave( actor )
@@ -539,6 +554,10 @@ local _finishTask =
 		return Task_Contribute( task, "success" )
 	end,
 	RECRUIT         = function ( task )
+		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
+		return Task_Contribute( task, "success" )
+	end,
+	HIRE_GUARD      = function ( task )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
 		return Task_Contribute( task, "success" )
 	end,
@@ -599,7 +618,6 @@ local _finishTask =
 			Chara_Serve( chara, group, city )
 			Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
 			Stat_Add( "Hire@Success", 1, StatType.TIMES )
-			--InputUtil_Pause( city.name, "Hire=" .. Asset_GetListSize( city, CityAssetID.CHARA_LIST ) )
 			return Task_Contribute( task, "success" )
 		else
 			Report_Feedback( task:ToString( "SIMPLE" ) .. " FAILED" )
@@ -807,14 +825,12 @@ function Task_Create( taskType, actor, location, destination, params )
 	--need CHARA
 	elseif type == TaskType.HIRE_CHARA
 		or type == TaskType.PROMOTE_CHARA
+		or type == TaskType.DISPATCH_CHARA
+		or type == TaskType.CALL_CHARA
+		or type == TaskType.MOVE_CAPITAL
 
 		or type == TaskType.ESTABLISH_CORPS
 
-		or type == TaskType.DISPATCH_CHARA
-		or type == TaskType.CALL_CHARA
-		or type == TaskType.CONSCRIPT
-		or type == TaskType.RECRUIT
-		
 		then
 		--!!!Attention
 		--More same task in this group can be executed!
@@ -830,6 +846,10 @@ function Task_Create( taskType, actor, location, destination, params )
 		or type == TaskType.BUILD_CITY
 		or type == TaskType.LEVY_TAX
 		or type == TaskType.TRANSPORT
+
+		or type == TaskType.CONSCRIPT
+		or type == TaskType.RECRUIT
+		or type == TaskType.HIRE_GUARD		
 
 		then
 		Asset_Set( task, TaskAssetID.ACTOR_TYPE, TaskActorType.CHARA )

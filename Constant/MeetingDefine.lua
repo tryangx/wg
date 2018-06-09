@@ -32,18 +32,22 @@ ProposalType =
 
 	CONSCRIPT       = 130,
 	RECRUIT         = 131,
+	HIRE_GUARD      = 132,
 
 	DEV_AGRICULTURE = 310,
 	DEV_COMMERCE    = 311,
 	DEV_PRODUCTION  = 312,		
 	BUILD_CITY      = 320,
 	LEVY_TAX        = 321,
-	TRANSPORT       = 330,	
+	TRANSPORT       = 330,
+	BUY_FOOD        = 331,
+	SELL_FOOD       = 332,	
 
 	HIRE_CHARA      = 400,
 	PROMOTE_CHARA   = 401,
 	DISPATCH_CHARA  = 402,
 	CALL_CHARA      = 403,
+	MOVE_CAPITAL    = 410,
 
 	RECONNOITRE     = 500,
 	SABOTAGE        = 501,
@@ -73,6 +77,7 @@ TaskType =
 
 	CONSCRIPT       = 130,
 	RECRUIT         = 131,
+	HIRE_GUARD      = 132,
 
 	DEV_AGRICULTURE = 310,
 	DEV_COMMERCE    = 311,
@@ -80,11 +85,14 @@ TaskType =
 	BUILD_CITY      = 320,
 	LEVY_TAX        = 321,
 	TRANSPORT       = 330,
+	BUY_FOOD        = 331,
+	SELL_FOOD       = 332,
 
 	HIRE_CHARA      = 400,
 	PROMOTE_CHARA   = 401,
 	DISPATCH_CHARA  = 402,
 	CALL_CHARA      = 403,
+	MOVE_CAPITAL    = 410,
 
 	RECONNOITRE     = 500,
 	SABOTAGE        = 501,
@@ -145,7 +153,7 @@ MeetingTopic =
 	UNDER_ATTACK          = 1,
 	UNDER_HARASS          = 2,
 
-	GOAL                  = 3,
+	DETERMINE_GOAL        = 3,
 
 	---------------------------------
 	--
@@ -154,14 +162,14 @@ MeetingTopic =
 	--EXECUTIVE       = 10,
 	CAPITAL               = 11,
 
+	--hire, encourage
+	HR                    = 12,
+
 	--research
-	TECHNICIAN            = 12,
+	TECHNICIAN            = 13,
 
 	--declare war, sign pact
-	DIPLOMATIC            = 13,
-
-	--hire, encourage
-	HR                    = 14,
+	DIPLOMATIC            = 14,
 
 	--agriculture, commerce, production
 	AFFAIRS               = 15,

@@ -11,6 +11,13 @@ local function Proposal_Execute( proposal )
 		group:AddGoal( goalType, goalData )
 		--InputUtil_Pause( "goal", MathUtil_FindName( GroupGoalType, goalType ) )
 		return
+
+	elseif type == ProposalType.MOVE_CAPITAL then
+		local actor = Asset_Get( proposal, ProposalAssetID.ACTOR )
+		local group = Asset_Get( actor, CharaAssetID.GROUP )
+		group:MoveCapital( Asset_Get( proposal, ProposalAssetID.LOCATION ) )
+		return
+
 	elseif type == ProposalType.INSTRUCT_CITY then
 		local list = Asset_GetDictItem( proposal, ProposalAssetID.PARAMS, "instructCityList" )
 		for _, item in ipairs( list ) do
@@ -50,10 +57,12 @@ end
 ---------------------------------------------------
 
 local function Meeting_Update( meeting )
-	Log_Write( "meeting", g_Time:ToString() .. " hold" .. meeting:ToString() )
+	Log_Write( "meeting", g_Time:ToString() .. " hold" .. meeting:ToString() )	
 
+	local city = Asset_Get( meeting, MeetingAssetID.LOCATION )
 	--determine topic	
 	local topic = Asset_Get( meeting, MeetingAssetID.TOPIC )
+
 	local begTopic, endTopic
 	if topic == MeetingTopic.NONE then		
 		begTopic = MeetingTopic.MEETING_LOOP
@@ -67,7 +76,6 @@ local function Meeting_Update( meeting )
 		Stat_Add( "Meeting@Special_Times", nil, StatType.TIMES )
 	end
 
-	local city = Asset_Get( meeting, MeetingAssetID.LOCATION )
 	local superior = Asset_Get( meeting, MeetingAssetID.SUPERIOR )
 	local totalSubmit = 0
 	while topic < endTopic do
@@ -135,14 +143,17 @@ local function Meeting_Update( meeting )
 end
 
 function Meeting_Hold( city, topic, target )
-if Asset_GetDictItem( city, CityAssetID.STATUSES, CityStatus.IN_SIEGE ) == true then
-	--Debug_Log( city.name, "in siege, cann't hold meeting" )
+	if Asset_GetDictItem( city, CityAssetID.STATUSES, CityStatus.IN_SIEGE ) == true then
+		--Debug_Log( city.name, "in siege, cann't hold meeting" )
 		Stat_Add( "Meeting@Siege", 1, StatType.TIMES )
 		return
 	end
-
-	if not topic then topic = MeetingTopic.NONE end
+	
+	if not topic then
+		topic = MeetingTopic.NONE
+	end
 	local executive = city:GetOfficer( CityJob.EXECUTIVE )
+	--print( city.name, MathUtil_FindName( MeetingTopic, topic ), topic, "ex=" .. String_ToStr( executive, "name" ) )	
 	if topic == MeetingTopic.UNDER_HARASS or topic == MeetingTopic.UNDER_ATTACK then		
 		--Debug_Log( "gain intel need to intercept" .. target:ToString() )
 		--find highest rank		
@@ -155,16 +166,10 @@ if Asset_GetDictItem( city, CityAssetID.STATUSES, CityStatus.IN_SIEGE ) == true 
 				highestRank = rank
 			end
 		end)
-		if not executive then
-			Stat_Add( "Meeting@Pass", 1, StatType.TIMES )
-			return
-		end
-	else
-		if not executive then
-			--no executive, cann't hold on any meeting
-			Stat_Add( "Meeting@Pass", 1, StatType.TIMES )
-			return
-		end
+	end	
+	if not executive then			
+		Stat_Add( "Meeting@Pass", g_Time:ToString() .. " " .. city:ToString( "CHARA" ), StatType.LIST )
+		return
 	end
 
 	local meeting = Entity_New( EntityType.MEETING )
@@ -177,18 +182,17 @@ if Asset_GetDictItem( city, CityAssetID.STATUSES, CityStatus.IN_SIEGE ) == true 
 	local participants = {}
 	Asset_Foreach( city, CityAssetID.CHARA_LIST, function ( chara )
 		if chara:IsBusy() == true then
-			--print( chara.name, " is busy" )
+			--Debug_Log( chara.name, " is busy", chara:ToString( "TASK" ) )
 			return
 		end
 		if chara:IsAtHome() == false then
-			--print( chara.name, " isn't at home" )
+			--Debug_Log( chara.name, " isn't at home" )
 			return
 		end
 		if chara == executive then return end
 		table.insert( participants, chara )
 	end )
 	participants = MathUtil_Shuffle_Sync( participants )
-	--InputUtil_Pause( meeting, MeetingAssetID.PARTICIPANTS, #participants )
 	Asset_CopyList( meeting, MeetingAssetID.PARTICIPANTS, participants )
 
 	Stat_Add( "Meeting@HoldTimes", 1, StatType.TIMES )

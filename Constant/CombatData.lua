@@ -23,6 +23,7 @@ DefaultTroopParams =
 		[1] = 500,
 		[2] = 1000,
 		[3] = 2000,
+		[4] = 4000,
 	}
 }
 
@@ -36,8 +37,8 @@ DefaultTroopTable =
 		melee = 90, shoot = 90, charge = 90, siege = 90, armor = 90, toughness = 90, movement  = 25,
 		skills    = {},
 		potential = 20,
-		capacity = { FOOD = 300, MATERIAL = 100 },
-		consume = { FOOD = 10, MONEY = 10, },		
+		capacity = { FOOD = 100, MATERIAL = 100 },
+		consume = { FOOD = 5, MONEY = 10, },		
 		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 10 },
 	},
@@ -47,8 +48,8 @@ DefaultTroopTable =
 		melee = 25, shoot = 25, charge = 25, siege = 25, armor = 25, toughness = 20, movement  = 25,		
 		skills    = {},
 		potential = 20,
-		capacity = { FOOD = 300, MATERIAL = 100 },
-		consume = { FOOD = 10, MONEY = 10, },		
+		capacity = { FOOD = 100, MATERIAL = 100 },
+		consume = { FOOD = 2, MONEY = 10, },		
 		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 30 },
 	},
@@ -59,8 +60,8 @@ DefaultTroopTable =
 		melee = 25, shoot = 25, charge = 25, siege = 0, armor = 25, toughness = 20, movement  = 25,		
 		skills    = {},
 		potential = 20,
-		capacity = { FOOD = 300, MATERIAL = 100 },
-		consume = { FOOD = 10, MONEY = 10, },		
+		capacity = { FOOD = 100, MATERIAL = 100 },
+		consume = { FOOD = 2, MONEY = 10, },		
 		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 10 },
 	},
@@ -71,8 +72,8 @@ DefaultTroopTable =
 		melee = 35, shoot = 30, charge = 30, siege = 0, armor = 35, toughness = 35, movement  = 25,
 		skills    = {},
 		potential = 20,
-		capacity = { FOOD = 300, MATERIAL = 100 },
-		consume = { FOOD = 10, MONEY = 5, },
+		capacity = { FOOD = 100, MATERIAL = 100 },
+		consume = { FOOD = 2, MONEY = 5, },
 		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 30 },
 	},
@@ -83,8 +84,8 @@ DefaultTroopTable =
 		melee = 35, shoot = 30, charge = 30, siege = 0, armor = 35, toughness = 35, movement  = 25,
 		skills    = {},
 		potential = 20,
-		capacity = { FOOD = 1000, MATERIAL = 1000, MONEY = 1000 },
-		consume = { FOOD = 10, MONEY = 5, },
+		capacity = { FOOD = 3000, MATERIAL = 1000, MONEY = 1000 },
+		consume = { FOOD = 2, MONEY = 5, },
 		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 30 },	
 	},
@@ -95,8 +96,8 @@ DefaultTroopTable =
 		melee = 50, shoot = 35, charge = 40, siege = 0, armor = 50, toughness = 45, movement  = 25,
 		skills    = {},
 		potential = 25,
-		capacity = { FOOD = 300, MATERIAL = 100 },
-		consume = { FOOD = 10, MONEY = 15, },		
+		capacity = { FOOD = 100, MATERIAL = 100 },
+		consume = { FOOD = 3, MONEY = 15, },		
 		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 20 },
 	},
@@ -106,8 +107,8 @@ DefaultTroopTable =
 		melee = 75, shoot = 0, charge = 65, siege = 0, armor = 65, toughness = 60, movement  = 20,
 		skills    = {},
 		potential = 30,
-		capacity = { FOOD = 300, MATERIAL = 100 },
-		consume = { FOOD = 10, MONEY = 20, },		
+		capacity = { FOOD = 100, MATERIAL = 100 },
+		consume = { FOOD = 4, MONEY = 20, },		
 		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 30 },
 	},	
@@ -119,8 +120,8 @@ DefaultTroopTable =
 		melee = 45, shoot = 75, charge = 0, siege = 0, armor = 60, toughness = 55, movement  = 25,
 		skills    = {},
 		potential = 25,
-		capacity = { FOOD = 300, MATERIAL = 100 },
-		consume = { FOOD = 10, MONEY = 16, },
+		capacity = { FOOD = 100, MATERIAL = 100 },
+		consume = { FOOD = 4, MONEY = 16, },
 		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 20, 40 },
 	},
@@ -131,8 +132,8 @@ DefaultTroopTable =
 		melee = 45, shoot = 35, charge = 45, siege = 0, armor = 40, toughness = 55, movement  = 90,
 		skills    = {},
 		potential = 25,
-		capacity = { FOOD = 300, MATERIAL = 100 },
-		consume = { FOOD = 10, MONEY = 28, },		
+		capacity = { FOOD = 200, MATERIAL = 100 },
+		consume = { FOOD = 6, MONEY = 28, },		
 		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 20, 41 },
 	},
@@ -142,8 +143,8 @@ DefaultTroopTable =
 		melee = 75, shoot = 0, charge = 85, siege = 0, armor = 85, toughness = 80, movement  = 65,
 		skills    = {},
 		potential = 40,
-		capacity = { FOOD = 300, MATERIAL = 100 },
-		consume = { FOOD = 20, MONEY = 60, },		
+		capacity = { FOOD = 200, MATERIAL = 100 },
+		consume = { FOOD = 8, MONEY = 60, },		
 		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 31 },
 	},	
@@ -164,7 +165,7 @@ DefaultTroopTable =
 		melee = 35, shoot = 0, charge = 0, siege = 85, armor = 85, toughness = 60, movement  = 20,
 		skills    = {},
 		potential = 40,
-		consume = { FOOD = 10, MONEY = 120, },		
+		consume = { FOOD = 2, MONEY = 120, },		
 		requirement = { MONEY = 1, MATERIAL = 1, TECH = 999, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 51 },
 	},
@@ -174,7 +175,7 @@ DefaultTroopTable =
 		melee = 35, shoot = 80, charge = 0, siege = 80, armor = 85, toughness = 60, movement  = 15,
 		skills    = {},
 		potential = 40,
-		consume = { FOOD = 10, MONEY = 150, },		
+		consume = { FOOD = 2, MONEY = 150, },		
 		requirement = { MONEY = 1, MATERIAL = 1, TECH = 999, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 50 },
 	},
@@ -466,5 +467,97 @@ DefaultFormationData =
 		{
 			position = ""
 		},
+	},
+}
+
+CombatPurposeParam = 
+{
+	--power_comparison_ratio
+	--  self.power / enemy.solder
+	--
+	--soldier_comparison_ratio
+	--  self.soldier / enemy.soldier
+	--
+	--intense
+	--	power_comparsion_ration
+	--
+
+	CONSERVATIVE = 
+	{
+		ATTEND_INTENSE   = 0.35,
+		DECLINED_INTENSE = 0.7,
+		FORCED_INTENSE   = 0.75,
+		WITHDRAW = 
+		{
+			{ reason="danger", not_siege = 1, intense = 0.35 },
+			{ reason="normal", not_siege = 1, intense = 0.35, morale = 30, casualty_ratio = 0.5 },
+			{ reason="no food", food_supply_day = 15, is_atk = 1 },
+		},
+	},
+
+	MODERATE = 
+	{
+		ATTEND_INTENSE   = 0.3,
+		DECLINED_INTENSE = 0.6,
+		FORCED_INTENSE   = 0.5,
+		WITHDRAW =
+		{
+			{ reason="danger", not_siege = 1, intense = 0.3 },
+			{ reason="normal", not_siege = 1, intense = 0.35, morale = 30, casualty_ratio = 1 },
+			{ reason="no food", food_supply_day = 10, is_atk = 1 },
+		},
+	},
+
+	AGGRESSIVE = 
+	{
+		ATTEND_INTENSE   = 0.2,
+		DECLINED_INTENSE = 0.5,
+		FORCED_INTENSE   = 0.35,
+		WITHDRAW = 
+		{
+			{ reason="danger", not_siege = 1, intense = 0.2 },
+			{ reason="normal", not_siege = 1, intense = 0.3, morale = 25, casualty_ratio = 1.5 },
+			{ reason="no food", food_supply_day = 10, is_atk = 1 },
+		},
+	},
+}
+
+CombatVictoryPoint =
+{
+	RESULTS = 
+	{
+		CAMP_COMBAT = 
+		{
+			--result minimum condition, descending
+			{ ratio = 50, atk = CombatResult.BRILLIANT_VICTORY, def = CombatResult.DISASTROUS_LOSE, winner = 1 },
+			{ ratio = 30, atk = CombatResult.STRATEGIC_VICTORY, def = CombatResult.STRATEGIC_LOSE, winner = 0 },
+		},
+
+		SIEGE_COMBAT = 
+		{
+			--result minimum condition, descending
+			{ ratio = 50, atk = CombatResult.BRILLIANT_VICTORY, def = CombatResult.DISASTROUS_LOSE, winner = 1 },
+			{ ratio = 30, atk = CombatResult.STRATEGIC_VICTORY, def = CombatResult.STRATEGIC_LOSE, winner = 0 },
+		},
+
+		FIELD_COMBAT = 
+		{
+			--result minimum condition, descending
+			{ ratio = 50, atk = CombatResult.BRILLIANT_VICTORY, def = CombatResult.DISASTROUS_LOSE, winner = 1 },
+			{ ratio = 30, atk = CombatResult.STRATEGIC_VICTORY, def = CombatResult.STRATEGIC_LOSE, winner = 0 },
+			--{ ratio = 15, atk = CombatResult.TACTICAL_VICTORY,  def = CombatResult.TACTICAL_LOSE, winner = 0 },
+		},		
+	},
+
+	BONUS = 
+	{
+		ACE_MODULUS       = 2,
+		
+		REPEL_TROOP       = 1,
+		NEUTRALIZE_TROOP  = 3,		
+
+		BREAKTHROUGH      = 0.5,
+
+		RETREAT           = 1,
 	},
 }

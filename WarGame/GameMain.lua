@@ -171,9 +171,6 @@ function Game_Init()
 	--init fomula
 	Group_FormulaInit()
 
-	--init combat params
-	Combat_Init()
-
 	--init datas, prevent any "crashed" caused by init-data leak 
 	Entity_Foreach( EntityType.CITY, function( data )
 		--Entity_Dump( data )
@@ -204,19 +201,21 @@ function Game_Test()
 
 	--[[]]
 	--test combat
-	if false then
-		local city = Entity_Get( EntityType.CITY, 100 )
-		local from = Entity_Get( EntityType.CITY, 101 )
+	if true then
+		local city = Entity_Get( EntityType.CITY, 1 )
+		local from = Entity_Get( EntityType.CITY, 2 )
 		local atkcorps = Corps_EstablishTest( { numoftroop = 10, siege = true, encampment = from } )
-		local defcorps = Corps_EstablishTest( { numoftroop = 4, encampment = city } )		
+		local defcorps = Corps_EstablishTest( { numoftroop = 4, encampment = city } )
+		Asset_Set( atkcorps, CorpsAssetID.LOCATION, 2 )
+		Asset_Set( defcorps, CorpsAssetID.LOCATION, 1 )
 		Asset_AppendList( city, CityAssetID.CORPS_LIST, defcorps )
 
 		--set combat
 		local combat = Entity_New( EntityType.COMBAT )
 		combat:AddCorps( atkcorps, CombatSide.ATTACKER )
 		combat:AddCorps( defcorps, CombatSide.DEFENDER )
-		
 		Asset_Set( combat, CombatAssetID.CITY, city )
+		Asset_Set( combat, CombatAssetID.PLOT, Asset_Get( city, CityAssetID.CENTER_PLOT ) )		
 
 		local testSiege = true--true
 		if testSiege == true then
@@ -229,15 +228,23 @@ function Game_Test()
 			Asset_Set( combat, CombatAssetID.BATTLEFIELD, BattlefieldTable_Get( 100 ) )
 			Asset_Set( combat, CombatAssetID.ATKCAMPFIELD, BattlefieldTable_Get( 200 ) )
 			Asset_Set( combat, CombatAssetID.DEFCAMPFIELD, BattlefieldTable_Get( 200 ) )
-		end			
+		end
 		--in siege combat, if attacker purpose not aggressive, they won't attack
 		Asset_Set( combat, CombatAssetID.ATK_PURPOSE, CombatPurpose.AGGRESSIVE )
 		Asset_Set( combat, CombatAssetID.DEF_PURPOSE, CombatPurpose.CONSERVATIVE )
 		System_Get( SystemType.WARFARE_SYS ):AddCombat( combat )
 
+		FeatureOption.DISABLE_FOOD_SUPPLY = true
+
+		local result = false
+		while not result do
+			result = Warfare_UpdateCombat( combat )
+		end 
+
 		--=combat:TestDamage()
 		--Entity_Dump( combat )
 		--[[]]		
+		return true
 	end
 
 	--check route
@@ -252,10 +259,10 @@ end
 function Game_Start()
 	Game_Init()
 	
-	Game_Test()
+	if Game_Test() then return end
 	
-	local city = Entity_Get( EntityType.CITY, 100 )
-	city:TrackData()
+	--local city = Entity_Get( EntityType.CITY, 1 )
+	--if city then city:TrackData() end
 
 	while Game_IsRunning()  do
 		Game_MainLoop()
@@ -278,7 +285,7 @@ function Game_Start()
 	end )
 
 	Entity_Foreach( EntityType.CITY, function ( entity )
-		print( entity:ToString( "BUDGET_YEAR" ) )
+		--print( entity:ToString( "BUDGET_YEAR" ) )
 		--print( entity:ToString( "GROWTH" ) )
 		print( entity:ToString( "POPULATION" ) )
 		print( entity:ToString( "DEVELOP" ) )

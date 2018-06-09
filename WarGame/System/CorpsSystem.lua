@@ -20,25 +20,68 @@ end
 
 -------------------------------------------
 
-function Corps_GetTroopMaxNumberLv( city )
+--return the food need carried to move to destination
+function Corps_CalcNeedFood( corps, dest )
+	--check task, determine more food should carry
+	local days = 0
+	local task = Asset_GetDictItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )
+	if task then
+		local taskType = Asset_Get( task, TaskAssetID.TYPE )
+		if taskType == TaskType.HARASS_CITY then
+			days = 60
+		elseif taskType == TaskType.ATTACK_CITY then
+			days = 180
+		elseif taskType == TaskType.INTERCEPT then
+			days = 60
+		else
+			Debug_Log( "more food" .. days, MathUtil_FindName( TaskType, taskType ) )
+		end
+	end
+
+	local from = Asset_Get( corps, CorpsAssetID.LOCATION )
+	days = days + Move_CalcCorpsMoveDuration( corps, from, dest )
+	--need food when back
+	local needFood = corps:GetConsumeFood() * days
+	local hasFood  = Asset_Get( corps, CorpsAssetID.FOOD )
+
+	--check capacity
+	--local capacity = corps:GetFoodCapacity()
+	--InputUtil_Pause( "need" .. needFood, "capacity" .. capacity, days )	
+
+	--print( "calcneed", from.name, dest.name, days, corps:GetConsumeFood(), needFood, hasFood )
+	return needFood - hasFood
+end
+
+function Corps_GetTroopNumberLvByGroup( group )
+	local government = Asset_Get( group, GroupAssetID.GOVERNMENT )
+	return GroupGovernmentData[government].TROOP_NUMBER_LV or 0
+end
+
+function Corps_GetTroopNumberLv( city )
 	local maxLv = 0
-	if not city then return maxLv end
-	local gropu = Asset_Get( city, CityAssetID.GROUP )
-	if group then maxLv = math.max( maxLv, Corps_GetTroopMaxNumberByGroup( group ) ) end	
+	if not city then
+		return maxLv
+	end
+	local group = Asset_Get( city, CityAssetID.GROUP )
+	if group then
+		maxLv = math.max( maxLv, Corps_GetTroopNumberLvByGroup( group ) )
+	end	
 	return maxLv
 end
 
-function Corps_GetTroopMaxNumberLv( troop )
-	return 0
-end
-
-function Corps_GetTroopMaxNumber( city, troop )	
-	local maxLv = Corps_GetTroopMaxNumberLv( city )
-	if troop then
-		maxLv = math.max( maxLv, Corps_GetTroopMaxNumberLv( troop ) )
-	end
+function Corps_GetTroopMaxNumber( city, troop )
+	local maxLv = Corps_GetTroopNumberLv( city )
 	local number = Scenario_GetData( "TROOP_PARAMS" ).TROOP_MAX_NUMBER[maxLv]
-	return number or Scenario_GetData( "TROOP_PARAMS" ).MIN_TROOP_SOLDIER
+	if not number then
+		number = Scenario_GetData( "TROOP_PARAMS" ).MIN_TROOP_SOLDIER
+	end	
+	if troop then
+		local maxNumber = Asset_Get( troop, TroopAssetID.MAX_SOLDIER )
+		if number < maxNumber then
+			number = maxNumber
+		end
+	end
+	return number
 end
 
 function Corps_GetLimityByCity( city )
@@ -60,9 +103,24 @@ function Corps_Join( corps, city )
 		city:AddCorps( corps )
 	end
 
+	--leader
+	local leader = Asset_Get( corps, CorpsAssetID.LEADER )
+	if leader then
+		Chara_Join( leader, city )
+	end
+
+	--officer
 	Asset_Foreach( corps, CorpsAssetID.OFFICER_LIST, function ( chara )
 		Chara_Join( chara, city )
+		InputUtil_Pause( chara.name, "join", city.name )
 	end )
+
+	Asset_Foreach( corps, CorpsAssetID.TROOP_LIST, function ( troop )
+		local officer = Asset_Get( troop, TroopAssetID.OFFICER )
+		if officer then
+			Chara_Join( officer, city )
+		end
+	end)
 
 	Debug_Log( corps.name .. " join " .. city.name )
 end
@@ -94,6 +152,7 @@ end
 
 function Corps_OfficerDie( corps, officer )
 	corps:LoseOfficer( officer )
+
 	Chara_Die( officer )
 end
 
@@ -233,14 +292,14 @@ local function Corps_EstablishTroop( city, corps, numberOfReqTroop, soldierPerTr
 			return false
 		end
 		if Corps_CanEstablishTroop( city, troopTable, soldierPerTroop, resources ) ~= true then
-			Debug_Log( "establish troop failed")
+			--Debug_Log( "establish troop failed")
 			return false
 		end
 
 		local troop = Entity_New( EntityType.TROOP )
 		troop:LoadFromTable( troopTable )
 
-		local maxSoldier = Corps_GetTroopMaxNumber( city, troop )
+		local maxSoldier = Corps_GetTroopMaxNumber( city )
 		Asset_Set( troop, TroopAssetID.SOLDIER, soldierPerTroop )
 		Asset_Set( troop, TroopAssetID.MAX_SOLDIER, maxSoldier )
 		Asset_Set( troop, TroopAssetID.CORPS, corps )
@@ -253,7 +312,7 @@ local function Corps_EstablishTroop( city, corps, numberOfReqTroop, soldierPerTr
 		if group then
 			Stat_Add( "IncSoldier@" .. group:ToString(), soldierPerTroop, StatType.ACCUMULATION )
 		end
-		--Debug_Log( "Add troop ", troopTable.name, soldierPerTroop )
+		--InputUtil_Pause( "Add troop ", troopTable.name, maxSoldier )
 		return true
 	end
 
@@ -355,10 +414,7 @@ function Corps_EstablishInCity( city, leader, purpose, troopNumber )
 	soldierPerTroop = math.floor( reserves / numberOfReqTroop )
 
 	--limit by the tech/theory/etc.
-	local maxSoldier = Corps_GetTroopMaxNumber( city, nil )
-	if soldierPerTroop > maxSoldier then
-		soldierPerTroop = maxSoldier
-	end
+	soldierPerTroop = math.min( soldierPerTroop, Corps_GetTroopMaxNumber( city, nil ) )
 
 	--boundary checks
 	local minSoldier = Scenario_GetData( "TROOP_PARAMS" ).MIN_TROOP_SOLDIER
@@ -500,7 +556,7 @@ function Corps_EstablishTroopByTable( table, number )
 	Asset_Set( troop, TroopAssetID.CORPS, corps )
 	Asset_Set( troop, TroopAssetID.SOLDIER, number )
 	Asset_Set( troop, TroopAssetID.MAX_SOLDIER, number )
-	troop:LoadFromTable( table )	
+	troop:LoadFromTable( table )
 	return troop
 end
 

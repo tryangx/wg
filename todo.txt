@@ -17,6 +17,10 @@ build upgarde(level up)
 
 build construction
 
+refactor combat( change step into datas like "prepare", "embattle", "fight", "fight", )
+
+buy / sell food
+
 intercept can cancel the corps task
 
 add solider limitation/requirement, reduce the complex of algorithm about Establish CROPS/TROOP
@@ -27,7 +31,7 @@ influence system( 1. only increase, 2. dec in event or special situ )
 
 add new move_actor transport, refugee
 
-add new system & move_actor mobile merchant
+add new system & move_actor mobile merchant( khan3,4 )
 
 economic / current policy / deflation / inflation
 
@@ -35,7 +39,7 @@ map generate update / saver / loader
 
 refactor combat
 
-buy food / starve react
+refactor PLAN ( exclusive task )
 
 *Eventful, just like surrender/fraud -> choose accept/decline/accpet-overwatch -> result
 

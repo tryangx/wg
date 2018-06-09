@@ -6,11 +6,16 @@
 --
 --------------------------------------------------------------
 
+--calculate the food corps carried to dispatch 
 function Supply_HasEnoughFoodForCorps( fromcity, destcity, corps )
 	if FeatureOption.DISABLE_FOOD_SUPPLY then return true end
 
 	local hasFood = Asset_Get( fromcity, CityAssetID.FOOD ) + Asset_Get( corps, CorpsAssetID.FOOD )
-	local needFood = Corps_CalcNeedFood( corps, destcity )	
+	--should carry more than 30 days food
+	local needFood = Corps_CalcNeedFood( corps, destcity )
+
+	--print( fromcity:ToString(), "has=" .. hasFood, "need=" .. needFood, corps:ToString("MILITARY") )
+
 	return hasFood >= needFood
 end
 
@@ -53,7 +58,7 @@ function Supply_CorpsCarryMaterial( corps )
 
 	Asset_Set( loc, CityAssetID.MATERIAL, hasMat - needMat )
 	Asset_Plus( corps, CorpsAssetID.MATERIAL, needMat )
-	InputUtil_Pause( corps.name, "carry mat from", loc.name, "need=" .. needMat, " citymat=" .. hasMat - needMat )
+	--InputUtil_Pause( corps.name, "carry mat from", loc.name, "need=" .. needMat, " citymat=" .. hasMat - needMat )
 
 	return true
 end
@@ -86,7 +91,7 @@ local function Supply_CorpsReplenish( corps )
 		local needFood  = math.min( transFood, corps:GetFoodCapacity() - corpsFood )
 		local needMat   = math.min( transMat, corps:GetMaterialCapacity() - corpsMat )
 		Asset_Set( corps, CorpsAssetID.FOOD, corpsFood + math.ceil( needFood * transEff ) )
-	Asset_Set( corps, CorpsAssetID.MATERIAL, corpsMat + needMat )
+		Asset_Set( corps, CorpsAssetID.MATERIAL, corpsMat + needMat )
 		Asset_Set( encampment, CityAssetID.FOOD, hasFood - needFood )
 		Asset_Set( encampment, CityAssetID.MATERIAL, hasMat - needMat )
 

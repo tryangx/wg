@@ -13,8 +13,10 @@ DefaultTaskSteps =
 	TRAIN_CORPS     = { "EXECUTE", "FINISH", "REPLY" },
 	DISPATCH_CORPS  = { "PREPARE", "EXECUTE", "FINISH", "REPLY" },
 	ENROLL_CORPS    = { "EXECUTE", "FINISH", "REPLY" },
+	
 	CONSCRIPT       = { "EXECUTE", "FINISH", "REPLY" },
 	RECRUIT         = { "EXECUTE", "FINISH", "REPLY" },
+	HIRE_GUARD      = { "EXECUTE", "FINISH", "REPLY" },
 
 	DEV_AGRICULTURE = { "EXECUTE", "FINISH", "REPLY" },
 	DEV_COMMERCE    = { "EXECUTE", "FINISH", "REPLY" },
@@ -55,6 +57,7 @@ DefaultTaskContribution =
 
 	CONSCRIPT       = { success = 20, failed = 0 },
 	RECRUIT         = { success = 20, failed = 0 },
+	HIRE_GUARD      = { success = 20, failed = 0 },
 
 	DEV_AGRICULTURE = { success = 30, failed = 0, work = 1 },
 	DEV_COMMERCE    = { success = 30, failed = 0, work = 1 },

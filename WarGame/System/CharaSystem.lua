@@ -48,11 +48,13 @@ end
 -------------------------------------------
 
 function Chara_Die( chara )
+	--remove from group
 	local group = Asset_Get( chara, CharaAssetID.GROUP )
 	if group then		
 		group:LoseChara( chara )
 	end
 
+	--remove from city
 	local home = Asset_Get( chara, CharaAssetID.HOME )
 	if home then
 		home:CharaLeave( chara )
@@ -75,7 +77,9 @@ end
 
 function Chara_Join( chara, city )
 	local oldHome = Asset_Get( chara, CharaAssetID.HOME )
-	if oldHome == city then return end
+	if oldHome == city then
+		return
+	end
 
 	if oldHome then
 		oldHome:CharaLeave( chara )
@@ -98,8 +102,7 @@ function Chara_Serve( chara, group, city )
 	end
 
 	if city then
-		Asset_AppendList( city, CityAssetID.CHARA_LIST, chara )
-		DBG_Trace( "chara_serve", chara.name .. " serve " .. city.name )
+		city:CharaJoin( chara )
 
 		--set home & location
 		Asset_Set( chara, CharaAssetID.HOME, city )

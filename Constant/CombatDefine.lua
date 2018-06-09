@@ -65,6 +65,31 @@ TroopStatus =
 	SURRENDER  = 11,
 }
 
+TroopCombatData = 
+{
+	SIDE       = 10,
+	X_POS      = 11,
+	Y_POS      = 12,
+	GRID       = 13,
+	FACE_DIR   = 14,
+
+	PREPARED   = 20,
+	ATTENDED   = 21,
+	VP         = 22,
+	EXPOSURE   = 23,
+	
+	ORDER      = 30,
+	TARGET     = 31,
+	MOVED      = 32,
+	ATTACKED   = 33,
+	DEFENDED   = 34,
+
+	RETREAT    = 40,
+	FLEE       = 41,
+	SURROUNDED = 42,
+	CAPTURED   = 43,
+}
+
 CorpsStatus = 
 {
 	IN_COMBAT = 10,
@@ -281,3 +306,16 @@ TacticEffect =
 
 ----------------------------------------------------------------------
 
+CombatPrepareResult = 
+{
+	BOTH_DECLINED     = 0,
+	BOTH_ACCEPTED     = 1,
+	ONLY_ATK_ACCEPTED = 2,
+	ONLY_DEF_ACCEPTED = 3,
+}
+
+CombatTime = 
+{
+	NORMAL_END_TIME = 5,
+	PURSUE_END_TIME = 7,
+}

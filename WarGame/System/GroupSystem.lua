@@ -5,7 +5,7 @@ end
 function Group_SeizeCity( group, city )
 	local oldGroup = Asset_Get( city, CityAssetID.GROUP )
 	if oldGroup == group then
-		error( "city="..city.name," already is under control by group=" .. gropu.name )
+		error( "city="..city.name," already is under control by group=" .. group.name )
 		return
 	end
 

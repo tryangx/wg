@@ -7,26 +7,32 @@ GroupGovernmentData =
 	KINGDOM       =
 	{
 		CAPITAL_CHARA_LIMIT = 12,
+		TROOP_NUMBER_LV     = 2,
 	},
 	EMPIRE        =
 	{
 		CAPITAL_CHARA_LIMIT = 12,
+		TROOP_NUMBER_LV     = 3,
 	},
 	REGION        =
 	{
 		CAPITAL_CHARA_LIMIT = 8,
+		TROOP_NUMBER_LV     = 1,
 	},
 	FAMILY        =
 	{
 		CAPITAL_CHARA_LIMIT = 8,
+		TROOP_NUMBER_LV     = 0,
 	},
 	GUERRILLA     =
 	{
 		CAPITAL_CHARA_LIMIT = 6,
+		TROOP_NUMBER_LV     = 0,
 	},
 	WARZONE       =
 	{
 		CAPITAL_CHARA_LIMIT = 6,
+		TROOP_NUMBER_LV     = 1,
 	},
 }
 

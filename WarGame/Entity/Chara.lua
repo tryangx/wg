@@ -178,8 +178,17 @@ end
 function Chara:ToString( type )
 	local content = "[" .. self.name .. "]"
 
+	if type == "TASK" or type == "ALL" then
+		local task = Asset_GetDictItem( self, CharaAssetID.STATUSES, CharaStatus.IN_TASK )
+		if task then
+			content = content .. " task=" .. task:ToString()
+		end
+	end
 	if type == "LOCATION" or type == "ALL" then
 		content = content .. " @" .. Asset_Get( self, CharaAssetID.LOCATION ).name
+	end
+	if type == "CORPS" or type == "ALL" then
+		content = content .. " corps=" .. String_ToStr( Asset_Get( self, CharaAssetID.CORPS ), "name" )
 	end
 	if type == "JOB" or type == "ALL" then
 		local home = Asset_Get( self, CharaAssetID.HOME )

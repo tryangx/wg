@@ -148,10 +148,13 @@ function Warefare_SiegeCombatOccur( corps, city )
 	return combat
 end
 
-local function Warfare_UpdateCombat( combat )
+function Warfare_UpdateCombat( combat )
 	combat:NextDay()
+	
 	local result = combat:GetResult()
-	if result == CombatResult.UNKNOWN then return false end
+	if result == CombatResult.UNKNOWN then
+		return false
+	end
 
 	combat:Dump()
 
@@ -179,6 +182,8 @@ local function Warfare_UpdateCombat( combat )
 		--InputUtil_Pause( "set guard", city.name, guard, old )
 		Stat_Add( "Guard@Lose", old - guard, StatType.ACCUMULATION )
 
+		city:SetStatus( CityStatus.IN_SIEGE )
+
 		--Seize city
 		if winner == CombatSide.ATTACKER then
 			local group = combat:GetGroup( winner )
@@ -189,6 +194,7 @@ local function Warfare_UpdateCombat( combat )
 			local corpsList = combat:GetCorpsList( winner )
 			for _, corps in ipairs( corpsList ) do
 				Corps_Join( corps, city )
+				--InputUtil_Pause( corps:ToString("BRIEF"), city:ToString("BRIEF") )
 			end
 
 			Debug_Log( city:ToString() .. " occupied by " .. ( group and group:ToString() or "" ), g_Time:CreateCurrentDateDesc() )
@@ -199,7 +205,7 @@ local function Warfare_UpdateCombat( combat )
 	end
 
 	Stat_Add( MathUtil_FindName( CombatType, Asset_Get( combat, CombatAssetID.TYPE ) ) .. "@WIN=" .. MathUtil_FindName( CombatSide, winner ), 1, StatType.TIMES )
-	Stat_Add( "Combat@Winner", combat:ToString() .. " winner=" .. combat:GetGroupName( winner ), StatType.LIST )
+	--Stat_Add( "Combat@Winner", combat:ToString() .. " winner=" .. combat:GetGroupName( winner ), StatType.LIST )
 
 	local group = combat:GetGroup( winner )
 	local oppGroup = combat:GetGroup( combat:GetOppSide( winner ) )
@@ -222,7 +228,7 @@ local function Warfare_UpdateCombat( combat )
 
 	Message_Post( MessageType.COMBAT_ENDED, { combat = combat } )
 
-	--InputUtil_Pause( "combat end", combat:ToString() )
+	InputUtil_Pause( "combat end", combat:ToString( "RESULT" ) )
 
 	return true
 end
@@ -325,11 +331,14 @@ end
 
 function WarfareSystem:AddCombat( combat )
 	local plot = Asset_Get( combat, CombatAssetID.PLOT )
+	if not plot then
+		error( "why no plot" )
+		return
+	end
 	if self._combats[plot] then
 		local existCombat = self._combats[plot]
 		print( existCombat:ToString( "DEBUG_CORPS" ) )
 		error( "Plot" .. "(x=" .. Asset_Get( plot, PlotAssetID.X ) .. ",y=" .. Asset_Get( plot, PlotAssetID.Y ) .. ") already has a combat!" )
 		return;
 	end
-	self._combats[plot] = combat
 end

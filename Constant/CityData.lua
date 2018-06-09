@@ -12,11 +12,13 @@ DefaultCityPopuConsumeFood =
 	RESERVES = 2,
 	--SOLDIER  = 2,
 
+--[[
 	OFFICER  = 1,
 	BACHELOR = 1,
-	GUARD    = 1,
+	GUARD    = 1,	
 
 	NOBEL    = 100,
+	]]
 }
 
 DefaultCityPopuSalary = 
@@ -87,19 +89,22 @@ DefaultCityPopuInit =
 --IMPT, affect initialize of the population structure
 DefaultCityPopuNeed = 
 {
-	RESERVES = { req = 0.01, limit = 0.1 },
+	RESERVES = { req = 0.001, limit = 0.02 },
 
-	HOBO     = { req = 0.05, limit = 0.1 },
-	CHILDREN = { req = 0.15, limit = 0.3 },
-	OLD      = { req = 0.05, limit = 0.2 },	
+	HOBO     = { req = 0.005, limit = 0.1 },
+	CHILDREN = { req = 0.15, limit = 0.35 },
+	OLD      = { req = 0.05, limit = 0.3 },	
 
+	FARMER   = { req = 0.3,  limit = 0.8 },
+	WORKER   = { req = 0.2,  limit = 0.4 },
+	MERCHANT = { req = 0.1,  limit = 0.2 },
 	CORVEE   = { req = 0.01, limit = 0.1 },
 
 	MIDDLE   = { req = 0.05, limit = 0.2 },
 
 	OFFICER  = { req = 0.05, limit = 0.1 },
 	BACHELOR = { req = 0.01, limit = 0.05 },
-	GUARD    = { req = 0.01, limit = 0.05 },
+	GUARD    = { req = 0.01, limit = 0.02 },
 
 	RICH     = { req = 0.005, limit = 0.01 },
 	NOBLE    = { req = 0.001, limit = 0.005 },
@@ -159,6 +164,7 @@ DefaultCityPopuConv =
 	{ from = "HOBO",     to = "FARMER",   sec_more_than = 40, prob = 90, sec = -1, debug = 1 },
 	{ from = "HOBO",     to = "WORKER",   sec_more_than = 40, prob = 80, sec = -1, debug = 1  },
 	{ from = "HOBO",     to = "MERCHANT", sec_more_than = 40, prob = 70, sec = -1, debug = 1  },
+	{ from = "HOBO",     to = "CORVEE",   sec_more_than = 40, prob = 60, sec = -1, debug = 1 },
 
 	{ from = "FARMER",   to = "MIDDLE",   sat_more_than = 60, prob = 30, sec = -1  },
 	{ from = "WORKER",   to = "MIDDLE",   sat_more_than = 60, prob = 35, sec = -1  },
@@ -166,13 +172,14 @@ DefaultCityPopuConv =
 
 	{ from = "MIDDLE",   to = "OFFICER",  sat_more_than = 60, prob = 35 },
 	{ from = "MIDDLE",   to = "BACHELOR", sat_more_than = 70, prob = 25 },
-	{ from = "MIDDLE",   to = "RICH",     sat_more_than = 75, prob = 20 },
+	{ from = "MIDDLE",   to = "RICH",     sat_more_than = 75, prob = 20 },	
 
 	--high to low
 	{ from = "FARMER",   to = "HOBO", sec_less_than = 40, prob = 40, force_conv = true },
 	{ from = "WORKER",   to = "HOBO", sec_less_than = 40, prob = 40, force_conv = true },
 	{ from = "MERCHANT", to = "HOBO", sec_less_than = 40, prob = 40, force_conv = true },
 	{ from = "MIDDLE",   to = "HOBO", sec_less_than = 30, prob = 30, force_conv = true },
+	{ from = "MIDDLE",   to = "CORVEE",  sec_more_than = 40, prob = 30, force_conv = true },
 
 	{ from = "OFFICER",  to = "MIDDLE", sat_less_than = 40, prob = 20, force_conv = true },
 	{ from = "BACHELOR", to = "MIDDLE", sat_less_than = 35, prob = 20, force_conv = true },
@@ -199,14 +206,23 @@ DefaultCityRecruit =
 	{ from = "MERCHANT", to = "RESERVES", prob = 100, min_rate = 5, max_rate = 15 },	
 }
 
+DefaultCityHireGuard =
+{
+	{ from = "HOBO",     to = "GUARD", prob = 100, min_rate = 5, max_rate = 15 },
+	{ from = "FARMER",   to = "GUARD", prob = 50, min_rate = 5, max_rate = 15 },
+	{ from = "WORKER",   to = "GUARD", prob = 50, min_rate = 5, max_rate = 15 },
+	{ from = "MERCHANT", to = "GUARD", prob = 50, min_rate = 5, max_rate = 15 },	
+	{ from = "MIDDLE",   to = "GUARD", prob = 20, min_rate = 5, max_rate = 15 },	
+}
+
 DefaultCityJobProb = 
 {
-	{ prob = 50, job = CityPopu.COMMANDER, },
-	{ prob = 50, job = CityPopu.STAFF },
-	{ prob = 50, job = CityPopu.HR },
-	{ prob = 50, job = CityPopu.AFFAIRS },
-	{ prob = 50, job = CityPopu.DIPLOMATIC, capital = 1 },
-	{ prob = 50, job = CityPopu.TECHNICIAN, capital = 1 },
+	{ prob = 50, job = "COMMANDER", },
+	{ prob = 50, job = "STAFF" },
+	{ prob = 50, job = "HR" },
+	{ prob = 50, job = "AFFAIRS" },
+	{ prob = 50, job = "DIPLOMATIC", capital = 1 },
+	{ prob = 50, job = "TECHNICIAN", capital = 1 },
 }
 
 DefaultCityPopuStructureParams = 

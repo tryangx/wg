@@ -136,25 +136,10 @@ function Plot:InitGrowth( params )
 	local outputFood = DefaultCityPopuHarvest[popuType] * DefaultCityPopuPerUnit[popuType] * agr
 	local supplyPopu = math.ceil( outputFood / DAY_IN_YEAR )
 
-	function CalcPopu()
-		local ret = Cache_Get( "SUPPLY_RATIO" )
-		if ret then return ret end
-		--travel all popu need
-		local totalRatio = 0
-		for type, ratio in pairs( DefaultCityPopuNeed ) do
-			--find who will consume the food
-			if DefaultCityPopuConsumeFood[type] then
-				totalRatio = totalRatio + ratio.req
-			end
-		end
-		--now we get how many ratio in population will consume the food
-		Cache_Set( "SUPPLY_RATIO", totalRatio )
-		return totalRatio		
-	end
-	local totalPopu = supplyPopu / CalcPopu()
-	local popu = math.ceil( totalPopu * Random_GetInt_Sync( 40, 80 ) * 0.01 )
+	local totalPopu = supplyPopu / DefaultCityPopuNeed.FARMER.req
+	local popu = math.ceil( totalPopu * Random_GetInt_Sync( 100, 250 ) * 0.01 )
 	Asset_Set( self, PlotAssetID.POPULATION, popu )
-	--print( "set popu=" .. totalPopu )
+	--InputUtil_Pause( "supply=" .. supplyPopu, "ratio=" .. DefaultCityPopuNeed.FARMER.req, "set popu=" .. popu, DefaultCityPopuPerUnit[popuType] * agr )
 
 	--[[
 	print( "agr=" .. Asset_Get( self, PlotAssetID.AGRICULTURE ) )

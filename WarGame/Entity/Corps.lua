@@ -26,7 +26,7 @@ CorpsAssetID =
 local function Corps_SetTroop( entity, id, value )
 	local troop = Entity_SetTroop( entity, id, value )
 	if troop and typeof( troop ) ~= "number" then
-		Asset_Set( entity, CorpsAssetID.OFFICER_LIST, Asset_Get( troop, TroopAssetID.OFFICER ) )
+		Asset_AppendList( entity, CorpsAssetID.OFFICER_LIST, Asset_Get( troop, TroopAssetID.OFFICER ) )
 	end
 	return troop
 end
@@ -88,40 +88,37 @@ function Corps:ToString( type )
 		content = content .. leader:ToString()
 	end
 
-	if type == "SIMPLE"	then
+	if type == "SIMPLE" or type == "ALL" then
 		content = content .. Asset_Get( self, CorpsAssetID.LOCATION ):ToString()
-		--content = content .. " trp=" .. Asset_GetListSize( self, CorpsAssetID.TROOP_LIST )
-	
-	elseif type == "ALL"	then
-		content = content .. " grp=" .. String_ToStr( Asset_Get( self, CorpsAssetID.GROUP ), "name" )		
-		content = content .. Asset_Get( self, CorpsAssetID.LOCATION ):ToString()
-		content = content .. " trp=" .. Asset_GetListSize( self, CorpsAssetID.TROOP_LIST )
-		content = content .. " soldier=" .. self:GetSoldier()
-	
-	elseif type == "BRIEF" then		
-		local leader = Asset_Get( self, CorpsAssetID.LEADER )
-		if leader then
-			content = content .. leader:ToString()
-		end
-		content = content .. " soldier=" .. self:GetSoldier()
-		Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function( troop )
-			content = content .. " " .. troop:ToString( type )
-		end)
-	
-	elseif type == "MILITARY" then
-		content = content .. " trp=" .. Asset_GetListSize( self, CorpsAssetID.TROOP_LIST )
-		content = content .. " soldier=" .. self:GetSoldier()
-	
-	elseif type == "POSITION" then
-		content = content .. " @" .. Asset_Get( self, CorpsAssetID.LOCATION ):ToString()
+		content = content .. " ld=" .. String_ToStr( Asset_Get( self, CorpsAssetID.LEADER ), "name" )
+	end
 
-	elseif type == "STATUS" then
+	if type == "MILITARY" or type == "ALL" then
+		content = content .. " trp=" .. Asset_GetListSize( self, CorpsAssetID.TROOP_LIST )
+		local soldier, maxSoldier = self:GetSoldier()
+		content = content .. " soldier=" .. soldier .. "/" .. maxSoldier
+	end
+	
+	if type == "STATUS" then
 		local task = Asset_GetDictItem( self, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )
 		if task then
 			content = content .. " task=" .. task:ToString()
 		end
 		content = content .. " " .. ( self:IsAtHome() and "athome" or "outside" )
 		content = content .. " " .. ( self:IsBusy() and "busy" or "idle" )
+	end
+	
+	if type == "BRIEF" then
+		content = content .. Asset_Get( self, CorpsAssetID.LOCATION ):ToString()
+		content = content .. " ld=" .. String_ToStr( Asset_Get( self, CorpsAssetID.LEADER ), "name" )
+		content = content .. " of=" .. 	Asset_GetListSize( self, CorpsAssetID.OFFICER_LIST )
+		content = content .. " soldier=" .. self:GetSoldier()
+		Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function( troop )
+			content = content .. " " .. troop:ToString( type )
+		end)	
+	
+	elseif type == "POSITION" then
+		content = content .. " @" .. Asset_Get( self, CorpsAssetID.LOCATION ):ToString()
 	
 	elseif type == "MAINTAIN" then
 		local food = Asset_Get( self, CorpsAssetID.FOOD )
@@ -220,9 +217,11 @@ end
 
 function Corps:AddTroop( troop )
 	Asset_AppendList( self, CorpsAssetID.TROOP_LIST, troop )
+	Asset_AppendList( self, CorpsAssetID.OFFICER_LIST, Asset_Get( troop, TroopAssetID.OFFICER ) )
 end
 
 function Corps:RemoveTroop( troop )
+	Asset_RemoveListItem( self, CorpsAssetID.OFFICER_LIST, Asset_Get( troop, TroopAssetID.OFFICER ) )
 	Asset_RemoveListItem( self, CorpsAssetID.TROOP_LIST, troop )
 end
 
@@ -272,13 +271,3 @@ function Corps:PaySalary( salary )
 end
 
 -------------------------------------------
-
---return the food need carried to move to destination
-function Corps_CalcNeedFood( corps, dest )
-	local from = Asset_Get( corps, CorpsAssetID.LOCATION )
-	local days = Move_CalcCorpsMoveDuration( corps, from, dest )
-	--need food when back
-	local needFood = corps:GetConsumeFood() * days * 2
-	local hasFood  = Asset_Get( corps, CorpsAssetID.FOOD )
-	return needFood - hasFood
-end

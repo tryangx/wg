@@ -18,9 +18,9 @@ function Intel_Get( city, fromCity, type )
 	local seed = g_Time:GetDateValue() + Entity_GetSeed( city ) + Entity_GetSeed( fromCity )
 
 	if level == 1 then
-		return math.ceil( value * Random_GetInt_Const( 100, 150, seed ) * 0.01 )
+		return math.ceil( value * Random_GetInt_Const( 80, 150, seed ) * 0.01 )
 	elseif level == 2 then
-		return math.ceil( value * Random_GetInt_Const( 100, 120, seed ) * 0.01 )
+		return math.ceil( value * Random_GetInt_Const( 90, 120, seed ) * 0.01 )
 	elseif level == 3 then
 		return value
 	end

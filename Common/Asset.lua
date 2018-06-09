@@ -273,7 +273,10 @@ end
 
 -- Use this to remove item from the list
 function Asset_RemoveListItem( entity, id, item )
-	if not item then error( "item invalid" ) return false end
+	if not item then
+		--error( "item invalid" )
+		return false
+	end
 	if not id then error( "id invalid" ) end
 	if typeof( entity ) == "number" then error( "entity invalid" ) return false end
 	if not entity[id] then return false end
@@ -548,6 +551,9 @@ function Asset_Get( entity, id )
 			error( "invalid entity in Asset_Get()" )
 		end
 		local attrib = Entity_GetAssetAttrib( entity, id )
+		if not attrib then
+			return
+		end
 		if attrib.value_type == AssetAttribType.LIST or attrib.value_type == AssetAttribType.POINTER_LIST then
 			error( "please use Asset_GetList()" )
 		end
@@ -558,7 +564,7 @@ function Asset_Get( entity, id )
 			error( "id is invalid" )
 		end
 		if typeof( entity ) == "number" then
-			return nil
+			return
 		end
 	end
 

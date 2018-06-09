@@ -62,7 +62,6 @@ CHUHAN_CharaData =
 		grade       = "BEST",
 		purpose     = 0,
 		job         = "LEADER",
-		home        = 100,
 		skills      = { 1000, 1030 },
 		politics    = { 0, 10, 1000 },
 		strategy    = { 0, 10, 1000 },
@@ -76,8 +75,7 @@ CHUHAN_CharaData =
 		potential   = 80,
 		grade       = "PERFECT",
 		purpose     = 0,
-		job 		= "",	
-		home        = 100,
+		job 		= "",
 		skills      = { 1000, 1030 },
 		politics    = { 0, 10, 1000 },
 		strategy    = { 0, 10, 1000 },
@@ -91,8 +89,7 @@ CHUHAN_CharaData =
 		potential   = 80,
 		grade       = "PERFECT",
 		purpose     = 0,
-		job 		= "",		
-		home        = 100,
+		job 		= "",
 		skills      = { 1000, 1030 },
 		politics    = { 0, 10, 1000 },
 		strategy    = { 0, 10, 1000 },
@@ -107,7 +104,6 @@ CHUHAN_CharaData =
 		grade       = "BEST",
 		purpose     = 0,
 		job         = "",
-		home        = 100,
 		skills      = { 1000, 1030 },
 		politics    = { 0, 10, 1000 },
 		strategy    = { 0, 10, 1000 },
@@ -122,7 +118,6 @@ CHUHAN_CharaData =
 		grade       = "BEST",
 		purpose     = 0,
 		job         = "",
-		home        = 100,
 		skills      = { 1000, 1030 },
 		politics    = { 0, 10, 1000 },
 		strategy    = { 0, 10, 1000 },
@@ -138,7 +133,6 @@ CHUHAN_CharaData =
 		grade       = "PERFECT",	
 		purpose     = 0,		
 		job         = "LEADER",
-		home        = 200,
 		skills      = { 1001, 1010, 1040 },
 		politics    = { 0, 10, 1000 },
 		strategy    = { 0, 10, 1000 },
@@ -152,7 +146,6 @@ CHUHAN_CharaData =
 		potential   = 90,
 		grade       = "BEST",
 		purpose     = 0,	
-		home        = 200,	
 		skills      = { 1001, 1010, 1040 },
 		politics    = { 0, 10, 1000 },
 		strategy    = { 0, 10, 1000 },
@@ -166,7 +159,6 @@ CHUHAN_CharaData =
 		potential   = 90,
 		grade       = "BEST",
 		purpose     = 0,	
-		home        = 200,	
 		skills      = { 1001, 1010, 1040 },
 		politics    = { 0, 10, 1000 },
 		strategy    = { 0, 10, 1000 },
@@ -180,7 +172,6 @@ CHUHAN_CharaData =
 		potential   = 90,
 		grade       = "BEST",
 		purpose     = 0,	
-		home        = 200,	
 		skills      = { 1001, 1010, 1040 },
 		politics    = { 0, 10, 1000 },
 		strategy    = { 0, 10, 1000 },
@@ -190,53 +181,75 @@ CHUHAN_CharaData =
 
 CHUHAN_CityData = 
 {
-	[101] = 
+	--  1 --- 2
+	-- /       \
+	--3  --4--  5
+	-- \       /
+	--  6 --- 7
+	[1] = 
 	{
-		name = "Xian Yang",
-		coordinate = { x = 42, y = 6 },
-		level = 16,
-		charas = {},
-		adjacents = { 100, 200 },
+		name = "XianYan",
+		coordinate = { x = 12, y = 6 },
+		adjacents = { 2, 3 },
+		level = 14,
+
 		defenses = { 15000, 10000, 15000 },
 	},
-	[100] = 
+	[2] = 
 	{
-		name = "Guan Zhong",
-		coordinate = { x = 36, y = 12 },
-		level = 12,
+		name = "LinZi",
+		coordinate = { x = 24, y = 6 },
+		adjacents = { 1, 5 },
+		level = 14,
+
+		defenses = { 15000, 10000, 15000 },
+	},
+	[3] = 
+	{
+		name = "GuangZhong",
+		coordinate = { x = 6, y = 12 },
+		adjacents = { 1, 4, 6 },
+		level = 12,		
 		charas = { 100, 101, 102, 103, 104 },
-		adjacents = { 101 },
+
 		defenses = { 15000, 10000, 15000 },
 	},
-	[200] = 
+	[4] = 
 	{
-		name = "Peng Chen",
-		coordinate = { x = 48, y = 12 },
-		level = 10,
+		name = "PengChen",
+		coordinate = { x = 3, y = 12 },
+		adjacents = { 3, 5 },
+		level = 13,
+
+		defenses = { 15000, 10000, 15000 },
+	},
+	[5] = 
+	{
+		name = "KuaiJi",
+		coordinate = { x = 30, y = 12 },
+		adjacents = { 2, 7 },
+		level = 12,
 		charas = { 200, 201, 202, 203 },
-		adjacents = { 101, 201 },
 		defenses = { 15000, 10000, 15000 },
 	},
-	[201] = 
+	[6] = 
 	{
-		name = "Jiu Jiang",
-		coordinate = { x = 51, y = 16 },
-		level = 4,
-		charas = {},
-		adjacents = { 200 },
+		name = "JinZhou",
+		coordinate = { x = 12, y = 18 },
+		adjacents = { 3, 7 },
+		level = 12,
+
 		defenses = { 15000, 10000, 15000 },
 	},
-	--[[
-	[201] = 
+	[7] = 
 	{
-		name = "Kuai Ji",
-		coordinate = { x = 54, y = 18 },
+		name = "JiuJiang",
+		coordinate = { x = 24, y = 18 },
+		adjacents = { 5, 6 },
 		level = 10,
-		charas = { 200, 201, 202, 203 },
-		adjacents = { 200 },
+
 		defenses = { 15000, 10000, 15000 },
 	},
-	]]
 }
 
 CHUHAN_GroupData =
@@ -244,10 +257,10 @@ CHUHAN_GroupData =
 	[1] =
 	{
 		name = "HAN",
-		goals = { { type="TERRIORITY", target = 100 } },
+		goals = { { type="TERRIORITY", target = 1 } },
 		leader = 100,
-		capital = 100,
-		cities = { 100, 101 },
+		capital = 3,
+		cities = { 3 },
 		charas = { 100, 101, 102, 103, 104 },
 		troops = {},
 		corps = {},
@@ -259,10 +272,10 @@ CHUHAN_GroupData =
 	[2] =
 	{
 		name = "CHU",
-		goals = { { type="DOMINATION", target = 100 } },
+		goals = { { type="DOMINATION", target = 1 } },
 		leader = 200,
-		capital = 200,
-		cities = { 200 },
+		capital = 5,
+		cities = { 5 },
 		charas = { 200, 201, 202, 203 },
 		troops = {},
 		corps = {},

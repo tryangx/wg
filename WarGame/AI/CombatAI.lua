@@ -20,10 +20,6 @@ end
 
 local bp = { type = "FILTER", condition = pause }
 
-local function TroopToString( troop )
-	return NIDString( troop ) .. ( troop._combatSide and ( troop._combatSide == CombatSide.ATTACKER and "-ATK" or "-DEF" ) or "" )
-end
-
 ----------------------------------------
 -- Setter funcitons
 
@@ -43,42 +39,42 @@ local function IsSiegeCombat()
 end
 
 local function IsSiegeAttacker()
-	if _troop._combatSide == CombatSide.DEFENDER then return false end	
+	if _troop:GetCombatData( TroopCombatData.SIDE ) == CombatSide.DEFENDER then return false end	
 	local type = Asset_Get( _combat, CombatAssetID.TYPE )
 	return type == CombatType.SIEGE_COMBAT or type == CombatType.CAMP_FIELD
 end
 
 local function IsSiegeDefender()
-	if _troop._combatSide == CombatSide.ATTACKER then return false end	
+	if _troop:GetCombatData( TroopCombatData.SIDE ) == CombatSide.ATTACKER then return false end	
 	local type = Asset_Get( _combat, CombatAssetID.TYPE )
 	return type == CombatType.SIEGE_COMBAT or type == CombatType.CAMP_FIELD
 end
 
 local function IsAttacker()
-	return _troop._combatSide == CombatSide.ATTACKER
+	return _troop:GetCombatData( TroopCombatData.SIDE ) == CombatSide.ATTACKER
 end
 
 local function IsDefender()
-	return _troop._combatSide == CombatSide.DEFENDER
+	return _troop:GetCombatData( TroopCombatData.SIDE ) == CombatSide.DEFENDER
 end
 
 local function IsDefenseBroken()
-	local oppSide = _combat:GetOppSide( _troop._combatSide )
+	local oppSide = _combat:GetOppSide( _troop:GetCombatData( TroopCombatData.SIDE ) )
 	local ret = _combat:GetStatus( oppSide, CombatStatus.DEFENSE_BROKEN ) == true
 	return ret
 end
 
 local function IsAdvantageous()
 	local intense = 0
-	intense = _combat:GetStat( _troop._combatSide, CombatStatistic.COMBAT_INTENSE )
+	intense = _combat:GetStat( _troop:GetCombatData( TroopCombatData.SIDE ), CombatStatistic.COMBAT_INTENSE )
 	
 	local purpose
-	if _troop._combatSide == CombatSide.ATTACKER then 
+	if _troop:GetCombatData( TroopCombatData.SIDE ) == CombatSide.ATTACKER then 
 		if _combat:GetStatus( CombatSide.DEFENDER, CombatStatus.SURROUNDED ) == true then
 			return true
 		end
 		purpose = Asset_Get( _combat, CombatAssetID.ATK_PURPOSE )
-	elseif _troop._combatSide == CombatSide.DEFENDER then
+	elseif _troop:GetCombatData( TroopCombatData.SIDE ) == CombatSide.DEFENDER then
 		if _combat:GetStatus( CombatSide.ATTACKER, CombatStatus.SURROUNDED ) == true then
 			return true
 		end
@@ -135,19 +131,18 @@ local function SetTroopStatus( params )
 end
 
 local function SetTroopOrder( params )	
-	_troop._order = CombatOrder[params.order]
-	--print( _troop.id, MathUtil_FindName( CombatSide, _troop._combatSide ), "order=" .. params.order )
+	_troop:SetCombatData( TroopCombatData.ORDER, CombatOrder[params.order] )
+	--print( _troop.id, MathUtil_FindName( CombatSide, _troop:GetCombatData( TroopCombatData.SIDE ) ), "order=" .. params.order )
 end
 
 ----------------------------------------
 
 local function IsFlee()
-	--if _troop._flee == true then InputUtil_Pause( _troop.id, "flee" ) end
-	return _troop._flee == true
+	return _troop:GetCombatData( TroopCombatData.FLEE ) == true
 end
 
 local function IsRetreat()
-	return _troop._retreat == true
+	return _troop:GetCombatData( TroopCombatData.RETREAT ) == true
 end
 
 ----------------------------------------
@@ -157,9 +152,9 @@ local function CanForcedAttack( ... )
 	if morale < 60 then return false end
 
 	local purpose
-	if _troop._combatSide == CombatSide.ATTACKER then
+	if _troop:GetCombatData( TroopCombatData.SIDE ) == CombatSide.ATTACKER then
 		purpose = Asset_Get( _combat, CombatAssetID.ATK_PURPOSE )
-	elseif _troop._combatSide == CombatSide.DEFENDER then
+	elseif _troop:GetCombatData( TroopCombatData.SIDE ) == CombatSide.DEFENDER then
 		purpose = Asset_Get( _combat, CombatAssetID.DEF_PURPOSE )
 	end
 
@@ -169,9 +164,9 @@ local function CanForcedAttack( ... )
 		return false
 	end
 	local intense = 0
-	if _troop._combatSide == CombatSide.ATTACKER then
+	if _troop:GetCombatData( TroopCombatData.SIDE ) == CombatSide.ATTACKER then
 		intense = _combat:GetStat( CombatSide.ALL, CombatStatistic.ATK_INTENSE )
-	elseif _troop._combatSide == CombatSide.DEFENDER then
+	elseif _troop:GetCombatData( TroopCombatData.SIDE ) == CombatSide.DEFENDER then
 		intense = _combat:GetStat( CombatSide.ALL, CombatStatistic.DEF_INTENSE )
 	end
 	--InputUtil_Pause( "intense=" .. intense )
@@ -224,7 +219,7 @@ end
 
 local function CalculateDistanceFromGrid()
 	local target = _registers["GRID"]
-	local distance = _combat:CalcDistance2( _troop._x, _troop._y, target.x, target.y )
+	local distance = _combat:CalcDistance2( _troop:GetCombatData( TroopCombatData.X_POS ), _troop:GetCombatData( TroopCombatData.Y_POS ), target.x, target.y )
 	_registers["DISTANCE"] = distance
 	return true
 end
@@ -236,16 +231,16 @@ end
 -- 1. Not in defended status
 -- 2. Distance is far away
 local function CanCharge( ... )
-	if _troop._defended == true or _troop._moved == false then return false end
+	if _troop:GetCombatData( TroopCombatData.DEFENDED ) == true or _troop:GetCombatData( TroopCombatData.MOVED ) == false then return false end
 
-	if _troop._grid and _troop._grid.isWall == true then return false end
+	if _troop:GetCombatData( TroopCombatData.GRID ) and _troop:GetCombatData( TroopCombatData.GRID ).isWall == true then return false end
 
 	local weapon = _troop:GetWeaponBy( "range", WeaponRangeType.LONG )
-	if not weapon then return nil end	
+	if not weapon then return false end	
 
 	local morale = Asset_Get( _troop, TroopAssetID.MORALE )
 
-	local order = _troop._order
+	local order = _troop:GetCombatData( TroopCombatData.ORDER )
 	if order == CombatOrder.FORCED_ATTACK then
 		if morale < 40 then return false end
 	elseif order == CombatOrder.ATTACK then
@@ -255,12 +250,14 @@ local function CanCharge( ... )
 	elseif order == CombatOrder.SURVIVE then
 		return false
 	end
+
 	_registers["WEAPON"] = weapon
+
 	return true
 end
 
 local function CanFight( ... )
-	if _troop._grid and _troop._grid.isWall == true then return false end
+	if _troop:GetCombatData( TroopCombatData.GRID ) and _troop:GetCombatData( TroopCombatData.GRID ).isWall == true then return false end
 
 	local weapon
 	weapon = _troop:GetWeaponBy( "range", WeaponRangeType.CLOSE )
@@ -271,7 +268,7 @@ local function CanFight( ... )
 
 	local morale = Asset_Get( _troop, TroopAssetID.MORALE )
 
-	local order = _troop._order
+	local order = _troop:GetCombatData( TroopCombatData.ORDER )
 	if order == CombatOrder.FORCED_ATTACK then
 		if morale < 30 then return false end
 	elseif order == CombatOrder.ATTACK then
@@ -289,7 +286,7 @@ end
 local function NeedShoot()	
 	local morale = Asset_Get( _troop, TroopAssetID.MORALE )
 
-	local order = _troop._order
+	local order = _troop:GetCombatData( TroopCombatData.ORDER )
 	if order == CombatOrder.FORCED_ATTACK then
 		if morale < 20 then return false end
 	elseif order == CombatOrder.ATTACK then
@@ -341,7 +338,7 @@ end
 
 local function NeedMoveBackward( ... )
 	local backGrid = _combat:GetBackGrid( _troop )
-	if backGrid ~= nil and backGrid.side ~= _troop._combatSide then return false end
+	if backGrid ~= nil and backGrid.side ~= _troop:GetCombatData( TroopCombatData.SIDE ) then return false end
 
 	local maxsoldier = Asset_Get( _troop, TroopAssetID.MAX_SOLDIER )
 	local soldier = Asset_Get( _troop, TroopAssetID.SOLDIER )
@@ -351,7 +348,7 @@ local function NeedMoveBackward( ... )
 	local soldierRatio = soldier / maxsoldier
 	local orgRatio = org / soldier
 
-	local order = _troop._order
+	local order = _troop:GetCombatData( TroopCombatData.ORDER )
 	if order == CombatOrder.FORCED_ATTACK then
 		if soldierRatio <= 0.6 and org <= 0 then return true end
 	elseif order == CombatOrder.ATTACK then
@@ -365,19 +362,19 @@ local function NeedMoveBackward( ... )
 end
 
 local function NeedMoveForward( ... )
-	local order = _troop._order
+	local order = _troop:GetCombatData( TroopCombatData.ORDER )
 	if order ~= CombatOrder.FORCED_ATTACK and order ~= CombatOrder.ATTACK then
 		--print( "order not atk", MathUtil_FindName( CombatOrder, order ) )
 		return false
 	end
 
-	local oppSide = _combat:GetOppSide( _troop._combatSide )
+	local oppSide = _combat:GetOppSide( _troop:GetCombatData( TroopCombatData.SIDE ) )
 	local frontGrid = _combat:GetFrontGrid( _troop )
 	if frontGrid == nil or frontGrid.side == oppSide then		
 		return false
 	end
 	
-	local curGrid = _combat:GetGrid( _troop._x, _troop._y )
+	local curGrid = _combat:GetGrid( _troop:GetCombatData( TroopCombatData.X_POS ), _troop:GetCombatData( TroopCombatData.Y_POS ) )
 
 	--check grid situation
 	local orgRatio = frontGrid.organization / curGrid.organization
@@ -387,7 +384,7 @@ local function NeedMoveForward( ... )
 	--print( frontGrid.organization, frontGrid.soldier, frontGrid.x, frontGrid.y )
 	--print( orgRatio, soldierRatio )
 	
-	local order = _troop._order
+	local order = _troop:GetCombatData( TroopCombatData.ORDER )
 	if order == CombatOrder.FORCED_ATTACK then
 		if orgRatio <= 1.5 or soldierRatio <= 1.5 then return true end
 	elseif order == CombatOrder.ATTACK then
@@ -397,19 +394,19 @@ local function NeedMoveForward( ... )
 	elseif order == CombatOrder.SURVIVE then
 		if orgRatio <= 1 and soldierRatio <= 1 then return true end
 	end
-	--InputUtil_Pause( TroopToString(_troop), _troop._x, _troop._y, "move foward" )
+	--InputUtil_Pause( TroopToString(_troop), _troop:GetCombatData( TroopCombatData.X_POS ), _troop:GetCombatData( TroopCombatData.Y_POS ), "move foward" )
 	return false
 end
 
 local function NeedMoveTowardGrid( ... )
-	local oppSide = _combat:GetOppSide( _troop._combatSide )
+	local oppSide = _combat:GetOppSide( _troop:GetCombatData( TroopCombatData.SIDE ) )
 	local frontGrid = _combat:GetFrontGrid( _troop )	
 	if frontGrid == nil or frontGrid.side == oppSide then return false end
 
 	local tarGrid = _combat:FindContactGrid( _troop )
 	if tarGrid == nil then return false end
 
-	--InputUtil_Pause( _troop._x, _troop._y, "find toward grid", tarGrid.x, tarGrid.y )
+	--InputUtil_Pause( _troop:GetCombatData( TroopCombatData.X_POS ), _troop:GetCombatData( TroopCombatData.Y_POS ), "find toward grid", tarGrid.x, tarGrid.y )
 
 	_registers["GRID"] = tarGrid
 
@@ -488,6 +485,7 @@ local CombatTroopAI_DefaultAttack =
 					{
 						{ type = "FILTER", condition = IsTargetInRange },
 						{ type = "FILTER", condition = CanCharge },
+						bp,
 						{ type = "ACTION", action = IssueTroopTask, params = { type = CombatTask.CHARGE, target = true } },
 					}
 				},
@@ -567,7 +565,7 @@ local function NeedFlee()
 	local morale = Asset_Get( _troop, TroopAssetID.MORALE )
 
 	local ret = false
-	local order = _troop._order
+	local order = _troop:GetCombatData( TroopCombatData.ORDER )
 	if order == CombatOrder.FORCED_ATTACK then
 		ret = soldierRatio + morale < 130 and soldierRatio < 40
 	elseif order == CombatOrder.ATTACK then
@@ -580,13 +578,13 @@ local function NeedFlee()
 
 	if ret == true then
 		_combat:DumpTroop( _troop )
-		--print( NIDString( _troop ), _troop._combatSide, " flee=", ret, "ratio=" .. soldierRatio, "mor=" .. morale )
+		--print( NIDString( _troop ), _troop:GetCombatData( TroopCombatData.SIDE ), " flee=", ret, "ratio=" .. soldierRatio, "mor=" .. morale )
 	end
 	return ret
 end
 
 local function NeedRetreat()
-	if _troop._retreat then return false end
+	if _troop:GetCombatData( TroopCombatData.RETREAT ) then return false end
 
 	local org = Asset_Get( _troop, TroopAssetID.ORGANIZATION )
 	--no organization, retreat immediately
@@ -594,7 +592,7 @@ local function NeedRetreat()
 
 	local mor = Asset_Get( _troop, TroopAssetID.MORALE )	
 	local ret = false
-	local order = _troop._order
+	local order = _troop:GetCombatData( TroopCombatData.ORDER )
 	if order == CombatOrder.FORCED_ATTACK then
 		ret = mor < 30
 	elseif order == CombatOrder.ATTACK then
@@ -667,7 +665,7 @@ local CombatTroopAI_Order =
 		{ type = "SEQUENCE", children = 
 			{
 				{ type = "FILTER", condition = IsSiegeCombat },
-				{ type = "FILTER", condition = IsSiegeAttacker },				
+				{ type = "FILTER", condition = IsSiegeAttacker },
 				{ type = "SELECTOR", children =
 					{
 						--check forced attack intense
@@ -691,7 +689,6 @@ local CombatTroopAI_Order =
 						},
 						{ type = "SEQUENCE", children = 
 							{
-								--{ type = "FILTER", condition = function ( ... ) InputUtil_Pause( TroopToString( _troop ), _troop,x, _troop.y, "default defend" ) end },
 								{ type = "ACTION", action = SetTroopOrder, params = { order = "DEFEND" } },
 							},
 						},

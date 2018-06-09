@@ -39,8 +39,11 @@ ScenarioData =
 	CITY_POPUSTRUCTURE_PARAMS    = DefaultCityPopuStructureParams,
 	CITY_DEVELOP_RESULT          = DefaultCityDevelopResult,
 	CITY_DEVELOPMENT_VARY_RESULT = DefaultCityDevelopmentVaryResult,
+	
 	CITY_CONSCRIPT_PARAMS        = DefaultCityConscript,
 	CITY_RECRUIT_PARAMS          = DefaultCityRecruit,
+	CITY_HIREGUARD_PARAMS        = DefaultCityHireGuard,
+	
 	CITY_JOB_PARAMS              = DefaultCityJobProb,
 	CORPS_PARAMS                 = DefaultCorpsParams,
 	TROOP_PARAMS                 = DefaultTroopParams,
@@ -117,6 +120,8 @@ function Scenario_InitData()
 
 	_Scenario.RELATION_OPINION = MathUtil_ConvertKeyToID( RelationOpinion, _Scenario.RELATION_OPINION )
 
+	CombatPurposeParam = MathUtil_ConvertKey2ID( CombatPurposeParam, CombatPurpose )
+	
 	--MathUtil_Dump( Scenario_GetData( "TASK_STEP_DATA" ) )
 end
 

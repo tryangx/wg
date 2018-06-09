@@ -24,11 +24,11 @@ function City_GetNextJob( city )
 		if valid == true and item.capital and isCapital == false then valid = false end
 		if valid == true and item.prob and Random_GetInt_Sync( 1, 100 ) > item.prob then valid = false end
 		if valid == true then
-			return item.job
+			return CityJob[item.job]
 		end
 	end
 	--default commander
-	return item.COMMANDER
+	return CityJob.COMMANDER
 end
 
 function City_GetPopuParams( city )
@@ -120,8 +120,14 @@ end
 -------------------------------------------------------
 -- City Statu
 
+--
+-- Budget Safty Rules
+-- 1. Monthly income > Salary
+-- 2. Current Property > Req Property( now is one year, maybe half year? )
+--
 function City_IsBudgetSafe( city )
 	local req = city:GetSalary()
+	--check salary covered by commerce tax( monthly )
 	if City_CalcCommerceTax( city ) < req then
 		return false
 	end
@@ -131,14 +137,12 @@ function City_IsBudgetSafe( city )
 	local req_food, req_money = city:GetReqProperty()
 
 	--check salary reserve
-	req_money = req_money + ( params and params.money or 0 )
 	if Asset_Get( city, CityAssetID.MONEY ) < req_money then
 		--InputUtil_Pause( city.name, "danger money reserve" )
 		return false
 	end
 
 	--check food reserve
-	req_food = req_food+ ( params and params.food or 0 )
 	if Asset_Get( city, CityAssetID.FOOD ) < req_food then
 		--InputUtil_Pause( city.name, "danger food reserve" )
 		return false
@@ -250,7 +254,7 @@ function City_PopuConv( city )
 		if need == -1 then need = current + max end
 		if target < 0 or need - current < 0 then
 			--print( "no need to conv", target, need, current )
-			return target, current, need
+			return target, current, need, 0
 		end
 		--print( target, current, need, max )
 		local inc = math.floor( math.min( target, need - current ) * Random_GetInt_Sync( 60, 100 ) * 0.01 )	
@@ -283,15 +287,15 @@ function City_PopuConv( city )
 			if valid == true then				
 				local toid   = CityPopu[flow.to]
 				local convRatio = flow.ratio or ( lv + 10 ) * 0.0005				
-				list[fromid], list[toid], _, inc = ConvPopu( list[fromid], list[toid], flow.force_conv and -1 or needlist[toid], math.floor( convRatio * list[fromid] ) )
+				list[fromid], list[toid], _, inc = ConvPopu( list[fromid], list[toid], flow.force_conv and -1 or needlist[toid], math.floor( convRatio * list[fromid] ) )				
 				if flow.sec then
 					security_delta = security_delta + flow.sec
 				end
 				--if flow.ratio then print( flow.from, flow.to, list[fromid], list[toid], math.floor( flow.ratio * list[fromid] ) ) end
 			end
-			if valid == true and flow.debug then
-				--InputUtil_Pause( flow.from .. "->" .. flow.to )
-				Stat_Add( flow.from .. "->" .. flow.to, inc, StatType.ACCUMULATION)
+			if valid == true and flow.debug and inc then
+				--InputUtil_Pause( flow.from .. "->" .. flow.to, inc )
+				Stat_Add( flow.from .. "->" .. flow.to, inc, StatType.ACCUMULATION )
 			end
 		end
 	end
@@ -471,16 +475,26 @@ function City_CheckFlag( city )
 			
 			local atkEvl = MathUtil_Approximate( adjaPower / power, attackerScores, "ratio", true )
 			if atkEvl.score <= 20 then
-				city:SetStatus( CityStatus.AGGRESSIVE_WEAK, true )
+				if Random_GetInt_Sync( 1, 100 ) < 50 then
+					city:SetStatus( CityStatus.AGGRESSIVE_WEAK, true )
+					city:SetStatus( CityStatus.AGGRESSIVE_ADV )
+				end
 			elseif atkEvl.score >= 80 then
-				city:SetStatus( CityStatus.AGGRESSIVE_ADV, true )
+				if Random_GetInt_Sync( 1, 100 ) < 50 then
+					city:SetStatus( CityStatus.AGGRESSIVE_ADV, true )
+					city:SetStatus( CityStatus.AGGRESSIVE_WEAK )
+				end
 			end
 
 			local defEvl = MathUtil_Approximate( adjaPower / power, defenderScores, "ratio" )
 			if defEvl.score >= 80 then
-				city:SetStatus( CityStatus.DEFENSIVE_DANGER, true )
+				if Random_GetInt_Sync( 1, 100 ) < 50 then
+					city:SetStatus( CityStatus.DEFENSIVE_DANGER, true )
+				end
 			elseif defEvl.score >= 20 then
-				city:SetStatus( CityStatus.DEFENSIVE_WEAK, true )
+				if Random_GetInt_Sync( 1, 100 ) < 50 then
+					city:SetStatus( CityStatus.DEFENSIVE_WEAK, true )
+				end
 			end
 		end
 	end )

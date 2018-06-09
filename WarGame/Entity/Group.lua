@@ -58,17 +58,19 @@ function Group:__init()
 end
 
 function Group:ToString( type )
+	
 	local content = "[" .. self.name .. "]"
 	if type == "SIMPLE" or type == "ALL" then
-		content = content .. " city=" .. Asset_GetListSize( self, GroupAssetID.CITY_LIST )
-		content = content .. " chara=" .. Asset_GetListSize( self, GroupAssetID.CHARA_LIST )
+		content = content .. " city=" .. Asset_GetListSize( self, GroupAssetID.CITY_LIST )		
+		content = content .. " chara=" .. Asset_GetListSize( self, GroupAssetID.CHARA_LIST )		
 		content = content .. " corps=" .. Asset_GetListSize( self, GroupAssetID.CORPS_LIST )
 	end
 	if type == "POWER" or type == "ALL" then
-		content = content ..  " sldr=" .. self:GetPopu( CityPopu.SOLDIER )		
-		content = content ..  " food=" .. self:GetProperty( CityAssetID.FOOD )
-		content = content ..  " money=" .. self:GetProperty( CityAssetID.MONEY )		
-		content = content ..  " mat=" .. self:GetProperty( CityAssetID.MATERIAL )
+		content = content .. " popu=" .. self:GetPopu( CityPopu.ALL )
+		content = content .. " sldr=" .. self:GetPopu( CityPopu.SOLDIER )		
+		content = content .. " food=" .. self:GetProperty( CityAssetID.FOOD )
+		content = content .. " money=" .. self:GetProperty( CityAssetID.MONEY )		
+		content = content .. " mat=" .. self:GetProperty( CityAssetID.MATERIAL )
 	end	
 	if type == "DIPLOMACY" then
 		local rels = Dipl_GetRelations( self )
@@ -148,12 +150,12 @@ function Group:VerifyData()
 		local home = Asset_Get( chara, CharaAssetID.HOME )		
 		if not home then
 			Asset_Set( chara, CharaAssetID.HOME, Asset_Get( self, GroupAssetID.CAPITAL ) )
-			CRR_Tolerate( chara.name .. " home correct to " .. Asset_Get( chara, CharaAssetID.HOME ) )
+			CRR_Tolerate( chara.name .. " home correct to " .. String_ToStr( Asset_Get( chara, CharaAssetID.HOME ), "name" ) )
 		end
 		local loc = Asset_Get( chara, CharaAssetID.LOCATION )
 		if not loc then
 			Asset_Set( chara, CharaAssetID.HOME, Asset_Get( chara, CharaAssetID.HOME ) )
-			CRR_Tolerate( chara.name .. " loc correct to " .. Asset_Get( chara, CharaAssetID.HOME ) )
+			CRR_Tolerate( chara.name .. " loc correct to " .. String_ToStr( Asset_Get( chara, CharaAssetID.HOME ), "name" ) )
 		end
 
 		--check group
@@ -217,6 +219,16 @@ function Group:GetSoldier()
 	return soldier
 end
 ]]
+
+function Group:GetStatusCityList( status )
+	local list = {}
+	Asset_Foreach( self, GroupAssetID.CITY_LIST, function ( city )
+		if city:HasStatus( status ) then
+			table.insert( list, city )
+		end
+	end)
+	return list
+end
 
 function Group:GetVacancyCityList()
 	local list = {}
@@ -308,7 +320,7 @@ function Group:OccupyCity( city )
 	local rescueList = {}
 	Asset_Foreach( city, CityAssetID.PRISONER_LIST, function( chara )
 		if Asset_Get( chara, CharaAssetID.GROUP ) == group then
-			Asset_AppendList( city, CityAssetID.CHARA_LIST, chara )
+			city:CharaJoin( chara )
 			table.insert( rescueList, chara )
 		end
 	end )
@@ -362,10 +374,23 @@ function Group:ElectLeader()
 	end
 end
 
+function Group:MoveCapital( capital )
+	local current = Asset_Get( self, GroupAssetID.CAPITAL )
+	if current == capital then
+		error( "same capital, why move" )
+	end
+	Asset_Set( self, GroupAssetID.CAPITAL, capital )
+	Debug_Log( self:ToString() .. " move capital=" .. capital:ToString() )
+end
+
 ---------------------------------------
 
 function Group:HasTech( id )
 	return Asset_HasItem( self, GroupAssetID.TECH_LIST, id, "id" )
+end
+
+function Group:HasGoal( goalType )
+	return self:GetGoal( goalType )
 end
 
 function Group:GetGoal( goalType )
@@ -379,7 +404,7 @@ function Group:AddGoal( goalType, goalData )
 	--InputUtil_Pause( "add goal", MathUtil_FindName( GroupGoalType, goalType ), goalType, goalData )
 	Asset_SetDictItem( self, GroupAssetID.GOAL_LIST, goalType, goalData )
 
-	Stat_Add( "SetGoal@" .. self.name, g_Time:ToString() .. " " .. MathUtil_FindName( GroupGoalType, goalType ), StatType.LIST )
+	Stat_Add( "SetGoal@" .. self.name, g_Time:ToString() .. " " .. MathUtil_FindName( GroupGoalType, goalType ) .. " city=" .. String_ToStr( goalData.city, "name" ), StatType.LIST )
 end
 
 function Group:MasterTech( tech )

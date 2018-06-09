@@ -28,7 +28,6 @@ TroopAssetID =
 	TIRENESS     = 210,
 	TRAINING     = 211,
 	HONOR        = 212, --TBD, kill how many soldier?
-	GLORY        = 213, --TBD, kill how many troop?	
 
 	SKILLS       = 220,
 	STATUSES     = 221,
@@ -59,7 +58,6 @@ TroopAssetAttrib =
 	tireness     = AssetAttrib_SetNumber ( { id = TroopAssetID.TIRENESS,      type = TroopAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),
 	training     = AssetAttrib_SetNumber ( { id = TroopAssetID.TRAINING,      type = TroopAssetType.GROWTH_ATTRIB, min = 0, max = 200 } ),
 	honor        = AssetAttrib_SetNumber ( { id = TroopAssetID.HONOR,         type = TroopAssetType.GROWTH_ATTRIB, } ),
-	glory        = AssetAttrib_SetNumber ( { id = TroopAssetID.GLORY,         type = TroopAssetType.GROWTH_ATTRIB, } ),
 	
 	skills       = AssetAttrib_SetPointerList ( { id = TroopAssetID.SKILLS,   type = TroopAssetType.GROWTH_ATTRIB, setter = Entity_SetSkill } ),
 	statuses     = AssetAttrib_SetDict   ( { id = TroopAssetID.STATUSES,      type = TroopAssetType.GROWTH_ATTRIB } ),
@@ -85,8 +83,20 @@ end
 function Troop:ToString( type )
 	local content = "[" .. self.name .. "](" .. self.id .. ")"
 
-	if type == "COMBAT" then
-		content = content .. ( self._combatSide and ( self._combatSide == CombatSide.ATTACKER and "-ATK" or "-DEF" ) or "" )		
+	if type == "COMBAT" then	
+		content = content .. ( self:GetCombatData( TroopCombatData.SIDE ) and ( self:GetCombatData( TroopCombatData.SIDE ) == CombatSide.ATTACKER and "-ATK" or "-DEF" ) or "" )
+		for type, v in pairs( self._combatDatas ) do
+			if typeof( v ) == "boolean" then
+			elseif typeof( v ) == "table" then
+			elseif typeof( v ) == "object" then
+			else
+				content = content .. " " .. MathUtil_FindName( TroopCombatData, type ) .. "=" .. v
+			end
+		end
+	elseif type == "COMBAT_FIGHT" then
+		content = content .. ( self:GetCombatData( TroopCombatData.SIDE ) and ( self:GetCombatData( TroopCombatData.SIDE ) == CombatSide.ATTACKER and "-ATK" or "-DEF" ) or "" )
+		content = content .. " n=" .. Asset_Get( self, TroopAssetID.SOLDIER ) .. "/" .. Asset_Get( self, TroopAssetID.MAX_SOLDIER )
+		
 	elseif type == "SIMPLE" then
 
 	elseif type == "BREIF" then
@@ -123,24 +133,33 @@ function Troop:LoadFromTable( tableData )
 	Asset_Set( self, TroopAssetID.MOVEMENT,  tableData.movement )
 end
 
-function Troop:TestGenerate()
-	Asset_Set( self, TroopAssetID.CORPS, nil )
-	Asset_Set( self, TroopAssetID.OFFICER, nil )
-	Asset_Set( self, TroopAssetID.POTENTIAL, Random_GetInt( TroopAssetAttrib.potential.min, TroopAssetAttrib.potential.max ) )	
-	Asset_Set( self, TroopAssetID.SOLDIER, Random_GetInt( 1, 4 ) * 500 )
-	Asset_Set( self, TroopAssetID.MAX_SOLDIER, Asset_Get( self, TroopAssetID.SOLDIER ) )
-	
-	Asset_Set( self, TroopAssetID.LEVEL, 0 )
-	Asset_Set( self, TroopAssetID.EXP, 0 )
-	Asset_Set( self, TroopAssetID.MORALE, 0 )
-	Asset_Set( self, TroopAssetID.ORGANIZATION, 0 )
-	Asset_Set( self, TroopAssetID.CONVEYANCE, 0 )
+-------------------------------------
 
-	Asset_Set( self, TroopAssetID.ARMOR, 100 )
-	Asset_Set( self, TroopAssetID.TOUGHNESS, 0 )
-	Asset_Set( self, TroopAssetID.MOVEMENT, 0 )
-
+function Troop:GetWeaponBy( name, value )
+	local tableData = Asset_Get( self, TroopAssetID.TABLEDATA )
+	return tableData and tableData:GetWeaponBy( name, value ) or nil
 end
+
+function Troop:GetCombatData( type )
+	if not self._combatDatas then return end
+	return self._combatDatas[type]
+end
+
+function Troop:SetCombatData( type, value )
+	if self._combatDatas then
+		self._combatDatas[type] = value
+	end
+end
+
+function Troop:AttendCombat( ... )
+	self._combatDatas = {}
+end
+
+function Troop:LeaveCombat( ... )
+	self._combatDatas = nil
+end
+
+-------------------------------------
 
 function Troop:Starve()
 	local cur = Asset_GetDictItem( self, TroopAssetID.STATUSES, TroopStatus.STARVATION )
@@ -154,7 +173,6 @@ function Troop:EatFood( food )
 	Asset_SetDictItem( self, TroopAssetID.STATUSES, TroopStatus.STARVATION, math.floor( value * 0.5 ) )
 end
 
-function Troop:GetWeaponBy( name, value )
-	local tableData = Asset_Get( self, TroopAssetID.TABLEDATA )
-	return tableData and tableData:GetWeaponBy( name, value ) or nil
+function Troop:SetOfficer( officer )
+	Asset_Set( self, TroopAssetID.OFFICER, officer )
 end

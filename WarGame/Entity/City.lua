@@ -70,7 +70,7 @@ CityAssetID =
 	DEFENSES        = 311,	
 	TROOPTABLE_LIST = 312,
 
-	--plan means plan-task is exclusive, only one valid
+	--plan means plan-task i s exclusive, only one valid
 	PLANS           = 321,
 	RESEARCH        = 322,
 }
@@ -197,12 +197,6 @@ function City:ToString( type )
 		content = content .. " popu=" .. Asset_Get( self, CityAssetID.POPULATION )
 		content = content .. " resv=" .. self:GetPopu( CityPopu.RESERVES )
 	
-	elseif type == "CHARA" then
-		content = content .. " chars=" .. Asset_GetListSize( self, CityAssetID.CHARA_LIST )
-		Asset_Foreach( self, CityAssetID.CHARA_LIST, function ( chara )
-			content = content .. " " .. chara.name .. ","
-		end )
-
 	elseif type == "OFFICER" then
 		content = content .. " chars=" .. Asset_GetListSize( self, CityAssetID.CHARA_LIST )
 		Asset_Foreach( self, CityAssetID.OFFICER_LIST, function ( officer, job )
@@ -219,7 +213,7 @@ function City:ToString( type )
 		content = content .. "+" .. math.ceil( money / salary ) .. "M"
 		content = content .. " food=" .. food
 		--content = content .. "-" .. consume
-		content = content .. "+" .. math.ceil( food / ( consume + supply ) ) .."D" .. "(" .. consume .. "+" .. supply .. ")"
+		content = content .. "+" .. math.ceil( food / ( DAY_IN_MONTH * ( consume + supply ) ) ) .."M" .. "(" .. consume .. "+" .. supply .. ")"
 		content = content .. " mat=" .. Asset_Get( self, CityAssetID.MATERIAL )
 
 	elseif type == "CONSUME" then
@@ -284,28 +278,41 @@ function City:ToString( type )
 		end )
 	end
 
+
+	if type == "CHARA" then-- or type == "ALL" then
+		content = content .. " chars=" .. Asset_GetListSize( self, CityAssetID.CHARA_LIST )
+		Asset_Foreach( self, CityAssetID.CHARA_LIST, function ( chara )
+			content = content .. " " .. chara.name .. ","
+		end )
+	end
+
 	if type == "STATUS" or type == "ALL" then
-		Asset_Foreach( self, CityAssetID.STATUSES, function ( data, status )
-			content = content .. " " .. MathUtil_FindName( CityStatus, status )
+		Asset_Foreach( self, CityAssetID.STATUSES, function ( data, status )			
 			if typeof( data ) == "boolean" then
-				content = content .. "=" .. ( data and "1" or "0" )
+				if data == true then
+					content = content .. " " .. MathUtil_FindName( CityStatus, status )
+					--content = content .. "=" .. ( data and "1" or "0" )
+				end
 			end
 		end)
-	end
+	end	
 	
 	if type == "MILITARY" or type == "ALL" then
+		content = content .. " popu=" .. Asset_Get( self, CityAssetID.POPULATION )
 		content = content .. " corps=" .. Asset_GetListSize( self, CityAssetID.CORPS_LIST )
 		content = content .. " sldr=" .. self:GetSoldier()
 		content = content .. " resv=" .. self:GetPopu( CityPopu.RESERVES )
 		content = content .. " guard=" .. self:GetPopu( CityPopu.GUARD )
 	end
-	if type == "GROWTH" or type == "ALL" then
+
+	if type == "GROWTH" then-- or type == "ALL" then
 		content = content .. " POPU=" .. Asset_Get( self, CityAssetID.POPULATION )
 		content = content .. " agri=" .. Asset_Get( self, CityAssetID.AGRICULTURE ) .. "/" .. Asset_Get( self, CityAssetID.MAX_AGRICULTURE )
 		content = content .. " comm=" .. Asset_Get( self, CityAssetID.COMMERCE ) .. "/" .. Asset_Get( self, CityAssetID.MAX_COMMERCE )
 		content = content .. " prod=" .. Asset_Get( self, CityAssetID.PRODUCTION ) .. "/" .. Asset_Get( self, CityAssetID.MAX_PRODUCTION )
 	end
-	if type == "POPULATION" or type == "ALL" then
+
+	if type == "POPULATION" then-- or type == "ALL" then
 		local total = Asset_Get( self, CityAssetID.POPULATION )
 		content = content .. " POPU=" .. total
 		Asset_Foreach( self, CityAssetID.POPU_STRUCTURE, function ( value, type )
@@ -441,15 +448,17 @@ function City:HasStatus( status )
 	return Asset_GetDictItem( self, CityAssetID.STATUSES, status )
 end
 
-function City:GetPopuValue( paramType )
+function City:GetPopuValue( paramType, popuType )
 	local sum = 0
 	local popuparams = City_GetPopuParams( _city )
 	for type, _ in pairs( CityPopu ) do
-		local value = popuparams[paramType][type]
-		if value then
-			local num = Asset_GetDictItem( self, CityAssetID.POPU_STRUCTURE, CityPopu[type] )
-			if num and num > 0 then
-				sum = sum + value * num
+		if not popuType or popuType == type then
+			local value = popuparams[paramType][type]
+			if value then
+				local num = Asset_GetDictItem( self, CityAssetID.POPU_STRUCTURE, CityPopu[type] )
+				if num and num > 0 then
+					sum = sum + value * num
+				end
 			end
 		end
 	end
@@ -537,20 +546,19 @@ function City:GetMaxBulidArea()
 end
 
 --get number of population structure 
-function City:GetPopu( poputype )
-	if not poputype then
-		error( "invalid City:GetPopu() params" )
-		return 0
+function City:GetPopu( popuType )
+	if not popuType or popuType == CityPopu.ALL then
+		return Asset_Get( self, CityAssetID.POPULATION )
 	end
-	return Asset_GetDictItem( self, CityAssetID.POPU_STRUCTURE, poputype )
+	return Asset_GetDictItem( self, CityAssetID.POPU_STRUCTURE, popuType )
 end
 
-function City:SetPopu( poputype, number )
-	Asset_SetDictItem( self, CityAssetID.POPU_STRUCTURE, poputype, number )
+function City:SetPopu( popuType, number )
+	Asset_SetDictItem( self, CityAssetID.POPU_STRUCTURE, popuType, number )
 end
-function City:AddPopu( poputype, number )
-	local cur = self:GetPopu( poputype )
-	Asset_SetDictItem( self, CityAssetID.POPU_STRUCTURE, poputype, cur + number )
+function City:AddPopu( popuType, number )
+	local cur = self:GetPopu( popuType )
+	Asset_SetDictItem( self, CityAssetID.POPU_STRUCTURE, popuType, cur + number )
 end
 
 --type from enum CityJob
@@ -659,13 +667,13 @@ end
 
 -------------------------------------------
 
-function City:ReducePopu( poputype, number )
-	local cur = Asset_GetDictItem( self, CityAssetID.POPU_STRUCTURE, poputype )
+function City:ReducePopu( popuType, number )
+	local cur = Asset_GetDictItem( self, CityAssetID.POPU_STRUCTURE, popuType )
 	if cur < number then return false end
-	Asset_SetDictItem( self, CityAssetID.POPU_STRUCTURE, poputype, cur - number )
+	Asset_SetDictItem( self, CityAssetID.POPU_STRUCTURE, popuType, cur - number )
 	Asset_Reduce( self, CityAssetID.POPULATION, number )
 
-	Stat_Add( "ConvertPopu@" .. self.name .. "_" .. MathUtil_FindName( CityPopu, poputype ), number, StatType.ACCUMULATION )
+	Stat_Add( "ConvertPopu@" .. self.name .. "_" .. MathUtil_FindName( CityPopu, popuType ), number, StatType.ACCUMULATION )
 end
 
 -------------------------------------------
@@ -707,12 +715,13 @@ end
 --chara is at home
 --chara isn't in task
 --chara isn't corps leader
-function City:FindFreeCharas()
+function City:FindFreeCharas( fn )
 	local charaList = {}
 	Asset_Foreach( self, CityAssetID.CHARA_LIST, function( chara )
 		if chara:IsAtHome() == false then return end
 		if chara:IsBusy() == true then return end
-		if Asset_Get( chara, CharaAssetID.CORPS ) then return end		
+		if Asset_Get( chara, CharaAssetID.CORPS ) then return end
+		if fn and not fn() then return end
 		table.insert( charaList, chara )
 	end )
 	return charaList
@@ -784,32 +793,44 @@ function City:FindNearbyFriendCities()
 	end )
 end
 
+--find enemy( at war ) cities adjacent
+function City:FindNearbyEnemyCities()
+	local group = Asset_Get( self, CityAssetID.GROUP )
+	return self:FilterAdjaCities( function ( adja )
+		local adjaGroup = Asset_Get( adja, CityAssetID.GROUP )
+		if group then
+			return Dipl_IsAtWar( group, adjaGroup )
+		end
+		return Dipl_IsAtWar( adjaGroup, group )
+	end )
+end
+
 --------------------------------------------
 
-function City:GetLimitPopuRatio( poputype )
+function City:GetLimitPopuRatio( popuType )
 	local cityparams = City_GetPopuParams( self )
 	local needparams = cityparams.POPU_NEED_RATIO
-	local popuname = MathUtil_FindName( CityPopu, poputype )
+	local popuname = MathUtil_FindName( CityPopu, popuType )
 	local ratio = needparams[popuname].limit
 	return ratio or 0
 end
 
 --return maximum population of given population type
-function City:GetLimitPopu( poputype )
-	local ratio = self:GetLimitPopuRatio( poputype )
+function City:GetLimitPopu( popuType )
+	local ratio = self:GetLimitPopuRatio( popuType )
 	return math.ceil( Asset_Get( self, CityAssetID.POPULATION ) * ratio )
 end
 
-function City:GetReqPopuRatio( poputype )
+function City:GetReqPopuRatio( popuType )
 	local cityparams = City_GetPopuParams( self )
 	local needparams = cityparams.POPU_NEED_RATIO
-	local popuname = MathUtil_FindName( CityPopu, poputype )
+	local popuname = MathUtil_FindName( CityPopu, popuType )
 	local ratio = needparams[popuname].req
 	return ratio or 0
 end
 
-function City:GetReqPopu( poputype )
-	local ratio = self:GetLimitPopuRatio( poputype )
+function City:GetReqPopu( popuType )
+	local ratio = self:GetLimitPopuRatio( popuType )
 	return math.ceil( Asset_Get( self, CityAssetID.POPULATION ) * ratio )
 end
 
@@ -822,7 +843,7 @@ function City:CharaJoin( chara )
 
 	Asset_AppendList( self, CityAssetID.CHARA_LIST, chara )
 
-	--Debug_Log( chara:ToString(), "join city=", self.name )
+	Debug_Log( chara:ToString(), "join city=", self.name, Asset_GetListSize( self, CityAssetID.CHARA_LIST ) )
 end
 
 function City:CharaLeave( chara )
@@ -922,8 +943,9 @@ function City:AssignOfficer()
 	local vacancies = #charaList - #jobList
 	while vacancies > 0 do
 		local job = City_GetNextJob( self )
-		table.insert( postList, job )
-		InputUtil_Pause( "add ", MathUtil_FindName( CityJob, job ) )
+		table.insert( jobList, job )
+		vacancies = vacancies - 1
+		--InputUtil_Pause( "add ", MathUtil_FindName( CityJob, job ), job )
 	end
 
 	local jobIndex = 1
@@ -934,14 +956,17 @@ function City:AssignOfficer()
 	end
 end
 
+--exclude executive
 function City:RemoveOfficer()
-	Asset_Clear( self, CityAssetID.CHARA_LIST )
+	local executive = self:GetOfficer( CityJob.EXECUTIVE )
+	Asset_Clear( self, CityAssetID.OFFICER_LIST )
+	Asset_SetDictItem( self, CityAssetID.OFFICER_LIST, CityJob.EXECUTIVE, executive )
 end
 
 function City:SetOfficer( chara, job )
 	local old = Asset_GetDictItem( self, CityAssetID.OFFICER_LIST, job )
 	if old then
-		InputUtil_Pause( "Old Officer=" .. ( old and old.name or "" ) )
+		Debug_Log( self.name, "Old Officer=" .. String_ToStr( old, "name" ), "new Officer=" .. String_ToStr( chara, "name" ) )
 	end
 	Asset_SetDictItem( self, CityAssetID.OFFICER_LIST, job, chara )
 	Debug_Log( self.name, "Assign " .. chara.name .. "-->" .. MathUtil_FindName( CityJob, job ) )
@@ -955,7 +980,9 @@ function City:Update()
 	local day = g_Time:GetDay()
 
 	--no executive? find one
-	if day == 1 then self:ElectExecutive() end
+	if day == 1 then
+		self:ElectExecutive()
+	end
 	
 	if day == 1 then
 		--dismiss
@@ -964,7 +991,7 @@ function City:Update()
 	end
 
 	if month == 1 and day == 1 and self:IsCapital() then
-		Meeting_Hold( self, MeetingTopic.GOAL )
+		Meeting_Hold( self, MeetingTopic.DETERMINE_GOAL )
 	end
 
 	if day == 2 then
