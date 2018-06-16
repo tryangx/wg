@@ -165,6 +165,8 @@ function Asset_GetList( entity, id )
 		if attrib and ( attrib.value_type == AssetAttribType.LIST or attrib.value_type == AssetAttribType.POINTER_LIST ) then
 			entity[id] = {}
 			list = entity[id]
+		elseif attrib and ( attrib.value_type == AssetAttribType.DICT or attrib.value_type == AssetAttribType.POINTER_DICT ) then
+			error( "use wrong method, please check it, maybe use Asset_GetDict() insted of." )
 		else
 			error( "what's wrong?" .. entity.type .. "," .. id .. " attrib.type=" .. attrib.value_type )
 		end

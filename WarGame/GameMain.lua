@@ -236,14 +236,16 @@ function Game_Test()
 
 		FeatureOption.DISABLE_FOOD_SUPPLY = true
 
-		local result = false
-		while not result do
-			result = Warfare_UpdateCombat( combat )
-		end 
-
-		--=combat:TestDamage()
+		if nil then
+			combat:TestDamage()
+		else
+			local result = false
+			while not result do
+				result = Warfare_UpdateCombat( combat )
+			end
+		end
+		
 		--Entity_Dump( combat )
-		--[[]]		
 		return true
 	end
 

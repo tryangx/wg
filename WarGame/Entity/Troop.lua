@@ -82,26 +82,32 @@ end
 
 function Troop:ToString( type )
 	local content = "[" .. self.name .. "](" .. self.id .. ")"
+	
+	content = content .. ( self:GetCombatData( TroopCombatData.SIDE ) and ( self:GetCombatData( TroopCombatData.SIDE ) == CombatSide.ATTACKER and "-ATK" or "-DEF" ) or "" )
 
-	if type == "COMBAT" then	
-		content = content .. ( self:GetCombatData( TroopCombatData.SIDE ) and ( self:GetCombatData( TroopCombatData.SIDE ) == CombatSide.ATTACKER and "-ATK" or "-DEF" ) or "" )
-		for type, v in pairs( self._combatDatas ) do
-			if typeof( v ) == "boolean" then
-			elseif typeof( v ) == "table" then
-			elseif typeof( v ) == "object" then
-			else
-				content = content .. " " .. MathUtil_FindName( TroopCombatData, type ) .. "=" .. v
+	if type == "COMBAT" or type == "COMBAT_ALL" then
+		content = content .. " org=" .. Asset_Get( self, TroopAssetID.ORGANIZATION )
+		content = content .. " mor=" .. Asset_Get( self, TroopAssetID.MORALE )
+		content = content .. " n=" .. Asset_Get( self, TroopAssetID.SOLDIER ) .. "/" .. Asset_Get( self, TroopAssetID.MAX_SOLDIER )
+	end
+	if type == "COMBAT_DATA" or type == "COMBAT_ALL" then
+		if self._combatDatas then
+			for type, v in pairs( self._combatDatas ) do
+				if typeof( v ) == "boolean" then
+				elseif typeof( v ) == "table" then
+				elseif typeof( v ) == "object" then
+				else
+					content = content .. " " .. MathUtil_FindName( TroopCombatData, type ) .. "=" .. v
+				end
 			end
 		end
-	elseif type == "COMBAT_FIGHT" then
-		content = content .. ( self:GetCombatData( TroopCombatData.SIDE ) and ( self:GetCombatData( TroopCombatData.SIDE ) == CombatSide.ATTACKER and "-ATK" or "-DEF" ) or "" )
-		content = content .. " n=" .. Asset_Get( self, TroopAssetID.SOLDIER ) .. "/" .. Asset_Get( self, TroopAssetID.MAX_SOLDIER )
+	end
 		
-	elseif type == "SIMPLE" then
+	if type == "SIMPLE" then
 
 	elseif type == "BREIF" then
 		content = content .. " n=" .. Asset_Get( self, TroopAssetID.SOLDIER )
-	else
+	elseif type == "ALL" then
 		content = content .. " n=" .. Asset_Get( self, TroopAssetID.SOLDIER )
 		local corps = Asset_Get( self, TroopAssetID.CORPS )
 		if corps then
@@ -135,9 +141,42 @@ end
 
 -------------------------------------
 
+function Troop:GetMaxMorale()
+	local lv = Asset_Get( self, TroopAssetID.MORALE )
+	return 100
+end
+
+function Troop:GetMaxOrg()
+	local soldier = Asset_Get( self, TroopAssetID.SOLDIER )
+	local maxOrg = soldier
+	return maxOrg
+end
+
 function Troop:GetWeaponBy( name, value )
 	local tableData = Asset_Get( self, TroopAssetID.TABLEDATA )
 	return tableData and tableData:GetWeaponBy( name, value ) or nil
+end
+
+function Troop:GetWeaponByTask( taskType )
+	local tableData = Asset_Get( self, TroopAssetID.TABLEDATA )
+		if not tableData then error( "1") return end
+
+	local weapon
+	if taskType == CombatTask.SHOOT then
+		weapon = self:GetWeaponBy( "range", WeaponRangeType.MISSILE )	
+	
+	elseif taskType == CombatTask.CHARGE then
+		weapon = self:GetWeaponBy( "range", WeaponRangeType.LONG )
+	
+	elseif taskType == CombatTask.FIGHT then		
+		weapon = self:GetWeaponBy( "range", WeaponRangeType.CLOSE )
+		if not weapon then weapon = self:GetWeaponBy( "range", WeaponRangeType.LONG ) end	
+
+	elseif taskType == CombatTask.DESTROY then
+		weapon = self:GetWeaponBy( "dmg", WeaponDamageType.FORTIFIED )
+
+	end
+	return weapon
 end
 
 function Troop:GetCombatData( type )
@@ -148,10 +187,12 @@ end
 function Troop:SetCombatData( type, value )
 	if self._combatDatas then
 		self._combatDatas[type] = value
+	else
+		--error( "not in combat" )
 	end
 end
 
-function Troop:AttendCombat( ... )
+function Troop:JoinCombat( ... )
 	self._combatDatas = {}
 end
 

@@ -226,9 +226,11 @@ function Warfare_UpdateCombat( combat )
 		end
 	end )
 
+	Debug_Log( "combat end", combat:ToString( "RESULT" ) )
+
 	Message_Post( MessageType.COMBAT_ENDED, { combat = combat } )
 
-	InputUtil_Pause( "combat end", combat:ToString( "RESULT" ) )
+	--InputUtil_Pause()
 
 	return true
 end
@@ -340,5 +342,6 @@ function WarfareSystem:AddCombat( combat )
 		print( existCombat:ToString( "DEBUG_CORPS" ) )
 		error( "Plot" .. "(x=" .. Asset_Get( plot, PlotAssetID.X ) .. ",y=" .. Asset_Get( plot, PlotAssetID.Y ) .. ") already has a combat!" )
 		return;
-	end
+	end	
+	self._combats[plot] = combat
 end

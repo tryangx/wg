@@ -145,13 +145,22 @@ CombatStatus =
 	DEFENSE_BROKEN = 30,
 }
 
-CombatStep = 
+CombatStepType = 
 {
-	REST     = 0,
+	--check withdraw, rest
 	PREPARE  = 1,
+
+	--check trigger skill?
 	EMBATTLE = 2,
+
+	--given order
 	ORDER    = 3,
+
+	--in combat, duration game time
 	INCOMBAT = 4,
+
+	--have a rest
+	REST     = 5,
 }
 
 CombatResult = 
@@ -201,6 +210,27 @@ CombatOrder =
 	FORCED_ATTACK  = 3,
 }
 
+CombatAction = 
+{
+	MOVE     = 1,
+	ATTACK   = 2,
+	DEFEND   = 3,	
+	KILL     = 5,
+	BEAT     = 6,
+	RETREAT  = 7,
+	FLEE     = 8,
+
+	BEEN_CRT_HIT     = 10,
+	BEEN_KILLED      = 11,
+	BEEN_FLANK_HIT   = 12,
+
+	FRIENDLY_RETREAT = 20,
+	FRIENDLY_KILLED  = 21,	
+	FRIENDLY_FLED    = 22,
+
+	DEFENCE_DESTOYED = 30,
+}
+
 CombatTask = 
 {
 	NONE     = 0,
@@ -209,8 +239,8 @@ CombatTask =
 	FIGHT    = 10,
 	SHOOT    = 11,
 	CHARGE   = 12,
-	DEFEND   = 13,
-	DESTROY_DEFENSE  = 14,
+	DESTROY  = 13,
+	DEFEND   = 14,
 	PASS     = 15,
 
 	--movement
@@ -225,9 +255,11 @@ CombatTask =
 CombatStatistic = 
 {
 	--initialize when combat occured
+	START_SOLDIER   = 1,	
+	VP              = 2,
 
 	--troop / side statistic, 
-	ACCUMULATE_TYPE = 10,
+	_ACCUMULATE_TYPE= 10, --SEPERATOR
 	KILL            = 11,
 	GAIN_VP         = 12,
 	VP_RATIO        = 13,
@@ -241,34 +273,49 @@ CombatStatistic =
 	DEAD            = 21,
 
 	REST_DAY        = 30,
-	FORCED_ATK_DAY  = 31,
+	STORM_DAY       = 31,
 	COMBAT_DAY      = 32,
 	
 	RESTORE_MORALE  = 41,
 	RESTORE_ORG     = 42,
 	LOSE_MORALE     = 43,
-	DESTROY_DEFENSE = 44,
+	DESTROY         = 44,
 
+	--------------------------------
 	--damage calculation
+	_TIMES_TYPE     = 50,  --SEPERATOR	
 	COUNTER_TIMES   = 52,
 	CRITICAL_TIMES  = 53,
 
 	--count every time
-	UPDATE_TYPE     = 100,
+	_UPDATE_TYPE    = 100,  --SEPERATOR
 	SOLDIER         = 101,
 
-	--prepare reference data
-	REFERENCE_TYPE  = 200,
-	PREPARED        = 201,
-	TOTAL_SOLDIER   = 202,
+	--prepare reference data	
+	_REFERENCE_TYPE = 200,	--SEPERATOR	
+	
+	MAX_SOLDIER     = 200,
+	TOTAL_SOLDIER   = 201,
+	EXPOSURE_SOLDIER= 202,
 	TOTAL_POWER     = 203,
-	EXPOSURE_POWER  = 204,
-	COMBAT_INTENSE  = 205,
-	AVERAGE_MORALE  = 206,
-	HAS_FOOD        = 207,
-	CONSUME_FOOD    = 208,
-	FOOD_SUPPLY_DAY = 209,
-	CASUALTY_RATIO  = 210,
+	EXPOSURE_POWER  = 204,	
+	PREPARE_SOLDIER = 206,
+	MORALE          = 207,
+	ORGANIZATION    = 208,	
+
+	FOOD_HAS        = 210,
+	FOOD_CONSUME    = 211,	
+	FOOD_DAY        = 212,
+
+	_RATIO_TYPE     = 220,
+	
+	CASUALTY_RATIO  = 220,
+	ORG_RATIO       = 221,
+	MORALE_RATIO    = 222,
+	PROP_RATIO      = 223,
+	PREPARE_RATIO   = 224,
+
+	SURROUNDED      = 230,	
 }
 
 CombatDirection = 
@@ -308,10 +355,12 @@ TacticEffect =
 
 CombatPrepareResult = 
 {
-	BOTH_DECLINED     = 0,
-	BOTH_ACCEPTED     = 1,
-	ONLY_ATK_ACCEPTED = 2,
-	ONLY_DEF_ACCEPTED = 3,
+	BOTH_DECLINED = 0,
+	BOTH_ACCEPTED = 1,
+	ATK_ACCEPTED  = 2,
+	DEF_ACCEPTED  = 3,
+	ATK_SURRENDER = 4,
+	DEF_SURRENDER = 5,
 }
 
 CombatTime = 

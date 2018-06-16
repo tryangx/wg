@@ -64,6 +64,11 @@ local function IsDefenseBroken()
 	return ret
 end
 
+local function IsTargetInRange()
+	if _registers["DISTANCE"] > 1 then return false end
+	return true
+end
+
 local function IsAdvantageous()
 	local intense = 0
 	intense = _combat:GetStat( _troop:GetCombatData( TroopCombatData.SIDE ), CombatStatistic.COMBAT_INTENSE )
@@ -102,8 +107,10 @@ end
 local function IsDowncast( params )
 	local morale = Asset_Get( _troop, TroopAssetID.MORALE )
 	if morale <= 20 then return true end
-	if morale > 40 then return false end
-	return Random_GetInt_Sync( 1, 100 ) < morale
+	if morale > 50 then return false end
+	local ret = Random_GetInt_Sync( 1, 100 ) < ( morale + 20 )
+	if ret == false then InputUtil_Pause( _troop:ToString(), "low morale" ) end
+	return ret
 end
 
 local function NeedSurrender()	
@@ -235,7 +242,7 @@ local function CanCharge( ... )
 
 	if _troop:GetCombatData( TroopCombatData.GRID ) and _troop:GetCombatData( TroopCombatData.GRID ).isWall == true then return false end
 
-	local weapon = _troop:GetWeaponBy( "range", WeaponRangeType.LONG )
+	local weapon = _troop:GetWeaponByTask( CombatTask.CHARGE )
 	if not weapon then return false end	
 
 	local morale = Asset_Get( _troop, TroopAssetID.MORALE )
@@ -259,12 +266,8 @@ end
 local function CanFight( ... )
 	if _troop:GetCombatData( TroopCombatData.GRID ) and _troop:GetCombatData( TroopCombatData.GRID ).isWall == true then return false end
 
-	local weapon
-	weapon = _troop:GetWeaponBy( "range", WeaponRangeType.CLOSE )
-	if not weapon then
-		weapon = _troop:GetWeaponBy( "range", WeaponRangeType.LONG )
-		if not weapon then return false end
-	end	
+	local weapon = _troop:GetWeaponByTask( CombatTask.FIGHT )
+	if not weapon then return false end
 
 	local morale = Asset_Get( _troop, TroopAssetID.MORALE )
 
@@ -299,35 +302,18 @@ local function NeedShoot()
 	return true	
 end
 
-local function IsTargetInRange()
-	if _registers["DISTANCE"] > 1 then return false end
-	return true
-end
-
 local function CanShoot( ... )
-	local weapon = _troop:GetWeaponBy( "range", WeaponRangeType.MISSILE )
-	if not weapon then return false end
-	_registers["WEAPON"] = weapon
-	return true
-end
-
-local function CanSiege( ... )
-	local weapon = _troop:GetWeaponBy( "dmg", WeaponDamageType.FORTIFIED )
+	local weapon = _troop:GetWeaponByTask( CombatTask.SHOOT )
 	if not weapon then return false end
 	_registers["WEAPON"] = weapon
 	return true
 end
 
 local function CanDestroyDefense( ... )
-	local wp1 = _troop:GetWeaponBy( "range", WeaponRangeType.MISSILE )
-	if not wp1 then return false end
-	local wp2 = _troop:GetWeaponBy( "dmg", WeaponDamageType.FORTIFIED )
-	if not wp2 then return false end
-	if wp1 == wp2 then
-		_registers["WEAPON"] = wp1
-		return true
-	end
-	return false
+	local weapon = _troop:GetWeaponByTask( CombatTask.DESTROY )
+	if not weapon then return false end
+	_registers["WEAPON"] = weapon
+	return true
 end
 
 local function NeedStay( ... )
@@ -525,7 +511,7 @@ local CombatTroopAI_SiegeAttacker =
 							{							
 								{ type = "FILTER", condition = IsCategory, params = { category = "SIEGE_WEAPON" } },
 								{ type = "FILTER", condition = CanDestroyDefense },
-								{ type = "ACTION", action = IssueTroopTask, params = { type = CombatTask.DESTROY_DEFENSE, grid = true } },
+								{ type = "ACTION", action = IssueTroopTask, params = { type = CombatTask.DESTROY, grid = true } },
 							},
 						},
 					},
@@ -574,11 +560,6 @@ local function NeedFlee()
 		ret = soldierRatio + morale < 110 and soldierRatio < 50
 	elseif order == CombatOrder.SURVIVE then
 		ret = soldierRatio + morale < 100 and soldierRatio < 55
-	end
-
-	if ret == true then
-		_combat:DumpTroop( _troop )
-		--print( NIDString( _troop ), _troop:GetCombatData( TroopCombatData.SIDE ), " flee=", ret, "ratio=" .. soldierRatio, "mor=" .. morale )
 	end
 	return ret
 end

@@ -239,8 +239,8 @@ DefaultWeaponTable =
 	[31] = { name = "lance",     level = "4", dmg = "PIERCE",    range = "LONG",    power = 50, accuracy = 40,  duration = 30, },
 	[40] = { name = "bow",       level = "4", dmg = "PIERCE",    range = "MISSILE", power = 20, accuracy = 25,  duration = 20, },
 	[41] = { name = "slingshot", level = "2", dmg = "NORMAL",    range = "MISSILE", power = 10, accuracy = 30,  duration = 20, },
-	[50] = { name = "stone",     level = "5", dmg = "FORTIFIED", range = "MISSILE", power = 80, accuracy = 80,  duration = 20, },
-	[51] = { name = "ram",       level = "5", dmg = "FORTIFIED", range = "CLOSE",   power = 50, accuracy = 100, duration = 20, },
+	[50] = { name = "stone",     level = "5", dmg = "FORTIFIED", range = "MISSILE", power = 80, accuracy = 5,  duration = 20, },
+	[51] = { name = "ram",       level = "5", dmg = "FORTIFIED", range = "CLOSE",   power = 50, accuracy = 10, duration = 20, },
 }
 
 
@@ -353,18 +353,18 @@ DefaultBattlefieldData =
 		--4 AB AC AB
 		name = "grassland", width = 3, height = 6,
 		grids = {
-			{ x=1, y=1, depth=5000, prot = 0, height = 10 },
-			{ x=2, y=1, depth=5000, prot = 0, height = 10 },
-			{ x=3, y=1, depth=5000, prot = 0, height = 10 },
-			{ x=1, y=2, depth=5000, prot = 0, height = 10 },
-			{ x=2, y=2, depth=5000, prot = 0, height = 10 },
-			{ x=3, y=2, depth=5000, prot = 0, height = 10 },
-			{ x=1, y=3, depth=5000, prot = 0, height = 10 },
-			{ x=2, y=3, depth=5000, prot = 0, height = 10 },
-			{ x=3, y=3, depth=5000, prot = 0, height = 10 },
-			{ x=1, y=4, depth=5000, prot = 0, height = 10 },
-			{ x=2, y=4, depth=5000, prot = 0, height = 10 },
-			{ x=3, y=4, depth=5000, prot = 0, height = 10 },
+			{ x=1, y=1, depth=5000, fort = 0, height = 10 },
+			{ x=2, y=1, depth=5000, fort = 0, height = 10 },
+			{ x=3, y=1, depth=5000, fort = 0, height = 10 },
+			{ x=1, y=2, depth=5000, fort = 0, height = 10 },
+			{ x=2, y=2, depth=5000, fort = 0, height = 10 },
+			{ x=3, y=2, depth=5000, fort = 0, height = 10 },
+			{ x=1, y=3, depth=5000, fort = 0, height = 10 },
+			{ x=2, y=3, depth=5000, fort = 0, height = 10 },
+			{ x=3, y=3, depth=5000, fort = 0, height = 10 },
+			{ x=1, y=4, depth=5000, fort = 0, height = 10 },
+			{ x=2, y=4, depth=5000, fort = 0, height = 10 },
+			{ x=3, y=4, depth=5000, fort = 0, height = 10 },
 		},
 		defpos = {
 			{ x=2, y=2 },
@@ -392,18 +392,18 @@ DefaultBattlefieldData =
 		-- 4 AB AC AB
 		name = "camp", width = 3, height = 4,
 		grids = {
-			{ x=2, y=1, depth=2000, prot = 50, height = 20, isWall = true, defense = 400, },
-			{ x=1, y=1, depth=2000, prot = 40, height = 20, isWall = true, defense = 200, },
-			{ x=3, y=1, depth=2000, prot = 50, height = 20, isWall = true, defense = 400, },
-			{ x=2, y=2, depth=2000, prot = 0, height = 10 },
-			{ x=1, y=2, depth=2000, prot = 0, height = 10 },
-			{ x=3, y=2, depth=2000, prot = 0, height = 10 },
-			{ x=2, y=3, depth=2000, prot = 0, height = 10 },
-			{ x=1, y=3, depth=2000, prot = 0, height = 10 },
-			{ x=3, y=3, depth=2000, prot = 0, height = 10 },
-			{ x=2, y=4, depth=2000, prot = 0, height = 10 },
-			{ x=1, y=4, depth=2000, prot = 0, height = 10 },
-			{ x=3, y=4, depth=2000, prot = 0, height = 10 },
+			{ x=2, y=1, depth=2000, fort = 50, height = 20, isWall = true, defense = 400, },
+			{ x=1, y=1, depth=2000, fort = 40, height = 20, isWall = true, defense = 200, },
+			{ x=3, y=1, depth=2000, fort = 50, height = 20, isWall = true, defense = 400, },
+			{ x=2, y=2, depth=2000, fort = 0, height = 10 },
+			{ x=1, y=2, depth=2000, fort = 0, height = 10 },
+			{ x=3, y=2, depth=2000, fort = 0, height = 10 },
+			{ x=2, y=3, depth=2000, fort = 0, height = 10 },
+			{ x=1, y=3, depth=2000, fort = 0, height = 10 },
+			{ x=3, y=3, depth=2000, fort = 0, height = 10 },
+			{ x=2, y=4, depth=2000, fort = 0, height = 10 },
+			{ x=1, y=4, depth=2000, fort = 0, height = 10 },
+			{ x=3, y=4, depth=2000, fort = 0, height = 10 },
 		},
 		defpos = {
 			{ x=2, y=1 },
@@ -423,18 +423,18 @@ DefaultBattlefieldData =
 	{
 		name = "town", width = 3, height = 4,
 		grids = {
-			{ x=2, y=1, depth=2000, prot = 100, height = 40, isWall = true, defense = 1500, },
-			{ x=1, y=1, depth=2000, prot = 80,  height = 40, isWall = true, defense = 1000, },
-			{ x=3, y=1, depth=2000, prot = 100, height = 40, isWall = true, defense = 1500, },
-			{ x=2, y=2, depth=2000, prot = 0, height = 10 },
-			{ x=1, y=2, depth=2000, prot = 0, height = 10 },
-			{ x=3, y=2, depth=2000, prot = 0, height = 10 },
-			{ x=2, y=3, depth=2000, prot = 0, height = 10 },
-			{ x=1, y=3, depth=2000, prot = 0, height = 10 },
-			{ x=3, y=3, depth=2000, prot = 0, height = 10 },
-			{ x=2, y=4, depth=2000, prot = 0, height = 10 },
-			{ x=1, y=4, depth=2000, prot = 0, height = 10 },
-			{ x=3, y=4, depth=2000, prot = 0, height = 10 },
+			{ x=2, y=1, depth=2000, fort = 100, height = 40, isWall = true, defense = 1500, },
+			{ x=1, y=1, depth=2000, fort = 80,  height = 40, isWall = true, defense = 1000, },
+			{ x=3, y=1, depth=2000, fort = 100, height = 40, isWall = true, defense = 1500, },
+			{ x=2, y=2, depth=2000, fort = 0, height = 10 },
+			{ x=1, y=2, depth=2000, fort = 0, height = 10 },
+			{ x=3, y=2, depth=2000, fort = 0, height = 10 },
+			{ x=2, y=3, depth=2000, fort = 0, height = 10 },
+			{ x=1, y=3, depth=2000, fort = 0, height = 10 },
+			{ x=3, y=3, depth=2000, fort = 0, height = 10 },
+			{ x=2, y=4, depth=2000, fort = 0, height = 10 },
+			{ x=1, y=4, depth=2000, fort = 0, height = 10 },
+			{ x=3, y=4, depth=2000, fort = 0, height = 10 },
 		},
 		defpos = {
 			{ x=2, y=1 },
@@ -482,42 +482,94 @@ CombatPurposeParam =
 	--	power_comparsion_ration
 	--
 
+	--casualty, morale, food, proportion
 	CONSERVATIVE = 
 	{
-		ATTEND_INTENSE   = 0.35,
-		DECLINED_INTENSE = 0.7,
-		FORCED_INTENSE   = 0.75,
+		SURRENDER = 
+		{
+			{ reason = "despair", is_surrounded = 1, prop_below = 25 },
+		},
 		WITHDRAW = 
 		{
-			{ reason="danger", not_siege = 1, intense = 0.35 },
-			{ reason="normal", not_siege = 1, intense = 0.35, morale = 30, casualty_ratio = 0.5 },
-			{ reason="no food", food_supply_day = 15, is_atk = 1 },
+			{ reason = "casulaty", casualty_above = 30, score = 50 },
+			{ reason = "chaos",    org_below = 50, score = 30 },
+			{ reason = "downcast", mor_below = 60, score = 30 },
+			{ reason = "danger",   prop_below = 40, score = 50 },			
+			{ reason = "no food",  food_below = 20, is_atk = 1 },
+			{ reason = "no food",  food_below = 30, is_field = 1 },
+		},
+		REST =
+		{
+			{ reason = "chaos",    org_below = 60, prob = 50 },
+			{ reason = "downcast", mor_below = 60, prob = 50 },
+		},
+		STORM = 
+		{
+			{ reason = "advantage", prop_above = 75, prob = 60 },
+		},
+		ATTEND = 
+		{
+			{ reason = "normal",    prepare_above = 75 },
 		},
 	},
 
 	MODERATE = 
 	{
-		ATTEND_INTENSE   = 0.3,
-		DECLINED_INTENSE = 0.6,
-		FORCED_INTENSE   = 0.5,
-		WITHDRAW =
+		SURRENDER = 
 		{
-			{ reason="danger", not_siege = 1, intense = 0.3 },
-			{ reason="normal", not_siege = 1, intense = 0.35, morale = 30, casualty_ratio = 1 },
-			{ reason="no food", food_supply_day = 10, is_atk = 1 },
+			{ reason = "despair", is_surrounded = 1, prop_below = 20 },
+		},
+		WITHDRAW = 
+		{
+			{ reason = "casulaty", casualty_above = 50, score = 50 },
+			{ reason = "chaos",    org_below = 30, score = 30 },
+			{ reason = "downcast", mor_below = 30, score = 30 },
+			{ reason = "danger",   prop_below = 35, score = 50 },			
+			{ reason = "no food",  food_below = 15, is_atk = 1 },
+			{ reason = "no food",  food_below = 20, is_field = 1 },
+		},
+		REST =
+		{
+			{ reason = "chaos",    org_below = 50, prob = 50 },
+			{ reason = "downcast", mor_below = 50, prob = 50 },
+		},
+		STORM = 
+		{
+			{ reason = "advantage", prop_above = 70, prob = 60 },
+		},
+		ATTEND = 
+		{
+			{ reason = "normal",    prepare_above = 70 },
 		},
 	},
 
 	AGGRESSIVE = 
 	{
-		ATTEND_INTENSE   = 0.2,
-		DECLINED_INTENSE = 0.5,
-		FORCED_INTENSE   = 0.35,
+		SURRENDER = 
+		{
+			{ reason = "despair", is_surrounded = 1, prop_below = 20 },
+		},
 		WITHDRAW = 
 		{
-			{ reason="danger", not_siege = 1, intense = 0.2 },
-			{ reason="normal", not_siege = 1, intense = 0.3, morale = 25, casualty_ratio = 1.5 },
-			{ reason="no food", food_supply_day = 10, is_atk = 1 },
+			{ reason = "casulaty", casualty_above = 50, score = 50 },
+			{ reason = "chaos",    org_below = 30, score = 30 },
+			{ reason = "downcast", mor_below = 30, score = 30 },
+			{ reason = "danger",   prop_below = 30, score = 50 },			
+			{ reason = "no food",  food_below = 15, is_atk = 1 },
+			{ reason = "no food",  food_below = 20, is_field = 1 },
+		},
+		REST =
+		{
+			{ reason = "chaos",    org_below = 30, prob = 50 },
+			{ reason = "downcast", mor_below = 30, prob = 50 },
+		},
+		STORM = 
+		{
+			{ reason = "advantage", prop_above = 60, prob = 60 },
+		},
+		ATTEND = 
+		{
+			{ reason = "normal",    prepare_above = 65 },
 		},
 	},
 }
@@ -559,5 +611,17 @@ CombatVictoryPoint =
 		BREAKTHROUGH      = 0.5,
 
 		RETREAT           = 1,
+	},
+}
+
+CombatStepData =
+{
+	--standard
+	[1] =
+	{
+		"PREPARE",
+		"EMBATTLE",
+		"ORDER",
+		"INCOMBAT",
 	},
 }

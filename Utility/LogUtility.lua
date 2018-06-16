@@ -1,5 +1,22 @@
 require "FileUtility"
 
+
+function Log_ToString( ... )
+	args = { ... }
+	if #args == 0 then return end
+
+	local content = ""
+	for i = 1, #args do
+		local type = typeof( args[i] )
+		if type == "string" or type == "number" then
+			content = content .. args[i] .. " "
+		end
+	end
+	return content
+end
+
+-----------------------------------------------
+
 LogUtility = class()
 
 LogWarningLevel = 
@@ -55,31 +72,17 @@ function LogUtility:WriteContent( content, level )
 	table.insert( self.logs, content )
 end
 
-function LogUtility:ConvertContent( ... )
-	args = { ... }
-	if #args == 0 then return end
-
-	local content = ""
-	for i = 1, #args do
-		local type = typeof( args[i] )
-		if type == "string" or type == "number" then
-			content = content .. args[i] .. " "
-		end
-	end
-	return content
-end
-
 function LogUtility:WriteDebug( ... )
-	self:WriteContent( self:ConvertContent( ... ), LogWarningLevel.DEBUG )
+	self:WriteContent( Log_ToString( ... ), LogWarningLevel.DEBUG )
 end
 function LogUtility:WriteLog( ... )
-	self:WriteContent( self:ConvertContent( ... ), LogWarningLevel.LOG )
+	self:WriteContent( Log_ToString( ... ), LogWarningLevel.LOG )
 end
 function LogUtility:WriteImportant( ... )
-	self:WriteContent( self:ConvertContent( ... ), LogWarningLevel.IMPORTANT )
+	self:WriteContent( Log_ToString( ... ), LogWarningLevel.IMPORTANT )
 end
 function LogUtility:WriteError( ... )
-	self:WriteContent( self:ConvertContent( ... ), LogWarningLevel.ERROR )
+	self:WriteContent( Log_ToString( ... ), LogWarningLevel.ERROR )
 end
 
 function LogUtility:Clear()

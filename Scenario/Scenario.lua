@@ -103,6 +103,11 @@ local _Scenario = ScenarioData
 
 --do the work like convert string to number
 function Scenario_InitData()
+	--global datas
+	for id, datas in pairs( CombatStepData ) do
+		CombatStepData[id] = MathUtil_ConvertDataStringToID( CombatStepType, datas )
+	end	
+
 	_Scenario.CHARA_PROMOTE_DATA   = MathUtil_ConvertKeyToID( CharaJob, _Scenario.CHARA_PROMOTE_DATA )
 	_Scenario.CHARA_PROMOTE_METHOD = MathUtil_ConvertKeyToID( CharaJob, _Scenario.CHARA_PROMOTE_METHOD )
 	for id, method in pairs( _Scenario.CHARA_PROMOTE_METHOD ) do
@@ -120,7 +125,7 @@ function Scenario_InitData()
 
 	_Scenario.RELATION_OPINION = MathUtil_ConvertKeyToID( RelationOpinion, _Scenario.RELATION_OPINION )
 
-	CombatPurposeParam = MathUtil_ConvertKey2ID( CombatPurposeParam, CombatPurpose )
+	CombatPurposeParam = MathUtil_ConvertKey2ID( CombatPurposeParam, CombatPurpose )	
 	
 	--MathUtil_Dump( Scenario_GetData( "TASK_STEP_DATA" ) )
 end
