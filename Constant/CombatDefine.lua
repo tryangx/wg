@@ -87,7 +87,6 @@ TroopCombatData =
 	RETREAT    = 40,
 	FLEE       = 41,
 	SURROUNDED = 42,
-	CAPTURED   = 43,
 }
 
 CorpsStatus = 
@@ -97,6 +96,8 @@ CorpsStatus =
 	IN_TASK   = 11,	
 
 	DEPATURE_TIME = 12,
+
+	UNDERSTAFFED  = 100,
 }
 
 CorpsPurpose =

@@ -201,7 +201,7 @@ function Game_Test()
 
 	--[[]]
 	--test combat
-	if true then
+	if nil then
 		local city = Entity_Get( EntityType.CITY, 1 )
 		local from = Entity_Get( EntityType.CITY, 2 )
 		local atkcorps = Corps_EstablishTest( { numoftroop = 10, siege = true, encampment = from } )
@@ -305,6 +305,8 @@ function Game_Start()
 	Debug_Normal( "Task==>" .. Entity_Number( EntityType.TASK ) ) Entity_Foreach( EntityType.TASK, function( entity ) Debug_Normal( entity:ToString( "DEBUG" ), "exist" ) end )
 	Debug_Normal( "Move==>" .. Entity_Number( EntityType.MOVE ) ) Entity_Foreach( EntityType.MOVE, function( entity ) Debug_Normal( entity:ToString(), "still" ) end )
 	Debug_Normal( "Dipl==>" .. Entity_Number( EntityType.RELATION ) ) Entity_Foreach( EntityType.RELATION, function( entity ) Debug_Normal( entity:ToString( "ALL" ) ) end )
+
+	GameMap_Draw( g_map )
 
 	print( g_Time:CreateCurrentDateDesc(), "win=" .. ( g_winner and g_winner.name or "[NONE]" ) )
 end

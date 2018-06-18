@@ -60,8 +60,14 @@ end
 function Group:ToString( type )
 	
 	local content = "[" .. self.name .. "]"
+
+	if type == "BRIEF" or type == "ALL" then
+		content = content .. " leader=" .. String_ToStr( Asset_Get( self, GroupAssetID.LEADER ), "name" )
+		content = content .. " capital=" .. String_ToStr( Asset_Get( self, GroupAssetID.CAPITAL ), "name" )
+	end
+
 	if type == "SIMPLE" or type == "ALL" then
-		content = content .. " city=" .. Asset_GetListSize( self, GroupAssetID.CITY_LIST )		
+		content = content .. " city=" .. Asset_GetListSize( self, GroupAssetID.CITY_LIST )
 		content = content .. " chara=" .. Asset_GetListSize( self, GroupAssetID.CHARA_LIST )		
 		content = content .. " corps=" .. Asset_GetListSize( self, GroupAssetID.CORPS_LIST )
 	end
@@ -168,6 +174,7 @@ function Group:VerifyData()
 end
 
 function Group:Update( ... )
+	self:ElectLeader()
 end
 
 function Group:UpdateSpy()
@@ -280,7 +287,7 @@ function Group:LoseCity( city, toCity )
 	end
 
 	--for all chara list
-	Asset_Foreach( city, CityAssetID.CHARA_LIST, function( chara )		
+	Asset_Foreach( city, CityAssetID.CHARA_LIST, function( chara )
 		if chara:IsAtHome() or not toCity then
 			--captured
 			Asset_AppendList( city, CityAssetID.PRISONER_LIST, chara )
@@ -348,7 +355,15 @@ function Group:AddChara( chara )
 end
 
 function Group:LoseChara( chara )
+	Asset_Set( chara, CharaAssetID.GROUP, nil )
+
 	Asset_RemoveListItem( self, GroupAssetID.CHARA_LIST, chara )
+
+	if Asset_Get( self, GroupAssetID.LEADER ) == chara then
+		Asset_Set( self, GroupAssetID.LEADER )
+	end
+
+	Debug_Log( chara:ToString(), "leave group=" .. self:ToString() )
 end
 
 function Group:AddCorps( corps )	
@@ -368,7 +383,7 @@ function Group:ElectLeader()
 	Asset_Set( self, GroupAssetID.LEADER, leader )
 
 	if leader then
-		InputUtil_Pause( "no king", leader.name )
+		Debug_Log( self:ToString(), "elect new leader=" .. leader:ToString() )
 	else
 		Group_Vanish( self )
 	end

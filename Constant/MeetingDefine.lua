@@ -127,20 +127,20 @@ TaskStep =
 TaskStatus = 
 {
 	--normal status, always idle
-	RUNNING    = 0,
+	RUNNING    = 1,
 	--means current step is waiting until duration time elapsed
-	WAITING    = 1,
+	WAITING    = 2,
 	--means acotr is moving, should wait
-	MOVING     = 2,
+	MOVING     = 3,
 	--means task is working, should wait for finish
-	WORKING    = 3,
+	WORKING    = 4,
 }
 
 TaskResult = 
 {
-	UNKNOWN = 0,
-	SUCCESS = 1,
-	FAILED  = 2,
+	UNKNOWN    = 0,
+	SUCCESS    = 1,
+	FAILED     = 2,
 }
 
 ----------------------------------------

@@ -18,6 +18,23 @@ function Troop_Remove( troop )
 	Entity_Remove( troop )
 end
 
+function Troop_RemoveOfficer( troop, isKilled )
+	local officer = Asset_Get( troop, TroopAssetID.OFFICER )
+	if not officer then return end
+
+	troop:SetOfficer()
+
+	local corps  = Asset_Get( troop, TroopAssetID.CORPS )	
+	local leader = corps and Asset_Get( corps, CorpsAssetID.LEADER ) or nil
+	if isKilled then
+		Chara_Die( officer )
+	elseif corps then
+		--not killed, just back to the corps officer-list
+		Asset_AppendList( corps, CorpsAssetID.OFFICER_LIST, officer )
+		InputUtil_Pause( "officer=" .. officer:ToString() .. " back to corps" )	
+	end
+end
+
 -------------------------------------------
 
 --return the food need carried to move to destination
@@ -84,9 +101,19 @@ function Corps_GetTroopMaxNumber( city, troop )
 	return number
 end
 
-function Corps_GetLimityByCity( city )
+function Corps_GetLimitByCity( city )
 	if city:IsCapital() == true then return 4 end
 	return 2
+end
+
+function Corps_GetRequiredByCity( city )
+	if city:IsCapital() == true then
+		return 3
+	end
+	if city:HasStatus( CityStatus.BATTLEFRONT ) then
+		return 1
+	end
+	return 0
 end
 
 function Corps_Join( corps, city )	
@@ -125,7 +152,7 @@ function Corps_Join( corps, city )
 	Debug_Log( corps.name .. " join " .. city.name )
 end
 
-function Corps_Dismiss( corps, reason )	
+function Corps_Neutralize( corps, reason )	
 	--remove from old city
 	local encampment = Asset_Get( corps, CorpsAssetID.ENCAMPMENT )
 	if encampment then
@@ -134,10 +161,15 @@ function Corps_Dismiss( corps, reason )
 		Debug_Log( corps:ToString() .. " not belong to any group or city!" )
 	end
 
-	--killed the leaders
+	--killed all officer
 	Asset_Foreach( corps, CorpsAssetID.OFFICER_LIST, function ( chara )
 		Chara_Die( chara )
 	end )
+
+	local leader = Asset_Get( corps, CorpsAssetID.LEADER )
+	if leader then
+		Chara_Die( chara )
+	end
 
 	--remove task
 	local task = Asset_GetDictItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )
@@ -148,12 +180,6 @@ function Corps_Dismiss( corps, reason )
 	Stat_Add( "Corps@Dismiss", corps:ToString() .. " reason=" .. reason, StatType.LIST )
 
 	Entity_Remove( corps )
-end
-
-function Corps_OfficerDie( corps, officer )
-	corps:LoseOfficer( officer )
-
-	Chara_Die( officer )
 end
 
 ---------------------------------------
@@ -360,6 +386,13 @@ end
 -- @param purpose default is FIELD_COMBAT
 -- @useage CorpsSystem:EstablishCorpsInCity( city )
 function Corps_EstablishInCity( city, leader, purpose, troopNumber )
+	--debug
+	if leader then
+		if Asset_Get( leader, CharaAssetID.CORPS ) then
+			error( leader.name .. " alread has a corps" )
+		end
+	end
+
 	local troopTables = Asset_GetList( city, CityAssetID.TROOPTABLE_LIST )
 	if not troopTables or #troopTables == 0 then
 		Debug_Log( "too bad, no troop table valid~" )
@@ -573,4 +606,7 @@ function CorpsSystem:Start()
 end
 
 function CorpsSystem:Update()
+	Entity_Foreach( EntityType.CORPS, function( corps )
+		corps:Update()
+	end )
 end

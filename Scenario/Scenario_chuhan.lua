@@ -5,8 +5,8 @@ CHUHAN_BaseData =
 
 CHUHAN_MapData = 
 {
-	width  = 70,
-	height = 70,
+	width  = 32,
+	height = 20,
 	plots  = nil,
 
 	plotTypes = 
@@ -217,7 +217,7 @@ CHUHAN_CityData =
 	[4] = 
 	{
 		name = "PengChen",
-		coordinate = { x = 3, y = 12 },
+		coordinate = { x = 18, y = 12 },
 		adjacents = { 3, 5 },
 		level = 13,
 

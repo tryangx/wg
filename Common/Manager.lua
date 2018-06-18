@@ -136,14 +136,31 @@ end
 
 function Manager:AddData( id, data )
 	if self._removeList then
-		print( "Add data in Foreach() is not recommended! type=" .. self._type )
+		DBG_Warning( "Mng", "Add data in Foreach() is not recommended! type=" .. self._type )
 	end
 
-	if not self._datas[id] then
-		self._count = self._count + 1
-	end
+	if not self._datas[id] then self._count = self._count + 1 end
+
 	self._datas[id] = data
+
 	return true
+end
+
+function Manager:BeginTraversal()
+	self._removeList = {}
+end
+
+function Manager:EndTraversal()
+	--remove list
+	if self._removeList then
+		for id, data in pairs( self._removeList ) do
+			if id == 137 then
+				--print( "remove", id, data.type )
+			end
+			self._datas[id] = nil
+		end
+		self._removeList = nil
+	end
 end
 
 function Manager:RemoveData( id, fn )
@@ -151,8 +168,11 @@ function Manager:RemoveData( id, fn )
 		return false
 	end
 	if self._removeList then
-		DBG_Warning( "Remove In Foreach()", "Remove data(type=" .. self._type .. ") isn't recommended!" )
-		self._removeList[id] = self._datas[id]
+		DBG_Warning( "Mng", "Remove data (type=" .. self._type .. ") isn't recommended when Traveling Data" )
+		if self._datas[id] then
+			self._removeList[id] = self._datas[id]
+		end
+		return
 	end
 	if not fn or fn( self._datas[id] ) then
 		self._datas[id] = nil
@@ -163,6 +183,9 @@ function Manager:RemoveData( id, fn )
 end
 
 function Manager:RemoveAllData( fn )
+	if self._removeList then
+		error( "Mng", "RemoveAll isn't recommended when Traversal Data!" )
+	end
 	for k, data in pairs( self._datas ) do
 		if not fn or fn( data ) then
 			self._datas[k] = nil
@@ -172,25 +195,23 @@ function Manager:RemoveAllData( fn )
 end
 
 function Manager:ForeachData( fn )
-	self._removeList = {}
+	self:BeginTraversal()
 	for k, data in pairs( self._datas ) do
 		fn( data )
 	end
-
-	--remove list
-	if self._removeList then
-		for id, data in pairs( self._removeList ) do
-			self._datas[id] = nil
-		end
-		self._removeList = nil
-	end
+	self:EndTraversal()
 end
 
 --Filter data by given function, return true means find the right data
 function Manager:FindData( fn )
+	self:BeginTraversal()
+	local ret
 	for k, data in pairs( self._datas ) do
-		if fn( data ) == true then
-			return data
+		if fn( data ) == true then			
+			ret = data
+			break
 		end
 	end
+	self:EndTraversal()
+	return ret
 end

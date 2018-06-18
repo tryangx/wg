@@ -5,6 +5,9 @@ function GameMapDrawer:__init()
 	self.xInc = 1
 	self.yInc = 1
 
+	self.cityNameLen  = 4
+	self.groupNameLen = 4
+
 	--indent, at least 5( y = ??? )
 	self.indentLength = 5	
 	self.indent = string.rep( " ", self.indentLength )
@@ -62,7 +65,7 @@ function GameMapDrawer:UpdateMap()
 		local x = Asset_Get( city, CityAssetID.X )
 		if not self.map[y] then self.map[y] = {} end
 		if self.map[y][x] then
-			print( "Duplicate", city.name, self.map[y][x].name, "in " .. pos.x .. ",", pos.y )
+			print( "Duplicate", city.name, self.map[y][x].name, "in " .. x .. ",", y )
 		end
 		self.map[y][x] = city
 		if not self.map[y].length then
@@ -99,7 +102,7 @@ function GameMapDrawer:DrawPlotMap( invalidate )
 		end
 		local road = Asset_Get( plot, PlotAssetID.ROAD )
 		if road > 0 then
-			if city then InputUtil_Pause( "wrong" ) end
+			--if city then InputUtil_Pause( "wrong" ) end
 			content = content .. "R"
 		end
 		--[[
@@ -113,6 +116,21 @@ function GameMapDrawer:DrawPlotMap( invalidate )
 		return content
 	end)
 	--print( "city=" .. cityNum )
+end
+
+function GameMapDrawer:DrawGroupMap( invalidate )
+	if not invalidate then self:UpdateMap() end
+	print( "Group Map" )
+	self:DrawTextMapByTable( function( data )
+		local city = data	
+		if city then
+			local content = " ".. StringUtil_Abbreviate( city.name, self.cityNameLen )
+			local group = Asset_Get( city, CityAssetID.GROUP )
+			content = content .. "@".. StringUtil_Abbreviate( group and group.name or "", self.groupNameLen ) .. " "
+			return content
+		end
+		return self.blank
+	end )
 end
 
 --[[
@@ -171,24 +189,6 @@ function GameMapDrawer:DrawPowerMap( invalidate )
 				local str = HelperUtil_CreateNumberDesc( city.guards )
 				content = content .. StringUtil_Abbreviate( city.name, self.groupNameLen + 1 ) .. " " .. StringUtil_Abbreviate( str, 4 )
 				--content = content .. StringUtil_Abbreviate( string.lower( city.name ), self.cityNameLen + 4 )
-			end
-			return content
-		end
-		return self.blank
-	end )
-end
-
-function GameMapDrawer:DrawGroupMap( invalidate )
-	if not invalidate then self:UpdateMap() end
-	print( "Group Map" )
-	self:DrawTextMapByTable( function( data )
-		local city = data	
-		if city then
-			local content = " ".. StringUtil_Abbreviate( city.name, self.cityNameLen )
-			if city:GetGroup() then
-				content = content .. "@".. StringUtil_Abbreviate( city:GetGroup().name, self.groupNameLen ) .. " "
-			else
-				content = content .. "   "
 			end
 			return content
 		end

@@ -1,5 +1,19 @@
 -------------------------------------------
 
+function Chara_FindBestCharaForJob( job, charaList )
+	local bestChara, bestIndex, bestRating
+	for inx, chara in ipairs( charaList ) do			
+		local rating = Chara_GetRatingCharaSuitJob( chara, job )
+		if not bestChara or bestRating < rating then
+			bestChara  = chara
+			bestIndex  = inx
+			bestRating = rating
+		end
+	end
+	table.remove( charaList, bestIndex )
+	return bestChara
+end
+
 function Chara_GetRatingCharaSuitJob( chara, job )
 	--to do
 	return 100
@@ -48,10 +62,15 @@ end
 -------------------------------------------
 
 function Chara_Die( chara )
-	--remove from group
-	local group = Asset_Get( chara, CharaAssetID.GROUP )
-	if group then		
-		group:LoseChara( chara )
+	if chara:GetStatus( CharaStatus.DEAD ) then
+		error( chara.name .. "died twice?" )
+	end
+	chara:SetStatus( CharaStatus.DEAD, 1 )
+
+	--remove from corps
+	local corps = Asset_Get( chara, CharaAssetID.CORPS )
+	if corps then
+		corps:LoseChara( chara )
 	end
 
 	--remove from city
@@ -61,9 +80,15 @@ function Chara_Die( chara )
 	end
 
 	--remove task
-	local task = Asset_GetDictItem( chara, CharaAssetID.STATUSES, CharaStatus.IN_TASK )
+	local task = chara:GetTask()
 	if task then
 		Task_Terminate( task )
+	end
+
+	--remove from group
+	local group = Asset_Get( chara, CharaAssetID.GROUP )
+	if group then		
+		group:LoseChara( chara )
 	end
 
 	Debug_Log( chara:ToString(), "died" )

@@ -100,11 +100,14 @@ CityStatus =
 	AGGRESSIVE_WEAK    = 1000,
 	AGGRESSIVE_ADV     = 1001,
 	--not enough defender military power
-	DEFENSIVE_WEAK      = 1010,	
-	DEFENSIVE_DANGER    = 1011,
-	
+	DEFENSIVE_WEAK     = 1010,	
+	DEFENSIVE_DANGER   = 1011,
+	--need develop
 	DEVELOPMENT_WEAK   = 1020,
 	DEVELOPMENT_DANGER = 1021,
+
+	--not enough reserves
+	RESERVE_UNDERSTAFFED = 1030,
 }
 
 CityJob = 

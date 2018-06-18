@@ -2,7 +2,6 @@ Randomizer = class()
 
 function Randomizer:__init( seed )
 	self.seed = seed or 0
-	--print( "seed=", seed )
 end
 
 function Randomizer:GetSeed( seed )
@@ -29,6 +28,10 @@ local _randomizer       = Randomizer()
 local _unsyncRandomizer = Randomizer()
 local _constRandomizer  = Randomizer()
 
+function Random_Result()
+	print( "seed=" .. _randomizer:GetSeed(), _unsyncRandomizer:GetSeed(), _constRandomizer:GetSeed() )
+end
+
 function Random_SetSeed_Sync( seed )
 	_randomizer:SetSeed( seed )
 end
@@ -37,6 +40,7 @@ function Random_SetSeed_Unsync( seed )
 end
 function Random_SetSeed( seed )
 	Random_SetSeed_Sync( seed )
+	Random_SetSeed_Unsync( seed )
 end
 function Random_GetInt_Sync( min, max )
 	return _randomizer:GetInt( min, max )
@@ -124,4 +128,30 @@ function Random_GetListItem( list )
 	local number = #list
 	if number == 0 then return nil end
 	return list[Random_GetInt_Sync( 1, number )]
+end
+
+
+-- Randomizer
+function Random_LocalGetRange( min, max, desc )
+	local value = g_asyncRandomizer:GetInt( min, max )
+	if desc then 
+		Debug_Log( "Gen Random ["..value.."] in ["..min..","..max.."] : " .. desc )
+	end
+	return value
+end
+
+function Random_SyncGetRange( min, max, desc )
+	local value = g_syncRandomizer:GetInt( min, max )
+	if desc then 
+		Debug_Log( "Gen Random ["..value.."] in ["..min..","..max.."] : " .. desc )
+	end
+	return value
+end
+
+function Random_SyncGetProb( desc )
+	local value = g_syncRandomizer:GetInt( 1, 10000 )
+	if desc then 
+		Debug_Log( "Gen Random ["..value.."] in ["..min..","..max.."] : " .. desc )
+	end
+	return value
 end

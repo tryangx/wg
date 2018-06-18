@@ -136,7 +136,7 @@ function Task:IsStepFinished()
 		return true
 	end
 
-	local status   = Asset_Get( self, TaskAssetID.STATUS )
+	local status = Asset_Get( self, TaskAssetID.STATUS )
 	if status == TaskStatus.WAITING then
 		return Asset_Get( self, TaskAssetID.DURATION ) <= 0
 	end

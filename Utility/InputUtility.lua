@@ -15,7 +15,6 @@ function InputUtil_Pause( ... )
 		print( "Press any key to continue" )
 	end
 	InputUtil_ReceiveInput()
-
 end
 
 function InputUtil_Wait( content, key )

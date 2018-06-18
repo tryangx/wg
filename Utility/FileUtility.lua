@@ -34,7 +34,8 @@ function LoadFileUtility:OpenFile( fileName )
 	end
 	self.fileName    = fileName
 	self.fileHandler = io.open( fileName, "r" )
-	--if self.fileHandler then print( "Open file="..self.fileName ) end
+	if self.fileHandler then print( "Open file="..self.fileName )
+	else error( "open file=" .. fileName .. " failed") end
 end
 
 function LoadFileUtility:ReopenFile( fileName )
@@ -289,7 +290,7 @@ end
 function SaveFileUtility:WriteTable( obj, filter )
 	if not self.fileHandler then error( "File handler invalid" ) end
 	if not obj then error( "Data is corrupted" ) end
-	
+
 	local objType = type( obj )
 	--ParserDebug( objType, obj )
 	if objType == "number" then
@@ -314,7 +315,11 @@ function SaveFileUtility:WriteTable( obj, filter )
 end
 
 function SaveFileUtility:WriteContent( v )
-	if self.fileHandler then self.fileHandler:write( v ) end
+	if self.fileHandler then
+		self.fileHandler:write( v )
+	else
+		error( "file not opened" )
+	end
 end
 
 function SaveFileUtility:Write( ... )

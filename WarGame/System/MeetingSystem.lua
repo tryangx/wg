@@ -26,6 +26,8 @@ local function Proposal_Execute( proposal )
 		return
 	end
 
+	--print( "issue", proposal:ToString() )
+
 	--issue task include initializing actortype, issue task to every subordinates
 	Task_IssueByProposal( proposal )
 
@@ -108,10 +110,13 @@ local function Meeting_Update( meeting )
 		if freeParticiants == 0 or submitProposal == 0 then
 			--InputUtil_Pause( "executive submit proposal", MathUtil_FindName( MeetingTopic, topic ) )
 			--let superior submit proposal
+			Debug_Log( city:ToString(), "superior=" .. superior:ToString() .. "try submit")
 			if superior:IsBusy() == false then
 				if CharaAI_SubmitMeetingProposal( superior, meeting ) then
 					totalSubmit    = totalSubmit + 1
 				end
+			else
+				Debug_Log( "superior=" .. superior:ToString("TASK") .. " is busy" )
 			end
 			--Stat_Add( "Meeting@Cancel_Times", nil, StatType.TIMES )
 			--print( "end meeting" )
@@ -148,12 +153,12 @@ function Meeting_Hold( city, topic, target )
 		Stat_Add( "Meeting@Siege", 1, StatType.TIMES )
 		return
 	end
-	
+
 	if not topic then
 		topic = MeetingTopic.NONE
 	end
 	local executive = city:GetOfficer( CityJob.EXECUTIVE )
-	--print( city.name, MathUtil_FindName( MeetingTopic, topic ), topic, "ex=" .. String_ToStr( executive, "name" ) )	
+	Debug_Log( city.name, MathUtil_FindName( MeetingTopic, topic ), topic, "ex=" .. String_ToStr( executive, "name" ) )	
 	if topic == MeetingTopic.UNDER_HARASS or topic == MeetingTopic.UNDER_ATTACK then		
 		--Debug_Log( "gain intel need to intercept" .. target:ToString() )
 		--find highest rank		
@@ -165,10 +170,14 @@ function Meeting_Hold( city, topic, target )
 				executive = chara
 				highestRank = rank
 			end
-		end)
+		end )
 	end	
 	if not executive then			
-		Stat_Add( "Meeting@Pass", g_Time:ToString() .. " " .. city:ToString( "CHARA" ), StatType.LIST )
+		--Stat_Add( "Meeting@Pass", g_Time:ToString() .. " " .. city:ToString( "CHARA" ), StatType.LIST )
+		return
+	end
+	if not executive:IsAtHome() then
+		Debug_Log( "meeting failed", executive.name .. " not at home")
 		return
 	end
 
@@ -177,6 +186,8 @@ function Meeting_Hold( city, topic, target )
 	Asset_Set( meeting, MeetingAssetID.TOPIC, topic )
 	Asset_Set( meeting, MeetingAssetID.SUPERIOR, executive )
 	Asset_Set( meeting, MeetingAssetID.TARGET, target )
+
+	Debug_Log( executive:ToString(), "enter meeting, executive" )
 
 	--find participants
 	local participants = {}
@@ -191,6 +202,7 @@ function Meeting_Hold( city, topic, target )
 		end
 		if chara == executive then return end
 		table.insert( participants, chara )
+		Debug_Log( chara:ToString(), "enter meeting" )
 	end )
 	participants = MathUtil_Shuffle_Sync( participants )
 	Asset_CopyList( meeting, MeetingAssetID.PARTICIPANTS, participants )

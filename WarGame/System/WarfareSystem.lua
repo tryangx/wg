@@ -173,7 +173,7 @@ function Warfare_UpdateCombat( combat )
 		--dismiss guard
 		local guard = 0
 		Asset_Foreach( combat, CombatAssetID.DEFENDER_LIST, function ( troop )
-			if Asset_GetDictItem( troop, TroopAssetID.STATUSES, TroopStatus.GUARD ) == true then
+			if troop:HasStatus( TroopStatus.GUARD ) then
 				guard = guard + Asset_Get( troop, TroopAssetID.SOLDIER )
 			end
 		end )
@@ -185,9 +185,12 @@ function Warfare_UpdateCombat( combat )
 		city:SetStatus( CityStatus.IN_SIEGE )
 
 		--Seize city
-		if winner == CombatSide.ATTACKER then
+		if winner == CombatSide.ATTACKER  then
 			local group = combat:GetGroup( winner )
 			if group then
+				--InputUtil_Pause( "occupy", city:ToString(), group:ToString() )
+				Stat_Add( "City@Occupy", city:ToString() .. " occupied by " .. ( group and group:ToString() or "" ) .. " " .. g_Time:CreateCurrentDateDesc(), StatType.LIST )
+				Debug_Log( city:ToString() .. " occupied by " .. ( group and group:ToString() or "" ), g_Time:CreateCurrentDateDesc() )
 				group:OccupyCity( city )
 			end
 			
@@ -196,13 +199,39 @@ function Warfare_UpdateCombat( combat )
 				Corps_Join( corps, city )
 				--InputUtil_Pause( corps:ToString("BRIEF"), city:ToString("BRIEF") )
 			end
-
-			Debug_Log( city:ToString() .. " occupied by " .. ( group and group:ToString() or "" ), g_Time:CreateCurrentDateDesc() )
-			Stat_Add( "City@Occupy", city:ToString() .. " occupied by " .. ( group and group:ToString() or "" ) .. " " .. g_Time:CreateCurrentDateDesc(), StatType.LIST )
-			--InputUtil_Pause( "occupy", city:ToString(), group:ToString() )
 		end
 	elseif type == CombatType.FIELD_COMBAT then		
 	end
+
+	--deal with prisoner
+	Asset_Foreach( combat, CombatAssetID.PRISONER, function ( data )
+		local troop = data.prisoner
+		if data.side == winner then
+			--release the prisoner
+			InputUtil_Pause( "just dismiss the troop and kill the officer" )
+			if troop:HasStatus( TroopStatus.SURRENDER ) or Random_GetInt_Sync( 1, 100 ) < 80 then
+				--accept surrender
+				local corpsList = combat:GetCorpsList( winner )
+				local corps = corpsList[0]
+				corps:AddTroop( troop )
+
+				local officer = Asset_Get( troop, TroopAssetID.OFFICER )
+				if officer then
+					Chara_Serve( officer, Asset_Get( corps, CorpsAssetID.GROUP ), Asset_Get( corps, CorpsAssetID.ENCAMPMENT ) )
+				end
+				InputUtil_Pause( crops:ToString() .. "accept surrender=" .. troop:ToString() )
+			else
+				--killed
+				Troop_RemoveOfficer( troop, true )
+				Troop_Remove( troop )				
+				InputUtil_Pause( troop:ToString(), "killed after surrender" )
+			end			
+		else
+			--back to the corps
+			troop:Release()
+			InputUtil_Pause( troop:ToString(), "released", combat:ToString() )
+		end
+	end )
 
 	Stat_Add( MathUtil_FindName( CombatType, Asset_Get( combat, CombatAssetID.TYPE ) ) .. "@WIN=" .. MathUtil_FindName( CombatSide, winner ), 1, StatType.TIMES )
 	--Stat_Add( "Combat@Winner", combat:ToString() .. " winner=" .. combat:GetGroupName( winner ), StatType.LIST )
@@ -221,7 +250,7 @@ function Warfare_UpdateCombat( combat )
 
 	Asset_Foreach( combat, CombatAssetID.CORPS_LIST, function  ( corps )
 		if corps:GetSoldier() == 0 then
-			Corps_Dismiss( corps, "neutralized" )
+			Corps_Neutralize( corps, "neutralized" )
 			Stat_Add( "Corps@Vanished", corps:ToString( "SIMPLE"), StatType.LIST )
 		end
 	end )

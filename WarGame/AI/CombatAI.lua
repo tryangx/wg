@@ -109,7 +109,7 @@ local function IsDowncast( params )
 	if morale <= 20 then return true end
 	if morale > 50 then return false end
 	local ret = Random_GetInt_Sync( 1, 100 ) < ( morale + 20 )
-	if ret == false then InputUtil_Pause( _troop:ToString(), "low morale" ) end
+	--if ret == false then InputUtil_Pause( _troop:ToString(), "low morale" ) end
 	return ret
 end
 

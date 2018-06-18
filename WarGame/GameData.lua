@@ -11,7 +11,7 @@
 g_turnIdx  = 1
 
 --maximum end time, always is daily
-g_turnEnd  = 360 * 1
+g_turnEnd  = 360 * 10
 
 --every step update in main(), always is daily
 g_turnStep = 1
@@ -45,9 +45,11 @@ function Game_NextTurn()
 
 	g_Time:ElapseDay( g_turnStep )
 
-	g_turnIdx = math.min( g_turnIdx + g_turnStep, g_turnEnd )
+	g_turnIdx = g_turnIdx + g_turnStep
+	g_turnIdx = g_turnEnd and math.min( g_turnIdx, g_turnEnd ) or g_turnIdx
 
---InputUtil_Pause()
+	--InputUtil_Pause()
+	--print( "turn=" .. g_turnIdx )
 end
 
 -------------------------------------------------

@@ -31,6 +31,7 @@ DefaultTroopParams =
 
 DefaultTroopTable = 
 {
+	--[[
 	[1] =
 	{
 		name      = "Strong", category  = "INFANTRY", conveyance = "FOOT",
@@ -53,7 +54,7 @@ DefaultTroopTable =
 		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 30 },
 	},
-
+]]
 	[10] =
 	{
 		name      = "Military", category  = "INFANTRY", conveyance = "FOOT",
@@ -233,12 +234,12 @@ DefaultCorpsTemplate =
 
 DefaultWeaponTable = 
 {
-	[10] = { name = "fork",      level = "1", dmg = "NORMAL",    range = "CLOSE",   power = 40, accuracy = 25,  duration = 30, },
-	[20] = { name = "sword",     level = "3", dmg = "NORMAL",    range = "CLOSE",   power = 35, accuracy = 35,  duration = 30, },
+	[10] = { name = "fork",      level = "1", dmg = "at_normal",    range = "CLOSE",   power = 40, accuracy = 25,  duration = 30, },
+	[20] = { name = "sword",     level = "3", dmg = "at_normal",    range = "CLOSE",   power = 35, accuracy = 35,  duration = 30, },
 	[30] = { name = "spear",     level = "3", dmg = "PIERCE",    range = "LONG",    power = 30, accuracy = 45,  duration = 30, },
 	[31] = { name = "lance",     level = "4", dmg = "PIERCE",    range = "LONG",    power = 50, accuracy = 40,  duration = 30, },
 	[40] = { name = "bow",       level = "4", dmg = "PIERCE",    range = "MISSILE", power = 20, accuracy = 25,  duration = 20, },
-	[41] = { name = "slingshot", level = "2", dmg = "NORMAL",    range = "MISSILE", power = 10, accuracy = 30,  duration = 20, },
+	[41] = { name = "slingshot", level = "2", dmg = "at_normal",    range = "MISSILE", power = 10, accuracy = 30,  duration = 20, },
 	[50] = { name = "stone",     level = "5", dmg = "FORTIFIED", range = "MISSILE", power = 80, accuracy = 5,  duration = 20, },
 	[51] = { name = "ram",       level = "5", dmg = "FORTIFIED", range = "CLOSE",   power = 50, accuracy = 10, duration = 20, },
 }
@@ -485,91 +486,107 @@ CombatPurposeParam =
 	--casualty, morale, food, proportion
 	CONSERVATIVE = 
 	{
+		ATTITUDE = 
+		{
+			END_DAY = 60,
+		},
+
 		SURRENDER = 
 		{
-			{ reason = "despair", is_surrounded = 1, prop_below = 25 },
+			{ reason = "sr_despair",  is_surrounded = 1, prop_below = 25 },			
+			{ reason = "sr_guard",    is_guard = 1, casualty_above = 20, mor_below = 60, score = 100 },
 		},
 		WITHDRAW = 
 		{
-			{ reason = "casulaty", casualty_above = 30, score = 50 },
-			{ reason = "chaos",    org_below = 50, score = 30 },
-			{ reason = "downcast", mor_below = 60, score = 30 },
-			{ reason = "danger",   prop_below = 40, score = 50 },			
-			{ reason = "no food",  food_below = 20, is_atk = 1 },
-			{ reason = "no food",  food_below = 30, is_field = 1 },
+			{ reason = "wd_casualty", casualty_above = 30, score = 50 },
+			{ reason = "wd_chaos",    org_below = 50, score = 30 },
+			{ reason = "wd_downcast", mor_below = 60, score = 30 },
+			{ reason = "wd_danger",   prop_below = 40, score = 50 },			
+			{ reason = "wd_nofood",  food_below = 20, is_atk = 1 },
+			{ reason = "wd_nofood",  food_below = 30, is_field = 1 },
 		},
 		REST =
 		{
-			{ reason = "chaos",    org_below = 60, prob = 50 },
-			{ reason = "downcast", mor_below = 60, prob = 50 },
+			{ reason = "rt_chaos",    org_below = 60, prob = 50 },
+			{ reason = "rt_downcast", mor_below = 60, prob = 50 },
 		},
 		STORM = 
 		{
-			{ reason = "advantage", prop_above = 75, prob = 60 },
+			{ reason = "st_advantage", prop_above = 75, prob = 60 },
 		},
 		ATTEND = 
 		{
-			{ reason = "normal",    prepare_above = 75 },
+			{ reason = "at_normal",    prepare_above = 75 },
 		},
 	},
 
 	MODERATE = 
 	{
+		ATTITUDE = 
+		{
+			END_DAY = 120,
+		},
 		SURRENDER = 
 		{
-			{ reason = "despair", is_surrounded = 1, prop_below = 20 },
+			{ reason = "sr_despair", is_surrounded = 1, prop_below = 20 },
+			{ reason = "sr_guard",    is_guard = 1, casualty_above = 20, mor_below = 60, score = 100 },
 		},
 		WITHDRAW = 
 		{
-			{ reason = "casulaty", casualty_above = 50, score = 50 },
-			{ reason = "chaos",    org_below = 30, score = 30 },
-			{ reason = "downcast", mor_below = 30, score = 30 },
-			{ reason = "danger",   prop_below = 35, score = 50 },			
-			{ reason = "no food",  food_below = 15, is_atk = 1 },
-			{ reason = "no food",  food_below = 20, is_field = 1 },
+			{ reason = "wd_casualty", casualty_above = 50, score = 50 },
+			{ reason = "wd_chaos",    org_below = 30, score = 30 },
+			{ reason = "wd_downcast", mor_below = 30, score = 30 },
+			{ reason = "wd_danger",   prop_below = 35, score = 50 },			
+			{ reason = "wd_nofood",  food_below = 15, is_atk = 1 },
+			{ reason = "wd_nofood",  food_below = 20, is_field = 1 },
 		},
 		REST =
 		{
-			{ reason = "chaos",    org_below = 50, prob = 50 },
-			{ reason = "downcast", mor_below = 50, prob = 50 },
+			{ reason = "rt_chaos",    org_below = 50, prob = 50 },
+			{ reason = "rt_downcast", mor_below = 50, prob = 50 },
 		},
 		STORM = 
 		{
-			{ reason = "advantage", prop_above = 70, prob = 60 },
+			{ reason = "st_advantage", prop_above = 70, prob = 60 },
 		},
 		ATTEND = 
 		{
-			{ reason = "normal",    prepare_above = 70 },
+			{ reason = "at_normal",    prepare_above = 70 },
 		},
 	},
 
 	AGGRESSIVE = 
 	{
+		ATTITUDE = 
+		{
+			END_DAY = 360,
+		},
 		SURRENDER = 
 		{
-			{ reason = "despair", is_surrounded = 1, prop_below = 20 },
+			{ reason = "sr_despair", is_surrounded = 1, prop_below = 20 },
+			{ reason = "sr_guard",    is_guard = 1, casualty_above = 20, mor_below = 60, score = 100 },
 		},
 		WITHDRAW = 
 		{
-			{ reason = "casulaty", casualty_above = 50, score = 50 },
-			{ reason = "chaos",    org_below = 30, score = 30 },
-			{ reason = "downcast", mor_below = 30, score = 30 },
-			{ reason = "danger",   prop_below = 30, score = 50 },			
-			{ reason = "no food",  food_below = 15, is_atk = 1 },
-			{ reason = "no food",  food_below = 20, is_field = 1 },
+			{ reason = "wd_casualty", casualty_above = 50, score = 50 },
+			{ reason = "wd_chaos",    org_below = 30, score = 30 },
+			{ reason = "wd_downcast", mor_below = 30, score = 30 },
+			{ reason = "wd_danger",   prop_below = 30, score = 50 },			
+			{ reason = "wd_nofood",  food_below = 15, is_atk = 1 },
+			{ reason = "wd_nofood",  food_below = 20, is_field = 1 },
 		},
 		REST =
 		{
-			{ reason = "chaos",    org_below = 30, prob = 50 },
-			{ reason = "downcast", mor_below = 30, prob = 50 },
+			{ reason = "rt_chaos",    org_below = 30, prob = 50 },
+			{ reason = "rt_downcast", mor_below = 30, prob = 50 },
 		},
 		STORM = 
 		{
-			{ reason = "advantage", prop_above = 60, prob = 60 },
+			{ reason = "st_advantage", prop_above = 60, prob = 60 },
 		},
 		ATTEND = 
 		{
-			{ reason = "normal",    prepare_above = 65 },
+			{ reason = "at_normal",    prepare_above = 65 },
 		},
 	},
 }

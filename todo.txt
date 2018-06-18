@@ -10,14 +10,15 @@ To Do List
 [ok] finish goal sys, make short-goal every year.
 [ok] change Asset_SetListItem() into Asset_SetDictItem(), refactor list / dict ASSET.
 [ok] full logger
+[ok] refactor combat( change step into datas like "prepare", "embattle", "fight", "fight", )
+
+[ok] refactor meeting/proposal/task, seperate proposer/actor
 
 redesign CITY.SECURITY, CITY.SATISFACTION -> CITY.DISS, CITY.SECURITY
 
 build upgarde(level up)
 
 build construction
-
-refactor combat( change step into datas like "prepare", "embattle", "fight", "fight", )
 
 buy / sell food
 
@@ -39,8 +40,6 @@ map generate update / saver / loader
 
 refactor combat
 
-refactor PLAN ( exclusive task )
-
 *Eventful, just like surrender/fraud -> choose accept/decline/accpet-overwatch -> result
 
 ------------------------------------------------
@@ -57,4 +56,8 @@ Short Goal
 
 	
 ------------------------------------------------
+[Bug]
 
+char died, but he charge multi task
+
+same seed, divergence

@@ -85,6 +85,9 @@ CharaStatus =
 	--Flag / Data
 	IN_TASK           = 1,
 
+	DEAD              = 2,
+
+	SURRENDER         = 3,
 
 	----------------------------
 	--ACCUMULATION

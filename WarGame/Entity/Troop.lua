@@ -202,18 +202,45 @@ end
 
 -------------------------------------
 
-function Troop:Starve()
-	local cur = Asset_GetDictItem( self, TroopAssetID.STATUSES, TroopStatus.STARVATION )
-	if not cur then cur = 1 end
-	Asset_SetDictItem( self, TroopAssetID.STATUSES, TroopStatus.STARVATION, math.ceil( cur * 1.5 ) )
+function Troop:HasStatus( status )
+	return Asset_GetDictItem( self, TroopAssetID.STATUSES, status )
 end
 
-function Troop:EatFood( food )
-	local value = Asset_GetDictItem( self, TroopAssetID.STATUSES, TroopStatus.STARVATION )
-	if not value or value == 0 then return end
-	Asset_SetDictItem( self, TroopAssetID.STATUSES, TroopStatus.STARVATION, math.floor( value * 0.5 ) )
+function Troop:SetStatus( status, value )
+	Asset_SetDictItem( self, TroopAssetID.STATUSES, status, value )
 end
 
 function Troop:SetOfficer( officer )
 	Asset_Set( self, TroopAssetID.OFFICER, officer )
+end
+
+-------------------------------------
+
+
+function Troop:Starve()
+	local cur = self:HasStatus( TroopStatus.STARVATION )
+	if not cur then cur = 1 end
+	self:SetStatus( TroopStatus.STARVATION, math.ceil( cur * 1.5 ) )
+end
+
+function Troop:EatFood( food )
+	local value = self:HasStatus( TroopStatus.STARVATION )
+	if not value or value == 0 then return end
+	self:SetStatus( TroopStatus.STARVATION, math.floor( value * 0.5 ) )
+end
+
+function Troop:Release()
+	self:SetStatus( TroopStatus.SURRENDER )
+	local officer = Asset_Get( self, TroopAssetID.OFFICER )
+	if officer then
+		officer:SetStatus( CharaStatus.SURRENDER )
+	end
+end
+
+function Troop:Surrender()
+	self:SetStatus( TroopStatus.SURRENDER, 1 )
+	local officer = Asset_Get( self, TroopAssetID.OFFICER )
+	if officer then
+		officer:SetStatus( CharaStatus.SURRENDER, 1 )
+	end
 end

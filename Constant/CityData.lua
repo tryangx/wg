@@ -9,10 +9,9 @@ DefaultCityPopuHarvest =
 
 DefaultCityPopuConsumeFood = 
 {
-	RESERVES = 2,
+	--RESERVES = 2,
 	--SOLDIER  = 2,
-
---[[
+	--[[
 	OFFICER  = 1,
 	BACHELOR = 1,
 	GUARD    = 1,	
@@ -24,7 +23,6 @@ DefaultCityPopuConsumeFood =
 DefaultCityPopuSalary = 
 {
 	RESERVES = 10,
-	--SOLDIER  = 10,
 
 	OFFICER  = 5,
 	BACHELOR = 5,
@@ -80,7 +78,7 @@ DefaultCityPopuInit =
 
 	BACHELOR = { min = 40, max = 120 },
 	OFFICER  = { min = 40, max = 120 },
-	GUARD    = { min = 40, max = 120 },
+	GUARD    = { min = 20, max = 80 },
 
 	RICH     = { min = 20, max = 120 },
 	NOBLE    = { min = 20, max = 120 },
@@ -92,19 +90,19 @@ DefaultCityPopuNeed =
 	RESERVES = { req = 0.001, limit = 0.02 },
 
 	HOBO     = { req = 0.005, limit = 0.1 },
-	CHILDREN = { req = 0.15, limit = 0.35 },
-	OLD      = { req = 0.05, limit = 0.3 },	
+	CHILDREN = { req = 0.15,  limit = 0.35 },
+	OLD      = { req = 0.05,  limit = 0.3 },	
 
-	FARMER   = { req = 0.3,  limit = 0.8 },
-	WORKER   = { req = 0.2,  limit = 0.4 },
-	MERCHANT = { req = 0.1,  limit = 0.2 },
-	CORVEE   = { req = 0.01, limit = 0.1 },
+	FARMER   = { req = 0.3,   limit = 0.8 },
+	WORKER   = { req = 0.2,   limit = 0.4 },
+	MERCHANT = { req = 0.1,   limit = 0.2 },
+	CORVEE   = { req = 0.01,  limit = 0.1 },
 
-	MIDDLE   = { req = 0.05, limit = 0.2 },
+	MIDDLE   = { req = 0.05,  limit = 0.2 },
 
-	OFFICER  = { req = 0.05, limit = 0.1 },
-	BACHELOR = { req = 0.01, limit = 0.05 },
-	GUARD    = { req = 0.01, limit = 0.02 },
+	OFFICER  = { req = 0.005, limit = 0.02 },
+	BACHELOR = { req = 0.002, limit = 0.01 },
+	GUARD    = { req = 0.005, limit = 0.01 },
 
 	RICH     = { req = 0.005, limit = 0.01 },
 	NOBLE    = { req = 0.001, limit = 0.005 },

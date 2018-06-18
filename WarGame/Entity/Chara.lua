@@ -179,7 +179,7 @@ function Chara:ToString( type )
 	local content = "[" .. self.name .. "]"
 
 	if type == "TASK" or type == "ALL" then
-		local task = Asset_GetDictItem( self, CharaAssetID.STATUSES, CharaStatus.IN_TASK )
+		local task = self:GetTask()
 		if task then
 			content = content .. " task=" .. task:ToString()
 		end
@@ -200,6 +200,18 @@ function Chara:ToString( type )
 			content = content .. " " .. MathUtil_FindName( CharaTraitType, trait )
 		end
 	end
+	if type == "STATUS" then
+		for status, v in pairs( Asset_GetDict( self, CharaAssetID.STATUSES ) ) do
+			if v then
+				if typeof( v ) == "boolean" then
+					content = content .. " " .. MathUtil_FindName( CharaStatus, status ) .. "=" .. ( v and "T" or "F" )
+				elseif typeof( v ) == "object" or typeof( v ) == "table" then
+				else 
+					content = content .. " " .. MathUtil_FindName( CharaStatus, status ) .. "=" .. v
+				end				
+			end
+		end
+	end
 	return content
 end
 
@@ -209,10 +221,18 @@ function Chara:GetTask()
 	return Asset_GetDictItem( self, CharaAssetID.STATUSES, CharaStatus.IN_TASK )
 end
 
+function Chara:SetTask( task )
+	--debug
+	if task and self:GetTask() then
+		print( "new task=" .. task:ToString() )
+		error( "already in task" .. self:ToString("TASK") )
+	end
+	Asset_SetDictItem( self, CharaAssetID.STATUSES, CharaStatus.IN_TASK, task )
+end
+
 function Chara:GetTrait( traitType )
 	return Asset_SetDictItem( self, CharaAssetID.TRAITS, traitType )
 end
-
 ------------------------------------------
 
 function Chara:IsGroupLeader()
@@ -228,16 +248,32 @@ function Chara:IsAtHome()
 end
 
 function Chara:IsBusy()
-	local status = Asset_GetDictItem( self, CharaAssetID.STATUSES, CharaStatus.IN_TASK )
+	local status = self:GetTask()
 	if not status then return false end	
 	return status ~= false
+end
+
+function Chara:HasStatus( status )
+	return Asset_GetDictItem( self, CharaAssetID.STATUSES, status )
+end
+
+function Chara:GetStatus( status )
+	return Asset_GetDictItem( self, CharaAssetID.STATUSES, status )
+end
+
+function Chara:SetStatus( status, value )
+	if status == CharaStatus.TASK then
+		self:SetTask( value )
+	else
+		Asset_SetDictItem( self, CharaAssetID.STATUSES, status, value )
+	end
 end
 
 function Chara:CanLevelUp()
 	local level     = Asset_Get( self, CharaAssetID.LEVEL )
 	local potential = Asset_Get( self, CharaAssetID.POTENTIAL )
 	if level >= potential then return false end
-	local exp = Asset_GetDictItem( self, CharaAssetID.STATUSES, CharaStatus.EXP )
+	local exp = self:GetStatus( CharaStatus.EXP )
 	if not exp or exp < 100 then return false end
 	return true
 end
@@ -248,7 +284,7 @@ function Chara:LevelUp()
 	end
 	local exp = Asset_GetDictItem( self, CharaAssetID.STATUSES, CharaStatus.EXP )
 	exp = exp - 100
-	Asset_SetDictItem( self, CharaAssetID.STATUSES, CharaStatus.EXP, exp )
+	self:SetStatus( CharaStatus.EXP, exp )
 	Asset_Plus( self, CharaAssetID.LEVEL, 1 )
 
 	Stat_Add( "CharaLevelUp@" .. self.name, 1, StatType.TIMES )
@@ -260,7 +296,7 @@ end
 function Chara:Update()	
 	Asset_Foreach( self, CharaAssetID.STATUSES, function( value, status )
 		if status > CharaStatus.CD_STATUS_BEG then
-			Asset_SetDictItem( self, CharaAssetID.STATUSES, status, value > 1 and value - 1 or nil )
+			self:SetStatus( status, value > 1 and value - 1 or nil )
 		end
 	end )
 

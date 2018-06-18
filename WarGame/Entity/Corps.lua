@@ -132,8 +132,6 @@ end
 
 -------------------------------------------
 
-
-
 function Corps:GetTraining()
 	local total = 0
 	local number = 0
@@ -196,6 +194,10 @@ end
 -------------------------------------------
 -- 
 
+function Corps:GetTask()
+	return Asset_GetDictItem( self, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )
+end
+
 function Corps:IsAtHome()
 	local location   = Asset_Get( self, CorpsAssetID.LOCATION )
 	local encampment = Asset_Get( self, CorpsAssetID.ENCAMPMENT )
@@ -203,14 +205,15 @@ function Corps:IsAtHome()
 end
 
 function Corps:IsBusy()
-	local status = Asset_GetDictItem( self, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )
-	if not status then return false end
-	return status ~= false
-end
-
----------------------------------------------
-
-function Corps:Update( ... )
+	local task = self:GetTask()
+	if task then
+		return true
+	end
+	local leader = Asset_Get( self, CorpsAssetID.LEADER )
+	if leader and leader:GetTask() then
+		return true
+	end
+	return false
 end
 
 -------------------------------------------
@@ -225,8 +228,43 @@ function Corps:RemoveTroop( troop )
 	Asset_RemoveListItem( self, CorpsAssetID.TROOP_LIST, troop )
 end
 
+function Corps:LoseChara( chara )
+	local leader = Asset_Get( self, CorpsAssetID.LEADER )
+	if leader == chara then
+		Asset_Set( self, CorpsAssetID.LEADER )
+		--InputUtil_Pause( self:ToString("BRIEF"), "lose leader=" .. chara.name )
+	else
+		self:LoseOfficer( chara )
+	end
+end
+
 function Corps:LoseOfficer( officer )
 	Asset_RemoveListItem( self, CorpsAssetID.OFFICER_LIST, officer )
+end
+
+function Corps:HasStatus( status )
+	return Asset_GetDictItem( self, CorpsAssetID.STATUSES, status )
+end
+
+function Corps:SetStatus( status, value )
+	Asset_SetDictItem( self, CorpsAssetID.STATUSES, status, value )
+end
+
+---------------------------------------------
+
+function Corps:Update( ... )
+	local soldier, maxSoldier = self:GetSoldier()
+	self:SetStatus( CorpsStatus.UNDERSTAFFED, soldier < maxSoldier * 0.6 )
+
+	local leader = Asset_Get( self, CorpsAssetID.LEADER )
+	if not leader then
+		--find new one
+		local chara = Chara_FindBestCharaForJob( CityJob.COMMANDER, Asset_GetList( self, CorpsAssetID.OFFICER_LIST ) )
+		if chara then
+			Asset_Set( self, CorpsAssetID.LEADER, chara )
+			InputUtil_Pause( "set corps leader=" .. chara.name )
+		end
+	end
 end
 
 -------------------------------------------

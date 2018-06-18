@@ -718,10 +718,15 @@ end
 function City:FindFreeCharas( fn )
 	local charaList = {}
 	Asset_Foreach( self, CityAssetID.CHARA_LIST, function( chara )
-		if chara:IsAtHome() == false then return end
-		if chara:IsBusy() == true then return end
-		if Asset_Get( chara, CharaAssetID.CORPS ) then return end
-		if fn and not fn() then return end
+		if chara:IsAtHome() == false then
+			--Debug_Log( chara.name, "no at home" )
+			return
+		end
+		if chara:IsBusy() == true then
+			--Debug_Log( chara.name, "busy" )
+			return						
+		end
+		if fn and not fn( chara ) then return end
 		table.insert( charaList, chara )
 	end )
 	return charaList
@@ -768,21 +773,35 @@ end
 --corps should at home
 --corps should out of task
 --corps should has a leader
-function City:GetFreeCorps()
+function City:GetFreeCorps( fn )
 	local list = {}
 	local soldier = 0
 	local power = 0
 	Asset_Foreach( self, CityAssetID.CORPS_LIST, function ( corps )
 		if corps:IsAtHome() == false then return end
 		if corps:IsBusy() == true then return end
-		if Asset_Get( corps, CorpsAssetID.LEADER ) == nil then
+		local leader = Asset_Get( corps, CorpsAssetID.LEADER )
+		if leader then
+			if leader:GetTask() then return end
+		else
 			--InputUtil_Pause( "no leader, not free corps" )
+		end
+		if fn and fn( corps ) == false then
 			return
 		end
 		table.insert( list, corps )
 		soldier = soldier + corps:GetSoldier()
 	end )
 	return list, soldier
+end
+
+function City:GetMilitaryCorps()
+	return self:GetFreeCorps( function ( corps )
+		if not Asset_Get( corps, CorpsAssetID.LEADER ) then
+			return false
+		end
+		return not corps:HasStatus( CorpsStatus.UNDERSTAFFED )
+	end)
 end
 
 function City:FindNearbyFriendCities()
@@ -843,6 +862,11 @@ function City:CharaJoin( chara )
 
 	Asset_AppendList( self, CityAssetID.CHARA_LIST, chara )
 
+	--debug
+	if chara:HasStatus( CharaStatus.DEAD ) then
+		error( "why dead man", chara.name )
+	end
+
 	Debug_Log( chara:ToString(), "join city=", self.name, Asset_GetListSize( self, CityAssetID.CHARA_LIST ) )
 end
 
@@ -851,7 +875,9 @@ function City:CharaLeave( chara )
 
 	Asset_RemoveListItem( self, CityAssetID.CHARA_LIST, chara )
 
-	Debug_Log( chara:ToString(), "leave city=", self.name )
+	self:RemoveOfficer( chara )
+
+	Debug_Log( chara:ToString(), "leave city=" .. self:ToString() )
 end
 
 --------------------------------------------
@@ -875,7 +901,7 @@ function City:AddCorps( corps )
 		group:AddCorps( corps )
 	end
 
-	--Debug_Log( corps:ToString(), "join city=", self.name )
+	Debug_Log( corps:ToString(), "join city=", self.name )
 end
 
 function City:RemoveCorps( corps )	
@@ -924,20 +950,6 @@ function City:AssignOfficer()
 	if #charaList == 0 then
 		return
 	end
-	
-	function FindBestCharaForJob( job, charaList )
-		local bestChara, bestIndex, bestRating
-		for inx, chara in ipairs( charaList ) do			
-			local rating = Chara_GetRatingCharaSuitJob( chara, job )
-			if not bestChara or bestRating < rating then
-				bestChara  = chara
-				bestIndex  = inx
-				bestRating = rating
-			end
-		end
-		table.remove( charaList, bestIndex )
-		return bestChara
-	end
 
 	--fill vacancy position
 	local vacancies = #charaList - #jobList
@@ -952,12 +964,20 @@ function City:AssignOfficer()
 	while #charaList > 0 do
 		local job = jobList[jobIndex]
 		jobIndex = jobIndex + 1
-		self:SetOfficer( FindBestCharaForJob( job, charaList ), job )		
+		self:SetOfficer( Chara_FindBestCharaForJob( job, charaList ), job )		
 	end
 end
 
 --exclude executive
-function City:RemoveOfficer()
+function City:RemoveOfficer( chara )
+	local job = self:GetCharaJob( chara )
+	if job ~= CityJob.NONE then
+		Debug_Log( "remove job=" .. MathUtil_FindName( CityJob, job ), chara:ToString( "STATUS")  )
+		Asset_SetDictItem( self, CityAssetID.OFFICER_LIST, job )
+	end
+end
+
+function City:ClearOfficer()
 	local executive = self:GetOfficer( CityJob.EXECUTIVE )
 	Asset_Clear( self, CityAssetID.OFFICER_LIST )
 	Asset_SetDictItem( self, CityAssetID.OFFICER_LIST, CityJob.EXECUTIVE, executive )
@@ -986,7 +1006,7 @@ function City:Update()
 	
 	if day == 1 then
 		--dismiss
-		if month == 1 then self:RemoveOfficer() end
+		if month == 1 then self:ClearOfficer() end
 		self:AssignOfficer()
 	end
 
