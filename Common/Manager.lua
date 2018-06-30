@@ -153,11 +153,15 @@ end
 function Manager:EndTraversal()
 	--remove list
 	if self._removeList then
-		for id, data in pairs( self._removeList ) do
-			if id == 137 then
-				--print( "remove", id, data.type )
-			end
+		local num = 0
+		for _, id in pairs( self._removeList ) do
+			local data = self._datas[id]			
+			--print( "remove id=" .. id, data:ToString() )
 			self._datas[id] = nil
+			num = num + 1
+		end
+		if num > 0 then
+			--InputUtil_Pause( "end travesal" )
 		end
 		self._removeList = nil
 	end
@@ -170,7 +174,8 @@ function Manager:RemoveData( id, fn )
 	if self._removeList then
 		DBG_Warning( "Mng", "Remove data (type=" .. self._type .. ") isn't recommended when Traveling Data" )
 		if self._datas[id] then
-			self._removeList[id] = self._datas[id]
+			table.insert( self._removeList, id )
+			--print( "put id=" .. id .. " into remove list" )
 		end
 		return
 	end

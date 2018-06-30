@@ -43,19 +43,22 @@ local function Route_DumpPath( plot1, plot2, path )
 end
 
 function Route_Verify()
+	--plot 2 plot
 	for p1, r1 in pairs( _plotRoutes ) do
 		for p2, r2 in pairs( _plotRoutes ) do
 			if p1 ~= p2 then
-				Route_DumpPath( p1, p2, Route_FindPathByPlot( p1, p2 ) )
+				--Route_DumpPath( p1, p2, Route_FindPathByPlot( p1, p2 ) )
 			end
 		end
 	end
 
+	--city 2 city
 	Entity_Foreach( EntityType.CITY, function ( city )
 		Entity_Foreach( EntityType.CITY, function ( adjaCity )
 			if city == adjaCity then return end
 
-			--Route_FindPathByCity( city, adjaCity )
+			local path = Route_FindPathByCity( city, adjaCity )
+			print( city.name .. "->" .. adjaCity.name, "path=" .. #path )
 
 			--[[
 			if Asset_HasItem( city, CityAssetID.ADJACENTS, adjaCity ) == true then return end
@@ -250,13 +253,6 @@ function Route_FindPathByPlot( plot1, plot2 )
 	return path
 end
 
-function Route_FindPathByCity( city1, city2 )
-	--print( String_ToStr( city1, "name" ), String_ToStr( city2, "name" ) )
-	local plot1 = Asset_Get( city1, CityAssetID.CENTER_PLOT )
-	local plot2 = Asset_Get( city2, CityAssetID.CENTER_PLOT )
-	return Route_FindPathByPlot( plot1, plot2 )
-end
-
 --return the distance between plot1 to plot2
 function Route_CalcPlotDistance( plot1, plot2 )
 	local path = Route_FindPathByPlot( plot1, plot2 )
@@ -413,4 +409,20 @@ function Route_FindPathBetweenCity( fromCity, toCity )
 	end )
 	-- "find", fromCity.name.."("..cx..","..cy..")" .. "->", toCity.name .."("..tx..","..ty..")" )
 	return _mapFinder:FindPath( cx, cy, tx, ty )
+end
+
+------------------------------
+
+function Route_FindPathByCity( city1, city2 )
+	if not city1 or not city2 then return end
+	--print( String_ToStr( city1, "name" ), String_ToStr( city2, "name" ) )
+	local plot1 = Asset_Get( city1, CityAssetID.CENTER_PLOT )
+	local plot2 = Asset_Get( city2, CityAssetID.CENTER_PLOT )
+	if not plot1 then
+		error( String_ToStr( city1, "name" ) .. " no centerplot" )
+	end
+	if not plot2 then
+		error( String_ToStr( city1, "name" ) .. " no centerplot" )
+	end
+	return Route_FindPathByPlot( plot1, plot2 )
 end

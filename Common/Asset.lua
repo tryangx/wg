@@ -236,6 +236,12 @@ function Asset_CopyList( entity, id, source, fn )
 	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "copy list" ) end
 end
 
+function Asset_SetList( entity, id, list )
+	if not id then error( "id invalid" ) end
+	if typeof( entity ) == "number" then error( "entity invalid" ) return false end
+	entity[id] = list
+end
+
 -- Use this to add item into the list
 function Asset_AppendList( entity, id, item, checker )
 	if checker then
@@ -274,7 +280,7 @@ function Asset_SetListItem( entity, id, index, item )
 end
 
 -- Use this to remove item from the list
-function Asset_RemoveListItem( entity, id, item )
+function Asset_RemoveListItem( entity, id, item, name )
 	if not item then
 		--error( "item invalid" )
 		return false
@@ -284,8 +290,8 @@ function Asset_RemoveListItem( entity, id, item )
 	if not entity[id] then return false end
 
 	local list = entity[id]
-	for k, data in pairs( list ) do
-		if data == item then
+	for k, data in pairs( list ) do		
+		if data == item or ( name and data.name == item ) then
 			if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "remove item=", k ) end
 			table.remove( list, k )
 			return true
@@ -315,22 +321,11 @@ function Asset_Clear( entity, id )
 end
 
 function Asset_Foreach( entity, id, fn )
-	--[[]]
 	local datas = entity[id]
-	if not datas then
-		datas = {}
-	end
+	if not datas then return end
 	for k, item in pairs( datas ) do
 		fn( item , k )
 	end
-	--]]
-	--[[
-	local list = Asset_GetList( entity, id )	
-	if not list then return end
-	for k, item in pairs( datas ) do
-		fn( item, k )
-	end
-	--]]
 end
 
 function Asset_FindListItem( entity, id, fn )
@@ -367,22 +362,6 @@ function Asset_HasItem( entity, id, value, name )
 		if name then return item[name] == value end
 		return item == value
 	end ) ~= nil
-	--[[
-	if not item then return false end
-	if not id then error( "id is invalid" ) end
-	if typeof( entity ) == "number" then return end
-	if not entity[id] then entity[id] = {} return false end	
-	
-	local list = entity[id]
-	for k, data in pairs( list ) do
-		if isValue then
-			if data == item then return true end
-		else
-			if k == item then return true end
-		end
-	end
-	return false
-	]]
 end
 
 function Asset_VerifyList( entity, id )
@@ -511,7 +490,7 @@ end
 
 -- Most useful function, to set asset data
 function Asset_Set( entity, id, value )
-	if not entity then return end
+	if not entity then error( "entity invalid" ) return end
 	if not id then error( "id is invalid" ) end
 	if typeof( entity ) == "number" then return end
 	local attrib = Entity_GetAssetAttrib( entity, id )

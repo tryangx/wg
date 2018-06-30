@@ -30,7 +30,7 @@ local EventHandlers =
 
 	--city
 	SECURITY        = function( value, event, entity ) Asset_Plus( entity, CityAssetID.SECURITY, value ) end,	
-	DISSATISFACTION = function( value, event, entity ) Asset_Plus( entity, CityAssetID.DISSATISFACTION, value ) end,
+	DISS = function( value, event, entity ) Asset_Plus( entity, CityAssetID.DISS, value ) end,
 }
 
 local function Event_TriggerEvent( entity, event )

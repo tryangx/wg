@@ -230,7 +230,7 @@ local function Move_OnCombatEnded( msg )
 		if corps:IsBusy() == false then
 			System_Get( SystemType.MOVE_SYS ):StopMoving( corps )
 		else
-			local task = Asset_GetDictItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )
+			local task = corps:GetTask()
 			Debug_Log( corps:ToString(), "is busying", task:ToString() )
 		end
 	end )

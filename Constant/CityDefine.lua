@@ -129,20 +129,6 @@ CityJob =
 	CAPITAL_POSITION_END = 17,
 }
 
-CityPlan = 
-{
-	NONE       = 0,
-	HR         = 1,
-	AFFAIRS    = 2,
-	COMMANDER  = 3,
-	STAFF      = 4,
-
-	DIPLOMATIC = 5,
-	TECHNICIAN = 6,
-
-	ALL        = 10,
-}
-
 CityIntelType = 
 {
 	--potential aggressive military power( exclude defend )
@@ -150,3 +136,22 @@ CityIntelType =
 	SOLDIER   = 11,
 	DEFENDER  = 12,
 }
+
+------------------------------------
+
+CityConstructionType = 
+{
+	DEVELOPMENT = 10,
+	MANAGEMENT  = 20,
+	MILITARY    = 30,
+	DEFENSIVE   = 40,
+	FOREIGN     = 50,
+	MISC        = 60,
+}
+
+
+CityConstrEffect = 
+{	
+	FORT = 400,
+}
+

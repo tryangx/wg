@@ -52,7 +52,6 @@ CorpsAssetAttrib =
 	movement   = AssetAttrib_SetNumber     ( { id = CorpsAssetID.MOVEMENT,      type = CorpsAssetType.BASE_ATTRIB, default = 0 } ),
 
 	statuses   = AssetAttrib_SetDict       ( { id = CorpsAssetID.STATUSES,      type = CorpsAssetType.BASE_ATTRIB } ),
-	tasks      = AssetAttrib_SetPointerList( { id = CorpsAssetID.TASKS,         type = CorpsAssetType.BASE_ATTRIB } ),
 
 	food       = AssetAttrib_SetNumber     ( { id = CorpsAssetID.FOOD,          type = CorpsAssetType.PROPERTY_ATTRIB, default = 0 } ),
 	material   = AssetAttrib_SetNumber     ( { id = CorpsAssetID.MATERIAL,      type = CorpsAssetType.PROPERTY_ATTRIB, default = 0 } ),
@@ -82,7 +81,7 @@ end
 -------------------------------------------
 
 function Corps:ToString( type )
-	local content = "[" .. self.name .. "]"	
+	local content = "[" .. ( self.name or "" ) .. "]"	
 	local leader = Asset_Get( self, CorpsAssetID.LEADER )
 	if leader then
 		content = content .. leader:ToString()
@@ -100,9 +99,17 @@ function Corps:ToString( type )
 	end
 	
 	if type == "STATUS" then
-		local task = Asset_GetDictItem( self, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )
+		local task = self:GetTask()
 		if task then
 			content = content .. " task=" .. task:ToString()
+		end
+		if leader then
+			local ldTask = leader:GetTask()
+			if ldTask then
+				content = content .. " ld_task=" .. ldTask:ToString()
+			else
+				content = content .. " ld_task=no"
+			end
 		end
 		content = content .. " " .. ( self:IsAtHome() and "athome" or "outside" )
 		content = content .. " " .. ( self:IsBusy() and "busy" or "idle" )
@@ -136,7 +143,7 @@ function Corps:GetTraining()
 	local total = 0
 	local number = 0
 	Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function ( troop )
-		total = total + Asset_Get( troop, TroopAssetID.TRAINING )
+		total = total + ( troop:GetStatus( TroopStatus.TRAINING ) or 0 )
 		number = number + 1
 	end )
 	total = math.ceil( total / number )
@@ -195,7 +202,11 @@ end
 -- 
 
 function Corps:GetTask()
-	return Asset_GetDictItem( self, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )
+	return Asset_GetDictItem( self, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )	
+end
+
+function Corps:SetTask( task )
+	Asset_SetDictItem( self, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK, task )
 end
 
 function Corps:IsAtHome()
@@ -210,9 +221,12 @@ function Corps:IsBusy()
 		return true
 	end
 	local leader = Asset_Get( self, CorpsAssetID.LEADER )
-	if leader and leader:GetTask() then
+	if leader and leader:IsBusy() then
 		return true
 	end
+	Asset_Foreach( self, CorpsAssetID.OFFICER_LIST, function ( chara )
+		if chara:IsBusy() then return true end
+	end)
 	return false
 end
 
@@ -242,7 +256,7 @@ function Corps:LoseOfficer( officer )
 	Asset_RemoveListItem( self, CorpsAssetID.OFFICER_LIST, officer )
 end
 
-function Corps:HasStatus( status )
+function Corps:GetStatus( status )
 	return Asset_GetDictItem( self, CorpsAssetID.STATUSES, status )
 end
 
@@ -250,12 +264,31 @@ function Corps:SetStatus( status, value )
 	Asset_SetDictItem( self, CorpsAssetID.STATUSES, status, value )
 end
 
+function Corps:GetMaxTraining()	
+	local leader = Asset_Get( self, CorpsAssetID.LEADER )
+	return 50 + Chara_GetSkillEffectValue( leader, CharaSkillEffect.LEADERSHIP )
+end
+
+---------------------------------------------
+
+function Corps:CanTrain()
+	local leader = Asset_Get( self, CorpsAssetID.LEADER )
+	if not leader then return false end
+	
+	local training = self:GetTraining()
+	local maxTraining = self:GetMaxTraining()
+	return training < maxTraining	
+end
+
 ---------------------------------------------
 
 function Corps:Update( ... )
 	local soldier, maxSoldier = self:GetSoldier()
-	self:SetStatus( CorpsStatus.UNDERSTAFFED, soldier < maxSoldier * 0.6 )
+	self:SetStatus( CorpsStatus.UNDERSTAFFED_LV1, soldier < maxSoldier * 0.5 )
+	self:SetStatus( CorpsStatus.UNDERSTAFFED_LV1, soldier < maxSoldier * 0.8 )
+	self:SetStatus( CorpsStatus.UNDERSTAFFED_LV2, soldier < maxSoldier )
 
+	--find new leader
 	local leader = Asset_Get( self, CorpsAssetID.LEADER )
 	if not leader then
 		--find new one
@@ -265,6 +298,11 @@ function Corps:Update( ... )
 			InputUtil_Pause( "set corps leader=" .. chara.name )
 		end
 	end
+
+	--update troop
+	Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function ( troop )
+		troop:Update()
+	end)
 end
 
 -------------------------------------------

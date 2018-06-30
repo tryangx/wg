@@ -1,5 +1,21 @@
 -------------------------------------------
 
+function Skill_GetEffectValue( skill, effect, default )
+	for type, value in ipairs( skill.effects ) do
+		if type == effect then
+			InputUtil_Pause( "get skill effect", MathUtil_FindName( CharaSkillEffect, value) )
+			return value
+		end
+	end
+	return default
+end
+
+-------------------------------------------
+
+function Chara_GetSkillEffectValue( chara, effect )
+	return chara:GetEffectValue( effect )
+end
+
 function Chara_FindBestCharaForJob( job, charaList )
 	local bestChara, bestIndex, bestRating
 	for inx, chara in ipairs( charaList ) do			
@@ -136,8 +152,9 @@ function Chara_Serve( chara, group, city )
 		--set job
 		Asset_Set( chara, CharaAssetID.JOB, CharaJob.OFFICER )
 
-		--to set relation
-		local executive = Asset_GetDictItem( Asset_Get( chara, CharaAssetID.LOCATION ), CityAssetID.OFFICER_LIST, CityJob.EXECUTIVE )
+		--[[
+		--to set relation		
+		local executive = Asset_GetDictItem( , CityAssetID.OFFICER_LIST, CityJob.EXECUTIVE )
 		if executive then
 			Asset_Set( chara, CharaAssetID.SUPERIOR, executive )
 			DBG_Trace( "chara_serve", executive.name .. " manage " .. chara.name )
@@ -145,6 +162,7 @@ function Chara_Serve( chara, group, city )
 			Asset_AppendList( executive, CharaAssetID.SUBORDINATES, chara )
 			DBG_Trace( "chara_serve", chara.name .. " serve " .. executive.name )
 		end
+		]]
 
 		Stat_Add( "Chara@Hire", chara.name .. " join " .. city.name .. " " .. g_Time:ToString(), StatType.LIST )
 	end
@@ -202,67 +220,21 @@ end
 
 -----------------------------------------------------
 
-function Chara_JobToPlan( job )
-	if job == CityJob.EXECUTIVE then
-		return CityPlan.ALL
-	elseif job == CityJob.COMMANDER then
-		return CityPlan.COMMANDER
-	elseif job == CityJob.STAFF then
-		return CityPlan.STAFF		
-	elseif job == CityJob.HR then
-		return CityPlan.HR
-	elseif job == CityJob.AFFAIRS then
-		return CityPlan.AFFAIRS
-	elseif job == CityJob.DIPLOMATIC then
-		return CityPlan.DIPLOMATIC
-	elseif job == CityJob.TECHNICIAN then
-		return CityPlan.TECHNICIAN
-	end
-	return CityPlan.NONE
-end
-
 local function Chara_WorkForJob( chara )
 	if chara:IsAtHome() == false then return end
 
 	local home = Asset_Get( chara, CharaAssetID.HOME )
 	if not home then return end
-	local job = home:GetCharaJob( chara )
-	plan = Chara_JobToPlan( job )	
-	local task
-	if plan == CityPlan.NONE then
-		return		
-	elseif plan == CityPlan.ALL then
-		--InputUtil_Pause( "all job",  )
-		return
-	else
-		task = Asset_GetDictItem( home, CityAssetID.PLANS, plan )
-	end
+
+	local task = chara:GetTask()
 	if not task then return end
-	--print( MathUtil_FindName( CityJob, job ), MathUtil_FindName( CityPlan, plan ), task  )
+	
 	--InputUtil_Pause( chara.name, "work on" .. task:ToString() )
 	Task_Do( task, chara )
 end
 
-local function Chara_ExecuteTask( chara )
-	local loc = Asset_Get( chara, CharaAssetID.LOCATION )
-
-	local list = {}
-	Asset_Foreach( chara, CharaAssetID.TASKS, function( task )
-		if Asset_Get( task, TaskAssetID.DESTINATION ) == loc then
-			table.insert( list, task )
-		end
-	end )
-
-	if #list == 0 then return end
-
-	local task = list[Random_GetInt_Sync(1, #list)]
-	Task_Do( task, chara )
-end
-
 local function Chara_LearnSkill( chara )
-	local numOfSkill = Asset_GetListSize( chara, CharaAssetID.SKILLS )
-	local reqNumOfSkill = math.floor( Asset_Get( chara, CharaAssetID.LEVEL ) * 0.1 )
-	if reqNumOfSkill > numOfSkill then
+	if not chara:CanLearnSkill() then
 		return false
 	end
 
@@ -273,7 +245,6 @@ local function Chara_LearnSkill( chara )
 		Stat_Add( "GainSkill@Failed", chara:ToString( "TRAITS" ), StatType.LIST )
 		return false
 	end
-	InputUtil_Pause( "has")
 	chara:LearnSkill( skill )	
 end
 
@@ -321,8 +292,6 @@ function CharaSystem:Update()
 			Chara_LevelUp( chara )
 		end
 		
-		--Chara_ExecuteTask( chara )
-
 		Chara_WorkForJob( chara )
 	end )
 end

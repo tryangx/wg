@@ -1,6 +1,4 @@
 local function Proposal_Execute( proposal )
-	Log_Write( "meeting", "  proposal=" .. proposal:ToString() )
-
 	--some proposal will execute immediately, no need to issue a task
 	local type = Asset_Get( proposal, ProposalAssetID.TYPE )
 	if type == ProposalType.SET_GOAL then
@@ -29,7 +27,9 @@ local function Proposal_Execute( proposal )
 	--print( "issue", proposal:ToString() )
 
 	--issue task include initializing actortype, issue task to every subordinates
-	Task_IssueByProposal( proposal )
+	local task = Task_IssueByProposal( proposal )
+
+	--if task then Log_Write( "meeting", "  task=" .. task:ToString() ) end
 
 	--remove proposal
 	Entity_Remove( proposal )
@@ -58,8 +58,49 @@ end
 
 ---------------------------------------------------
 
+local function CheckTopicWithChara( city, chara, topic )	
+	if topic == MeetingTopic.UNDER_HARASS or topic == MeetingTopic.UNDER_ATTACK then
+		return true
+	end
+	local job = city:GetCharaJob( chara )	
+	if job == CityJob.EXECUTIVE then
+		return true
+	end
+	if job == CityJob.COMMANDER then
+		if topic == MeetingTopic.COMMANDER or topic == MeetingTopic.STRATEGY then
+			return true
+		end
+	end
+	if job == CityJob.STAFF then
+		if topic == MeetingTopic.STAFF then
+			return true
+		end
+	end
+	if job == CityJob.HR then
+		if topic == MeetingTopic.HR then
+			return true
+		end
+	end
+	if job == CityJob.AFFAIRS then
+		if topic == MeetingTopic.AFFAIRS then
+			return true
+		end
+	end
+	if job == CityJob.DIPLOMATIC then
+		if topic == MeetingTopic.DIPLOMATIC then
+			return true
+		end
+	end
+	if job == CityJob.TECHNICIAN then
+		if topic == MeetingTopic.TECHNICIAN then
+			return true
+		end
+	end
+	return false
+end
+
 local function Meeting_Update( meeting )
-	Log_Write( "meeting", g_Time:ToString() .. " hold" .. meeting:ToString() )	
+	--Log_Write( "meeting", g_Time:ToString() .. " hold" .. meeting:ToString() )	
 
 	local city = Asset_Get( meeting, MeetingAssetID.LOCATION )
 	--determine topic	
@@ -69,7 +110,10 @@ local function Meeting_Update( meeting )
 	if topic == MeetingTopic.NONE then		
 		begTopic = MeetingTopic.MEETING_LOOP
 		endTopic = MeetingTopic.MEETING_END
-		topic = begTopic		
+		topic = begTopic
+		if city:IsCapital() then
+			begTopic = begTopic + 1
+		end
 	else
 		--has special topic
 		begTopic = topic
@@ -82,41 +126,53 @@ local function Meeting_Update( meeting )
 	local totalSubmit = 0
 	while topic < endTopic do
 		--print( "cur_topic=", MathUtil_FindName( MeetingTopic, topic ) )
+		--Log_Write( "meeting", "  topic=" .. MathUtil_FindName( MeetingTopic, topic ) )
 		Asset_Set( meeting, MeetingAssetID.TOPIC, topic )
 
 		--clear all proposals
 		Entity_Clear( EntityType.PROPOSAL )
 
 		--number of allow proposer
-		local numofproposer  = Random_GetInt_Sync( 1, 2 )
+		local numofproposer  = Random_GetInt_Sync( 1, 3 )
 		local submitProposal = 0
 
 		--submit proposals
 		local freeParticiants = 0
-		Asset_FindListItem( meeting, MeetingAssetID.PARTICIPANTS, function ( chara )			
-			if chara:IsBusy() then return end
+		--[[]]
+		Asset_FindListItem( meeting, MeetingAssetID.PARTICIPANTS, function ( chara )
+			if not CheckTopicWithChara( city, chara, topic ) then
+				return
+			end
+			if chara:IsBusy() then
+				Log_Write( "meeting", "    chara=" .. chara:ToString() .. " busy=" .. chara:GetTask():ToString() )
+				return
+			end			
 			freeParticiants = freeParticiants + 1
 			Stat_Add( "Proposal@Try_Times", nil, StatType.TIMES )
-			--if topic == MeetingTopic.COMMANDER then InputUtil_Pause( "commander") end
+			--if topic == MeetingTopic.COMMANDER then InputUtil_Pause( "commander") end			
 			if CharaAI_SubmitMeetingProposal( chara, meeting ) then
 				numofproposer  = numofproposer - 1
 				submitProposal = submitProposal + 1
 				totalSubmit    = totalSubmit + 1
+			else
+				Log_Write( "meeting", "    topic=" .. MathUtil_FindName( MeetingTopic, topic ) .. " chara=" .. chara:ToString() .. " passed" )
 			end
 			return numofproposer <= 0
 		end )
+		--]]
 		
 		--print( "free=" .. freeParticiants, "submit=" .. submitProposal )
 		if freeParticiants == 0 or submitProposal == 0 then
 			--InputUtil_Pause( "executive submit proposal", MathUtil_FindName( MeetingTopic, topic ) )
 			--let superior submit proposal
-			Debug_Log( city:ToString(), "superior=" .. superior:ToString() .. "try submit")
-			if superior:IsBusy() == false then
+			if superior:IsBusy() == false then				
 				if CharaAI_SubmitMeetingProposal( superior, meeting ) then
 					totalSubmit    = totalSubmit + 1
+				else
+					Log_Write( "meeting", "    topic=" .. MathUtil_FindName( MeetingTopic, topic ) .. " superior=" .. superior:ToString() .. " passed" )
 				end
 			else
-				Debug_Log( "superior=" .. superior:ToString("TASK") .. " is busy" )
+				Log_Write( "meeting", "    topic=" .. MathUtil_FindName( MeetingTopic, topic ) .. " superior=" .. superior:ToString() .. " busy=" .. superior:GetTask():ToString() )
 			end
 			--Stat_Add( "Meeting@Cancel_Times", nil, StatType.TIMES )
 			--print( "end meeting" )
@@ -163,7 +219,7 @@ function Meeting_Hold( city, topic, target )
 		--Debug_Log( "gain intel need to intercept" .. target:ToString() )
 		--find highest rank		
 		local highestRank = CharaJob.NONE
-		city:FilterOfficer( function ( chara )
+		city:FilterOfficer( function ( chara, job )
 			if chara:IsAtHome() == false then return end
 			local rank = Asset_Get( chara, CharaAssetID.JOB )
 			if rank > highestRank then
@@ -177,7 +233,7 @@ function Meeting_Hold( city, topic, target )
 		return
 	end
 	if not executive:IsAtHome() then
-		Debug_Log( "meeting failed", executive.name .. " not at home")
+		Debug_Log( "meeting failed", executive.name .. " not at home", executive:ToString( "LOCATION") )
 		return
 	end
 

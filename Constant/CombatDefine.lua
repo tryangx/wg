@@ -59,10 +59,17 @@ TroopStatus =
 	--is guard
 	GUARD      = 1,
 
+	HONOR      = 4,
+
 	--range: 1-10
 	STARVATION = 10,
 
 	SURRENDER  = 11,
+
+	--attributes
+	ATTRIBUTE_STATUS = 100,
+	EXP        = 101,
+	TRAINING   = 102,
 }
 
 TroopCombatData = 
@@ -97,7 +104,12 @@ CorpsStatus =
 
 	DEPATURE_TIME = 12,
 
-	UNDERSTAFFED  = 100,
+	--less than 50%
+	UNDERSTAFFED_LV1  = 100,
+	--less than 80%
+	UNDERSTAFFED_LV2  = 101,
+	--less than 100%
+	UNDERSTAFFED_LV2  = 102,
 }
 
 CorpsPurpose =

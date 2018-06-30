@@ -41,7 +41,7 @@ CharaAssetID =
 	--GROWTH
 	--normal, good, excellent, best, perfect
 	GRADE           = 300,
-	--determine maximum level
+	--equals to the sum of level + skill 
 	POTENTIAL       = 301,
 	--determine to learn skills
 	LEVEL           = 303,
@@ -76,7 +76,6 @@ CharaAssetAttrib =
 	corps      = AssetAttrib_SetPointer( { id = CharaAssetID.CORPS,      type = CharaAssetType.BASE_ATTRIB, setter = Entity_SetCorps } ),
 	troop      = AssetAttrib_SetPointer( { id = CharaAssetID.TROOP,      type = CharaAssetType.BASE_ATTRIB, setter = Entity_SetTroop } ),
 	statuses   = AssetAttrib_SetDict   ( { id = CharaAssetID.STATUSES,   type = CityAssetType.BASE_ATTRIB } ),
-	tasks      = AssetAttrib_SetPointerList( { id = CharaAssetID.TASKS,  type = CityAssetType.BASE_ATTRIB } ),
 
 	--action
 	politics     = AssetAttrib_SetNumber( { id = CharaAssetID.POLITICS,        type = CharaAssetType.ACTION_ATTRIB, min = 0, max = 9999 } ),
@@ -90,8 +89,8 @@ CharaAssetAttrib =
 	tactic_lim   = AssetAttrib_SetNumber( { id = CharaAssetID.TACTIC_LIMIT,  type = CharaAssetType.ACTION_ATTRIB, min = 0, max = 9999 } ),
 
 	grade        = AssetAttrib_SetNumber     ( { id = CharaAssetID.GRADE,        type = CharaAssetType.GROWTH_ATTRIB, enum = CharaGrade, default = CharaGrade.NORMAL } ),
-	potential    = AssetAttrib_SetNumber     ( { id = CharaAssetID.POTENTIAL,    type = CharaAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),	
-	level        = AssetAttrib_SetNumber     ( { id = CharaAssetID.LEVEL,        type = CharaAssetType.GROWTH_ATTRIB, min = 1, max = 100 } ),
+	potential    = AssetAttrib_SetNumber     ( { id = CharaAssetID.POTENTIAL,    type = CharaAssetType.GROWTH_ATTRIB, min = 0, max = 20 } ),	
+	level        = AssetAttrib_SetNumber     ( { id = CharaAssetID.LEVEL,        type = CharaAssetType.GROWTH_ATTRIB, min = 1, max = 20 } ),
 	loyality     = AssetAttrib_SetNumber     ( { id = CharaAssetID.LOYALITY,     type = CharaAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),
 	contribution = AssetAttrib_SetNumber     ( { id = CharaAssetID.CONTRIBUTION, type = CharaAssetType.GROWTH_ATTRIB, min = 0 } ),
 	service_day  = AssetAttrib_SetNumber     ( { id = CharaAssetID.SERVICE_DAY,  type = CharaAssetType.GROWTH_ATTRIB } ),
@@ -111,12 +110,6 @@ Chara = class()
 
 function Chara:__init()
 	Entity_Init( self, EntityType.CHARA, CharaAssetAttrib )
-end
-
-function Chara:Remove()
-	Asset_Foreach( self, CharaAssetID.TASKS, function ( task )
-		Asset_RemoveIndexItem( task, TaskAssetID.CONTRIBUTORS, self )
-	end)
 end
 
 function Chara:Load( data )
@@ -185,14 +178,15 @@ function Chara:ToString( type )
 		end
 	end
 	if type == "LOCATION" or type == "ALL" then
-		content = content .. " @" .. Asset_Get( self, CharaAssetID.LOCATION ).name
+		content = content .. " home=" .. String_ToStr( Asset_Get( self, CharaAssetID.HOME ), "name" )
+		content = content .. " @" .. String_ToStr( Asset_Get( self, CharaAssetID.LOCATION ), "name" )
 	end
 	if type == "CORPS" or type == "ALL" then
 		content = content .. " corps=" .. String_ToStr( Asset_Get( self, CharaAssetID.CORPS ), "name" )
 	end
 	if type == "JOB" or type == "ALL" then
 		local home = Asset_Get( self, CharaAssetID.HOME )
-		content = content .. " job=" .. MathUtil_FindName( CityJob, home:GetCharaJob( self ) )
+		content = content .. " job=" .. ( home and MathUtil_FindName( CityJob, home:GetCharaJob( self ) ) or "" )
 		content = content .. " cot=" .. Asset_Get( self, CharaAssetID.CONTRIBUTION )
 	end	
 	if type == "TRAITS" then
@@ -221,18 +215,40 @@ function Chara:GetTask()
 	return Asset_GetDictItem( self, CharaAssetID.STATUSES, CharaStatus.IN_TASK )
 end
 
-function Chara:SetTask( task )
-	--debug
-	if task and self:GetTask() then
-		print( "new task=" .. task:ToString() )
-		error( "already in task" .. self:ToString("TASK") )
+function Chara:SetTask( task )	
+	if task and self:GetTask() then error( "already in task" .. self:ToString("TASK") ) end
+
+	if task then
+		Debug_Log( self:ToString(), "recv taks=" .. task:ToString() )
+	elseif self:GetTask() then
+		Debug_Log( self:ToString(), "oldtask=" .. self:GetTask():ToString() )
 	end
+
 	Asset_SetDictItem( self, CharaAssetID.STATUSES, CharaStatus.IN_TASK, task )
 end
 
 function Chara:GetTrait( traitType )
 	return Asset_SetDictItem( self, CharaAssetID.TRAITS, traitType )
 end
+
+function Chara:GetSkillByEffect( effect )
+	return Asset_FindListItem( self, CharaAssetID.SKILLS, function ( skill )
+		local ret = Skill_GetEffectValue( skill, effect )
+		if ret then return true end
+	end)
+end
+
+function Chara:GetEffectValue( effect )
+	local value = 0
+	Asset_Foreach( self, CharaAssetID.SKILLS, function ( skill )
+		local ret = Skill_GetEffectValue( skill, effect )
+		if ret then
+			value = value + ret
+		end
+	end )
+	return value
+end
+
 ------------------------------------------
 
 function Chara:IsGroupLeader()
@@ -248,13 +264,7 @@ function Chara:IsAtHome()
 end
 
 function Chara:IsBusy()
-	local status = self:GetTask()
-	if not status then return false end	
-	return status ~= false
-end
-
-function Chara:HasStatus( status )
-	return Asset_GetDictItem( self, CharaAssetID.STATUSES, status )
+	return self:GetTask() ~= nil
 end
 
 function Chara:GetStatus( status )
@@ -269,12 +279,25 @@ function Chara:SetStatus( status, value )
 	end
 end
 
-function Chara:CanLevelUp()
+function Chara:CanLearnSkill()
 	local level     = Asset_Get( self, CharaAssetID.LEVEL )
 	local potential = Asset_Get( self, CharaAssetID.POTENTIAL )
-	if level >= potential then return false end
+	local hasSkill  = Asset_GetListSize( self, CharaAssetID.SKILLS )
+	if level + hasSkill >= potential then
+		return false
+	end
+	if hasSkill >= level then
+		return false
+	end
+	return true
+end
+
+function Chara:CanLevelUp()
+	if not self:CanLearnSkill() then return false end
+
 	local exp = self:GetStatus( CharaStatus.EXP )
-	if not exp or exp < 100 then return false end
+	local maxExp = 100
+	if not exp or exp < maxExp then return false end
 	return true
 end
 
@@ -327,6 +350,6 @@ function Chara:LearnSkill( skill )
 	Asset_AppendList( self, CharaAssetID.SKILLS, skill )
 	--InputUtil_Pause( self.name, "gain skill=" .. skill.name )
 
-	Stat_Add( "Skill@Learn", g_Time:ToString() .. " " .. self.name .. "->" .. skill, StatType.LIST )
+	Stat_Add( "Skill@Learn", g_Time:ToString() .. " " .. self.name .. "->" .. skill.name, StatType.LIST )
 	Stat_Add( "Skill@LearnTimes", 1, StatType.TIMES )
 end

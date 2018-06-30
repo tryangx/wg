@@ -14,12 +14,12 @@ GroupAssetID =
 	CHARA_LIST     = 201,
 	CITY_LIST      = 202,
 	CORPS_LIST     = 203,
-	
+
 	MONEY          = 210,
-	MATERIAL       = 211,
-	
-	REPUTATION     = 220,
-	INFLUENCE      = 221,
+	MATERIAL       = 211,	
+
+	STATUSES       = 220,
+	INFLUENCES     = 221,
 
 	TECH_LIST      = 301,
 	GOAL_LIST      = 302,
@@ -40,8 +40,8 @@ GroupAssetAttrib =
 	money     = AssetAttrib_SetNumber( { id = GroupAssetID.MONEY,    type = GroupAssetType.PROPERTY_ATTRIB } ),
 	material  = AssetAttrib_SetNumber( { id = GroupAssetID.MONEY,    type = GroupAssetType.PROPERTY_ATTRIB } ),
 
-	reputation= AssetAttrib_SetNumber( { id = GroupAssetID.REPUTATION,   type = GroupAssetType.PROPERTY_ATTRIB } ),
-	influence = AssetAttrib_SetNumber( { id = GroupAssetID.INFLUENCE,    type = GroupAssetType.PROPERTY_ATTRIB } ),
+	statuses   = AssetAttrib_SetDict   ( { id = GroupAssetID.STATUSES,   type = GroupAssetType.BASE_ATTRIB } ),
+	influences = AssetAttrib_SetDict   ( { id = GroupAssetID.INFLUENCES,  type = GroupAssetType.BASE_ATTRIB } ),
 
 	techs     = AssetAttrib_SetList          ( { id = GroupAssetID.TECH_LIST,     type = GroupAssetType.GROWTH_ATTRIB } ),
 	goals     = AssetAttrib_SetDict          ( { id = GroupAssetID.GOAL_LIST,     type = GroupAssetType.GROWTH_ATTRIB } ),
@@ -177,6 +177,32 @@ function Group:Update( ... )
 	self:ElectLeader()
 end
 
+function Group:UpdateInfluences()
+	local influences = 0
+	local _, _, ter_percent = Ranking_GetGroupRanking( RankingType.TERRIORITY, self )
+	local _, _, pow_percent = Ranking_GetGroupRanking( RankingType.MILITARY_POWER, self )
+	Asset_SetDictItem( self, GroupAssetID.INFLUENCES, GroupInfluence.POWER_RANK, pow_percent )
+	Asset_SetDictItem( self, GroupAssetID.INFLUENCES, GroupInfluence.POWER_RANK, ter_percent )
+	influences = influences + ter_percent + pow_percent
+
+	local allyInf = 0
+	Asset_SetDictItem( self, GroupAssetID.INFLUENCES, GroupInfluence.ALLY, allyInf )
+	influences = influences + allyInf
+
+	local leader = Asset_Get( self, GroupAssetID.LEADER )
+	local titleInf = 0
+	local charmInf = leader and Asset_Get( leader, CharaAssetID.LEVEL ) * 10 or 0
+	Asset_SetDictItem( self, GroupAssetID.INFLUENCES, GroupInfluence.LEADER_TITLE, titleInf )
+	Asset_SetDictItem( self, GroupAssetID.INFLUENCES, GroupInfluence.LEADER_CHARM, charmInf )
+	influences = influences + titleInf + charmInf
+
+	Asset_SetDictItem( self, GroupAssetID.INFLUENCES, GroupInfluence.TOTAL, influences )
+
+	--InputUtil_Pause( self.name, "influ=" .. influences, ter_percent, pow_percent, allyInf, titleInf, charmInf )
+	
+	--Asset_Foreach( self, GroupAssetID.INFLUENCE, function ( inf, k )	end )
+end
+
 function Group:UpdateSpy()
 	--clear current list
 	Asset_Clear( self, GroupAssetID.SPY_LIST )
@@ -193,6 +219,14 @@ function Group:UpdateSpy()
 end
 
 ----------------------------------------------------------
+
+function Group:GetStatus( status )
+	return Asset_GetDictItem( self, GroupAssetID.STATUSES, status )
+end
+
+function Group:SetStatus( status, value )
+	Asset_SetDictItem( self, GroupAssetID.STATUSES, status, value )
+end
 
 function Group:GetPopu( popuType )
 	local num = 0
@@ -216,21 +250,10 @@ function Group:GetSpy( city )
 	end )
 end
 
---[[
-function Group:GetSoldier()
-	--corps in city
-	local soldier = 0
-	Asset_Foreach( self, GroupAssetID.CITY_LIST, function ( city )
-		soldier = soldier + city:GetSoldier()
-	end )
-	return soldier
-end
-]]
-
 function Group:GetStatusCityList( status )
 	local list = {}
 	Asset_Foreach( self, GroupAssetID.CITY_LIST, function ( city )
-		if city:HasStatus( status ) then
+		if city:GetStatus( status ) then
 			table.insert( list, city )
 		end
 	end)
@@ -250,6 +273,14 @@ function Group:GetVacancyCityList()
 		table.insert( list, city )
 	end)
 	return list
+end
+
+function Group:GetTerriority()
+	local terriority = 0
+	Asset_Foreach( self, GroupAssetID.CITY_LIST, function ( city )
+		terriority = terriority + Asset_GetListSize( city, CityAssetID.PLOTS )
+	end)
+	return terriority
 end
 
 function Group:GetMilitaryPower()
@@ -425,4 +456,28 @@ end
 function Group:MasterTech( tech )
 	Asset_AppendList( self, GroupAssetID.TECH_LIST, tech )
 	--InputUtil_Pause( "master tech" .. tech.id )
+end
+
+---------------------------------------
+
+function Group:ModifyReputation( type )
+	local reputation = self:GetStatus( GroupStatus.REPUTATION )
+	if not reputation then reputation = 0 end
+	local params = GroupStatusParamas.REPUTATION[type]
+	reputation = reputation + math.ceil( reputation * params.rate + params.c )
+	self:SetStatus( GroupStatus.REPUTATION, reputation )
+
+	--InputUtil_Pause( self.name, "modify repu", type, reputation )
+end
+
+function Group:WinCombat( combat )
+	self:ModifyReputation( "WIN_COMBAT" )	
+end
+
+function Group:LoseCombat( combat )
+	self:ModifyReputation( "LOSE_COMBAT" )
+end
+
+function Group:AchieveGoal()
+	self:ModifyReputation( "ACHIEVE_GOAL" )
 end

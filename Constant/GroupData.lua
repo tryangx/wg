@@ -113,3 +113,14 @@ DefaultTechData =
 		prerequisite = { tech = { 221 } },
 	},
 }
+
+GroupStatusParamas = 
+{
+	REPUTATION = 
+	{
+		--bonus = current * rate + c
+		WIN_COMBAT   = { rate = 0.01, c = 10 },
+		LOSE_COMBAT  = { rate = -0.01, c = -5 },
+		ACHIEVE_GOAL = { rate = 0.02, c = 10 },
+	},
+}

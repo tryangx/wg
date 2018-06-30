@@ -32,7 +32,7 @@ function Game_Init()
 		elseif entity.type == EntityType.CITY then
 			if id == CityAssetID.SECURITY then
 				--print( entity.name, MathUtil_FindName( CityAssetID, id ), operation or "unkown" )
-			elseif id == CityAssetID.DISSATISFACTION then
+			elseif id == CityAssetID.DISS then
 				--print( entity.name, MathUtil_FindName( CityAssetID, id ), operation or "unkown" )
 			elseif id == CityAssetID.STATUSES then
 				--InputUtil_Pause( "set statuses", operation )
@@ -149,8 +149,10 @@ function Game_Init()
 
 	print( "init system....." )
 
+	--The order of System_Addd() will determine the execution order
+	System_Add( RankingSystem() )
 	System_Add( MessageSystem() )
-	System_Add( CharaSystem() )
+	System_Add( CharaSystem() )		
 	System_Add( CitySystem() )
 	System_Add( GroupSystem() )
 	System_Add( CorpsSystem() )	
@@ -178,6 +180,11 @@ function Game_Init()
 		City_Harvest( data )
 	end )
 
+	Entity_Foreach( EntityType.CHARA, function ( chara )
+		
+		CharaCreator_GenerateAtomicTrait( chara )
+	end)
+
 	--set debugger watcher( print on the console )
 	DBG_SetWatcher( "Debug_Meeting",  DBGLevel.NORMAL )
 	--DBG_SetWatcher( "Debug_Meeting",  DBGLevel.IMPORTANT )
@@ -197,6 +204,9 @@ function Game_Test()
 	Entity_Dump( city )
 	Corps_EstablishInCity( city )
 	Entity_Dump( city )	
+	--]]
+
+	--[[]]
 	--]]
 
 	--[[]]
@@ -248,6 +258,7 @@ function Game_Test()
 		--Entity_Dump( combat )
 		return true
 	end
+	--]]
 
 	--check route
 	--Route_Verify()
@@ -268,7 +279,7 @@ function Game_Start()
 
 	while Game_IsRunning()  do
 		Game_MainLoop()
-	end
+	end	
 
 	--city:TrackData( true )
 	--city:DumpGrowthAttrs()

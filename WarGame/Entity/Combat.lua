@@ -254,6 +254,7 @@ function Combat:ToString( type )
 	return content
 end
 
+--[[
 function Combat:Remove()
 	self._currentField = nil
 	self._grids = nil
@@ -264,6 +265,7 @@ function Combat:Remove()
 	self._stat[CombatSide.DEFENDER] = nil	
 	self._stat = nil
 end
+]]
 
 --Add single troop into Combat
 function Combat:AddTroop( troop, side )
@@ -460,7 +462,7 @@ end
 function Combat:GetTroopGroupName( troop )
 	local corps  = Asset_Get( troop, TroopAssetID.CORPS )
 	if corps then return self:GetCorpsGroupName( corps ) end
-	if troop:HasStatus( TroopStatus.GUARD ) == true then
+	if troop:GetStatus( TroopStatus.GUARD ) == true then
 		return self:GetGroupName( CombatSide.DEFENDER )
 	end
 	return "[UNKNOWN]"
@@ -979,10 +981,12 @@ function Combat:Prepare()
 	elseif atkWithdraw then
 		WriteCombatLog( self:ToString( "DEBUG_CORPS" ) )
 		Asset_Set( self, CombatAssetID.RESULT, CombatResult.STRATEGIC_LOSE )
+		Asset_Set( self, CombatAssetID.WINNER, CombatSide.DEFENDER )
 		return CombatPrepareResult.BOTH_DECLINED
 	elseif defWithdraw then
 		WriteCombatLog( self:ToString( "DEBUG_CORPS" ) )
 		Asset_Set( self, CombatAssetID.RESULT, CombatResult.STRATEGIC_VICTORY )
+		Asset_Set( self, CombatAssetID.WINNER, CombatSide.ATTACKER )
 		return CombatPrepareResult.BOTH_DECLINED
 	end
 
@@ -1050,11 +1054,11 @@ function Combat:PrepareDefense()
 	local city = Asset_Get( self, CombatAssetID.CITY )
 	if not city then return end
 	--defence	
-	local defenses = Asset_GetList( city, CityAssetID.DEFENSES )
+	local gates = Asset_GetList( city, CityAssetID.GATES )
 	local index = 1
 	for _, grid in pairs( self._grids ) do
 		if grid.isWall then
-			grid.defense = defenses[index]
+			grid.defense = gates[index]
 			--InputUtil_Pause( "add defense=", grid.defense, index, defenses[index] )
 			--WriteCombatLog( index .. "=" .. defenses[index] )
 			index = index + 1
@@ -1116,7 +1120,7 @@ function Combat:NextStep( step )
 		if result == CombatPrepareResult.ATK_SURRENDER then
 			--make all to be prisoner
 			Asset_Foreach( self, CombatAssetID.ATTACKER_LIST, function ( troop )
-				if not troop:HasStatus( TroopStatus.GUARD ) then
+				if not troop:GetStatus( TroopStatus.GUARD ) then
 					self:Surrender( troop )
 				end
 			end )
@@ -1127,7 +1131,7 @@ function Combat:NextStep( step )
 		elseif result == CombatPrepareResult.DEF_SURRENDER then
 			--make all to be prisoner
 			Asset_Foreach( self, CombatAssetID.DEFENDER_LIST, function ( troop )
-				if not troop:HasStatus( TroopStatus.GUARD ) then
+				if not troop:GetStatus( TroopStatus.GUARD ) then
 					self:Surrender( troop )
 				end
 			end )
@@ -1266,7 +1270,7 @@ function Combat:Feedback()
 		local city = Asset_Get( self, CombatAssetID.CITY )
 		for _, grid in pairs( self._grids ) do
 			if grid.isWall == true then
-				Asset_SetDictItem( city, CityAssetID.DEFENSES, grid.x, grid.defense )
+				Asset_SetDictItem( city, CityAssetID.GATES, grid.x, grid.defense )
 				WriteCombatLog( "DEFENSE-" .. grid.x .. "=" .. grid.defense )
 			end
 		end
@@ -1746,40 +1750,40 @@ function Combat:DoAction( troop, action, target )
 	if action == CombatAction.MOVE then
 	
 	elseif action == CombatAction.ATTACK then
-		self:InfluenceMorale( troop, -Random_GetInt_Sync( 3, 6 ) )
+		self:AffectMorale( troop, -Random_GetInt_Sync( 3, 6 ) )
 	
 	elseif action == CombatAction.DEFEND then
-		self:InfluenceMorale( troop, -Random_GetInt_Sync( 4, 5 ) )
+		self:AffectMorale( troop, -Random_GetInt_Sync( 4, 5 ) )
 
 	elseif action == CombatAction.KILL then
 		local morale = math.max( 10, math.ceil( 25 + ( Asset_Get( target, TroopAssetID.LEVEL ) - Asset_Get( troop, TroopAssetID.LEVEL ) ) * 0.5 ) )
-		self:InfluenceMorale( troop, morale )
+		self:AffectMorale( troop, morale )
 	
 	elseif action == CombatAction.BEAT then
-		self:InfluenceMorale( troop, math.ceil( 5 + Asset_Get( troop, TroopAssetID.LEVEL ) ) )
+		self:AffectMorale( troop, math.ceil( 5 + Asset_Get( troop, TroopAssetID.LEVEL ) ) )
 
 	elseif action == CombatAction.RETREAT then
 		WriteCombatLog( "RETREAT=" .. troop:ToString( "COMBAT_ALL" ) )
 		troop:SetCombatData( TroopCombatData.RETREAT, 1 )
-		self:InfluenceMorale( troop, math.ceil( Asset_Get( troop, TroopAssetID.LEVEL ) - 20 ) )
+		self:AffectMorale( troop, math.ceil( Asset_Get( troop, TroopAssetID.LEVEL ) - 20 ) )
 
 	elseif action == CombatAction.FLEE then
 		troop:SetCombatData( TroopCombatData.FLEE, 1 )
-		self:InfluenceFriendlyMorale( troop:GetCombatData( TroopCombatData.SIDE ), troop )		
+		self:AffectFriendlyMorale( troop:GetCombatData( TroopCombatData.SIDE ), troop )		
 		WriteCombatLog( "FLEE=" .. troop:ToString( "COMBAT_ALL" ) )
 
 	elseif action == CombatAction.BEEN_CRT_HIT then
 		local atklv = Asset_Get( target, TroopAssetID.LEVEL )
 		local deflv = Asset_Get( troop, TroopAssetID.LEVEL )
 		local morale = math.max( 4, math.ceil( 10 + ( atklv - deflv ) * 0.5 ) )
-		self:InfluenceMorale( troop, -morale )
+		self:AffectMorale( troop, -morale )
 
 	elseif action == CombatAction.BEEN_FLANK_HIT then
 		local morale = math.max( 4, math.ceil( 5 + ( atklv - deflv ) * 0.35 ) )
-		self:InfluenceMorale( troop, -morale )
+		self:AffectMorale( troop, -morale )
 
 	elseif action == CombatAction.BEEN_KILLED then
-		self:InfluenceFriendlyMorale( troop:GetCombatData( TroopCombatData.SIDE ) )
+		self:AffectFriendlyMorale( troop:GetCombatData( TroopCombatData.SIDE ) )
 
 	elseif action == CombatAction.FRIENDLY_RETREAT then
 	elseif action == CombatAction.FRIENDLY_KILLED then
@@ -1787,7 +1791,7 @@ function Combat:DoAction( troop, action, target )
 	
 	elseif action == CombatAction.DEFENCE_DESTOYED then
 		if Asset_Get( self, CombatAssetID.TYPE ) == CombatType.SIEGE_COMBAT then
-			self:InfluenceFriendlyMorale( def.side )
+			self:AffectFriendlyMorale( def.side )
 		end
 
 	end
@@ -1795,7 +1799,7 @@ function Combat:DoAction( troop, action, target )
 	WriteCombatLog( troop:ToString(), "act=" .. MathUtil_FindName( CombatAction, action ), String_ToStr( target, "name" ) )
 end
 
-function Combat:InfluenceOrg( troop, delta )
+function Combat:AffectOrg( troop, delta )
 	if delta == 0 then return end
 	local maxOrg = troop:GetMaxOrg()
 	local org = Asset_Get( troop, TroopAssetID.ORGANIZATION )	
@@ -1803,7 +1807,7 @@ function Combat:InfluenceOrg( troop, delta )
 	Asset_Set( troop, TroopAssetID.ORGANIZATION, org )
 end
 
-function Combat:InfluenceMorale( troop, delta )
+function Combat:AffectMorale( troop, delta )
 	if delta == 0 then return end
 	local maxMorale = troop:GetMaxMorale()
 	local morale = Asset_Get( troop, TroopAssetID.MORALE )
@@ -1812,7 +1816,7 @@ function Combat:InfluenceMorale( troop, delta )
 	WriteCombatLog( troop.name, "mor_delta=" .. morale .. ( delta > 0 and "+" .. delta or delta ) )
 end
 
-function Combat:InfluenceFriendlyMorale( side, troop, increase )
+function Combat:AffectFriendlyMorale( side, troop, increase )
 	local list
 	if side == CombatSide.ATTACKER then
 		list = Asset_GetList( self, CombatAssetID.ATTACKER_LIST )
@@ -1826,12 +1830,12 @@ function Combat:InfluenceFriendlyMorale( side, troop, increase )
 		if tar ~= troop and self:IsTroopValid( tar ) then
 			local tarLv = Asset_Get( tar, TroopAssetID.LEVEL )
 			local morale = math.max( 0, math.ceil( 10 + ( lv - tarLv ) * 0.5 ) )
-			self:InfluenceMorale( tar, morale * ( increase and 1 or -1 ) )
+			self:AffectMorale( tar, morale * ( increase and 1 or -1 ) )
 		end
 	end
 end
 
-function Combat:InfluenceFriendlyOrg( side, troop, increase )
+function Combat:AffectFriendlyOrg( side, troop, increase )
 	local list
 	if side == CombatSide.ATTACKER then
 		list = Asset_GetList( self, CombatAssetID.ATTACKER_LIST )
@@ -1844,7 +1848,7 @@ function Combat:InfluenceFriendlyOrg( side, troop, increase )
 		if tar ~= troop and self:IsTroopValid( tar ) then
 			local tarLv = Asset_Get( tar, TroopAssetID.LEVEL )
 			local org = tar:GetMaxOrg() * math.max( 0, 10 + ( lv - tarLv ) * 0.5 )
-			self:InfluenceOrg( tar, -org )
+			self:AffectOrg( tar, -org )
 		end
 	end
 end
@@ -1890,7 +1894,7 @@ function Combat:Encourage( troop )
 	--restore morale
 	local level = Asset_Get( troop, TroopAssetID.LEVEL )
 	local morale = math.ceil( 5 + level + level )
-	self:InfluenceMorale( troop, morale )
+	self:AffectMorale( troop, morale )
 	self:AddStat( troop:GetCombatData( TroopCombatData.SIDE ), CombatStatistic.RESTORE_MORALE, morale )
 	--InputUtil_Pause( "encourage mor=", morale )
 end
@@ -1900,7 +1904,7 @@ function Combat:Reform( troop )
 	local level = Asset_Get( troop, TroopAssetID.LEVEL )
 	local maxOrg = troop:GetMaxOrg()
 	local restore = maxOrg * ( level + 10 ) * 0.01
-	self:InfluenceOrg( troop, restore )
+	self:AffectOrg( troop, restore )
 	self:AddStat( troop:GetCombatData( TroopCombatData.SIDE ), CombatStatistic.RESTORE_ORG, org )
 end
 
@@ -1910,17 +1914,19 @@ end
 function Combat:Surrounded( troop )
 	local level = Asset_Get( troop, TroopAssetID.LEVEL )
 	local morale = math.ceil( 15 - level )
-	self:InfluenceMorale( troop, morale )
+	self:AffectMorale( troop, morale )
 	self:AddStat( troop:GetCombatData( TroopCombatData.SIDE ), CombatStatistic.LOSE_MORALE, morale )
 	InputUtil_Pause( "surrounded mor=", morale )
 end
 
-function Combat:Kill( attacker, defender )
+function Combat:KillTroop( attacker, defender )
 	WriteCombatLog( attacker:ToString( "COMBAT" ) .. " kill " .. defender:ToString( "COMBAT" ) )
-		
+
+	attacker:KillTroop( defender )
+
 	self:DoAction( defender, CombatAction.BEEN_KILLED )
 
-	self:DoAction( attacker, CombatAction.KILL, defender )
+	self:DoAction( attacker, CombatAction.KILL, defender )	
 
 	--remove from battlefield
 	self:RemoveTroop( defender, true )
@@ -1963,7 +1969,7 @@ function Combat:DealDamage( attacker, defender, params )
 	--Reduce organization
 	local organization = Asset_Get( defender, TroopAssetID.ORGANIZATION )
 	local reduceOrg = math.min( 0, -math.floor( dmg * params.orgRate ) )
-	self:InfluenceOrg( defender, reduceOrg )
+	self:AffectOrg( defender, reduceOrg )
 
 	--Kill soldier
 	local defNumber = Asset_Get( defender, TroopAssetID.SOLDIER )
@@ -1976,7 +1982,7 @@ function Combat:DealDamage( attacker, defender, params )
 		self:AddStat( defender:GetCombatData( TroopCombatData.SIDE ), CombatStatistic.DEAD, defNumber )	
 		self:AddStat( attacker:GetCombatData( TroopCombatData.SIDE ), CombatStatistic.KILL, defNumber )
 		self:AddStat( attacker            , CombatStatistic.KILL, defNumber )		
-		self:Kill( attacker, defender )
+		self:KillTroop( attacker, defender )
 		return
 	end
 	
@@ -1995,6 +2001,8 @@ function Combat:DealDamage( attacker, defender, params )
 	if defender:GetCombatData( CombatStatistic.RETREAT ) then
 		self:DoAction( attacker, CombatAction.BEAT )
 	end
+
+	attacker:KillSoldier( kill )
 
 	-----------------------------------------
 	-- Damage( Kill ) Statistic	

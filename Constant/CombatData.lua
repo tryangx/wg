@@ -15,7 +15,13 @@ DefaultTroopParams =
 	TRANSPORT_ID      = 20,
 	------------------------------
 
+	INIT_POTENTIAL    = 10,
+
 	MIN_TROOP_SOLDIER = 100,
+
+	TROOP_POTENTIAL   = 20,
+
+	TROOP_LEVELUP_EXP = 100,
 
 	TROOP_MAX_NUMBER = 
 	{

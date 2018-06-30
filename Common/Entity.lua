@@ -126,7 +126,7 @@ end
 function Entity_Remove( entity )
 	local mng = Entity_GetManager( entity.type )
 	if not mng then return false end
-	if entity.Remove then entity:Remove() end
+	--if entity.Remove then entity:Remove() end
 	return mng:RemoveData( entity.id )
 end
 
@@ -170,7 +170,7 @@ function Entity_SetAssetAttrib( entity, attribs )
 	_entityDatas[type].attribs = {}	
 	for k, attrib in pairs( attribs ) do
 		if not attrib.id then
-			error( "set attrib failed" )
+			error( "set attrib failed=" .. k )
 		end
 		attrib.name = k
 		_entityDatas[type].attribs[attrib.id] = attrib

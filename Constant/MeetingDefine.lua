@@ -62,46 +62,52 @@ ProposalType =
 --all proposal type should exist in TaskType or it'll occur error
 TaskType = 
 {
-	HARASS_CITY     = 110,
-	ATTACK_CITY     = 111,
-	INTERCEPT       = 112,
-	DISPATCH_CORPS  = 113,
+	STRATEGY_TASK   = 110, --seperator
+	HARASS_CITY     = 111,
+	ATTACK_CITY     = 112,
+	INTERCEPT       = 113,
+	DISPATCH_CORPS  = 114,
 
-	ESTABLISH_CORPS = 120,
-	REINFORCE_CORPS = 121,
-	DISMISS_CORPS   = 122,
-	TRAIN_CORPS     = 123,
-	UPGRADE_CORPS   = 124,
-	ENROLL_CORPS    = 126,
-	REGROUP_CORPS   = 127,
+	COMMANDER_TASK  = 220, --seperator
+	ESTABLISH_CORPS = 221,
+	REINFORCE_CORPS = 222,
+	DISMISS_CORPS   = 223,
+	TRAIN_CORPS     = 224,
+	UPGRADE_CORPS   = 225,
+	ENROLL_CORPS    = 226,
+	REGROUP_CORPS   = 227,
+	CONSCRIPT       = 230,
+	RECRUIT         = 231,
+	HIRE_GUARD      = 232,
 
-	CONSCRIPT       = 130,
-	RECRUIT         = 131,
-	HIRE_GUARD      = 132,
-
-	DEV_AGRICULTURE = 310,
-	DEV_COMMERCE    = 311,
-	DEV_PRODUCTION  = 312,
-	BUILD_CITY      = 320,
-	LEVY_TAX        = 321,
+	AFFAIRS_TASK    = 300, --seperator
+	DEV_AGRICULTURE = 311,
+	DEV_COMMERCE    = 312,
+	DEV_PRODUCTION  = 313,
+	BUILD_CITY      = 324,
+	LEVY_TAX        = 325,
 	TRANSPORT       = 330,
 	BUY_FOOD        = 331,
 	SELL_FOOD       = 332,
 
-	HIRE_CHARA      = 400,
-	PROMOTE_CHARA   = 401,
-	DISPATCH_CHARA  = 402,
-	CALL_CHARA      = 403,
+	HR_TASK         = 400, --seperator
+	HIRE_CHARA      = 401,
+	PROMOTE_CHARA   = 402,
+	DISPATCH_CHARA  = 403,
+	CALL_CHARA      = 404,
 	MOVE_CAPITAL    = 410,
 
-	RECONNOITRE     = 500,
-	SABOTAGE        = 501,
+	STAFF_TASK      = 500, --seperator
+	RECONNOITRE     = 501,
+	SABOTAGE        = 502,
 
-	RESEARCH        = 600,
+	TECH_TASK       = 600,	
+	RESEARCH        = 601,
 
-	IMPROVE_RELATION = 700,
-	DECLARE_WAR      = 701,
-	SIGN_PACT        = 702,
+	DIPLOMATIC_TASK  = 700, --seperator
+	IMPROVE_RELATION = 701,
+	DECLARE_WAR      = 702,
+	SIGN_PACT        = 703,
 }
 
 TaskActorType = 
@@ -156,11 +162,13 @@ MeetingTopic =
 	DETERMINE_GOAL        = 3,
 
 	---------------------------------
-	--
-	MEETING_LOOP          = 11,
+	--Should be the first top ic index, just as same as the first one below
+	MEETING_LOOP          = 10,
 
-	--EXECUTIVE       = 10,
-	CAPITAL               = 11,
+	CAPITAL               = 10,
+
+	--harass, attack
+	STRATEGY              = 11,
 
 	--hire, encourage
 	HR                    = 12,
@@ -180,10 +188,7 @@ MeetingTopic =
 	--operation
 	STAFF                 = 17,
 
-	--harass, attack
-	STRATEGY              = 18,
-
 	--Always should be the last topic + 1
-	MEETING_END           = 19,
+	MEETING_END           = 18,
 	---------------------------------
 }
