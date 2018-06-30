@@ -215,10 +215,10 @@ DefaultCityHireGuard =
 
 DefaultCityJobProb = 
 {
-	{ prob = 50, job = "COMMANDER", },
-	{ prob = 50, job = "STAFF" },
-	{ prob = 50, job = "HR" },
-	{ prob = 50, job = "AFFAIRS" },
+	{ prob = 70, job = "COMMANDER",  max = 5 },
+	{ prob = 50, job = "AFFAIRS",    max = 3 },
+	{ prob = 40, job = "STAFF",      max = 2 },	
+	{ prob = 30, job = "HR",         max = 2 },	
 	{ prob = 50, job = "DIPLOMATIC", capital = 1 },
 	{ prob = 50, job = "TECHNICIAN", capital = 1 },
 }
@@ -418,7 +418,237 @@ CityLevelParams =
 
 --------------------------------------------
 
-CityBuildingData =
+--Development( agri / comm / prod )
+--Management
+--Military
+--Defense
+--FOREGIN
+--
+-- duration means how long to build the construction, same as HP
+Default_CityBuildingData =
 {
-	[1] = { name = "wall", },
+	[1000] = 
+	{
+		name = "Farm Lv1",
+		type = "DEVELOPMENT",
+		duration = 60,
+		effects = {},
+		prerequsite = { city_lv = 1, },
+	},
+	[1000] = 
+	{
+		name = "Farm Lv2",
+		type = "DEVELOPMENT",
+		duration = 120,
+		effects = {},		
+		prerequsite = { has_constr = 1000, },
+	},
+	[1010] = 
+	{
+		name = "Market Lv1",
+		type = "DEVELOPMENT",
+		duration = 120,
+		effects = {},
+	},
+	[1011] = 
+	{
+		name = "Market Lv2",
+		type = "DEVELOPMENT",
+		duration = 180,
+		effects = {},
+		prerequsite = { has_constr = 1010, },
+	},
+	[1020] = 
+	{
+		name = "Workshop Lv1",
+		type = "DEVELOPMENT",
+		duration = 90,
+		effects = {},
+	},
+	[1021] = 
+	{
+		name = "Workshop Lv2",
+		type = "DEVELOPMENT",
+		duration = 120,
+		effects = {},
+		prerequsite = { has_constr = 1020, },
+	},
+
+	[2000] = 
+	{
+		name = "Administration Lv1",
+		type = "MANAGEMENT",
+		duration = 90,
+		effects = {},
+		prerequsite = { singleton = 1 },
+	},
+	[2001] = 
+	{
+		name = "Administration Lv2",
+		type = "MANAGEMENT",
+		duration = 320,
+		effects = {},
+		prerequsite = { has_constr = 2000, singleton = 1 },
+	},
+	[2003] = 
+	{
+		name = "Administration Lv2",
+		type = "MANAGEMENT",
+		duration = 1080,
+		effects = {},
+		prerequsite = { has_constr = 2001, singletonsingleton = 1 },
+	},
+	[2010] = 
+	{
+		name = "Watch Tower",
+		type = "MANAGEMENT",
+		duration = 120,
+		effects = {},
+		prerequsite = {},
+	},
+	[2020] = 
+	{
+		name = "Inspect Tower",
+		type = "MANAGEMENT",
+		duration = 120,
+		effects = {},
+		prerequsite = {},
+	},
+	[2030] = 
+	{
+		name = "Prison",
+		type = "MANAGEMENT",
+		duration = 180,
+		effects = {},
+		prerequsite = {},
+	},
+	[2040] = 
+	{
+		name = "Execution Grand",
+		type = "MANAGEMENT",
+		duration = 180,
+		effects = {},
+		prerequsite = {},
+	},
+	[2050] = 
+	{
+		name = "Tax Station",
+		type = "MANAGEMENT",
+		duration = 90,
+		effects = {},
+		prerequsite = { has_constr = 1020, },
+	},
+
+	[3000] = 
+	{
+		name = "Barrack Lv1",
+		type = "MILITARY",
+		duration = 15,
+		effects = {},
+		prerequsite = {},
+	},
+	[3001] = 
+	{
+		name = "Barrack Lv1",
+		type = "MILITARY",
+		duration = 90,
+		effects = {},		
+		prerequsite = {},
+	},
+	[3002] = 
+	{
+		name = "Barrack Lv2",
+		type = "MILITARY",
+		duration = 180,
+		effects = {},		
+		prerequsite = { has_constr = 3000 },
+	},
+	[3010] = 
+	{
+		name = "Drill Ground",
+		type = "MILITARY",
+		duration = 180,
+		effects = {},		
+		prerequsite = { has_constr = 3000 },
+	},
+	[3020] = 
+	{
+		name = "Firing Ground",
+		type = "MILITARY",
+		duration = 180,
+		effects = {},
+		prerequsite = { has_constr = 3000 },
+	},
+	[3030] = 
+	{
+		name = "Jousting Ground",
+		type = "MILITARY",
+		duration = 180,
+		effects = {},		
+		prerequsite = { has_constr = 3000 },
+	},
+
+	--Defensive
+	[4000] = 
+	{
+		name = "Earthen Wall Lv1",
+		type = "DEFENSIVE",
+		duration = 15,
+		effects = { FORT = 5, },		
+	},
+	[4001] = 
+	{
+		name = "Earthen Wall Lv2",
+		type = "DEFENSIVE",
+		duration = 45,
+		effects = { FORT = 10, },
+		prerequsite = { has_constr = 4000, },
+	},
+
+	[4010] = 
+	{
+		name = "Stone Wall Lv1",
+		type = "DEFENSIVE",
+		duration = 90,
+		effects = { FORT = 15, },
+	},
+	[4011] = 
+	{
+		name = "Stone Wall Lv2",
+		type = "DEFENSIVE",
+		duration = 180,
+		effects = { FORT = 30, },
+		prerequsite = { has_constr = 4010, },
+	},
+	[4012] = 
+	{
+		name = "Stone Wall Lv3",
+		type = "DEFENSIVE",
+		duration = 360,
+		effects = { FORT = 60, },
+		prerequsite = { has_constr = 4011, },
+	},
+
+	--Foregin
+	[5000] = 
+	{
+		name = "Embassy Lv1",
+		type = "FOREIGN",
+		duration = 180,
+		effects = {},
+		prerequsite = { has_constr = 3000, },
+	},
+	[5010] = 
+	{
+		name = "Intelligent Agency Lv1",
+		type = "FOREIGN",
+		duration = 180,
+		effects = {},
+		prerequsite = {},
+	},
+}
+
+CityBuildMethod = 
+{
+	
 }

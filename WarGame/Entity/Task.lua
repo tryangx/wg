@@ -95,9 +95,7 @@ function Task:ToString( type )
 		content = content .. " atr=" .. ( Asset_Get( self, TaskAssetID.ACTOR ):ToString() )
 		content = content .. " beg=" .. g_Time:CreateDateDescByValue( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )
 		content = content .. " end=" .. g_Time:CreateDateDescByValue( Asset_Get( self, TaskAssetID.END_TIME ) )
-		content = content .. " pas=" .. g_Time:CalcDiffDayByDate( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )
-	elseif type == "PLAN" then
-		content = content .. " pln=" .. MathUtil_FindName( CityPlan, Asset_GetDictItem( self, TaskAssetID.PARAMS, "plan" ) )
+		content = content .. " pas=" .. g_Time:CalcDiffDayByDate( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )	
 	elseif type == "DETAIL" then
 		content = content .. " atr=" .. ( Asset_Get( self, TaskAssetID.ACTOR ):ToString() )
 		content = content .. " @" .. String_ToStr( Asset_Get( self, TaskAssetID.LOCATION ), "name" )	
@@ -114,16 +112,6 @@ function Task:ToString( type )
 		content = content .. " rslt=" .. MathUtil_FindName( TaskResult, result )
 	end
 	return content
-end
-
-
-function Task:Remove()
-	local type = Asset_Get( self, TaskAssetID.TYPE )
-	
-	--remove from all contributor
-	Asset_Foreach( self, TaskAssetID.CONTRIBUTORS, function ( value, chara )		
-		Asset_RemoveListItem( chara, CharaAssetID.TASKS, self )
-	end )
 end
 
 function Task:Load( data )

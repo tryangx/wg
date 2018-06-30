@@ -164,7 +164,8 @@ function Warfare_UpdateCombat( combat )
 
 	--Debug_Log( "CombatResult=" .. MathUtil_FindName( CombatResult, result ) )
 
-	Stat_Add( "Combat@Result", combat:ToString( "RESULT" ), StatType.LIST )
+
+	local IsAffectReputation = false
 
 	if type == CombatType.SIEGE_COMBAT then
 		--reset in-siege status
@@ -173,7 +174,7 @@ function Warfare_UpdateCombat( combat )
 		--dismiss guard
 		local guard = 0
 		Asset_Foreach( combat, CombatAssetID.DEFENDER_LIST, function ( troop )
-			if troop:HasStatus( TroopStatus.GUARD ) then
+			if troop:GetStatus( TroopStatus.GUARD ) then
 				guard = guard + Asset_Get( troop, TroopAssetID.SOLDIER )
 			end
 		end )
@@ -199,8 +200,11 @@ function Warfare_UpdateCombat( combat )
 				Corps_Join( corps, city )
 				--InputUtil_Pause( corps:ToString("BRIEF"), city:ToString("BRIEF") )
 			end
+
+			IsAffectReputation = true
 		end
 	elseif type == CombatType.FIELD_COMBAT then		
+		IsAffectReputation = result == CombatResult.BRILLIANT_VICTORY or result == CombatResult.DISASTROUS_LOSE
 	end
 
 	--deal with prisoner
@@ -209,7 +213,7 @@ function Warfare_UpdateCombat( combat )
 		if data.side == winner then
 			--release the prisoner
 			InputUtil_Pause( "just dismiss the troop and kill the officer" )
-			if troop:HasStatus( TroopStatus.SURRENDER ) or Random_GetInt_Sync( 1, 100 ) < 80 then
+			if troop:GetStatus( TroopStatus.SURRENDER ) or Random_GetInt_Sync( 1, 100 ) < 80 then
 				--accept surrender
 				local corpsList = combat:GetCorpsList( winner )
 				local corps = corpsList[0]
@@ -233,16 +237,19 @@ function Warfare_UpdateCombat( combat )
 		end
 	end )
 
-	Stat_Add( MathUtil_FindName( CombatType, Asset_Get( combat, CombatAssetID.TYPE ) ) .. "@WIN=" .. MathUtil_FindName( CombatSide, winner ), 1, StatType.TIMES )
+	Stat_Add( "Combat@Result", combat:ToString( "RESULT" ), StatType.LIST )
+	Stat_Add( MathUtil_FindName( CombatType, type ) .. "@WIN=" .. MathUtil_FindName( CombatSide, winner ), 1, StatType.TIMES )
 	--Stat_Add( "Combat@Winner", combat:ToString() .. " winner=" .. combat:GetGroupName( winner ), StatType.LIST )
 
 	local group = combat:GetGroup( winner )
 	local oppGroup = combat:GetGroup( combat:GetOppSide( winner ) )
 	if group then
 		group:ElectLeader()
+		if IsAffectReputation then group:WinCombat( combat ) end
 	end
 	if oppGroup then
 		oppGroup:ElectLeader()
+		if IsAffectReputation then oppGroup:LoseCombat( combat ) end
 	end
 
 	Debug_Log( combat:ToString( "DEBUG_CORPS" ) )
@@ -252,6 +259,8 @@ function Warfare_UpdateCombat( combat )
 		if corps:GetSoldier() == 0 then
 			Corps_Neutralize( corps, "neutralized" )
 			Stat_Add( "Corps@Vanished", corps:ToString( "SIMPLE"), StatType.LIST )
+		else
+			Corps_AfterCombat( corps )
 		end
 	end )
 

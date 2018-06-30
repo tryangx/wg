@@ -64,21 +64,22 @@ DefaultCharaTrait =
 {
 	LIBIDO       =
 	{
-		SELFISH       = 40,
-		IRRITABLE     = 40,
-		INSIDIOUS     = 40,
-		DISPASSIONATE = -40,		
+		SELFISH       = 40,		
+		IRRITATION    = 40,
+		INSIDIOUS     = 40,		
+		DISPASSIONATE = -40,				
 		LOVE_MONEY    = 40,
 		LOVE_HONOR    = 40,
+
+		HARDWORK      = 40,
 	},
 	SEXLESS     =
 	{
-		SELFISH       = 40,
+		SELFISH       = 20,		
 		AGGRESSIVE    = 60,
-		CONSERVATIVE  = 100,
-		IRRITABLE     = -40,
-		INSIDIOUS     = 40,
-		IRRITABLE     = -40,
+		CONSERVATIVE  = 100,		
+		INSIDIOUS     = 40,		
+		IRRITATION    = -40,
 		DISPASSIONATE = 40,
 		LOVE_MONEY    = -40,
 		LOVE_HONOR    = -40,
@@ -87,7 +88,7 @@ DefaultCharaTrait =
 	IDEAL        =
 	{
 		AGGRESSIVE    = 20,
-		HARDWORK      = 40,
+		HARDWORK      = 20,
 		CAREFUL       = -50, 
 		CARELESS      = 50,
 		INSIDIOUS     = -40,
@@ -100,7 +101,7 @@ DefaultCharaTrait =
 	REALISM      =
 	{
 		CONSERVATIVE  = 20,
-		HARDWORK      = 40,
+		HARDWORK      = 50,
 		CAREFUL       = 50, 
 		CARELESS      = -50,
 		INSIDIOUS     = 40,
@@ -113,8 +114,7 @@ DefaultCharaTrait =
 	ACTIVELY     =
 	{
 		AGGRESSIVE   = 50,
-		HARDWORK     = 20,
-		IRRITABLE    = 30,
+		IRRITATION   = 30,
 		CONSERVATIVE = -100,
 		LOVE_MONEY    = 20,
 		LOVE_HONOR    = 20,
@@ -133,9 +133,10 @@ DefaultCharaTrait =
 	},
 	STRONG       =
 	{
+		HARDWORK      = -20,
 		CAREFUL       = -50,
 		CARELESS      = 50,
-		IRRITABLE     = 40,
+		IRRITATION    = 40,
 		LOVE_MONEY    = 20,
 		LOVE_HONOR    = 20,
 		SMART         = -40,
@@ -143,9 +144,10 @@ DefaultCharaTrait =
 	},
 	WEAK         =
 	{
+		HARDWORK      = 40,
 		CAREFUL       = 50,
 		CARELESS      = -50,
-		IRRITABLE     = -40,
+		IRRITATION    = -40,
 		SMART         = 40,
 		FOOLISH       = -40,
 	},
@@ -153,18 +155,20 @@ DefaultCharaTrait =
 	{
 		CAREFUL       = 50,
 		CARELESS      = -50,
-		IRRITABLE     = -50,
+		IRRITATION    = -50,
 		DISPASSIONATE = 50,
 		LOVE_HONOR    = 40,
+		HARDWORK      = 40,
 	},
 	EXTROVERT    =
 	{
 		CARELESS      = 50,
 		CAREFUL       = -50,
-		IRRITABLE     = 40,
+		IRRITATION    = 40,
 		DISPASSIONATE = -40,
 		LOVE_MONEY    = 40,
-		LOVE_HONOR    = 40,
+		LOVE_HONOR    = 40,		
+		HARDWORK      = 20,
 	},
 }
 
@@ -172,106 +176,185 @@ DefaultCharaTrait =
 --"traits" means one of every subset conditions should be satisfied
 DefaultCharaSkill = 
 {
+	[2000] =
 	{
-		id=2000, name="HR expert",
+		name="HR expert",
 		effects = { HIRE_CHARA_BONUS = 150, },
-		prerequisite = { pot_above, exp_above = 100 },
-		traits  = 
+		prerequisite = { exp_above = 100 },
+		conditions = 
 		{
-			{ "OPEN" }
+			{ trait = "OPEN", prob = 70 },
+			{ trait = "GENEROUS", prob = 30 },
 		},
+		consume = { TACTIC = 100 },
 	},
 
+	[3010] =
 	{
-		id=3010, name="Agri expert",
+		name="Agri expert",
 		effects = { AGRICULTURE_BONUS = 150, },
-		prerequisite = { pot_above, exp_above = 100 },
-		traits  = 
+		prerequisite = { exp_above = 100 },
+		conditions = 
 		{
-			{ "HARDWORK" }
+			{ trait = "HARDWORK", prob = 60 },
+			{ trait = "CONSERVATIVE", prob = 40 },
 		},
 	},
+	[3020] =
 	{
-		id=3020, name="Comm expert",
+		name="Comm expert",
 		effects = { COMMERCE_BONUS = 150, },
-		prerequisite = { pot_above, exp_above = 100 },
-		traits  = { { "HARDWORK" } },
+		prerequisite = { exp_above = 100 },
+		conditions = 
+		{
+			{ trait = "HARDWORK", prob = 60 },
+			{ trait = "LOVE_MONEY", prob = 50 },
+			{ trait = "SELFISH", prob = 50 },
+		},
 	},
+	[3030] = 
 	{
-		id=3030, name="Prod expert",
+		name="Prod expert",
 		effects = { PRODUCTION_BONUS = 150, },
-		prerequisite = { pot_above, exp_above = 100 },
-		traits  = { { "HARDWORK" } },
+		prerequisite = { exp_above = 100 },
+		conditions = 
+		{
+			{ trait = "HARDWORK", prob = 60 },
+			{ trait = "AGGRESSIVE", prob = 40 },			
+		},
 	},
+	[3040] =
 	{
-		id=3040, name="Builder expert",
+		name="Builder expert",
 		effects = { BUILD_BONUS = 150, },
-		prerequisite = { pot_above, exp_above = 100 },
-		traits = { { "HARDWORK" } },
+		prerequisite = { exp_above = 100 },
+		conditions = 
+		{
+			{ trait = "HARDWORK", prob = 50 },
+			{ trait = "CAREFUL", prob = 30 },			
+		},
 	},
 	{
 		id=3050, name="Tax expert",
 		effects = { LEVY_TAX_BONUS = 150, },
-		prerequisite = { pot_above, exp_above = 100 },
-		traits = { { "HARDWORK" } },
+		prerequisite = { exp_above = 100 },
+		conditions = 
+		{
+			{ trait = "HARDWORK", prob = 30 },
+			{ trait = "LOVE_MONEY", prob = 50 },
+		},
 	},
 
 	{
 		id=4010, name="SCOUT expert",
 		effects = { RECONNOITRE_BONUS = 150, },
-		prerequisite = { pot_above, exp_above = 100 },
-		traits = { { "HARDWORK" } },
+		prerequisite = { exp_above = 100 },
+		conditions = 
+		{
+			{ trait = "INSIDIOUS", prob = 50 },
+			{ trait = "CAREFUL", prob = 50 },
+		},
 	},
 	{
 		id=4020, name="SPY expert",
 		effects = { SABOTAGE_BONUS = 150, },
-		prerequisite = { pot_above, exp_above = 100 },
-		traits = { { "INSIDIOUS" } },
+		prerequisite = { exp_above = 100 },
+		conditions = 
+		{
+			{ trait = "INSIDIOUS", prob = 50 },
+			{ trait = "CAREFUL", prob = 50 },
+		},
 	},
 
 	{
 		id=5010, name="dipl expert",
 		effects = { IMPROVE_RELATION_BONUS = 150, },
-		prerequisite = { pot_above, exp_above = 100 },
-		traits = { { "SMART" } },
+		prerequisite = { exp_above = 100 },
+		conditions = 
+		{
+			{ trait = "INSIDIOUS", prob = 50 },
+			{ trait = "SMART", prob = 50 },
+			{ trait = "OPEN", prob = 50 },			
+		},
 	},
 	{
 		id=5020, name="pact expert",
 		effects = { SIGN_PACT_BONUS = 150, },
-		prerequisite = { pot_above, exp_above = 100 },
-		traits = { { "INSIDIOUS" } },
+		prerequisite = { exp_above = 100 },
+		conditions = 
+		{
+			{ trait = "INSIDIOUS", prob = 50 },
+			{ trait = "SMART", prob = 50 },
+			{ trait = "OPEN", prob = 50 },
+		},
 	},
 
 	{
 		id=6010, name="tech expert",
 		effects = { RESEARCH_BONUS = 150, },
-		prerequisite = { pot_above, exp_above = 100 },
-		traits = { { "CAREFUL" } },
+		prerequisite = { exp_above = 100 },
+		conditions = 
+		{
+			{ trait = "CAREFUL", prob = 50 },
+			{ trait = "HARDWORK", prob = 50 },
+		},
 	},
 
 	{
 		id=7010, name="atk expert",
 		effects = { ATTACK = 150, },
-		prerequisite = { pot_above, exp_above = 100 },
-		traits = { { "AGGRESSIVE" } },
+		prerequisite = { exp_above = 100 },
+		conditions = 
+		{
+			{ traits = { "STRONG", "AGGRESSIVE" }, prob = 70 },
+			{ traits = { "STRONG", "IRRITABLE" }, prob = 70 },			
+		},
 	},
 	{
 		id=7020, name="def expert",
 		effects = { DEFEND = 150, },
-		prerequisite = { pot_above, exp_above = 100 },
-		traits = { { "CONSERVATIVE" } },
+		prerequisite = { exp_above = 100 },
+		conditions = 
+		{
+			{ trait = "CONSERVATIVE", prob = 50 },
+			{ trait = "CAREFUL", prob = 50 },
+		},
 	},
 	{
 		id=7110, name="field expert",
 		effects = { FIELD_COMBAT_BONUS = 150, },
-		prerequisite = { pot_above, exp_above = 100 },
-		traits = { { "STRONG", "INSIDIOUS" } },
+		prerequisite = { exp_above = 100 },
+		conditions = 
+		{
+			{ traits = { "STRONG", "INSIDIOUS" }, prob = 70 },
+		},
 	},
 	{
 		id=7120, name="siege expert",
 		effects = { SIEGE_COMBAT_BONUS = 150, },
-		prerequisite = { pot_above, exp_above = 100 },
-		traits = { { "STRONG", "CAREFUL" } },
+		prerequisite = { exp_above = 100 },
+		conditions = 
+		{
+			{ traits = { "STRONG", "CAREFUL" }, prob = 30 },
+		},
+	},
+	{
+		id=7500, name="training expert",
+		effects = { TRAINING = 50, },
+		prerequisite = { exp_above = 100 },
+		conditions = 
+		{
+			--{ trait = "CAREFUL", prob = 30 },
+		},
+	},
+	{
+		id=7510, name="Leadership Lv1",
+		effects = { LEADERSHIP = 30, },
+		prerequisite = { exp_above = 100 },
+		conditions = 
+		{
+			--{ trait = "CAREFUL", prob = 30 },
+		},
 	},
 }
 

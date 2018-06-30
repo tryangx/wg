@@ -35,13 +35,23 @@ function Troop_RemoveOfficer( troop, isKilled )
 	end
 end
 
+function Troop_LevelUp( troop )
+	troop:LevelUp()
+end
+
 -------------------------------------------
+
+function Corps_AfterCombat( corps )
+	Asset_Foreach( corps, CorpsAssetID.TROOP_LIST, function ( troop )
+		Troop_LevelUp( troop )
+	end)
+end
 
 --return the food need carried to move to destination
 function Corps_CalcNeedFood( corps, dest )
 	--check task, determine more food should carry
 	local days = 0
-	local task = Asset_GetDictItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )
+	local task = corps:GetTask()
 	if task then
 		local taskType = Asset_Get( task, TaskAssetID.TYPE )
 		if taskType == TaskType.HARASS_CITY then
@@ -110,7 +120,7 @@ function Corps_GetRequiredByCity( city )
 	if city:IsCapital() == true then
 		return 3
 	end
-	if city:HasStatus( CityStatus.BATTLEFRONT ) then
+	if city:GetStatus( CityStatus.BATTLEFRONT ) then
 		return 1
 	end
 	return 0
@@ -172,7 +182,7 @@ function Corps_Neutralize( corps, reason )
 	end
 
 	--remove task
-	local task = Asset_GetDictItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )
+	local task = corps:GetTask()
 	if task then
 		Task_Terminate( task )
 	end
@@ -325,6 +335,9 @@ local function Corps_EstablishTroop( city, corps, numberOfReqTroop, soldierPerTr
 		local troop = Entity_New( EntityType.TROOP )
 		troop:LoadFromTable( troopTable )
 
+		--determine the potential, maybe consider about the culture
+		Asset_Set( troop, TroopAssetID.POTENTIAL, Scenario_GetData( "TROOP_PARAMS" ).TROOP_POTENTIAL )
+
 		local maxSoldier = Corps_GetTroopMaxNumber( city )
 		Asset_Set( troop, TroopAssetID.SOLDIER, soldierPerTroop )
 		Asset_Set( troop, TroopAssetID.MAX_SOLDIER, maxSoldier )
@@ -386,7 +399,10 @@ end
 -- @param purpose default is FIELD_COMBAT
 -- @useage CorpsSystem:EstablishCorpsInCity( city )
 function Corps_EstablishInCity( city, leader, purpose, troopNumber )
-	--debug
+	if not leader then
+		error( "no leader, no corps" )
+		return
+	end
 	if leader then
 		if Asset_Get( leader, CharaAssetID.CORPS ) then
 			error( leader.name .. " alread has a corps" )
@@ -408,12 +424,6 @@ function Corps_EstablishInCity( city, leader, purpose, troopNumber )
 
 	--to make a corps
 	local corps = Entity_New( EntityType.CORPS )
-	Asset_Set( corps, CorpsAssetID.LEADER,     leader )
-	Asset_Set( leader, CharaAssetID.CORPS,     corps )
-
-	Asset_Set( corps, CorpsAssetID.LOCATION,   city )
-	Asset_Set( corps, CorpsAssetID.ENCAMPMENT, city )
-	Asset_Set( corps, CorpsAssetID.TEMPLATE,   template )
 
 	--set group and name
 	local group = Asset_Get( city, CityAssetID.GROUP )	
@@ -423,6 +433,13 @@ function Corps_EstablishInCity( city, leader, purpose, troopNumber )
 	else
 		corps.name = city.name .. "_Corps_" .. corps.id
 	end
+	
+	Asset_Set( corps, CorpsAssetID.LEADER,     leader )	
+	Asset_Set( leader, CharaAssetID.CORPS,     corps )
+
+	Asset_Set( corps, CorpsAssetID.LOCATION,   city )
+	Asset_Set( corps, CorpsAssetID.ENCAMPMENT, city )
+	Asset_Set( corps, CorpsAssetID.TEMPLATE,   template )
 
 	if leader then
 		Stat_Add( "Corps@Leader", leader:ToString() .. "->" .. corps:ToString(), StatType.LIST )
@@ -509,8 +526,12 @@ function Corps_EnrollInCity( corps, city )
 end
 
 function Corps_Train( corps, progress )
+	local maxTraining = corps:GetMaxTraining()
 	Asset_Foreach( corps, CorpsAssetID.TROOP_LIST, function ( troop )
-		Asset_Plus( troop, TroopAssetID.TRAINING, progress )
+		local training = troop:GetStatus( TroopStatus.TRAINING )
+		if not training then training = 0 end
+		training = training + progress
+		troop:SetStatus( TroopStatus.TRAINING, math.min( training, maxTraining ) )
 	end )
 	--InputUtil_Pause( "train corps", corps:GetTraining() )
 end

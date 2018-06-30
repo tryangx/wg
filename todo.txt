@@ -11,28 +11,34 @@ To Do List
 [ok] change Asset_SetListItem() into Asset_SetDictItem(), refactor list / dict ASSET.
 [ok] full logger
 [ok] refactor combat( change step into datas like "prepare", "embattle", "fight", "fight", )
-
 [ok] refactor meeting/proposal/task, seperate proposer/actor
+[ok] build construction
+[ok] expedition -> send corps to attack occupy goal
+[ok] improve troop levelup / chara levelup
 
-redesign CITY.SECURITY, CITY.SATISFACTION -> CITY.DISS, CITY.SECURITY
+---------------------------------------------------------
 
-build upgarde(level up)
+[inprog] troop medal: kill troop + honor --> medals
+[inprog] reputation system( 1. can inc/dec, 2. affect all things like san5 )
+[inprog] influence system( 1. only increase, 2. dec in event or special situ )
 
-build construction
+refactor chara loyality 
 
-buy / sell food
+add chara skills / troop tactics etc
+
+redesign CITY.SECURITY, CITY.SATISFACTION -> CITY.DISS, CITY.SECURITY, leads to rebel
+
+task refactor -> city, corps, actor
 
 intercept can cancel the corps task
 
 add solider limitation/requirement, reduce the complex of algorithm about Establish CROPS/TROOP
 
-reputation system( 1. can inc/dec, 2. affect all things like san5 )
-
-influence system( 1. only increase, 2. dec in event or special situ )
-
 add new move_actor transport, refugee
 
 add new system & move_actor mobile merchant( khan3,4 )
+
+buy / sell food
 
 economic / current policy / deflation / inflation
 

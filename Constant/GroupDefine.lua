@@ -128,3 +128,21 @@ GroupGovernment =
 	WARZONE       = 6,
 }
 
+GroupStatus = 
+{
+	--Determine by what group did
+	--1. Occupy City
+	--2. Win/Lose the importatnt field-combat
+	--3. Finish the goal
+	REPUTATION     = 1,
+}
+
+GroupInfluence = 
+{
+	TOTAL        = 0,
+	POWER_RANK   = 1,
+	TERRIOR_RANK = 2,
+	ALLY         = 3,
+	LEADER_TITLE = 4,
+	LEADER_CHARM = 5,
+}

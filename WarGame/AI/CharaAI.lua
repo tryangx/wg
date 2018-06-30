@@ -53,7 +53,7 @@ local function SubmitProposal( params )
 	Asset_Set( proposal, ProposalAssetID.TIME,        g_Time:GetDateValue() )
 	Asset_Set( proposal, ProposalAssetID.ACTOR,       _actor )
 
-	if _actor:GetTask() then
+	if _actor:IsBusy() then
 		error( _actor:ToString(), "already has task" )
 	end
 	
@@ -75,60 +75,74 @@ local function SubmitProposal( params )
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "corps", _registers["CORPS"] )
 
 	elseif params.type == "ESTABLISH_CORPS" then
-		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "leader", _registers["CORPS_LEADER"] )
-		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.COMMANDER )
-	
-	elseif params.type == "REINFORCE_CORPS"
-		or params.type == "DISMISS_CORPS"
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.ESTABLISH_CORPS )
+
+	elseif params.type == "DISMISS_CORPS"
 		or params.type == "TRAIN_CORPS"
 		or params.type == "UPGRADE_CORPS"
+		then
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "corps", _registers["CORPS"] )
+
+	elseif params.type == "REINFORCE_CORPS"
 		or params.type == "ENROLL_CORPS" then
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "corps", _registers["CORPS"] )
-		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.COMMANDER )
-
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.COMMANDER_TASK )
+	
 	elseif params.type == "RECRUIT"
 		or params.type == "CONSCRIPT" 
 		or params.type == "HIRE_GUARD" then
-		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.COMMANDER )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.COMMANDER_TASK )
 
 	elseif params.type == "PROMOTE_CHARA" then
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "job", _registers["JOB"] )
-		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.HR )
+	
 	elseif params.type == "HIRE_CHARA" then
-		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.HR )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.HR_TASK )
+	
 	elseif params.type == "DISPATCH_CHARA" then
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
+	
 	elseif params.type == "CALL_CHARA" then		
 		Asset_Set( proposal, ProposalAssetID.LOCATION, _registers["TARGET_CITY"] )
+	
 	elseif params.type == "MOVE_CAPITAL" then
 		Asset_Set( proposal, ProposalAssetID.LOCATION, _registers["TARGET_CITY"] )
 	
 	elseif params.type == "DEV_AGRICULTURE" or params.type == "DEV_COMMERCE" or params.type == "DEV_PRODUCTION" 
-		or params.type == "BUILD_CITY" or params.type == "LEVY_TAX"
+		or params.type == "LEVY_TAX"
 		then
-		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.AFFAIRS )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.AFFAIRS_TASK )
+	
+	elseif params.type == "BUILD_CITY"
+		then
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "construction", _registers["CONSTRUCTION"] )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.BUILD_CITY )
+
 	elseif params.type == "TRANSPORT" then
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
-		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.AFFAIRS )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.TRANSPORT )
 
 	elseif params.type == "RECONNOITRE" 
 		or params.type == "SABOTAGE"
 		then
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
-		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.STAFF )
 
 	elseif params.type == "RESEARCH" then
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "tech", _registers["TARGET_TECH"] )
-		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.TECHNICIAN )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.RESEARCH )
 
-	elseif params.type == "IMPROVE_RELATION"
+	elseif params.type == "IMPROVE_RELATION"	
 		or params.type == "DECLARE_WAR"
 		then
 		local oppGroup = _registers["TARGET_GROUP"]
 		local capital  = Asset_Get( oppGroup, GroupAssetID.CAPITAL )
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, capital )
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "group", oppGroup )
-		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.DIPLOMATIC )
+		if params.type == "IMPROVE_RELATION" then
+			Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.IMPROVE_RELATION )
+		elseif params.type == "DECLARE_WAR" then
+			Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.DECLARE_WAR )
+		end		
 
 	elseif params.type == "SIGN_PACT" then
 		local oppGroup = _registers["TARGET_GROUP"]
@@ -137,7 +151,7 @@ local function SubmitProposal( params )
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "pact", _registers["PACT"] )		
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "time", _registers["TIME"] )
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "group", oppGroup )
-		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", CityPlan.DIPLOMATIC )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.DIPLOMATIC_TASK )
 
 	elseif params.type == "SET_GOAL" then
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "goalType", _registers["GOALTYPE"] )
@@ -146,12 +160,18 @@ local function SubmitProposal( params )
 	elseif params.type == "INSTRUCT_CITY" then
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "instructCityList", _registers["INSTRUCT_CITY_LIST"] )		
 
+	elseif params.type == "TRAIN_CORPS" then
+
 	elseif params.type == "" then
 	end
 
 	DBG_Watch( "Debug_Meeting", "submit proposal=" .. proposal:ToString() )
 
 	Stat_Add( "Proposal@Submit_Times", 1, StatType.TIMES )
+
+	Log_Write( "meeting", "    topic=" .. MathUtil_FindName( MeetingTopic, _topic ) ..  " proposal=" .. proposal:ToString() )
+
+	--InputUtil_Pause( proposal:ToString() )
 
 	Asset_SetDictItem( _proposer, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD, Random_GetInt_Sync( 30, 50 ) )
 end
@@ -199,7 +219,7 @@ local function IsProposalCD()
 end
 
 local function HasCityStatus( params )
-	local ret = _city:HasStatus( CityStatus[params.status] )
+	local ret = _city:GetStatus( CityStatus[params.status] )
 	if ret == true then
 		--InputUtil_Pause( _city.name, params.status, CityStatus[params.status] )
 	end
@@ -218,29 +238,23 @@ local function HasGroupGoal( params )
 end
 
 local function QueryJob( topic )
-	local plan
 	local job
 	if topic == MeetingTopic.TECHNICIAN then
-		plan = CityPlan.TECHNICIAN
 		job  = CityJob.TECHNICIAN
 	elseif topic == MeetingTopic.DIPLOMATIC then
-		plan = CityPlan.DIPLOMATIC
 		job  = CityJob.DIPLOMATIC
 	elseif topic == MeetingTopic.HR then
-		plan = CityPlan.HR
 		job  = CityJob.HR
 	elseif topic == MeetingTopic.AFFAIRS then
-		plan = CityPlan.AFFAIRS
 		job  = CityJob.AFFAIRS
 	elseif topic == MeetingTopic.COMMANDER then
-		plan = CityPlan.COMMANDER
 		job  = CityJob.COMMANDER
-	elseif topic == MeetingTopic.STAFF then		
-		plan = CityPlan.STAFF
+	elseif topic == MeetingTopic.STAFF then
 		job  = CityJob.STAFF
 	elseif topic == MeetingTopic.STRATEGY then
+		job  = CityJob.COMMANDER
 	end
-	return job, plan
+	return job
 end
 
 local function CanSubmitPlan( params )
@@ -250,16 +264,10 @@ local function CanSubmitPlan( params )
 
 	--exclusive task checker
 	local topic = MeetingTopic[params.topic]
-	local job, plan = QueryJob( topic )
+	local job = QueryJob( topic )
 	if plan then
-		local task = Asset_GetDictItem( _city, CityAssetID.PLANS, plan ) 
-		if task then
-			local taskType = Asset_Get( task, TaskAssetID.TYPE )
-			if plan == CityPlan.STAFF then
-				--InputUtil_Pause( MathUtil_FindName( CityPlan, plan ), "exist", task:ToString() )				
-				return false
-			end
-		end
+		local task = _city:GetPlan( plan )
+		if task then return false end
 	end
 
 	if _city:IsCharaOfficer( CityJob.EXECUTIVE, _proposer ) == true then
@@ -272,20 +280,19 @@ local function CanSubmitPlan( params )
 		end )
 		if actor then
 			_actor = actor
-			Debug_Log( "execute" .. _proposer.name, "find a actor=" .. _actor.name )			
+			--Log_Write( "meeting", "      " .. _proposer.name .. " find a actor=" .. _actor.name )
 		end
 	end
 
 	return true
 end
 
-local function IsResponsible()	
+local function IsResponsible()		
 	if _city:IsCharaOfficer( CityJob.EXECUTIVE, _proposer ) == true then
 		return true
 	end
 
 	local job = QueryJob( _topic )
-	--print( "check responsible=" .. _proposer.name, "needjob=" .. MathUtil_FindName( CityJob, job ) )
 	if _city:IsCharaOfficer( job, _proposer ) then
 		--print( _proposer.name, "is job=" .. MathUtil_FindName( CityJob, job ) )
 		return true
@@ -309,7 +316,9 @@ local function CanEstablishCorps()
 
 	--need a leader
 	local charaList = _city:FindFreeCharas( function ( chara )
-		if Asset_Get( chara, CharaAssetID.CORPS ) then return false end
+		if Asset_Get( chara, CharaAssetID.CORPS ) then
+			return false
+		end
 		local job = _city:GetCharaJob( chara )
 		--Debug_Log( chara.name, MathUtil_FindName( CityJob, job ) )
 		return job == CityJob.COMMANDER
@@ -338,9 +347,9 @@ local function CanEstablishCorps()
 	end
 
 	local leader = Random_GetListItem( charaList )
-	_registers["CORPS_LEADER"] = leader
+	_registers["ACTOR"] = leader
 
-	--InputUtil_Pause( "est corps", leader:ToString() )
+	Debug_Log( "est corps", leader:ToString() )
 
 	return true
 end
@@ -355,7 +364,11 @@ local function CanReinforceCorps()
 	Asset_FindListItem( _city, CityAssetID.CORPS_LIST, function ( corps )
 		if corps:IsAtHome() == false then return false end
 		if corps:IsBusy() == true then return false end
-		if corps:HasStatus( CorpsStatus.UNDERSTAFFED ) then
+		if corps:GetStatus( CorpsStatus.UNDERSTAFFED_LV1 ) then
+			table.insert( corpsList, corps )
+		elseif corps:GetStatus( CorpsStatus.UNDERSTAFFED_LV2 ) and Random_GetInt_Sync( 1, 100 ) < 60 then
+			table.insert( corpsList, corps )
+		elseif corps:GetStatus( CorpsStatus.UNDERSTAFFED_LV3 ) and Random_GetInt_Sync( 1, 100 ) < 30 then
 			table.insert( corpsList, corps )
 		end
 	end )
@@ -405,7 +418,8 @@ local function CanTrainCorps()
 	Asset_FindListItem( _city, CityAssetID.CORPS_LIST, function ( corps )
 		if corps:IsAtHome() == false then return false end
 		if corps:IsBusy() == true then return false end
-		if corps:GetTraining() < 50 then
+		--check corps can train
+		if corps:CanTrain() then
 			findCorps = corps
 			return true
 		end
@@ -421,6 +435,31 @@ local function CanTrainCorps()
 	return true
 end
 
+local function CheckEnemyCity( targetCity, city, soldier, scores )
+	if targetCity:GetStatus( CityStatus.STARVATION ) then
+		return true
+	end
+
+	local citySoldier = Intel_Get( targetCity, city, CityIntelType.DEFENDER )
+	--unknown
+	if citySoldier == -1 then
+		return false
+	end
+	
+	--TODO: should consider about the officer ability
+
+	local ratio = soldier / citySoldier
+	local item = MathUtil_Approximate( ratio, scores, "ratio", true )
+	
+	Debug_Log( "enemy_compare", city.name .."=" .. soldier, targetCity.name .."="..citySoldier )
+
+	if Random_GetInt_Sync( 1, 100 ) > item.score then
+		return false
+	end
+	
+	return true
+end
+
 local function FindEnemyCityList( city, soldier, scores )
 	local group = Asset_Get( city, CityAssetID.GROUP )
 	return city:FilterAdjaCities( function ( adja )
@@ -428,27 +467,7 @@ local function FindEnemyCityList( city, soldier, scores )
 		if Dipl_IsAtWar( group, adjaGroup ) == false then
 			return false
 		end
-
-		if city:HasStatus( CityStatus.STARVATION ) then
-			return true
-		end
-
-		local citySoldier = Intel_Get( adja, city, CityIntelType.DEFENDER )
-		--unknown
-		if citySoldier == -1 then
-			return false
-		end
-		
-		--TODO: should consider about the officer ability
-
-		local ratio = soldier / citySoldier
-		local item = MathUtil_Approximate( ratio, scores, "ratio", true )
-		if Random_GetInt_Sync( 1, 100 ) > item.score then
-			return false
-		end
-
-		Debug_Log( "enemy_compare", soldier, citySoldier, "guard=" .. adja:GetPopu( CityPopu.GUARD ), item.score )
-		return true
+		return CheckEnemyCity( adja, city, soldier, scores )
 	end )
 end
 
@@ -490,7 +509,7 @@ local function CanAttackCity()
 	--check free corps
 	local list, soldier, power = _city:GetMilitaryCorps()
 	if #list == 0 then
-		--local numofcorps = Asset_GetListSize( _city, CityAssetID.CORPS_LIST )
+		local numofcorps = Asset_GetListSize( _city, CityAssetID.CORPS_LIST )
 		--print( _city.name, "has corps=" .. numofcorps )
 		return false
 	end
@@ -505,10 +524,56 @@ local function CanAttackCity()
 	local cities = FindEnemyCityList( _city, soldier, canAttackScores )
 
 	local number = #cities
-	if number == 0 then return false end
+	if number == 0 then
+		--print( "no enemy city" )
+		return false
+	end
 
 	local corps = list[Random_GetInt_Sync( 1, #list )]
 	local destcity = cities[Random_GetInt_Sync( 1, number )]
+
+	--check food
+	if Supply_HasEnoughFoodForCorps( _city, destcity, corps ) == false then
+		return false
+	end
+
+	Debug_Log( "check attack" .. corps:ToString( "STATUS" ) )
+	Debug_Log( "CombatCompare", corps:ToString( "MILITARY" ), destcity:ToString( "MILITARY" ) )
+
+	_registers["ACTOR"] = corps
+	_registers["TARGET_CITY"] = destcity
+	_registers["ATTACK_CORPS"] = list
+
+	--InputUtil_Pause( "attack", destcity.name, #list, corps:ToString("MILITARY"),soldier )
+
+	return true
+end
+
+local function CanExpedition()
+	--check free corps
+	local list, soldier, power = _city:GetMilitaryCorps()
+	if #list == 0 then
+		return false
+	end
+
+	local canAttackScores = 
+	{
+		{ ratio = 1.5, score = 0 },
+		{ ratio = 2,   score = 20 },
+		{ ratio = 3,   score = 50 },
+		{ ratio = 4,   score = 90 },
+	}
+
+	local goal = _group:GetGoal( GroupGoalType.OCCUPY_CITY )
+	if not goal then
+		return false
+	end
+	local destcity = goal.city
+	if not CheckEnemyCity( destcity, _city, soldier, canAttackScores ) then
+		return false
+	end
+	
+	local corps = list[Random_GetInt_Sync( 1, #list )]
 
 	--check food
 	if Supply_HasEnoughFoodForCorps( _city, destcity, corps ) == false then
@@ -521,7 +586,7 @@ local function CanAttackCity()
 	_registers["TARGET_CITY"] = destcity
 	_registers["ATTACK_CORPS"] = list
 
-	--InputUtil_Pause( "attack", destcity.name, #list, corps:ToString("MILITARY"),soldier )
+	--InputUtil_Pause( "expedition", destcity.name, #list, corps:ToString("MILITARY"),soldier )
 
 	return true
 end
@@ -557,13 +622,13 @@ end
 --2. not enough reserves
 --3. corps understaffed
 local function NeedMoreReserves()
-	if _city:HasStatus( CityStatus.BUDGET_DANGER ) then
+	if _city:GetStatus( CityStatus.BUDGET_DANGER ) then
 		--print( "budget danger, cann't conscript" )
 		Stat_Add( "BudgetDanger", 1, StatType.TIMES )
 		return false
 	end
 
-	if _city:HasStatus( CityStatus.RESERVE_UNDERSTAFFED ) then
+	if _city:GetStatus( CityStatus.RESERVE_UNDERSTAFFED ) then
 		return true
 	end
 	
@@ -571,45 +636,45 @@ local function NeedMoreReserves()
 	local score = 0
 	--check "in danger"
 	if _group:GetGoal( GroupGoalType.OCCUPY_CITY ) then
-		if _city:HasStatus( CityStatus.AGGRESSIVE_WEAK ) then
+		if _city:GetStatus( CityStatus.AGGRESSIVE_WEAK ) then
 			--print( _city.name, "AGGRESSIVE wek", score )
 			return true
 		end
-		if _city:HasStatus( CityStatus.AGGRESSIVE_ADV ) then
+		if _city:GetStatus( CityStatus.AGGRESSIVE_ADV ) then
 			score = score - 10
 			--print( _city.name, "AGGRESSIVE adv", score )
 		end
-		if _city:HasStatus( CityStatus.MILITARY_BASE ) then
+		if _city:GetStatus( CityStatus.MILITARY_BASE ) then
 			score = score + 30
 		end
 	elseif _group:GetGoal( GroupGoalType.DEFEND_CITY ) then
-		if _city:HasStatus( CityStatus.DEFENSIVE_DANGER ) then
+		if _city:GetStatus( CityStatus.DEFENSIVE_DANGER ) then
 			--print( _city.name, "DEFENSIVE_DANGER", score )
 			return true
 		end
-		if _city:HasStatus( CityStatus.DEFENSIVE_WEAK ) then
+		if _city:GetStatus( CityStatus.DEFENSIVE_WEAK ) then
 			score = score + 20
 			--print( _city.name, "DEFENSIVE_WEAK", score )
 		end
 	else
-		if _city:HasStatus( CityStatus.AGGRESSIVE_WEAK ) then
+		if _city:GetStatus( CityStatus.AGGRESSIVE_WEAK ) then
 			score = score + 30
 		end
-		if _city:HasStatus( CityStatus.AGGRESSIVE_ADV ) then
+		if _city:GetStatus( CityStatus.AGGRESSIVE_ADV ) then
 			return false
 		end
-		if _city:HasStatus( CityStatus.DEFENSIVE_DANGER ) then
+		if _city:GetStatus( CityStatus.DEFENSIVE_DANGER ) then
 			score = score + 50
 		end
-		if _city:HasStatus( CityStatus.DEFENSIVE_WEAK ) then
+		if _city:GetStatus( CityStatus.DEFENSIVE_WEAK ) then
 			score = score + 30
 		end
-		if _city:HasStatus( CityStatus.MILITARY_BASE ) then
+		if _city:GetStatus( CityStatus.MILITARY_BASE ) then
 			score = score + 20
 		end
 	end
 
-	if _city:HasStatus( CityStatus.BATTLEFRONT ) then
+	if _city:GetStatus( CityStatus.BATTLEFRONT ) then
 		score = score + 30
 	end
 
@@ -626,18 +691,21 @@ local function NeedMoreReserves()
 		{ ratio = 0.5, score = 70 },
 		{ ratio = 0.7, score = 50 },
 		{ ratio = 0.9, score = 30 },
+		{ ratio = 1, score = 0 },
 	}
 	local item = MathUtil_Approximate( ratio, reservesScores, "ratio", true )
 	score = score + item.score
 	
-	if Random_GetInt_Sync( 1, 100 ) > score then
+	--print( score, reserves, needSoldier )
+
+	if Random_GetInt_Sync( 1, 100 ) > score then		
 		Debug_Log( _city:ToString( "STATUS" ) )
 		Debug_Log( g_Time:ToString(), _city.name, "failed reserve " .. item.score .. "->" .. score, "needsol=" .. reserves .. "/" .. needSoldier )
 		return false
 	end
 
 	--starve check
-	if _city:HasStatus( CityStatus.STARVATION ) then
+	if _city:GetStatus( CityStatus.STARVATION ) then
 		--InputUtil_Pause( _city.name, "is starvation" )		
 	end
 
@@ -651,7 +719,7 @@ end
 
 --force conscript, 
 local function CanConscript()
-	if _actor:GetTask() then return false end	
+	if _actor:IsBusy() then return false end	
 	if NeedMoreReserves() == false then
 		return false
 	end
@@ -660,7 +728,7 @@ end
 
 --use money to recruit
 local function CanRecruit()
-	if _actor:GetTask() then return false end
+	if _actor:IsBusy() then return false end
 	if NeedMoreReserves() == false then		
 		return false
 	end
@@ -668,7 +736,7 @@ local function CanRecruit()
 end
 
 local function CanHireGuard()
-	if _actor:GetTask() then return false end
+	if _actor:IsBusy() then return false end
 
 	local hasGuard  = _city:GetPopu( CityPopu.GUARD )
 	local needGuard = _city:GetReqPopu( CityPopu.GUARD )
@@ -685,11 +753,11 @@ local function CanHireGuard()
 	local score = 50
 
 	if _group:GetGoal( GroupGoalType.DEFEND_CITY ) then
-		if _city:HasStatus( CityStatus.DEFENSIVE_DANGER ) then
+		if _city:GetStatus( CityStatus.DEFENSIVE_DANGER ) then
 			InputUtil_Pause( _city.name, "DEFENSIVE_DANGER", score )
 			return true
 		end
-		if _city:HasStatus( CityStatus.DEFENSIVE_WEAK ) then
+		if _city:GetStatus( CityStatus.DEFENSIVE_WEAK ) then
 			score = score + 30
 		end
 	end
@@ -732,13 +800,13 @@ end
 
 local function NeedCorps( city, score )
 	if not score then score = 0 end
-	if city:HasStatus( CityStatus.DEFENSIVE_WEAK ) then
+	if city:GetStatus( CityStatus.DEFENSIVE_WEAK ) then
 		score = score + 20
 	end
-	if city:HasStatus( CityStatus.DEFENSIVE_DANGER ) then
+	if city:GetStatus( CityStatus.DEFENSIVE_DANGER ) then
 		score = score + 35
 	end
-	if city:HasStatus( CityStatus.BATTLEFRONT ) then
+	if city:GetStatus( CityStatus.BATTLEFRONT ) then
 		score = score + 50
 	end
 	--Debug_Log( "dis corps", city.name, score )
@@ -812,15 +880,25 @@ end
 ----------------------------------------
 
 local function CanBuildCity()
-	if _actor:GetTask() then return false end
+	if _actor:IsBusy() then return false end
 
 	local area = _city:GetMaxBulidArea()
-	local numOfConstrs = Asset_GetListSize( _city, CityAssetID.CONSTR_LIST )
-	if numOfConstrs >= area then
+	local has = Asset_GetListSize( _city, CityAssetID.CONSTR_LIST )
+	if has >= area then
 		return false
 	end
 
-	return false
+	local list = Asset_GetList( _city, CityAssetID.CONSTRTABLE_LIST )
+	if #list == 0 then
+		return false
+	end
+
+	local constr = Random_GetListItem( list )
+	_registers["CONSTRUCTION"] = constr
+
+	--InputUtil_Pause( "build", constr.name )
+
+	return true
 end
 
 function NeedLevyTax( score )
@@ -844,7 +922,7 @@ local function CanLevyTax()
 end
 
 local function CanTransport()
-	if _actor:GetTask() then return false end
+	if _actor:IsBusy() then return false end
 
 	--has enough corvee to do this job
 	if _city:GetPopu( CityPopu.CORVEE ) < Scenario_GetData( "TROOP_PARAMS" ).MIN_TROOP_SOLDIER then		
@@ -853,7 +931,7 @@ local function CanTransport()
 	end
 
 	--has enough food/moeny for self
-	if _city:HasStatus( CityStatus.BUDGET_DANGER ) then
+	if _city:GetStatus( CityStatus.BUDGET_DANGER ) then
 		--print( "budget danger")
 		return false
 	end
@@ -861,7 +939,7 @@ local function CanTransport()
 	--find advanced base
 	local cityList = {}
 	Asset_Foreach( _group, GroupAssetID.CITY_LIST, function ( city )
-		if _city ~= city and city:HasStatus( CityStatus.ADVANCED_BASE ) then
+		if _city ~= city and city:GetStatus( CityStatus.ADVANCED_BASE ) then
 			table.insert( cityList, city )
 		end
 	end )
@@ -878,7 +956,7 @@ local function CanTransport()
 end
 
 local function CanHireChara()
-	if _actor:GetTask() then return false end
+	if _actor:IsBusy() then return false end
 
 	local limit
 	if _city then		
@@ -1030,7 +1108,6 @@ local function CanCallChara()
 	local charaList = {}	
 	Asset_Foreach( _group, GroupAssetID.CITY_LIST, function ( city )
 		if city:IsCapital() then return end
-		--print( city.name, Asset_GetListSize( city, CityAssetID.CHARA_LIST ), Asset_GetListSize( city, CityAssetID.OFFICER_LIST ), Chara_GetReqNumOfOfficer( city ) )
 		local num = Asset_GetListSize( city, CityAssetID.OFFICER_LIST )		
 		if num > city:GetNumOfOfficerSlot() then
 			charaList = city:FindNonOfficerFreeCharas( charaList )
@@ -1051,7 +1128,7 @@ local function CanCallChara()
 end
 
 local function CanDevelop( params )
-	if _actor:GetTask() then return false end
+	if _actor:IsBusy() then return false end
 
 	local score = 0
 	local ratio
@@ -1102,13 +1179,13 @@ local function CanDevelop( params )
 end
 
 local function CanResearch()
-	if _actor:GetTask() then return false end
+	if _actor:IsBusy() then return false end
 
 	if _city:IsCapital() == false then return false end
 
 	if Asset_Get( _city, CityAssetID.RESEARCH ) ~= nil then return false end
 	
-	if _proposer:IsGroupLeader() == false and _city:GetOfficer( CityJob.TECHNICIAN ) ~= _proposer then
+	if _proposer:IsGroupLeader() == false and not _city:IsCharaOfficer( CityJob.TECHNICIAN, _proposer ) then
 		return false
 	end
 
@@ -1144,7 +1221,7 @@ end
 ------------------------------
 
 local function CanReconnoitre()
-	if _actor:GetTask() then return false end
+	if _actor:IsBusy() then return false end
 
 	--whether to reconnoitre
 	local list = {}
@@ -1163,7 +1240,7 @@ local function CanReconnoitre()
 end
 
 local function CanSabotage()
-	if _actor:GetTask() then return false end
+	if _actor:IsBusy() then return false end
 
 	local list = {}
 	Asset_Foreach( _city, CityAssetID.SPY_LIST, function( spy )
@@ -1196,11 +1273,11 @@ local function DetermineDefendGoal( ... )
 		if goalData.city == city then
 			table.insert( baseList, { city = city, type = CityStatus.ADVANCED_BASE } )
 		
-		elseif city:HasStatus( CityStatus.SAFETY ) then
+		elseif city:GetStatus( CityStatus.SAFETY ) then
 			--where support the advanced base
 			if city:IsAdjaCity( goalData.city ) then
 				table.insert( baseList, { city = city, type = CityStatus.MILITARY_BASE } )
-			elseif city:HasStatus( CityStatus.SAFETY ) then
+			elseif city:GetStatus( CityStatus.SAFETY ) then
 				table.insert( baseList, { city = city, type = CityStatus.PRODUCTION_BASE } )
 			end
 
@@ -1225,7 +1302,7 @@ local function DetermineEnhanceGoal( ... )
 		if goalData.city == city then
 			table.insert( baseList, { city = city, type = CityStatus.MILITARY_BASE } )
 
-		elseif city:HasStatus( CityStatus.SAFETY ) then
+		elseif city:GetStatus( CityStatus.SAFETY ) then
 			table.insert( baseList, { city = city, type = CityStatus.PRODUCTION_BASE } )
 
 		else
@@ -1250,7 +1327,7 @@ local function DetermineDevelopGoal( ... )
 		if goalData.city == city then
 			table.insert( baseList, { city = city, type = CityStatus.PRODUCTION_BASE } )
 
-		elseif city:HasStatus( CityStatus.SAFETY ) then
+		elseif city:GetStatus( CityStatus.SAFETY ) then
 			table.insert( baseList, { city = city, type = CityStatus.PRODUCTION_BASE } )
 		
 		else
@@ -1277,7 +1354,7 @@ local function DetermineOccupyGoal( ... )
 		if Asset_Get( adjaCity, CityAssetID.GROUP ) ~= _group then
 			return
 		end
-		if adjaCity:HasStatus( CityStatus.ADVANCED_BASE ) then
+		if adjaCity:GetStatus( CityStatus.ADVANCED_BASE ) then
 			return true
 		end
 		table.insert( cityList, adjaCity )
@@ -1296,13 +1373,13 @@ local function DetermineOccupyGoal( ... )
 			return
 		end
 
-		if city:HasStatus( CityStatus.SAFETY ) then
+		if city:GetStatus( CityStatus.SAFETY ) then
 			table.insert( baseList, { city = city, type = CityStatus.PRODUCTION_BASE } )
 		
-		elseif city:HasStatus( CityStatus.BATTLEFRONT ) then
+		elseif city:GetStatus( CityStatus.BATTLEFRONT ) then
 			table.insert( baseList, { city = city, type = CityStatus.MILITARY_BASE } )
 		
-		elseif city:HasStatus( CityStatus.FRONTIER ) then
+		elseif city:GetStatus( CityStatus.FRONTIER ) then
 			table.insert( baseList, { city = city, type = nil } )
 		
 		else
@@ -1318,14 +1395,14 @@ end
 local function CanImproveRelation()
 	if 1 then return false end
 
-	if _actor:GetTask() then return false end
+	if _actor:IsBusy() then return false end
 
 	--1. self isn't at war
 	--2. target isn't at war
 	if Dipl_IsAtWar( _group ) == true then return false end	
 
 	--only group leader or diplomatic can execute the task
-	if _proposer:IsGroupLeader() == false and _city:GetOfficer( CityJob.DIPLOMATIC ) ~= _proposer then return false end
+	if _proposer:IsGroupLeader() == false and not _city:IsCharaOfficer( CityJob.DIPLOMATIC, _proposer ) then return false end
 
 	local list = Dipl_GetRelations( _group )
 	if not list then return false end
@@ -1347,7 +1424,7 @@ local function CanImproveRelation()
 end
 
 local function CanDeclareWar()
-	if _actor:GetTask() then return false end
+	if _actor:IsBusy() then return false end
 
 	local list = Dipl_GetRelations( _group )
 	if not list then return false end
@@ -1367,7 +1444,7 @@ local function CanDeclareWar()
 end
 
 local function CanSignPact()
-	if _actor:GetTask() then return false end
+	if _actor:IsBusy() then return false end
 
 	local list = Dipl_GetRelations( _group )
 	if not list then return  false end	
@@ -1494,7 +1571,7 @@ local function DetermineGoal()
 	if findGoalType == GroupGoalType.OCCUPY_CITY then
 		local cityList = {}
 		Asset_Foreach( _group, GroupAssetID.CITY_LIST, function ( city )
-			if not city:HasStatus( CityStatus.BATTLEFRONT ) then
+			if not city:GetStatus( CityStatus.BATTLEFRONT ) then
 				return
 			end
 			Asset_Foreach( city, CityAssetID.ADJACENTS, function ( adjaCity )
@@ -1513,7 +1590,7 @@ local function DetermineGoal()
 	if findGoalType == GroupGoalType.DEFEND_CITY then
 		local cityList = {}
 		Asset_Foreach( _group, GroupAssetID.CITY_LIST, function ( city )
-			if city:HasStatus( CityStatus.BATTLEFRONT ) == true then
+			if city:GetStatus( CityStatus.BATTLEFRONT ) == true then
 				table.insert( cityList, city )
 			end
 		end)
@@ -1529,7 +1606,7 @@ local function DetermineGoal()
 		local minSoldier = Scenario_GetData( "TROOP_PARAMS" ).MIN_TROOP_SOLDIER
 		Asset_Foreach( _group, GroupAssetID.CITY_LIST, function ( city )
 			--print( "enhance", city:GetPopu( CityPopu.RESERVES ), minSoldier )
-			if city:HasStatus( CityStatus.FRONTIER ) == true or city:HasStatus( CityStatus.BATTLEFRONT ) == true then
+			if city:GetStatus( CityStatus.FRONTIER ) == true or city:GetStatus( CityStatus.BATTLEFRONT ) == true then
 				table.insert( cityList, city )
 			end
 		end )
@@ -1680,7 +1757,7 @@ local RecruitProposal =
 	},
 }
 
-local RecruitProposal = 
+local HireGuardProposal = 
 {
 	type = "SEQUENCE", children = 
 	{
@@ -1874,19 +1951,22 @@ local _SubmitCommanderProposal =
 		{ type = "SELECTOR", children = 
 			{
 				--self security
-				EstablishCorpsProposal,			
+				EstablishCorpsProposal,
 				ReinforceProposal,				
 				EnrollProposal,
 				ConscriptProposal,
 				RecruitProposal,
-
-				--enhance
+				HireGuardProposal,				
 				TrainProposal,
-
-				--friendly safety
 				DispatchCorpsProposal,				
 			},
-		}
+		},
+		--[[
+		{ type = "RANDOM_SELECTOR", children = 
+			{
+			}
+		},
+		]]
 	}
 }
 
@@ -1955,6 +2035,12 @@ local _SubmitStrategyProposal =
 				{ type = "SEQUENCE", children = 
 					{		
 						{ type = "FILTER", condition = CanAttackCity },
+						{ type = "ACTION", action = SubmitProposal, params = { type = "ATTACK_CITY" } },
+					},
+				},
+				{ type = "SEQUENCE", children = 
+					{		
+						{ type = "FILTER", condition = CanExpedition },
 						{ type = "ACTION", action = SubmitProposal, params = { type = "ATTACK_CITY" } },
 					},
 				},
@@ -2196,6 +2282,6 @@ function CharaAI_SubmitMeetingProposal( chara, meeting )
 		--DBG_Watch( "Debug_Meeting", chara.name .. " try proposal, topic=" .. MathUtil_FindName( MeetingTopic, _topic ) )
 		return _behavior:Run( _meetingProposal )
 	end
-	DBG_Watch( "Debug_Meeting", chara.name .. " cann't submit proposal" )
+	Log_Write( "meeting", "    chara=" .. chara.name .. " cann't submit proposal" )
 	return false
 end

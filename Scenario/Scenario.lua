@@ -48,6 +48,8 @@ ScenarioData =
 	CORPS_PARAMS                 = DefaultCorpsParams,
 	TROOP_PARAMS                 = DefaultTroopParams,
 
+	CITY_CONSTR_DATA             = Default_CityBuildingData,
+
 	TASK_STEP_DATA   = DefaultTaskSteps,
 	TASK_CONTRIBUTION_DATA = DefaultTaskContribution,	
 
@@ -56,7 +58,7 @@ ScenarioData =
 	TECH_DATA        = DefaultTechData,
 
 	--Scenario 
-	CHARA_SKILL_DATA = DefaultCharaSkill,
+	CHARA_SKILL_DATA = DefaultCharaSkill,		
 
 	TROOP_DATA       = DefaultTroopTable,
 	WEAPON_DATA      = DefaultWeaponTable,
@@ -90,7 +92,7 @@ ScenarioData =
 
 	GROUP_DATA    = CHUHAN_GroupData,
 	CITY_DATA     = CHUHAN_CityData,
-	CHARA_DATA    = CHUHAN_CharaData,	
+	CHARA_DATA    = CHUHAN_CharaData,
 
 	EVENT_DATA    = CHUHAN_EventData,
 	CORPS_DATA    = nil,	
@@ -115,6 +117,11 @@ function Scenario_InitData()
 	end
 
 	_Scenario.CHARA_TRAIT_DATA = MathUtil_ConvertKeyToID( CharaTraitType, _Scenario.CHARA_TRAIT_DATA )	
+
+	for id, skill in pairs( _Scenario.CHARA_SKILL_DATA ) do
+		skill.effects = MathUtil_ConvertKeyToID( CharaSkillEffect, skill.effects )
+		skill.consume = MathUtil_ConvertKeyToID( CharaActionPoint, skill.consume )
+	end
 
 	_Scenario.TASK_STEP_DATA = MathUtil_ConvertKeyToID( TaskType, _Scenario.TASK_STEP_DATA )
 	for id, list in pairs( _Scenario.TASK_STEP_DATA ) do

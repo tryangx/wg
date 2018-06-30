@@ -118,9 +118,9 @@ function CharaCreator_GenerateCharaActionData( chara, grade )
 	Asset_Set( chara, CharaAssetID.TACTIC_LIMIT,    tactic_lim * CharaCreatorParams.LIMIT_MODULUS )
 end
 
-function CharaCreator_GenerateAtomicTrait( chara )
+function CharaCreator_GenerateAtomicTrait( chara, num )
 	--determine how many atomic trait
-	local reqNumOfTrait = Random_GetInt_Sync( 2, 4 )
+	local reqNumOfTrait = num or Random_GetInt_Sync( 1, 3 )
 	--print( "Try to trait", reqNumOfTrait )
 	while reqNumOfTrait > 0 do
 		for _, item in ipairs( CharaAtomicTraitProb ) do

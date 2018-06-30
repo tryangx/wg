@@ -23,6 +23,7 @@ function City_GetNextJob( city )
 		local valid = true
 		if valid == true and item.capital and isCapital == false then valid = false end
 		if valid == true and item.prob and Random_GetInt_Sync( 1, 100 ) > item.prob then valid = false end
+		if valid == true and item.max and city:GetNumberOfOfficer( CityJob[item.job] ) >= item.max then valid = false end
 		if valid == true then
 			return CityJob[item.job]
 		end
@@ -233,7 +234,7 @@ end
 
 function City_PopuConv( city )
 	local security = Asset_Get( city, CityAssetID.SECURITY )
-	local dissatisfaction = Asset_Get( city, CityAssetID.DISSATISFACTION )
+	local DISS = Asset_Get( city, CityAssetID.DISS )
 
 	local lv       = Asset_Get( city, CityAssetID.LEVEL )	
 	local list     = Asset_GetList( city, CityAssetID.POPU_STRUCTURE )
@@ -329,7 +330,7 @@ function City_Mental( city )
 	local hobosec    = math.max( hobo * mentalparams.HOBO / popu, minparams.HOBO )	
 	local security_std = math.max( 50, math.ceil( 60 + soldiersec + officersec + hobosec ) )
 	
-	local dissatisfaction = Asset_Get( city, CityAssetID.DISSATISFACTION )
+	local DISS = Asset_Get( city, CityAssetID.DISS )
 	local richsat  = math.min( rich * mentalparams.RICH / popu, maxparams.RICH )
 	local noblesat = math.min( noble * mentalparams.NOBLE / popu, maxparams.NOBLE )
 	local midsat   = math.min( middle * mentalparams.MIDDLE / popu, maxparams.MIDDLE )
@@ -358,10 +359,10 @@ function City_Mental( city )
 	]]	
 
 	Asset_Set( city, CityAssetID.SECURITY, security )
-	Asset_Set( city, CityAssetID.DISSATISFACTION, dissatisfaction )
+	Asset_Set( city, CityAssetID.DISS, DISS )
 
 	Track_Data( "security", security )
-	Track_Data( "dissatisfaction", dissatisfaction )
+	Track_Data( "DISS", DISS )
 	--Track_Dump()
 
 	--if security < satisfaction then InputUtil_Pause() end
@@ -372,7 +373,7 @@ function City_PopuGrow( city )
 	local population = Asset_Get( city, CityAssetID.POPULATION )
 	local growthRate = Random_GetInt_Sync( PopulationParams.GROWTH_MIN_RATE , PopulationParams.GROWTH_MAX_RATE )
 	local sec = Asset_Get( city, CityAssetID.SECURITY )
-	local diss = Asset_Get( city, CityAssetID.DISSATISFACTION )
+	local diss = Asset_Get( city, CityAssetID.DISS )
 
 	--increase children
 	local increase = math.ceil( population * growthRate * rate * ( 100 + ( sec - diss ) ) * 0.000005 )
@@ -750,8 +751,11 @@ function City_LevyTax( city, progress )
 	return income
 end
 
-function City_Build( city )
-
+function City_Build( city, construction )
+	Asset_AppendList( city, CityAssetID.CONSTR_LIST, construction )
+	--InputUtil_Pause( city:ToString( "CONSTRUCTION") )
+	Stat_Add( "BuildConstr", 1, StatType.TIMES )
+	Stat_Add( city.name .. "@Build", construction.name, StatType.LIST )
 end
 
 function City_Pillage( city )

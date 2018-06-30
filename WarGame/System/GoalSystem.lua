@@ -63,6 +63,7 @@ function GoalSystem:Update()
 				end
 
 				if achieveGoal then
+					group:AchieveGoal()
 					--InputUtil_Pause( "achieve goal", MathUtil_FindName( GroupGoalType, goalType ) )					
 					Stat_Add( "AchieveGoal@" .. MathUtil_FindName( GroupGoalType, goalType ), 1, StatType.TIMES )
 				end

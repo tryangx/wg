@@ -37,10 +37,15 @@ function GroupSystem:Update()
 	local day = g_Time:GetDay()
 	Entity_Foreach( EntityType.GROUP, function ( group )
 		group:Update()
+
 		if day == DAY_IN_MONTH then
 			group:UpdateSpy()
 
 			Stat_Add( "GroupStatus@" .. group.name, g_Time:ToString() .. " " .. group:ToString( "POWER" ), StatType.LIST )
+		end
+
+		if day == DAY_IN_MONTH then
+			group:UpdateInfluences()
 		end
 	end )
 end

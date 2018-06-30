@@ -115,4 +115,7 @@ SkillEffectType =
 	DEFEND             = 702,
 	FIELD_COMBAT_BONUS = 711,
 	SIEGE_COMBAT_BONUS = 711,
+
+	TRAINING           = 800,
+	LEADERSHIP         = 801,
 }

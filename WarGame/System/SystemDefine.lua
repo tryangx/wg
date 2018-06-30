@@ -16,12 +16,14 @@ require "System/MeetingSystem"
 require "System/DiplomacySystem"
 require "System/GoalSystem"
 require "System/ReportSystem"
+require "System/RankingSystem"
 
 --System running sequence as follow
 SystemType =
 {
 	MESSAGE_SYS       = 1,
 	REPORT_SYS        = 2,
+	RANKING_SYS       = 3,
 
 	CHARA_SYS         = 100,
 	CITY_SYS          = 101,

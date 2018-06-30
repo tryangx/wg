@@ -1,6 +1,4 @@
-
-
-----------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------
 --
 --
 --
@@ -108,11 +106,41 @@ CharaStatus =
 	----------------------------
 }
 
+CharaActionPoint = 
+{
+	--STAMINA = 1,
+	TACTIC   = 1,
+	STRATEGY = 2,
+	POLITICS = 3,
+}
 
+CharaSkillEffect = 
+{
+	HIRE_CHARA_BONUS   = 201,
 
---
--- Selfish --       
--- Close -- Open
+	AGRICULTURE_BONUS  = 301,
+	COMMERCE_BONUS     = 302,
+	PRODUCTION_BONUS   = 303,
+	BUILD_BONUS        = 304,
+	LEVY_TAX_BONUS     = 305,
+
+	RECONNOITRE_BONUS  = 401,
+	SABOTAGE_BONUS     = 402,
+
+	IMPROVE_RELATION_BONUS = 501,
+	SIGN_PACT_BONUS        = 502,
+	
+	RESEARCH_BONUS     = 601,
+
+	ATTACK             = 701,
+	DEFEND             = 702,
+	FIELD_COMBAT_BONUS = 711,
+	SIEGE_COMBAT_BONUS = 711,
+
+	TRAINING           = 800,
+	LEADERSHIP         = 801,
+}
+
 --
 --
 CharaTraitType = 
@@ -166,7 +194,6 @@ CharaTraitType =
 
 	OPEN       = 2040,
 	CLOSE      = 2041,
-
 
 	-----------------------
 	--Normally ( which will leads to extension )
