@@ -178,6 +178,7 @@ function City:ToString( type )
 	
 	elseif type == "OFFICER" then
 		content = content .. " chars=" .. Asset_GetListSize( self, CityAssetID.CHARA_LIST )
+		content = content .. " ofi=" .. Asset_GetListSize( self, CityAssetID.OFFICER_LIST )
 		Asset_Foreach( self, CityAssetID.OFFICER_LIST, function ( data )
 			content = content .. " [" .. MathUtil_FindName( CityJob, data.job ) .. "]=" .. data.officer.name
 		end )
@@ -753,10 +754,12 @@ end
 
 function City:FindVacancyOfficerPositions()
 	local posList = {}
-	local endPos = self:IsCapital() and CityJob.CAPITAL_POSITION_END or CityJob.POSITION_END
+	local endPos = CityJob.POSITION_BEGIN + self:GetNumOfOfficerSlot() - 1
 	for job = CityJob.POSITION_BEGIN + 1, endPos do
 		local officer = self:GetOfficer( job )
 		if not officer then
+			--print( "add pos", MathUtil_FindName( CityJob, job ) )
+			if job == CityJob.CAPITAL_POSITION_END then error( "wrong" .. endPos ) end
 			table.insert( posList, job )
 		end
 	end
@@ -769,6 +772,7 @@ function City:FindNonOfficerFreeCharas( charaList )
 	Asset_Foreach( self, CityAssetID.CHARA_LIST, function( chara )
 		if chara:IsAtHome() == false then return end
 		if chara:IsBusy() == true then return end
+		if Asset_Get( chara, CharaAssetID.CORPS ) then return end
 		if self:GetCharaJob( chara ) ~= CityJob.NONE then return end
 		table.insert( charaList, chara )
 	end )
@@ -800,7 +804,7 @@ function City:GetFreeCorps( fn )
 		else
 			--InputUtil_Pause( "no leader, not free corps" )
 		end
-		if fn and fn( corps ) == false then
+		if fn and not fn( corps ) then
 			return
 		end
 		table.insert( list, corps )
@@ -809,12 +813,13 @@ function City:GetFreeCorps( fn )
 	return list, soldier
 end
 
-function City:GetMilitaryCorps()
+function City:GetMilitaryCorps( understaffed )
+	if not understaffed then understaffed = 20 end
 	return self:GetFreeCorps( function ( corps )
 		if not Asset_Get( corps, CorpsAssetID.LEADER ) then
 			return false
 		end
-		return not corps:GetStatus( CorpsStatus.UNDERSTAFFED )
+		return corps:GetStatus( CorpsStatus.UNDERSTAFFED ) < understaffed
 	end)
 end
 
@@ -850,7 +855,7 @@ end
 
 --return maximum population of given population type
 function City:GetLimitPopu( popuType )
-	local ratio = self:GetLimitPopuRatio( popuType )
+	local ratio = self:GetLimitPopuRatio( popuType )	
 	return math.ceil( Asset_Get( self, CityAssetID.POPULATION ) * ratio )
 end
 
@@ -863,7 +868,7 @@ function City:GetReqPopuRatio( popuType )
 end
 
 function City:GetReqPopu( popuType )
-	local ratio = self:GetLimitPopuRatio( popuType )
+	local ratio = self:GetReqPopuRatio( popuType )
 	return math.ceil( Asset_Get( self, CityAssetID.POPULATION ) * ratio )
 end
 
@@ -915,7 +920,7 @@ function City:AddCorps( corps )
 		group:AddCorps( corps )
 	end
 
-	Debug_Log( corps:ToString(), "join city=", self.name )
+	Debug_Log( corps:ToString(), "garrison city=" .. self.name )
 end
 
 function City:RemoveCorps( corps )	
@@ -965,20 +970,24 @@ function City:AssignOfficer()
 		return
 	end
 
+	--print( self:ToString("OFFICER"),  #charaList, #jobList )
+
 	--fill vacancy position
 	local vacancies = #charaList - #jobList
 	while vacancies > 0 do
 		local job = City_GetNextJob( self )
 		table.insert( jobList, job )
 		vacancies = vacancies - 1
-		--InputUtil_Pause( "add ", MathUtil_FindName( CityJob, job ), job )
+		--print( "add ", MathUtil_FindName( CityJob, job ), job )
 	end
 
 	local jobIndex = 1
 	while #charaList > 0 do
 		local job = jobList[jobIndex]
 		jobIndex = jobIndex + 1
-		self:SetOfficer( Chara_FindBestCharaForJob( job, charaList ), job )		
+		local chara = Chara_FindBestCharaForJob( job, charaList )
+		self:SetOfficer( chara, job )
+		--print( "setofficer", chara.name, MathUtil_FindName( CityJob, job ) )
 	end
 end
 
@@ -1011,6 +1020,17 @@ function City:SetOfficer( chara, job )
 end
 
 --------------------------------------------
+
+function City:UpdatePopu( ... )
+	--only calculate soldier in the city
+	local soldier = 0
+	Asset_Foreach( self, CityAssetID.CORPS_LIST, function ( corps )
+		if corps:IsAtHome() then
+			soldier = soldier + corps:GetSoldier()
+		end
+	end)
+	Asset_SetDictItem( self, CityAssetID.POPU_STRUCTURE, CityPopu.SOLDIER, soldier )
+end
 
 function City:UpdateConstrList()
 	Asset_Clear( self, CityAssetID.CONSTRTABLE_LIST )
@@ -1064,18 +1084,13 @@ function City:Update()
 		--Track_HistoryRecord( "dev", { name = self.name, agr = Asset_Get( self, CityAssetID.AGRICULTURE ), comm = Asset_Get( self, CityAssetID.COMMERCE ), prod = Asset_Get( self, CityAssetID.PRODUCTION ), date = g_Time:GetDateValue() } )
 	end
 
+	if day == 1 then
+		self:UpdatePopu()
+	end
+
 	if day == DAY_IN_MONTH then
 		self:UpdateConstrList()
 	end
-
-	--only calculate soldier in the city
-	local soldier = 0
-	Asset_Foreach( self, CityAssetID.CORPS_LIST, function ( corps )
-		if corps:IsAtHome() then
-			soldier = soldier + corps:GetSoldier()
-		end
-	end)
-	Asset_SetDictItem( self, CityAssetID.POPU_STRUCTURE, CityPopu.SOLDIER, soldier )
 
 	--cancel research
 	if self:IsCapital() == false then

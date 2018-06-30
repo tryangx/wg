@@ -7,10 +7,13 @@ function Intel_Get( city, fromCity, type )
 	local value = 0
 	if type == CityIntelType.MILITARY then
 		value = city:GetMilitaryPower()
+
 	elseif type == CityIntelType.SOLDIER then
-		value = city:GetSoldier()
-	elseif type == CityIntelType.DEFENDER then
-		value = city:GetPopu( CityPopu.SOLDIER ) + city:GetPopu( CityPopu.GUARD )
+		value = city:GetSoldier() + city:GetPopu( CityPopu.RESERVES )
+
+	elseif type == CityIntelType.DEFENDER then		
+		value = city:GetPopu( CityPopu.SOLDIER ) + city:GetPopu( CityPopu.RESERVES ) + city:GetPopu( CityPopu.GUARD )
+
 	else
 		error( "unkown intel type=" .. type )
 	end

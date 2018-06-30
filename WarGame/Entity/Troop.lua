@@ -251,6 +251,13 @@ function Troop:Surrender()
 	end
 end
 
+function Troop:AffectMorale( delta )	
+	local maxMorale = self:GetMaxMorale()
+	local morale = Asset_Get( self, TroopAssetID.MORALE )
+	morale = math.max( 0, math.min( maxMorale, morale + delta ) )
+	Asset_Set( self, TroopAssetID.MORALE, morale )
+end
+
 function Troop:KillSoldier( number )
 	local exp = self:GetStatus( TroopStatus.EXP )
 	exp = exp + number
@@ -290,5 +297,8 @@ function Troop:LevelUp()
 	return true
 end
 
-function Troop:Update()
+function Troop:UpdateAtHome()
+	local lv = Asset_Get( self, TroopAssetID.LEVEL )
+	local delta = lv + 5
+	self:AffectMorale( delta )
 end

@@ -118,7 +118,7 @@ end
 
 function Corps_GetRequiredByCity( city )
 	if city:IsCapital() == true then
-		return 3
+		return 2
 	end
 	if city:GetStatus( CityStatus.BATTLEFRONT ) then
 		return 1
@@ -178,7 +178,7 @@ function Corps_Neutralize( corps, reason )
 
 	local leader = Asset_Get( corps, CorpsAssetID.LEADER )
 	if leader then
-		Chara_Die( chara )
+		Chara_Die( leader )
 	end
 
 	--remove task
@@ -460,10 +460,11 @@ function Corps_EstablishInCity( city, leader, purpose, troopNumber )
 	else
 		numberOfReqTroop = troopNumber
 	end
+
 	--calculate minimum soldier per required troop
 	soldierPerTroop = math.floor( reserves / numberOfReqTroop )
 
-	--limit by the tech/theory/etc.
+	--limit by the tech/theory/etc.	
 	soldierPerTroop = math.min( soldierPerTroop, Corps_GetTroopMaxNumber( city, nil ) )
 
 	--boundary checks

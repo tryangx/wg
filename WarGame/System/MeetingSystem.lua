@@ -133,7 +133,7 @@ local function Meeting_Update( meeting )
 		Entity_Clear( EntityType.PROPOSAL )
 
 		--number of allow proposer
-		local numofproposer  = Random_GetInt_Sync( 1, 3 )
+		local numofproposer  = Random_GetInt_Sync( 2, 4 )
 		local submitProposal = 0
 
 		--submit proposals
@@ -198,7 +198,7 @@ local function Meeting_Update( meeting )
 
 	if totalSubmit == 0 then Stat_Add( "Meeting@Waste", g_Time:ToString() .. " " .. city.name .. " n=" .. Asset_GetListSize( meeting, MeetingAssetID.PARTICIPANTS ), StatType.LSIT ) end
 
-	local content = g_Time:ToString() .. " " .. city.name .. " meeting over, n=" .. Asset_GetListSize( meeting, MeetingAssetID.PARTICIPANTS ) .. " num_p=" .. totalSubmit
+	local content = g_Time:ToString() .. " " .. city.name .. " sp=" .. String_ToStr( superior, "name" ) .. " meeting over, n=" .. Asset_GetListSize( meeting, MeetingAssetID.PARTICIPANTS ) .. " num_p=" .. totalSubmit
 	Log_Write( "meeting", content )
 	DBG_Watch( "Debug_Meeting", content )
 end
@@ -247,7 +247,9 @@ function Meeting_Hold( city, topic, target )
 
 	--find participants
 	local participants = {}
-	Asset_Foreach( city, CityAssetID.CHARA_LIST, function ( chara )
+	--Asset_Foreach( city, CityAssetID.CHARA_LIST, function ( chara )
+	Asset_Foreach( city, CityAssetID.OFFICER_LIST, function ( data )
+		local chara = data.officer
 		if chara:IsBusy() == true then
 			--Debug_Log( chara.name, " is busy", chara:ToString( "TASK" ) )
 			return
@@ -256,9 +258,12 @@ function Meeting_Hold( city, topic, target )
 			--Debug_Log( chara.name, " isn't at home" )
 			return
 		end
-		if chara == executive then return end
+		if chara == executive then
+			return
+		end
 		table.insert( participants, chara )
-		Debug_Log( chara:ToString(), "enter meeting" )
+		--Debug_Log( chara:ToString(), "enter meeting" )
+		Log_Write( "meeting", "         " .. chara:ToString() .. "=" .. MathUtil_FindName( CityJob, city:GetCharaJob( chara ) ) .. " attend" )
 	end )
 	participants = MathUtil_Shuffle_Sync( participants )
 	Asset_CopyList( meeting, MeetingAssetID.PARTICIPANTS, participants )

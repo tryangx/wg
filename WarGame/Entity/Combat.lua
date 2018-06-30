@@ -1809,11 +1809,8 @@ end
 
 function Combat:AffectMorale( troop, delta )
 	if delta == 0 then return end
-	local maxMorale = troop:GetMaxMorale()
-	local morale = Asset_Get( troop, TroopAssetID.MORALE )
-	morale = math.max( 0, math.min( maxMorale, math.ceil( morale + delta ) ) )
-	Asset_Set( troop, TroopAssetID.MORALE, morale )
-	WriteCombatLog( troop.name, "mor_delta=" .. morale .. ( delta > 0 and "+" .. delta or delta ) )
+	troop:AffectMorale( math.ceil( delta ) )
+	WriteCombatLog( troop.name, "mor_delta=" .. Asset_Get( troop, TroopAssetID.MORALE ) .. ( delta > 0 and "+" .. delta or delta ) )
 end
 
 function Combat:AffectFriendlyMorale( side, troop, increase )

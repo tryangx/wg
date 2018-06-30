@@ -64,6 +64,7 @@ function Group:ToString( type )
 	if type == "BRIEF" or type == "ALL" then
 		content = content .. " leader=" .. String_ToStr( Asset_Get( self, GroupAssetID.LEADER ), "name" )
 		content = content .. " capital=" .. String_ToStr( Asset_Get( self, GroupAssetID.CAPITAL ), "name" )
+		content = content .. " popu=" .. self:GetPopu( CityPopu.ALL )		
 	end
 
 	if type == "SIMPLE" or type == "ALL" then
@@ -263,11 +264,16 @@ end
 function Group:GetVacancyCityList()
 	local list = {}
 	Asset_Foreach( self, GroupAssetID.CITY_LIST, function ( city )
+		local limit
 		local has = Asset_GetListSize( city, CityAssetID.CHARA_LIST )
-		if has >= Chara_GetReqNumOfOfficer( city ) then
+		limit = Chara_GetReqNumOfOfficer( city )
+		if has >= limit then
+			--print( "not vac req", has .. "/" .. limit )
 			return
 		end
-		if has >= Chara_GetLimitByCity( _city ) then
+		limit = Chara_GetLimitByCity( city )
+		if has >= limit then
+			--print( "not vac limi", has .. "/" .. limit )
 			return
 		end
 		table.insert( list, city )
@@ -311,9 +317,7 @@ function Group:LoseCity( city, toCity )
 				highLv = lv
 			end
 		end )
-		if newCapital then
-			Asset_Set( self, GroupAssetID.CAPITAL, newCapital )
-		end
+		Asset_Set( self, GroupAssetID.CAPITAL, newCapital )
 		toCity = Random_GetListItem( city:FindNearbyFriendCities() )
 	end
 

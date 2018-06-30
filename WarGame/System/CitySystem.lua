@@ -414,12 +414,13 @@ function City_CheckFlag( city )
 	city:SetStatus( CityStatus.DEVELOPMENT_DANGER, score > 6 )
 
 	--military evaluation
-	local score = 0
+	local adjaPower
 	local group = Asset_Get( city, CityAssetID.GROUP )
-	local power = city:GetMilitaryPower( city )
-	if power == 0 then score = 100 end
+	local power, maxPower = city:GetSoldier( city )
+	local reserves = city:GetPopu( CityPopu.RESERVES )
 
 	--set default flag
+	city:SetStatus( CityStatus.OLD_CAPITAL, city:IsCapital() or nil )
 	city:SetStatus( CityStatus.SAFETY )
 	city:SetStatus( CityStatus.BATTLEFRONT )
 	city:SetStatus( CityStatus.FRONTIER )
@@ -427,6 +428,8 @@ function City_CheckFlag( city )
 
 	city:SetStatus( CityStatus.DEFENSIVE_WEAK )
 	city:SetStatus( CityStatus.DEFENSIVE_DANGER )
+
+	city:SetStatus( CityStatus.RESERVE_UNDERSTAFFED, power + power < maxPower )
 
 	local defenderScores = 
 	{
@@ -469,22 +472,29 @@ function City_CheckFlag( city )
 				--should to do
 			end
 
-			local adjaPower = Intel_Get( adjaCity, city, CityIntelType.MILITARY )
+			adjaPower = Intel_Get( adjaCity, city, CityIntelType.DEFENDER )
 			if adjaPower == -1 then
 				return
 			end
 			
-			local atkEvl = MathUtil_Approximate( adjaPower / power, attackerScores, "ratio", true )
+			local atkEvl = MathUtil_Approximate( ( power + reserves ) / adjaPower, attackerScores, "ratio", true )			
 			if atkEvl.score <= 20 then
 				if Random_GetInt_Sync( 1, 100 ) < 50 then
+					--InputUtil_Pause( city.name, "self=" .. power + reserves, "adja=" .. adjaPower, adjaCity:ToString( "MILITARY") )
 					city:SetStatus( CityStatus.AGGRESSIVE_WEAK, true )
 					city:SetStatus( CityStatus.AGGRESSIVE_ADV )
 				end
 			elseif atkEvl.score >= 80 then
 				if Random_GetInt_Sync( 1, 100 ) < 50 then
+					--InputUtil_Pause( city.name, "self=" .. power + reserves, "adja=" .. adjaPower, adjaCity:ToString( "MILITARY") )
 					city:SetStatus( CityStatus.AGGRESSIVE_ADV, true )
 					city:SetStatus( CityStatus.AGGRESSIVE_WEAK )
 				end
+			end
+
+			adjaPower = Intel_Get( adjaCity, city, CityIntelType.SOLDIER )
+			if adjaPower == -1 then
+				return
 			end
 
 			local defEvl = MathUtil_Approximate( adjaPower / power, defenderScores, "ratio" )
@@ -858,7 +868,7 @@ function CitySystem:Update()
 			--print( city:ToString( "BUDGET_MONTH" ) )			
 		end
 		
-		if day % 10 == 0 then
+		if day == DAY_IN_MONTH then
 			City_CheckFlag( city )
 		end
 

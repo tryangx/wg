@@ -88,8 +88,11 @@ function Corps:ToString( type )
 	end
 
 	if type == "SIMPLE" or type == "ALL" then
-		content = content .. Asset_Get( self, CorpsAssetID.LOCATION ):ToString()
-		content = content .. " ld=" .. String_ToStr( Asset_Get( self, CorpsAssetID.LEADER ), "name" )
+		local loc = Asset_Get( self, CorpsAssetID.LOCATION )
+		content = content .. " loc=" .. ( loc and loc:ToString() or "" )
+		local encampment = Asset_Get( self, CorpsAssetID.ENCAMPMENT )
+		content = content .. " camp=" .. ( encampment and encampment:ToString() or "" )
+		content = content .. " ld=" .. String_ToStr( Asset_Get( self, CorpsAssetID.LEADER ), "name" )		
 	end
 
 	if type == "MILITARY" or type == "ALL" then
@@ -98,7 +101,7 @@ function Corps:ToString( type )
 		content = content .. " soldier=" .. soldier .. "/" .. maxSoldier
 	end
 	
-	if type == "STATUS" then
+	if type == "STATUS" or type == "ALL" then
 		local task = self:GetTask()
 		if task then
 			content = content .. " task=" .. task:ToString()
@@ -116,7 +119,8 @@ function Corps:ToString( type )
 	end
 	
 	if type == "BRIEF" then
-		content = content .. Asset_Get( self, CorpsAssetID.LOCATION ):ToString()
+		content = content .. " loc=" .. Asset_Get( self, CorpsAssetID.LOCATION ):ToString()
+		content = content .. " camp=" .. Asset_Get( self, CorpsAssetID.ENCAMPMENT ):ToString()
 		content = content .. " ld=" .. String_ToStr( Asset_Get( self, CorpsAssetID.LEADER ), "name" )
 		content = content .. " of=" .. 	Asset_GetListSize( self, CorpsAssetID.OFFICER_LIST )
 		content = content .. " soldier=" .. self:GetSoldier()
@@ -218,14 +222,19 @@ end
 function Corps:IsBusy()
 	local task = self:GetTask()
 	if task then
+		--print( task:ToString(), "busy")
 		return true
 	end
-	local leader = Asset_Get( self, CorpsAssetID.LEADER )
+	local leader = Asset_Get( self, CorpsAssetID.LEADER )	
 	if leader and leader:IsBusy() then
+		--print( leader, "busy")
 		return true
 	end
 	Asset_Foreach( self, CorpsAssetID.OFFICER_LIST, function ( chara )
-		if chara:IsBusy() then return true end
+		if chara:IsBusy() then
+			--print( self.name, chara.name, "busy")
+			return true
+		end
 	end)
 	return false
 end
@@ -246,6 +255,7 @@ function Corps:LoseChara( chara )
 	local leader = Asset_Get( self, CorpsAssetID.LEADER )
 	if leader == chara then
 		Asset_Set( self, CorpsAssetID.LEADER )
+		--print( self:ToString( "BRIEF") .. " lose leader" )
 		--InputUtil_Pause( self:ToString("BRIEF"), "lose leader=" .. chara.name )
 	else
 		self:LoseOfficer( chara )
@@ -284,9 +294,7 @@ end
 
 function Corps:Update( ... )
 	local soldier, maxSoldier = self:GetSoldier()
-	self:SetStatus( CorpsStatus.UNDERSTAFFED_LV1, soldier < maxSoldier * 0.5 )
-	self:SetStatus( CorpsStatus.UNDERSTAFFED_LV1, soldier < maxSoldier * 0.8 )
-	self:SetStatus( CorpsStatus.UNDERSTAFFED_LV2, soldier < maxSoldier )
+	self:SetStatus( CorpsStatus.UNDERSTAFFED, ( maxSoldier - soldier ) * 100 / maxSoldier )
 
 	--find new leader
 	local leader = Asset_Get( self, CorpsAssetID.LEADER )
@@ -300,9 +308,11 @@ function Corps:Update( ... )
 	end
 
 	--update troop
-	Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function ( troop )
-		troop:Update()
-	end)
+	if self:IsAtHome() then
+		Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function ( troop )
+			troop:UpdateAtHome()
+		end)
+	end	
 end
 
 -------------------------------------------

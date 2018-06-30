@@ -13,6 +13,7 @@ DefaultTaskSteps =
 	TRAIN_CORPS     = { "EXECUTE", "FINISH", "REPLY" },
 	DISPATCH_CORPS  = { "PREPARE", "EXECUTE", "FINISH", "REPLY" },
 	ENROLL_CORPS    = { "EXECUTE", "FINISH", "REPLY" },
+	LEAD_CORPS      = { "FINISH", "REPLY" },
 	
 	CONSCRIPT       = { "EXECUTE", "FINISH", "REPLY" },
 	RECRUIT         = { "EXECUTE", "FINISH", "REPLY" },
@@ -52,8 +53,9 @@ DefaultTaskContribution =
 	DISMISS_CORPS   = { success = 10, failed = 0 },
 	TRAIN_CORPS     = { success = 40, failed = 0 },
 	UPGRADE_CORPS   = { success = 40, failed = 0 },
-	ENROLL_CORPS    = { success = 20, failed = 0 },
+	ENROLL_CORPS    = { success = 20, failed = 0 },	
 	REGROUP_CORPS   = { success = 40, failed = 0 },
+	LEAD_CORPS      = { success = 20, failed = 0 },
 
 	CONSCRIPT       = { success = 20, failed = 0 },
 	RECRUIT         = { success = 20, failed = 0 },

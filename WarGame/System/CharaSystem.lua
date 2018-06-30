@@ -45,7 +45,7 @@ function Chara_GetLimitByGroup( group )
 	Asset_Foreach( group, GroupAssetID.CITY_LIST, function ( city )
 		lv = lv + Asset_Get( city, CityAssetID.LEVEL )
 	end )
-	number = number + math.floor( lv * 0.1 )
+	number = number + math.floor( lv * 0.4 )	
 	return number
 end
 
@@ -55,14 +55,24 @@ function Chara_GetLimitByCity( city )
 	local lv = Asset_Get( city, CityAssetID.LEVEL )	
 	local ret = math.ceil( lv / 4 ) + 1
 	if city:IsCapital() then
-		ret = ret + ret
+		ret = ret + 10
 	end
 	--DBG_Warning( "chara_limit_bycity", ret )
 	return ret
 end
 
 function Chara_GetReqNumOfOfficer( city )
-	return 2
+	if city:IsCapital() then
+		return 8
+	end
+	if city:GetStatus( CityStatus.BATTLEFRONT ) then
+		return 6
+	elseif city:GetStatus( CityStatus.FRONTIER ) then
+		return 4
+	elseif city:GetStatus( CityStatus.SAFETY ) then
+		return 2
+	end
+	return 3
 end
 
 function Chara_FindLeader( charaList )

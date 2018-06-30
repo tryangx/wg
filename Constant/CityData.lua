@@ -87,7 +87,7 @@ DefaultCityPopuInit =
 --IMPT, affect initialize of the population structure
 DefaultCityPopuNeed = 
 {
-	RESERVES = { req = 0.001, limit = 0.02 },
+	RESERVES = { req = 0.005, limit = 0.02 },
 
 	HOBO     = { req = 0.005, limit = 0.1 },
 	CHILDREN = { req = 0.15,  limit = 0.35 },
@@ -215,12 +215,12 @@ DefaultCityHireGuard =
 
 DefaultCityJobProb = 
 {
-	{ prob = 70, job = "COMMANDER",  max = 5 },
-	{ prob = 50, job = "AFFAIRS",    max = 3 },
-	{ prob = 40, job = "STAFF",      max = 2 },	
-	{ prob = 30, job = "HR",         max = 2 },	
-	{ prob = 50, job = "DIPLOMATIC", capital = 1 },
-	{ prob = 50, job = "TECHNICIAN", capital = 1 },
+	{ prob = 40, job = "COMMANDER",  max = 5 },
+	{ prob = 30, job = "AFFAIRS",    max = 3 },
+	{ prob = 30, job = "STAFF",      max = 2 },	
+	{ prob = 20, job = "HR",         max = 2 },	
+	{ prob = 20, job = "DIPLOMATIC", capital = 1 },
+	{ prob = 20, job = "TECHNICIAN", capital = 1 },
 }
 
 DefaultCityPopuStructureParams = 

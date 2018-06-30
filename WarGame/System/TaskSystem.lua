@@ -11,12 +11,12 @@ local DEFAULT_TASK_DURATION      = 25
 
 local _removeTask
 
-local _moveWatcher = {}
-
 local _combatTasks = {}
 
 --all moving corps need to register this
 local _interceptTasks = {}
+
+local _targetTasks = {}
 
 ---------------------------------------------------
 -- Task Content Function
@@ -84,15 +84,13 @@ local function Task_Remove( task )
 
 	_interceptTasks[actor] = nil
 
+	local dest = Asset_Get( task, TaskAssetID.DESTINATION )	
+	local taskList = _targetTasks[dest]
+	if taskList then
+		taskList[task] = nil
+	end
+
 	Entity_Remove( task )
-end
-
---actor was removed
-function Task_Terminate( task )
-	Task_Remove( task )
-
-	Debug_Log( "Terminate task=" .. task:ToString() )
-	Stat_Add( "Task@Terminate", task:ToString("DETAIL"), StatType.LIST )
 end
 
 local function Task_Resume( task )
@@ -258,7 +256,7 @@ local _prepareTask =
 	DECLARE_WAR     = function ( task )
 		local group    = Asset_Get( task, TaskAssetID.GROUP )
 		local oppGroup = Asset_GetDictItem( task, TaskAssetID.PARAMS, "group" )
-		local capital  = Asset_Get( oppGroup, GroupAssetID.CAPITAL )
+	local capital  = Asset_Get( oppGroup, GroupAssetID.CAPITAL )
 		local loc      = Asset_Get( task, TaskAssetID.LOCATION )
 		local dur = Move_CalcIntelTransDuration( group, loc, capital )
 		Asset_Set( task, TaskAssetID.DURATION, dur )
@@ -445,7 +443,7 @@ local _workOnTask =
 			local reserves= city:GetPopu( CityPopu.RESERVES )
 			local number  = reserves < workload and reserves or workload
 			local corps   = Asset_GetDictItem( task, TaskAssetID.PARAMS, "corps" )
-			Log_Write( "task",  "reinforce-corps", corps:ToString(), "+" .. number )
+			Log_Write( "task",  "reinforce-corps=" .. corps:ToString() .. "+" .. number )
 			Corps_ReinforceTroop( corps, number )
 			reserves = reserves - number
 			city:SetPopu( CityPopu.RESERVES, reserves )
@@ -512,6 +510,7 @@ local function Task_MoveChara( task )
 	
 	--chara in corps, won't leave single
 	if Asset_Get( actor, CharaAssetID.CORPS ) then
+		print( task:ToString() )
 		error( actor:ToString() .. " has corps" )
 	end
 
@@ -550,6 +549,13 @@ local _finishTask =
 		local city = Asset_Get( task, TaskAssetID.DESTINATION )
 		local corps = Asset_GetDictItem( task, TaskAssetID.PARAMS, "corps" )
 		Corps_Dispatch( corps, city )
+		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
+		return Task_Contribute( task, "success" )
+	end,
+	LEAD_CORPS      = function ( task )
+		local corps = Asset_GetDictItem( task, TaskAssetID.PARAMS, "corps" )
+		local actor = Asset_Get( task, TaskAssetID.ACTOR )
+		Asset_Set( corps, CorpsAssetID.LEADER, actor )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
 		return Task_Contribute( task, "success" )
 	end,
@@ -755,6 +761,75 @@ local function Task_IsAtHome( task )
 	return false
 end
 
+local function Task_BackHome( task )
+	if Move_IsMoving( Asset_Get( task, TaskAssetID.ACTOR ) ) == false then
+		Stat_Add( "Task@BackHome", 1, StatType.TIMES )
+		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.MOVING )
+
+		local actor     = Asset_Get( task, TaskAssetID.ACTOR )
+		local actorType = Asset_Get( task, TaskAssetID.ACTOR_TYPE )
+		if actorType == TaskActorType.CHARA then
+			local home = Asset_Get( actor, CharaAssetID.HOME )
+			if not home then
+				--print( actor:ToString( "ALL" ) )
+				print( task:ToString() )
+				Debug_Log( "no home" .. task.id )
+			else
+				Move_Chara( actor, home )
+			end			
+
+		elseif actorType == TaskActorType.CORPS then				
+			local loc = Asset_Get( actor, CorpsAssetID.LOCATION )
+			local dest = Asset_Get( actor, CorpsAssetID.ENCAMPMENT )
+			if dest then
+				if dest ~= loc then
+					Log_Write( "task", task:ToString() .. " back home=" .. String_ToStr( dest, "name" ) )
+					Move_Corps( actor, dest )
+				end
+			else
+				dest = Asset_Get( task, TaskAssetID.LOCATION )
+				if loc ~= dest then
+					--back to location where start the task
+					Log_Write( "task", task:ToString() .. " back home=" .. String_ToStr( dest, "name" ) )
+					Move_Corps( actor, dest )
+				end
+			end
+		end
+	end
+end
+
+local function Task_Move2Destination( task )	
+	if Move_IsMoving( Asset_Get( task, TaskAssetID.ACTOR ) ) == false then
+		Stat_Add( "Task@Move2Dest", 1, StatType.TIMES )
+
+		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.MOVING )
+
+		local actor     = Asset_Get( task, TaskAssetID.ACTOR )
+		local actorType = Asset_Get( task, TaskAssetID.ACTOR_TYPE )		
+		local loc       = Asset_Get( task, TaskAssetID.DESTINATION )
+		if actorType == TaskActorType.CHARA then
+			Log_Write( "task", task:ToString() .. " move to dest=" .. String_ToStr( loc, "name" ) )
+			Move_Chara( actor, loc )
+		elseif actorType == TaskActorType.CORPS then			
+			Log_Write( "task", task:ToString() .. " move to dest=" .. String_ToStr( loc, "name" ) )
+			Move_Corps( actor, loc )
+			Supply_CorpsCarryFood( actor, loc )
+		end
+	end
+end
+
+local function Task_End( task )
+	Asset_Set( task, TaskAssetID.END_TIME, g_Time:GetDateValue() )
+
+	Stat_Add( "Task@End", task:ToString( "END" ), StatType.LIST )
+	Stat_Add( "TaskEnd@" .. MathUtil_FindName( TaskType, Asset_Get( task, TaskAssetID.TYPE ) ), 1, StatType.TIMES )
+	Log_Write( "task",  task:ToString() .. "end task" )
+	--Log_Write( "meeting", g_Time:ToString() .. task:ToString() .. " end" )	
+	Task_Remove( task )
+
+	return true
+end
+
 ---------------------------------------------------
 
 function Task_CityReceive( task, city )
@@ -780,11 +855,19 @@ function Task_CorpsReceive( task, corps )
 		error( corps:ToString() .. " has task" )
 	end
 
-	Asset_SetDictItem( task, TaskAssetID.CONTRIBUTORS, corps, 0 )
-
 	Task_SetCorpsTask( corps, task )
 
 	--Log_Write( "task",  corps:ToString(), "recv task" )
+end
+
+--actor was removed
+function Task_Terminate( task )
+	Task_Remove( task )
+
+	Task_BackHome( task )
+
+	Log_Write( "task", "Terminate task=" .. task:ToString() )
+	Stat_Add( "Task@Terminate", task:ToString("DETAIL"), StatType.LIST )
 end
 
 function Task_Create( taskType, actor, location, destination, params )	
@@ -803,16 +886,29 @@ function Task_Create( taskType, actor, location, destination, params )
 	Task_CityReceive( task, location )
 
 	--need CORPS
-	if type == TaskType.HARASS_CITY 
-		or type == TaskType.ATTACK_CITY 
-		or type == TaskType.INTERCEPT
+	if type == TaskType.LEAD_CORPS then
+		Asset_Set( task, TaskAssetID.ACTOR_TYPE, TaskActorType.CHARA )
+		Task_CharaReceive( task, actor )
+		local corps = Asset_GetDictItem( task, TaskAssetID.PARAMS, "corps" )
+		Task_CorpsReceive( task, corps )
+
+	elseif type == TaskType.HARASS_CITY 
+		or type == TaskType.ATTACK_CITY then
+		Asset_Set( task, TaskAssetID.ACTOR_TYPE, TaskActorType.CORPS )
+		Task_CorpsReceive( task, actor )
+		if not _targetTasks[destination] then
+			_targetTasks[destination] = {}
+		end
+		_targetTasks[destination][task] = 1
+
+	elseif type == TaskType.INTERCEPT
 		or type == TaskType.DISPATCH_CORPS
 
 		or type == TaskType.REINFORCE_CORPS
 		or type == TaskType.DISMISS_CORPS 
 		or type == TaskType.TRAIN_CORPS
 		or type == TaskType.ENROLL_CORPS
-		or type == TaskType.UPGRADE_CORPS
+		or type == TaskType.UPGRADE_CORPS		
 		then
 		Asset_Set( task, TaskAssetID.ACTOR_TYPE, TaskActorType.CORPS )		
 		Task_CorpsReceive( task, actor )
@@ -893,73 +989,6 @@ function Task_IssueByProposal( proposal )
 	end
 end
 
-local function Task_BackHome( task )
-	if Move_IsMoving( Asset_Get( task, TaskAssetID.ACTOR ) ) == false then
-		Stat_Add( "Task@BackHome", 1, StatType.TIMES )
-		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.MOVING )
-
-		local actor     = Asset_Get( task, TaskAssetID.ACTOR )
-		local actorType = Asset_Get( task, TaskAssetID.ACTOR_TYPE )
-		if actorType == TaskActorType.CHARA then
-			local home = Asset_Get( actor, CharaAssetID.HOME )
-			if not home then
-				print( actor:ToString( "ALL" ) )
-				print( task:ToString() )
-				error( "no home" .. task.id )
-			else
-				Move_Chara( actor, home )
-			end			
-
-		elseif actorType == TaskActorType.CORPS then				
-			local dest = Asset_Get( actor, CorpsAssetID.ENCAMPMENT )
-			if dest then
-				Log_Write( "task",  task:ToString() .. " back home=" .. String_ToStr( dest, "name" ) )
-				Move_Corps( actor, dest )
-			else
-				local loc = Asset_Get( actor, CorpsAssetID.LOCATION )				
-				dest = Asset_Get( task, TaskAssetID.LOCATION )
-				if loc ~= dest then
-					--back to location where start the task
-					Log_Write( "task",  task:ToString() .. " back home=" .. String_ToStr( dest, "name" ) )
-					Move_Corps( actor, dest )
-				end
-			end
-		end
-	end
-end
-
-local function Task_Move2Destination( task )	
-	if Move_IsMoving( Asset_Get( task, TaskAssetID.ACTOR ) ) == false then
-		Stat_Add( "Task@Move2Dest", 1, StatType.TIMES )
-
-		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.MOVING )
-
-		local actor     = Asset_Get( task, TaskAssetID.ACTOR )
-		local actorType = Asset_Get( task, TaskAssetID.ACTOR_TYPE )		
-		local loc       = Asset_Get( task, TaskAssetID.DESTINATION )
-		if actorType == TaskActorType.CHARA then
-			Log_Write( "task",  task:ToString() .. " move to dest=" .. String_ToStr( loc, "name" ) )
-			Move_Chara( actor, loc )
-		elseif actorType == TaskActorType.CORPS then			
-			Log_Write( "task",  task:ToString() .. " move to dest=" .. String_ToStr( loc, "name" ) )
-			Move_Corps( actor, loc )
-			Supply_CorpsCarryFood( actor, loc )
-		end
-	end
-end
-
-local function Task_End( task )
-	Asset_Set( task, TaskAssetID.END_TIME, g_Time:GetDateValue() )
-
-	Stat_Add( "Task@End", task:ToString( "END" ), StatType.LIST )
-	Stat_Add( "TaskEnd@" .. MathUtil_FindName( TaskType, Asset_Get( task, TaskAssetID.TYPE ) ), 1, StatType.TIMES )
-	Debug_Log( "task",  task:ToString() .. "end task" )
-	--Log_Write( "meeting", g_Time:ToString() .. task:ToString() .. " end" )	
-	Task_Remove( task )
-
-	return true
-end
-
 local function Task_Reply( task )
 	--default go back home
 	if Task_IsAtHome( task ) == false then
@@ -974,8 +1003,10 @@ local function Task_Reply( task )
 	end
 
 	--bonus to contributor
-	if Asset_Get( task, TaskAssetID.ACTOR_TYPE ) == TaskActorType.CHARA then		
+	if Asset_Get( task, TaskAssetID.ACTOR_TYPE ) == TaskActorType.CHARA then
 		Asset_Foreach( task, TaskAssetID.CONTRIBUTORS, function( value, actor )
+			--local type = Asset_Get( task, TaskAssetID.TYPE )
+			--if type == TaskType.LEAD_CORPS then print( actor.name, "contribute", value, task:ToString() ) end
 			actor:Contribute( value )
 		end )
 	else
@@ -1029,8 +1060,7 @@ function Task_Do( task, actor )
 		error( "no work function for working status, " .. MathUtil_FindName( TaskType, type ) )
 	end
 
-	if contribution and contribution > 0 then		
-		--InputUtil_Pause( "cont=" .. contribution, task:ToString() )
+	if contribution and contribution > 0 then
 		task:Contribute( Asset_Get( task, TaskAssetID.ACTOR ), contribution )
 	end
 

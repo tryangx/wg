@@ -22,6 +22,10 @@ To Do List
 [inprog] reputation system( 1. can inc/dec, 2. affect all things like san5 )
 [inprog] influence system( 1. only increase, 2. dec in event or special situ )
 
+expedition will consider the goal
+
+add task=regroup task
+
 refactor chara loyality 
 
 add chara skills / troop tactics etc

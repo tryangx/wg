@@ -104,12 +104,7 @@ CorpsStatus =
 
 	DEPATURE_TIME = 12,
 
-	--less than 50%
-	UNDERSTAFFED_LV1  = 100,
-	--less than 80%
-	UNDERSTAFFED_LV2  = 101,
-	--less than 100%
-	UNDERSTAFFED_LV2  = 102,
+	UNDERSTAFFED  = 100,
 }
 
 CorpsPurpose =
