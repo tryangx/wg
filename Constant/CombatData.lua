@@ -12,6 +12,7 @@ DefaultTroopParams =
 	--Very Important!!!
 	--special temp id
 	GUARD_ID          = 11,
+	RESERVE_ID        = 12,
 	TRANSPORT_ID      = 20,
 	------------------------------
 
@@ -83,6 +84,18 @@ DefaultTroopTable =
 		consume = { FOOD = 2, MONEY = 5, },
 		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 30 },
+	},
+
+	[12] =
+	{
+		name      = "Reserves", category  = "INFANTRY", conveyance = "FOOT",
+		melee = 25, shoot = 25, charge = 25, siege = 0, armor = 25, toughness = 20, movement  = 25,		
+		skills    = {},
+		potential = 20,
+		capacity = { FOOD = 100, MATERIAL = 100 },
+		consume = { FOOD = 2, MONEY = 10, },		
+		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
+		weapons = { 10 },
 	},
 
 	[20] = 
@@ -504,12 +517,18 @@ CombatPurposeParam =
 		},
 		WITHDRAW = 
 		{
-			{ reason = "wd_casualty", casualty_above = 30, score = 50 },
-			{ reason = "wd_chaos",    org_below = 50, score = 30 },
-			{ reason = "wd_downcast", mor_below = 60, score = 30 },
-			{ reason = "wd_danger",   prop_below = 40, score = 50 },			
-			{ reason = "wd_nofood",  food_below = 20, is_atk = 1 },
-			{ reason = "wd_nofood",  food_below = 30, is_field = 1 },
+			{ reason = "wd_casualty1", casualty_above = 10, score = 10 },
+			{ reason = "wd_casualty2", casualty_above = 20, score = 20 },
+			{ reason = "wd_casualty3", casualty_above = 35, score = 30 },
+			{ reason = "wd_chaos1",    org_below = 50, score = 15 },
+			{ reason = "wd_chaos2",    org_below = 20, score = 15 },
+			{ reason = "wd_downcast1", mor_below = 60, score = 15 },
+			{ reason = "wd_downcast2", mor_below = 40, score = 15 },
+			{ reason = "wd_danger1",   prop_below = 35, score = 10 },
+			{ reason = "wd_danger2",   prop_below = 25, score = 10 },
+			{ reason = "wd_danger3",   prop_below = 20, score = 20 },
+			{ reason = "wd_nofood1",  food_below = 20, is_atk = 1,   score = 80 },
+			{ reason = "wd_nofood2",  food_below = 30, is_field = 1, score = 60 },
 		},
 		REST =
 		{
@@ -539,12 +558,18 @@ CombatPurposeParam =
 		},
 		WITHDRAW = 
 		{
-			{ reason = "wd_casualty", casualty_above = 50, score = 50 },
-			{ reason = "wd_chaos",    org_below = 30, score = 30 },
-			{ reason = "wd_downcast", mor_below = 30, score = 30 },
-			{ reason = "wd_danger",   prop_below = 35, score = 50 },			
-			{ reason = "wd_nofood",  food_below = 15, is_atk = 1 },
-			{ reason = "wd_nofood",  food_below = 20, is_field = 1 },
+			{ reason = "wd_casualty1", casualty_above = 10, score = 10 },
+			{ reason = "wd_casualty2", casualty_above = 20, score = 20 },
+			{ reason = "wd_casualty3", casualty_above = 35, score = 30 },
+			{ reason = "wd_chaos1",    org_below = 50, score = 15 },
+			{ reason = "wd_chaos2",    org_below = 20, score = 15 },
+			{ reason = "wd_downcast1", mor_below = 60, score = 15 },
+			{ reason = "wd_downcast2", mor_below = 40, score = 15 },
+			{ reason = "wd_danger1",   prop_below = 35, score = 10 },
+			{ reason = "wd_danger2",   prop_below = 25, score = 10 },
+			{ reason = "wd_danger3",   prop_below = 20, score = 20 },
+			{ reason = "wd_nofood1",  food_below = 20, is_atk = 1,   score = 80 },
+			{ reason = "wd_nofood2",  food_below = 30, is_field = 1, score = 60 },
 		},
 		REST =
 		{
@@ -574,12 +599,18 @@ CombatPurposeParam =
 		},
 		WITHDRAW = 
 		{
-			{ reason = "wd_casualty", casualty_above = 50, score = 50 },
-			{ reason = "wd_chaos",    org_below = 30, score = 30 },
-			{ reason = "wd_downcast", mor_below = 30, score = 30 },
-			{ reason = "wd_danger",   prop_below = 30, score = 50 },			
-			{ reason = "wd_nofood",  food_below = 15, is_atk = 1 },
-			{ reason = "wd_nofood",  food_below = 20, is_field = 1 },
+			{ reason = "wd_casualty1", casualty_above = 10, score = 10 },
+			{ reason = "wd_casualty2", casualty_above = 20, score = 20 },
+			{ reason = "wd_casualty3", casualty_above = 35, score = 30 },
+			{ reason = "wd_chaos1",    org_below = 50, score = 15 },
+			{ reason = "wd_chaos2",    org_below = 20, score = 15 },
+			{ reason = "wd_downcast1", mor_below = 60, score = 15 },
+			{ reason = "wd_downcast2", mor_below = 40, score = 15 },
+			{ reason = "wd_danger1",   prop_below = 35, score = 10 },
+			{ reason = "wd_danger2",   prop_below = 25, score = 10 },
+			{ reason = "wd_danger3",   prop_below = 20, score = 20 },
+			{ reason = "wd_nofood1",  food_below = 20, is_atk = 1,   score = 80 },
+			{ reason = "wd_nofood2",  food_below = 30, is_field = 1, score = 60 },
 		},
 		REST =
 		{

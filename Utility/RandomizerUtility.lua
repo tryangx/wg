@@ -2,6 +2,7 @@ Randomizer = class()
 
 function Randomizer:__init( seed )
 	self.seed = seed or 0
+	self.times = 0
 end
 
 function Randomizer:GetSeed( seed )
@@ -13,6 +14,7 @@ function Randomizer:SetSeed( seed )
 end
 
 function Randomizer:GetInt( min, max )
+	self.times = self.times + 1
 	self.seed = ( self.seed * 32765 + 12345 ) % 2147483647
 	if min < max then
 		return self.seed % ( max - min ) + min
@@ -29,18 +31,22 @@ local _unsyncRandomizer = Randomizer()
 local _constRandomizer  = Randomizer()
 
 function Random_Result()
-	print( "seed=" .. _randomizer:GetSeed(), _unsyncRandomizer:GetSeed(), _constRandomizer:GetSeed() )
+	Log_Add( "random", "seed1=" .. _randomizer:GetSeed() .. "+" .. _randomizer.times )
+	Log_Add( "random", "seed2=" .. _unsyncRandomizer:GetSeed() .. "+" .. _unsyncRandomizer.times )
+	Log_Add( "random", "seed3=" .. _constRandomizer:GetSeed() .. "+" .. _constRandomizer.times )
 end
 
 function Random_SetSeed_Sync( seed )
+	Log_Add( "random", "seed1_init=" .. seed )
 	_randomizer:SetSeed( seed )
 end
 function Random_SetSeed_Unsync( seed )
+	Log_Add( "random", "seed2_init=" .. seed )
 	_unsyncRandomizer:SetSeed( seed )
 end
 function Random_SetSeed( seed )
+	Log_Add( "random", "gameid=" .. g_gameId )
 	Random_SetSeed_Sync( seed )
-	Random_SetSeed_Unsync( seed )
 end
 function Random_GetInt_Sync( min, max )
 	return _randomizer:GetInt( min, max )

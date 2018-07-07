@@ -93,16 +93,23 @@ function Chara_Die( chara )
 	end
 	chara:SetStatus( CharaStatus.DEAD, 1 )
 
+	--print( chara.name, "died" )
+
 	--remove from corps
 	local corps = Asset_Get( chara, CharaAssetID.CORPS )
 	if corps then
 		corps:LoseChara( chara )
+	else
+		Debug_Log( chara.name .. "die, no corps" )
 	end
 
 	--remove from city
 	local home = Asset_Get( chara, CharaAssetID.HOME )
 	if home then
+		--print( home.name, "leave", chara.name )
 		home:CharaLeave( chara )
+	else
+		error( "no home?" )
 	end
 
 	--remove task
@@ -115,6 +122,8 @@ function Chara_Die( chara )
 	local group = Asset_Get( chara, CharaAssetID.GROUP )
 	if group then		
 		group:LoseChara( chara )
+	else
+		Debug_Log( chara.name .. "die, no group" )
 	end
 
 	Debug_Log( chara:ToString(), "died" )
@@ -123,6 +132,7 @@ function Chara_Die( chara )
 
 	Entity_Remove( chara )
 
+	--if chara.name == "Qian XII" then error( "" ) end
 	--InputUtil_Pause( "die")
 end
 

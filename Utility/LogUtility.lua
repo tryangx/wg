@@ -30,24 +30,32 @@ LogWarningLevel =
 	ERROR  = 100,
 }
 
-function LogUtility:__init( fileName, logLevel, isPrintLog )
+function LogUtility:__init( fileName, logLevel, isPrintLog, isAdd )
 	self.logs = {}
 	self.logIndex = 1
 	
 	self.fileUtility = nil
 	self.isPrintLog  = isPrintLog or false
 	self.logLevel    = logLevel or LogWarningLevel.LOG
+	self.isAdd       = isAdd
 
 	self:SetLogFile( fileName )
 end
 
 function LogUtility:SetLogFile( fileName )
 	if not self.fileUtility then self.fileUtility = SaveFileUtility() end
-	self.fileUtility:OpenFile( fileName, true )
+	self.fileUtility:OpenFile( fileName, not self.isAdd )
 end
 
 function LogUtility:SetPrinterMode( isOn )		
 	self.isPrintLog = isOn
+end
+
+function LogUtility:SetAddMode( isAdd )
+	self.isAdd = isAdd
+	if self.fileUtility then
+		self.fileUtility:SetMode( isAdd )
+	end
 end
 
 function LogUtility:SetLogLevel( level )

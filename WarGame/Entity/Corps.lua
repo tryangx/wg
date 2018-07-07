@@ -9,11 +9,15 @@ CorpsAssetID =
 {
 	GROUP          = 101,
 	LEADER         = 102,
+
 	TROOP_LIST     = 103,
 	OFFICER_LIST   = 104,
+
 	LOCATION       = 110,
 	ENCAMPMENT     = 111,
+
 	STATUSES       = 112,
+
 	TEMPLATE       = 120,
 	MOVEMENT       = 121,
 
@@ -255,8 +259,7 @@ function Corps:LoseChara( chara )
 	local leader = Asset_Get( self, CorpsAssetID.LEADER )
 	if leader == chara then
 		Asset_Set( self, CorpsAssetID.LEADER )
-		--print( self:ToString( "BRIEF") .. " lose leader" )
-		--InputUtil_Pause( self:ToString("BRIEF"), "lose leader=" .. chara.name )
+		--print( self:ToString() .. "lose leader=" .. chara.name, Asset_Get( self, CorpsAssetID.LEADER ) )
 	else
 		self:LoseOfficer( chara )
 	end
@@ -303,7 +306,7 @@ function Corps:Update( ... )
 		local chara = Chara_FindBestCharaForJob( CityJob.COMMANDER, Asset_GetList( self, CorpsAssetID.OFFICER_LIST ) )
 		if chara then
 			Asset_Set( self, CorpsAssetID.LEADER, chara )
-			InputUtil_Pause( "set corps leader=" .. chara.name )
+			--InputUtil_Pause( "set corps leader=" .. chara.name )
 		end
 	end
 

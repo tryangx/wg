@@ -190,7 +190,8 @@ CHUHAN_CityData =
 	{
 		name = "XianYan",
 		coordinate = { x = 12, y = 6 },
-		adjacents = { 2, 3 },
+		--adjacents = { 2, 3 },
+		adjacents = { 3 },
 		level = 14,
 
 		defenses = { 15000, 10000, 15000 },
@@ -199,7 +200,8 @@ CHUHAN_CityData =
 	{
 		name = "LinZi",
 		coordinate = { x = 24, y = 6 },
-		adjacents = { 1, 5 },
+		--adjacents = { 1, 5 },
+		adjacents = { 5 },
 		level = 14,
 
 		defenses = { 15000, 10000, 15000 },
@@ -227,7 +229,7 @@ CHUHAN_CityData =
 	{
 		name = "KuaiJi",
 		coordinate = { x = 30, y = 12 },
-		adjacents = { 2, 7 },
+		adjacents = { 2, 4, 7 },
 		level = 12,
 		charas = { 200, 201, 202, 203 },
 		defenses = { 15000, 10000, 15000 },
@@ -236,7 +238,8 @@ CHUHAN_CityData =
 	{
 		name = "JinZhou",
 		coordinate = { x = 12, y = 18 },
-		adjacents = { 3, 7 },
+		--adjacents = { 3, 7 },
+		adjacents = { 3 },
 		level = 12,
 
 		defenses = { 15000, 10000, 15000 },
@@ -245,7 +248,8 @@ CHUHAN_CityData =
 	{
 		name = "JiuJiang",
 		coordinate = { x = 24, y = 18 },
-		adjacents = { 5, 6 },
+		--adjacents = { 5, 6 },
+		adjacents = { 5 },
 		level = 10,
 
 		defenses = { 15000, 10000, 15000 },

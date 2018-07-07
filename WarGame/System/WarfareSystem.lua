@@ -28,8 +28,8 @@ function Warefare_FieldCombatOccur( plot, atk, def )
 	end
 
 	--set purpose
-	Asset_Set( combat, CombatAssetID.ATK_PURPOSE, CombatPurpose.MODERATE )
-	Asset_Set( combat, CombatAssetID.DEF_PURPOSE, CombatPurpose.MODERATE )
+	Asset_Set( combat, CombatAssetID.ATK_PURPOSE, CombatPurpose.AGGRESSIVE )
+	Asset_Set( combat, CombatAssetID.DEF_PURPOSE, CombatPurpose.AGGRESSIVE )
 
 	if combatExist == false then
 		System_Get( SystemType.WARFARE_SYS ):AddCombat( combat )
@@ -79,7 +79,7 @@ function Warefare_HarassCombatOccur( corps, city )
 
 	--set purpose
 	Asset_Set( combat, CombatAssetID.ATK_PURPOSE, CombatPurpose.MODERATE )
-	Asset_Set( combat, CombatAssetID.DEF_PURPOSE, CombatPurpose.MODERATE )
+	Asset_Set( combat, CombatAssetID.DEF_PURPOSE, CombatPurpose.AGGRESSIVE )
 
 	if combatExist == false then
 		System_Get( SystemType.WARFARE_SYS ):AddCombat( combat )
@@ -212,6 +212,7 @@ function Warfare_UpdateCombat( combat )
 		local troop = data.prisoner
 		if data.side == winner then
 			--release the prisoner
+			if troop:GetStatus( TroopStatus.RESERVE ) or troop:GetStatus( TroopStatus.GUARD ) then return end
 			InputUtil_Pause( "just dismiss the troop and kill the officer" )
 			if troop:GetStatus( TroopStatus.SURRENDER ) or Random_GetInt_Sync( 1, 100 ) < 80 then
 				--accept surrender
@@ -257,7 +258,7 @@ function Warfare_UpdateCombat( combat )
 
 	Asset_Foreach( combat, CombatAssetID.CORPS_LIST, function  ( corps )
 		if corps:GetSoldier() == 0 then
-			Corps_Neutralize( corps, "neutralized" )
+			Corps_Dismiss( corps, true )
 			Stat_Add( "Corps@Vanished", corps:ToString( "SIMPLE"), StatType.LIST )
 		else
 			Corps_AfterCombat( corps )

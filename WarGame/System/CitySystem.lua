@@ -429,6 +429,8 @@ function City_CheckFlag( city )
 	city:SetStatus( CityStatus.DEFENSIVE_WEAK )
 	city:SetStatus( CityStatus.DEFENSIVE_DANGER )
 
+	--soldier less than half	
+	city:SetStatus( CityStatus.RESERVE_NEED, maxPower - power )
 	city:SetStatus( CityStatus.RESERVE_UNDERSTAFFED, power + power < maxPower )
 
 	local defenderScores = 
@@ -448,22 +450,18 @@ function City_CheckFlag( city )
 		{ ratio = 3,   score = 80, },
 		{ ratio = 4,   score = 90, },
 	}
-
+	
 	--city:SetStatus( CityStatus.PRODUCTION_BASE, true )
 	Asset_Foreach( city, CityAssetID.ADJACENTS, function( adjaCity )
 		local adjaGroup = Asset_Get( adjaCity, CityAssetID.GROUP )
 		if adjaGroup ~= group then
-			
 			city:SetStatus( CityStatus.SAFETY, nil )
 
 			if Dipl_IsAtWar( adjaGroup, group ) then
 				--print( String_ToStr( city, "name" ), String_ToStr( adjaCity, "name" ), String_ToStr( adjaGroup, "name" ), String_ToStr( group, "name" ) )
-				--city:SetStatus( CityStatus.PRODUCTION_BASE, nil )
-				--city:SetStatus( CityStatus.ADVANCED_BASE, true )
 				city:SetStatus( CityStatus.BATTLEFRONT, true )
 				--Debug_Log( city.name, "is battlefront" )
-				--print( city:ToString( "STATUS" ) )
-				--InputUtil_Pause()
+				Debug_Log( "status=" .. city:ToString( "STATUS" ) )
 			else				
 				city:SetStatus( CityStatus.FRONTIER, true )
 			end

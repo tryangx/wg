@@ -33,11 +33,14 @@ CityPopu =
 	ALL      = 0,
 
 	--military
-	RESERVES = 1,
-	SOLDIER  = 2,
+	REFUGEE  = 1,
+
+	---------------------
+	--Below is not include in city
+	INCITY_SEPERATOR = 10,
 
 	--lower-class
-	HOBO     = 10,
+	HOBO     = 10,	
 	CHILDREN = 11,
 	OLD      = 12,
 	
@@ -46,6 +49,9 @@ CityPopu =
 	WORKER   = 21,
 	MERCHANT = 22,
 	CORVEE   = 23,
+
+	RESERVES = 24,
+	SOLDIER  = 25,	
 
 	MIDDLE   = 30,
 	
@@ -108,6 +114,7 @@ CityStatus =
 
 	--not enough reserves
 	RESERVE_UNDERSTAFFED = 1030,
+	RESERVE_NEED         = 1031,
 }
 
 CityJob = 

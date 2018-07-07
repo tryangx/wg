@@ -68,10 +68,13 @@ function Entity_Load( type, datas, enum )
 		error( "no manager, you should call Entity_Setup() first." )
 		return
 	end
+	if not datas then
+		return
+	end
 	local mng = _entityManager[type]
 	mng:Clear()
 	local number = mng:LoadFromData( datas )
-	print( "Load [".. ( enum and MathUtil_FindName( enum , type ) or type ).."] Entity = " .. number .. "/" .. mng:GetCount() )
+	Debug_Log( "Load [".. ( enum and MathUtil_FindName( enum , type ) or type ).."] Entity = " .. number .. "/" .. mng:GetCount() )
 end
 
 function Entity_Get( type, id )

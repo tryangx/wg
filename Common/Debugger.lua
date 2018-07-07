@@ -17,8 +17,9 @@ function DBG_SetLevel( lv )
 	_level = lv or DBGLevel.IMPORTANT
 end
 
-function DBG_Error( content )
-	print( content )
+function DBG_Error( ... )
+	print( ... )
+	error( "" )
 end
 
 -- print "content" when "cond" is valid ( true or not nil )
@@ -105,13 +106,29 @@ end
 
 local _logger = {}
 
-function Log_Create( type )
+function Log_Create( type, isAdd )
+	if not isAdd then isAdd = false end
 	local logger = _logger[type]
 	if not logger then
-		logger = LogUtility( "run/" .. type .. "_" .. g_gameId .. ".log", LogWarningLevel.LOG, false )
+		local fileName
+		if isAdd then
+			fileName = "run/" .. type .. ".log" 
+		else
+			fileName = "run/" .. type .. "_" .. g_gameId .. ".log" 
+		end		
+		logger = LogUtility( fileName, LogWarningLevel.LOG, false, isAdd )
 		_logger[type] = logger
+	else
+		logger:SetAddMode( isAdd )
 	end
 	return logger
+end
+
+function Log_Add( type, content )
+	local logger = Log_Create( type, true )
+	if logger then
+		logger:WriteLog( content )
+	end
 end
 
 function Log_Write( type, content )

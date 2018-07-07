@@ -14,6 +14,7 @@ DefaultTaskSteps =
 	DISPATCH_CORPS  = { "PREPARE", "EXECUTE", "FINISH", "REPLY" },
 	ENROLL_CORPS    = { "EXECUTE", "FINISH", "REPLY" },
 	LEAD_CORPS      = { "FINISH", "REPLY" },
+	REGROUP_CORPS   = { "PREPARE", "FINISH", "REPLY" },
 	
 	CONSCRIPT       = { "EXECUTE", "FINISH", "REPLY" },
 	RECRUIT         = { "EXECUTE", "FINISH", "REPLY" },

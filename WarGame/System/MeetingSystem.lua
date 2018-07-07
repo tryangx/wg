@@ -6,8 +6,9 @@ local function Proposal_Execute( proposal )
 		local group = Asset_Get( loc, CityAssetID.GROUP )
 		local goalType = Asset_GetDictItem( proposal, ProposalAssetID.PARAMS, "goalType" )
 		local goalData = Asset_GetDictItem( proposal, ProposalAssetID.PARAMS, "goalData" )
+		--print( "goal", MathUtil_FindName( GroupGoalType, goalType ), goalType )
 		group:AddGoal( goalType, goalData )
-		--InputUtil_Pause( "goal", MathUtil_FindName( GroupGoalType, goalType ) )
+		
 		return
 
 	elseif type == ProposalType.MOVE_CAPITAL then
@@ -29,6 +30,7 @@ local function Proposal_Execute( proposal )
 	--issue task include initializing actortype, issue task to every subordinates
 	local task = Task_IssueByProposal( proposal )
 
+	--Log_Write( "meeting", "			issue proposal=" .. proposal:ToString() )
 	--if task then Log_Write( "meeting", "  task=" .. task:ToString() ) end
 
 	--remove proposal
@@ -180,9 +182,13 @@ local function Meeting_Update( meeting )
 
 		--update proposals
 		local numofproposal = Entity_Number( EntityType.PROPOSAL )		
-		if numofproposal > 0 then
+		if numofproposal > 0 then			
 			local index =  Random_GetInt_Sync( 1, numofproposal )
 			local proposal = Entity_GetByIndex( EntityType.PROPOSAL, index )
+			if numofproposal > 1 then
+				--Entity_Foreach( EntityType.PROPOSAL, function(proposal) print( proposal:ToString() ) end )
+				--InputUtil_Pause( "choose proposal=" .. index, numofproposal )
+			end
 			--print( "update proposal" .. MathUtil_FindName( ProposalType, Asset_Get( proposal, ProposalAssetID.TYPE ) ) )			
 			Proposal_Respond( proposal )
 		end
@@ -243,7 +249,7 @@ function Meeting_Hold( city, topic, target )
 	Asset_Set( meeting, MeetingAssetID.SUPERIOR, executive )
 	Asset_Set( meeting, MeetingAssetID.TARGET, target )
 
-	Debug_Log( executive:ToString(), "enter meeting, executive" )
+	Debug_Log( city.name, executive:ToString(), "enter meeting, executive" )
 
 	--find participants
 	local participants = {}
@@ -262,7 +268,7 @@ function Meeting_Hold( city, topic, target )
 			return
 		end
 		table.insert( participants, chara )
-		--Debug_Log( chara:ToString(), "enter meeting" )
+		Debug_Log( chara:ToString(), "enter meeting" )
 		Log_Write( "meeting", "         " .. chara:ToString() .. "=" .. MathUtil_FindName( CityJob, city:GetCharaJob( chara ) ) .. " attend" )
 	end )
 	participants = MathUtil_Shuffle_Sync( participants )
@@ -298,6 +304,17 @@ function MeetingSystem:Start()
 end
 
 function MeetingSystem:Update()
+	local month = g_Time:GetMonth()
+	local day   = g_Time:GetDay()
+	Entity_Foreach( EntityType.CITY, function ( city )
+		if month == 1 and day == 1 and city:IsCapital() then
+			Meeting_Hold( city, MeetingTopic.DETERMINE_GOAL )
+		end
+
+		if day == 2 then
+			Meeting_Hold( city )
+		end
+	end)	
 	Entity_Foreach( EntityType.MEETING, Meeting_Update )
 	Entity_Clear( EntityType.MEETING )
 end

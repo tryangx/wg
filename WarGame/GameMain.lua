@@ -86,7 +86,7 @@ function Game_Init()
 	--Entity_Load( EntityType.WEAPON, Scenario_GetData( "WEAPON_DATA" ), EntityType )
 	Entity_Load( EntityType.EVENT, Scenario_GetData( "EVENT_DATA" ), EntityType )
 
-	DistrictTable_Load    ( Scenario_GetData( "DISTRICT_DATA" ), EntityType )
+	--DistrictTable_Load    ( Scenario_GetData( "DISTRICT_DATA" ), EntityType )
 	PlotTable_Load        ( Scenario_GetData( "PLOT_TABLE_DATA" ), EntityType )
 	ResourceTable_Load    ( Scenario_GetData( "RESOURCE_DATA" ), EntityType)
 	TroopTable_Load       ( Scenario_GetData( "TROOP_DATA" ), EntityType )
@@ -149,25 +149,29 @@ function Game_Init()
 
 	print( "init system....." )
 
-	--The order of System_Addd() will determine the execution order
-	System_Add( RankingSystem() )
+	--!!! The order of System_Add() will determine the execution order, should be very careful	
 	System_Add( MessageSystem() )
-	System_Add( CharaSystem() )		
+	System_Add( IntelSystem() )
+
+	System_Add( RankingSystem() )
+	System_Add( GoalSystem() )
+	System_Add( CharaCreatorSystem() )
+
+	System_Add( CharaSystem() )
 	System_Add( CitySystem() )
 	System_Add( GroupSystem() )
-	System_Add( CorpsSystem() )	
-	System_Add( MoveSystem() )
-	System_Add( WarfareSystem() )	
-	System_Add( CharaCreatorSystem() )
+	System_Add( CorpsSystem() )
+
 	System_Add( ConsumeSystem() )
 	System_Add( SupplySystem() )
 	System_Add( LogisticsSystem() )
-	System_Add( IntelSystem() )	
+		
 	System_Add( EventSystem() )
 	System_Add( MeetingSystem() )
 	System_Add( DiplomacySystem() )
 	System_Add( TaskSystem() )	
-	System_Add( GoalSystem() )
+	System_Add( WarfareSystem() )
+	System_Add( MoveSystem() )
 	System_Start()
 
 	--init fomula
@@ -212,6 +216,7 @@ function Game_Test()
 	--[[]]
 	--test combat
 	if nil then
+		Combat_EnablePrinter()
 		local city = Entity_Get( EntityType.CITY, 1 )
 		local from = Entity_Get( EntityType.CITY, 2 )
 		local atkcorps = Corps_EstablishTest( { numoftroop = 10, siege = true, encampment = from } )
@@ -316,6 +321,8 @@ function Game_Start()
 	Debug_Normal( "Task==>" .. Entity_Number( EntityType.TASK ) ) Entity_Foreach( EntityType.TASK, function( entity ) Debug_Normal( entity:ToString( "DEBUG" ), "exist" ) end )
 	Debug_Normal( "Move==>" .. Entity_Number( EntityType.MOVE ) ) Entity_Foreach( EntityType.MOVE, function( entity ) Debug_Normal( entity:ToString(), "still" ) end )
 	Debug_Normal( "Dipl==>" .. Entity_Number( EntityType.RELATION ) ) Entity_Foreach( EntityType.RELATION, function( entity ) Debug_Normal( entity:ToString( "ALL" ) ) end )
+
+	Random_Result()
 
 	GameMap_Draw( g_map )
 

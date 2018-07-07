@@ -116,14 +116,22 @@ function Corps_GetLimitByCity( city )
 	return 2
 end
 
+--get the number of requirement corps( minimum, not maximum )
 function Corps_GetRequiredByCity( city )
+	local num = 0
 	if city:IsCapital() == true then
-		return 2
+		num = num + 1
 	end
 	if city:GetStatus( CityStatus.BATTLEFRONT ) then
-		return 1
+		num = num + 1
 	end
-	return 0
+	if city:GetStatus( CityStatus.FRONTIER ) then
+		if num == 0 then num = 1 end
+	end
+	if city:GetStatus( CityStatus.MILITARY_BASE ) then
+		if num >= 2 then num = num - 1 end
+	end
+	return num
 end
 
 function Corps_Join( corps, city )	
@@ -162,7 +170,14 @@ function Corps_Join( corps, city )
 	Debug_Log( corps.name .. " join " .. city.name )
 end
 
-function Corps_Neutralize( corps, reason )	
+function Corps_Dismiss( corps, neutralized )
+	Stat_Add( "Corps@Dismiss", corps:ToString() .. " neutralized=" .. ( neutralized and "1" or "0" ), StatType.LIST )
+
+	local group = Asset_Get( corps, CorpsAssetID.GROUP )
+	if group then
+		group:RemoveCorps( corps )
+	end
+
 	--remove from old city
 	local encampment = Asset_Get( corps, CorpsAssetID.ENCAMPMENT )
 	if encampment then
@@ -171,14 +186,23 @@ function Corps_Neutralize( corps, reason )
 		Debug_Log( corps:ToString() .. " not belong to any group or city!" )
 	end
 
-	--killed all officer
+	--remove officers
 	Asset_Foreach( corps, CorpsAssetID.OFFICER_LIST, function ( chara )
-		Chara_Die( chara )
+		if neutralized then
+			Chara_Die( chara )
+		else
+			Asset_Set( chara, CharaAssetID.CORPS )
+		end
 	end )
 
+	--remove leader
 	local leader = Asset_Get( corps, CorpsAssetID.LEADER )
 	if leader then
-		Chara_Die( leader )
+		if neutralized then
+			Chara_Die( chara )
+		else
+			Asset_Set( leader, CharaAssetID.CORPS )
+		end
 	end
 
 	--remove task
@@ -187,7 +211,10 @@ function Corps_Neutralize( corps, reason )
 		Task_Terminate( task )
 	end
 
-	Stat_Add( "Corps@Dismiss", corps:ToString() .. " reason=" .. reason, StatType.LIST )
+	--remove troop
+	Asset_Foreach( corps, CorpsAssetID.TROOP_LIST, function ( troop )
+		Entity_Remove( troop )
+	end)
 
 	Entity_Remove( corps )
 end
@@ -524,6 +551,8 @@ function Corps_EnrollInCity( corps, city )
 		soldierPerTroop = reserves
 	end
 	Corps_EstablishTroop( city, corps, numberOfTroop, soldierPerTroop )
+
+	Stat_Add( "Enroll@" .. corps.id, 1, StatType.TIMES )
 end
 
 function Corps_Train( corps, progress )
@@ -535,6 +564,25 @@ function Corps_Train( corps, progress )
 		troop:SetStatus( TroopStatus.TRAINING, math.min( training, maxTraining ) )
 	end )
 	--InputUtil_Pause( "train corps", corps:GetTraining() )
+end
+
+function Corps_Regroup( corps, list )
+	for _, otherCorps in ipairs( list ) do
+		if otherCorps ~= corps then
+			Asset_Foreach( otherCorps, CorpsAssetID.TROOP_LIST, function ( troop )
+				corps:AddTroop( troop )
+			end )			
+			Asset_Foreach( otherCorps, CorpsAssetID.OFFICER_LIST, function ( officer )
+				--we'll move officer from troop to staff
+			end)
+			Asset_Clear( otherCorps, CorpsAssetID.TROOP_LIST )
+			Asset_Clear( otherCorps, CorpsAssetID.OFFICER_LIST )
+			otherCorps:SetTask()
+
+			Corps_Dismiss( otherCorps )
+		end
+	end
+	--InputUtil_Pause( "regroup", corps:ToString("BRIEF") )
 end
 
 function Corps_Dispatch( corps, city )

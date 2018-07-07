@@ -56,8 +56,10 @@ TroopRequirement =
 
 TroopStatus = 
 {
-	--is guard
+	--is from guard
 	GUARD      = 1,
+	--is from reserves
+	RESERVE    = 2,
 
 	HONOR      = 4,
 
@@ -196,11 +198,11 @@ CombatResult =
 
 CombatPurpose = 
 {
-	CONSERVATIVE = 10,
-
-	MODERATE     = 20,
-
-	AGGRESSIVE   = 30,
+	DEATH_DEFEND = 10,
+	CONSERVATIVE = 20,
+	MODERATE     = 30,
+	AGGRESSIVE   = 40,
+	DEATH_FIGHT  = 50,
 }
 
 CombatOrder = 

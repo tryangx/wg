@@ -79,7 +79,7 @@ function Task:__init( ... )
 	Entity_Init( self, EntityType.TASK, TaskAssetAttrib )
 end
 
-function Task:ToString( type )	
+function Task:ToString( type )
 	local content = self.id .. " " .. MathUtil_FindName( TaskType, Asset_Get( self, TaskAssetID.TYPE ) )
 	content = content .. " " .. String_ToStr( Asset_Get( self, TaskAssetID.GROUP ), "name" )
 	if type == "SIMPLE" then
@@ -105,7 +105,7 @@ function Task:ToString( type )
 		content = content .. " atr=" .. ( Asset_Get( self, TaskAssetID.ACTOR ):ToString() )
 		content = content .. " @" .. String_ToStr( Asset_Get( self, TaskAssetID.LOCATION ), "name" )	
 		content = content .. " dst=" .. String_ToStr( Asset_Get( self, TaskAssetID.DESTINATION ), "name" )		
-		content = content .. " pas=" .. g_Time:CalcDiffDayByDate( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )		
+		content = content .. " pas=" .. g_Time:CalcDiffDayByDate( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )
 	end	
 	local result = Asset_Get( self, TaskAssetID.RESULT )
 	if result ~= TaskResult.UNKNOWN then

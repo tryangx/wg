@@ -22,7 +22,7 @@ function Table_CalculateBonuses( bonuses, datas )
 				bonuses[type] = bonuses[type] + bonus.value
 			end
 		else
-			print( "Invalid Bonus Type=", bonus.type )
+			Debug_Log( "Invalid Bonus Type=", bonus.type )
 		end		
 	end
 end

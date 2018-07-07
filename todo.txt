@@ -16,15 +16,16 @@ To Do List
 [ok] expedition -> send corps to attack occupy goal
 [ok] improve troop levelup / chara levelup
 
+[ok] expedition will consider the goal
+[ok] add task=regroup corps task, combine small corps to bigger one
 ---------------------------------------------------------
 
 [inprog] troop medal: kill troop + honor --> medals
 [inprog] reputation system( 1. can inc/dec, 2. affect all things like san5 )
 [inprog] influence system( 1. only increase, 2. dec in event or special situ )
+[inprog] add solider limitation/requirement, reduce the complex of algorithm about Establish CROPS/TROOP
 
-expedition will consider the goal
-
-add task=regroup task
+#imp:fix random-seed bug
 
 refactor chara loyality 
 
@@ -32,11 +33,7 @@ add chara skills / troop tactics etc
 
 redesign CITY.SECURITY, CITY.SATISFACTION -> CITY.DISS, CITY.SECURITY, leads to rebel
 
-task refactor -> city, corps, actor
-
 intercept can cancel the corps task
-
-add solider limitation/requirement, reduce the complex of algorithm about Establish CROPS/TROOP
 
 add new move_actor transport, refugee
 

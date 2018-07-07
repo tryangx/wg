@@ -253,6 +253,7 @@ function City:ToString( type )
 		end )
 
 	elseif type == "CORPS" then
+		content = content .. " corps=" .. Asset_GetListSize( self, CityAssetID.CORPS_LIST )
 		Asset_Foreach( self, CityAssetID.CORPS_LIST, function ( corps )
 			content = content .. " " .. corps:ToString( "STATUS" ) .. "/"
 		end )
@@ -418,6 +419,13 @@ function City:VerifyData()
 	end )
 
 	Asset_VerifyList( self, CityAssetID.ADJACENTS )
+
+	--verify adjacents
+	Asset_Foreach( self, CityAssetID.ADJACENTS, function ( adjaCity )
+		if not Asset_HasItem( adjaCity, CityAssetID.ADJACENTS, self ) then
+			error( adjaCity.name .. " not connect to " .. self.name )
+		end
+	end)
 
 	self:ElectExecutive()
 end
@@ -877,15 +885,16 @@ end
 
 --character join into city, but no means he is there
 function City:CharaJoin( chara )
+	--debug
+	if chara:GetStatus( CharaStatus.DEAD ) then
+		DBG_Error( "why dead man", chara.name )
+		return
+	end
+
 	Asset_Set( chara, CharaAssetID.HOME, self )
 
 	Asset_AppendList( self, CityAssetID.CHARA_LIST, chara )
-
-	--debug
-	if chara:GetStatus( CharaStatus.DEAD ) then
-		error( "why dead man", chara.name )
-	end
-
+	
 	Debug_Log( chara:ToString(), "join city=", self.name, Asset_GetListSize( self, CityAssetID.CHARA_LIST ) )
 end
 
@@ -934,11 +943,6 @@ function City:RemoveCorps( corps )
 		Asset_RemoveListItem( self, CityAssetID.CHARA_LIST,   chara )
 		Asset_RemoveListItem( self, CityAssetID.OFFICER_LIST, chara, "officer" )
 	end)
-
-	local group = Asset_Get( self, CityAssetID.GROUP )
-	if group then
-		group:RemoveCorps( corps )
-	end
 end
 
 --------------------------------------------
@@ -1066,14 +1070,6 @@ function City:Update()
 		--dismiss
 		if month == 1 then self:ClearOfficer() end
 		self:AssignOfficer()
-	end
-
-	if month == 1 and day == 1 and self:IsCapital() then
-		Meeting_Hold( self, MeetingTopic.DETERMINE_GOAL )
-	end
-
-	if day == 2 then
-		Meeting_Hold( self )
 	end
 
 	--print( self.name, "food=" .. Asset_Get( self, CityAssetID.FOOD ))

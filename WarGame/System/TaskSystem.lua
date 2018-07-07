@@ -47,9 +47,10 @@ end
 local function Task_SetCorpsTask( corps, task )
 	corps:SetTask( task )
 
-	local chara = Asset_Get( corps, CorpsAssetID.LEADER )
-	if chara then
-		chara:SetTask( task )
+	local leader = Asset_Get( corps, CorpsAssetID.LEADER )
+	if leader then
+		--print( "setcorpsleader", leader:ToString("TASK" ))
+		leader:SetTask( task )
 	end
 
 	Asset_Foreach( corps, CorpsAssetID.OFFICER_LIST, function ( chara )
@@ -218,6 +219,10 @@ local _prepareTask =
 		Asset_Set( task, TaskAssetID.DURATION, 20 )
 		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WAITING )
 	end,
+	REGROUP_CORPS   = function ( task )
+		Asset_Set( task, TaskAssetID.DURATION, 20 )
+		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WAITING )
+	end,
 
 	TRANSPORT       = function ( task )
 		Asset_Set( task, TaskAssetID.DURATION, 5 )
@@ -328,7 +333,7 @@ local _executeTask =
 	TRAIN_CORPS     = function ( task )
 		Asset_Set( task, TaskAssetID.DURATION, DEFAULT_TASK_DURATION )
 		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WORKING )
-	end,	
+	end,
 
 	DEV_AGRICULTURE = function( task )
 		Asset_Set( task, TaskAssetID.DURATION, DEFAULT_TASK_DURATION )
@@ -361,6 +366,9 @@ local _executeTask =
 	DISPATCH_CHARA  = function ( task )
 		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WAITING )
 	end,
+	CALL_CHARA  = function ( task )
+		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WAITING )
+	end,	
 
 	RECONNOITRE = function ( task )
 		Asset_Set( task, TaskAssetID.DURATION, 80 )
@@ -553,9 +561,16 @@ local _finishTask =
 		return Task_Contribute( task, "success" )
 	end,
 	LEAD_CORPS      = function ( task )
-		local corps = Asset_GetDictItem( task, TaskAssetID.PARAMS, "corps" )
-		local actor = Asset_Get( task, TaskAssetID.ACTOR )
+		local corps = Asset_Get( task, TaskAssetID.ACTOR )
+		local actor = Asset_GetDictItem( task, TaskAssetID.PARAMS, "leader" )
 		Asset_Set( corps, CorpsAssetID.LEADER, actor )
+		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
+		return Task_Contribute( task, "success" )
+	end,
+	REGROUP_CORPS   = function ( task )
+		local list = Asset_GetDictItem( task, TaskAssetID.PARAMS, "corps_list" )
+		local actor = Asset_Get( task, TaskAssetID.ACTOR )
+		Corps_Regroup( actor, list )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
 		return Task_Contribute( task, "success" )
 	end,
@@ -855,7 +870,7 @@ function Task_CorpsReceive( task, corps )
 		error( corps:ToString() .. " has task" )
 	end
 
-	Task_SetCorpsTask( corps, task )
+	corps:SetTask( task )
 
 	--Log_Write( "task",  corps:ToString(), "recv task" )
 end
@@ -887,10 +902,18 @@ function Task_Create( taskType, actor, location, destination, params )
 
 	--need CORPS
 	if type == TaskType.LEAD_CORPS then
-		Asset_Set( task, TaskAssetID.ACTOR_TYPE, TaskActorType.CHARA )
-		Task_CharaReceive( task, actor )
-		local corps = Asset_GetDictItem( task, TaskAssetID.PARAMS, "corps" )
-		Task_CorpsReceive( task, corps )
+		Asset_Set( task, TaskAssetID.ACTOR_TYPE, TaskActorType.CORPS )
+		Task_CorpsReceive( task, actor )
+
+		local leader = Asset_GetDictItem( task, TaskAssetID.PARAMS, "leader" )
+		Task_CharaReceive( task, leader )
+
+	elseif type == TaskType.REGROUP_CORPS then
+		Asset_Set( task, TaskAssetID.ACTOR_TYPE, TaskActorType.CORPS )
+		local list = Asset_GetDictItem( task, TaskAssetID.PARAMS, "corps_list" )
+		for _, corps in ipairs( list ) do
+			Task_CorpsReceive( task, corps )
+		end
 
 	elseif type == TaskType.HARASS_CITY 
 		or type == TaskType.ATTACK_CITY then
