@@ -25,7 +25,7 @@ To Do List
 [inprog] influence system( 1. only increase, 2. dec in event or special situ )
 [inprog] add solider limitation/requirement, reduce the complex of algorithm about Establish CROPS/TROOP
 
-#imp:fix random-seed bug
+[inprog] #imp:fix random-seed bug, reason=asset_dict use table as key, but table address isn't fixed in run-time
 
 refactor chara loyality 
 

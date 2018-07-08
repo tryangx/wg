@@ -58,17 +58,18 @@ function Intel_Post( inteltype, city, params )
 		if group == curGroup then return end
 		local dur = Move_CalcIntelTransDuration( nil, Asset_Get( group, GroupAssetID.CAPITAL ), city )
 		--InputUtil_Pause( "intel to " .. group.name, "need dur=" .. dur )
-		Asset_SetDictItem( intel, IntelAssetID.SPYS_DURATION, group, dur )
+		Asset_SetDictItem( intel, IntelAssetID.SPYS_DURATION, group.id, dur )
 	end )
 end
 
 function Intel_Update( intel )	
 	local type = Asset_Get( intel, IntelAssetID.TYPE )
-	Asset_Foreach( intel, IntelAssetID.SPYS_DURATION, function( dur, group )
+	Asset_Foreach( intel, IntelAssetID.SPYS_DURATION, function( dur, id )
 		if dur > 0 then
 			dur = dur - g_elapsed
-			Asset_SetDictItem( intel, IntelAssetID.SPYS_DURATION, group, dur )
+			Asset_SetDictItem( intel, IntelAssetID.SPYS_DURATION, id, dur )
 			if dur <= 0 then
+				local group = Entity_Get( EntityType.GROUP, id )
 				--group receive intel
 				--Stat_Add( "Intel@Gain", intel:ToString(), StatType.LIST )
 				if type  == IntelType.HARASS_CITY then

@@ -563,6 +563,9 @@ local _finishTask =
 	LEAD_CORPS      = function ( task )
 		local corps = Asset_Get( task, TaskAssetID.ACTOR )
 		local actor = Asset_GetDictItem( task, TaskAssetID.PARAMS, "leader" )
+		if Asset_Get( actor, CharaAssetID.CORPS ) then
+			DBG_Error( actor.name .. " already in corps=" .. Asset_Get( actor, CharaAssetID.CORPS ):ToString() )
+		end
 		Asset_Set( corps, CorpsAssetID.LEADER, actor )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
 		return Task_Contribute( task, "success" )
@@ -1027,10 +1030,10 @@ local function Task_Reply( task )
 
 	--bonus to contributor
 	if Asset_Get( task, TaskAssetID.ACTOR_TYPE ) == TaskActorType.CHARA then
-		Asset_Foreach( task, TaskAssetID.CONTRIBUTORS, function( value, actor )
+		Asset_Foreach( task, TaskAssetID.CONTRIBUTORS, function( data )
 			--local type = Asset_Get( task, TaskAssetID.TYPE )
 			--if type == TaskType.LEAD_CORPS then print( actor.name, "contribute", value, task:ToString() ) end
-			actor:Contribute( value )
+			data.actor:Contribute( data.value )
 		end )
 	else
 		--todo

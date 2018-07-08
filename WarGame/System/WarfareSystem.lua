@@ -169,7 +169,7 @@ function Warfare_UpdateCombat( combat )
 
 	if type == CombatType.SIEGE_COMBAT then
 		--reset in-siege status
-		city:SetStatus( city, CityStatus.IN_SIEGE, nil )
+		city:SetStatus( CityStatus.IN_SIEGE, nil )
 
 		--dismiss guard
 		local guard = 0
@@ -358,16 +358,16 @@ end
 
 function WarfareSystem:Update()
 	local lists = {}
-	for plot, combat in pairs( self._combats ) do				
+	for id, combat in pairs( self._combats ) do
 		if Warfare_UpdateCombat( combat ) == true then
 			Stat_Add( "Combat@Duration", Asset_Get( combat, CombatAssetID.TIME ), StatType.ACCUMULATION )
-			self._combats[plot] = nil
+			self._combats[id] = nil
 		end
 	end
 end
 
 function WarfareSystem:GetCombatByPlot( plot )
-	return self._combats[plot]
+	return self._combats[plot.id]
 end
 
 function WarfareSystem:AddCombat( combat )
@@ -376,11 +376,11 @@ function WarfareSystem:AddCombat( combat )
 		error( "why no plot" )
 		return
 	end
-	if self._combats[plot] then
+	if self._combats[plot.id] then
 		local existCombat = self._combats[plot]
 		print( existCombat:ToString( "DEBUG_CORPS" ) )
 		error( "Plot" .. "(x=" .. Asset_Get( plot, PlotAssetID.X ) .. ",y=" .. Asset_Get( plot, PlotAssetID.Y ) .. ") already has a combat!" )
 		return;
 	end	
-	self._combats[plot] = combat
+	self._combats[plot.id] = combat
 end

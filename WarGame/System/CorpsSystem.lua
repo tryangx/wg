@@ -199,7 +199,7 @@ function Corps_Dismiss( corps, neutralized )
 	local leader = Asset_Get( corps, CorpsAssetID.LEADER )
 	if leader then
 		if neutralized then
-			Chara_Die( chara )
+			Chara_Die( leader )
 		else
 			Asset_Set( leader, CharaAssetID.CORPS )
 		end

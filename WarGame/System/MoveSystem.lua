@@ -231,7 +231,8 @@ local function Move_OnCombatEnded( msg )
 			System_Get( SystemType.MOVE_SYS ):StopMoving( corps )
 		else
 			local task = corps:GetTask()
-			Debug_Log( corps:ToString(), "is busying", task:ToString() )
+			--print( "task=", task )
+			Debug_Log( "busy corps=" .. corps:ToString( "STATUS"), "is busying" )
 		end
 	end )
 end

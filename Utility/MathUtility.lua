@@ -68,7 +68,7 @@ function MathUtil_Shuffle_Sync( source, desc )
 	end
 	return source
 end
-function MathUtil_Shuffle_Unsync( source, desc )	
+function MathUtil_Shuffle_Unsync( source, desc )
 	local length = #source
 	if length > 1 then
 		for i = 1, length do			

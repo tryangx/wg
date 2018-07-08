@@ -1109,7 +1109,7 @@ function City:GetSpy( city )
 	end )
 	if not spy then
 		spy = self:CreateSpy( city, CitySpyParams.INIT_GRADE )
-		Asset_SetDictItem( self, CityAssetID.SPY_LIST, city, spy )
+		Asset_SetDictItem( self, CityAssetID.SPY_LIST, city.id, spy )
 	end
 	return spy
 end

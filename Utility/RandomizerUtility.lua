@@ -14,11 +14,12 @@ function Randomizer:SetSeed( seed )
 end
 
 function Randomizer:GetInt( min, max )
-	self.times = self.times + 1
+	self.times = self.times + 1		
 	self.seed = ( self.seed * 32765 + 12345 ) % 2147483647
 	if min < max then
 		return self.seed % ( max - min ) + min
 	elseif min > max then
+		error( "rev " .. min ..","..max)
 		return self.seed % ( min - max ) + max
 	end
 	return min
@@ -32,8 +33,8 @@ local _constRandomizer  = Randomizer()
 
 function Random_Result()
 	Log_Add( "random", "seed1=" .. _randomizer:GetSeed() .. "+" .. _randomizer.times )
-	Log_Add( "random", "seed2=" .. _unsyncRandomizer:GetSeed() .. "+" .. _unsyncRandomizer.times )
-	Log_Add( "random", "seed3=" .. _constRandomizer:GetSeed() .. "+" .. _constRandomizer.times )
+	--Log_Add( "random", "seed2=" .. _unsyncRandomizer:GetSeed() .. "+" .. _unsyncRandomizer.times )
+	--Log_Add( "random", "seed3=" .. _constRandomizer:GetSeed() .. "+" .. _constRandomizer.times )
 end
 
 function Random_SetSeed_Sync( seed )
@@ -48,17 +49,28 @@ function Random_SetSeed( seed )
 	Log_Add( "random", "gameid=" .. g_gameId )
 	Random_SetSeed_Sync( seed )
 end
-function Random_GetInt_Sync( min, max )
-	return _randomizer:GetInt( min, max )
+function Random_GetInt_Sync( min, max, desc )
+	if desc then
+		--Log_Add( "random", "time=" .. _randomizer.times .. " seed=" .. _randomizer.seed .. " min=" .. min .. " max=" .. max .. ( desc and " desc=" .. desc or "" ) )
+	end
+	local ret = _randomizer:GetInt( min, max )
+	if _randomizer.times == 70788 then
+		--Log_Add( "random", "time=" .. _randomizer.times .. " seed=" .. _randomizer.seed .. " min=" .. min .. " max=" .. max .. ( desc and " desc=" .. desc or "" ) )
+		--error( "wrong seed min=" .. min .. " max=" .. max )
+	end
+	return ret
 end
 function Random_GetInt_Unsync( min, max )
 	return _unsyncRandomizer:GetInt( min, max )
 end
-function Random_GetInt( min, max )
-	return Random_GetInt_Sync( min, max )
-end
 
 -------------------------------------------------
+
+--[[
+function Random_GetInt( min, max, desc )
+	return Random_GetInt_Sync( min, max, desc )
+end
+]]
 
 function Random_GetInt_Const( min, max, seed )
 	if not seed then error( "no seed" ) end
@@ -133,6 +145,7 @@ end
 function Random_GetListItem( list )
 	local number = #list
 	if number == 0 then return nil end
+	if number == 1 then return list[1] end
 	return list[Random_GetInt_Sync( 1, number )]
 end
 

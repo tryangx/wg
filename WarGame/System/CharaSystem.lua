@@ -13,6 +13,7 @@ end
 -------------------------------------------
 
 function Chara_GetSkillEffectValue( chara, effect )
+	if not chara then return 0 end
 	return chara:GetEffectValue( effect )
 end
 
@@ -99,6 +100,7 @@ function Chara_Die( chara )
 	local corps = Asset_Get( chara, CharaAssetID.CORPS )
 	if corps then
 		corps:LoseChara( chara )
+		Debug_Log( corps:ToString("OFFICER"))
 	else
 		Debug_Log( chara.name .. "die, no corps" )
 	end
@@ -108,6 +110,7 @@ function Chara_Die( chara )
 	if home then
 		--print( home.name, "leave", chara.name )
 		home:CharaLeave( chara )
+		Debug_Log( home:ToString("CHARA"))		
 	else
 		error( "no home?" )
 	end
@@ -120,8 +123,9 @@ function Chara_Die( chara )
 
 	--remove from group
 	local group = Asset_Get( chara, CharaAssetID.GROUP )
-	if group then		
+	if group then
 		group:LoseChara( chara )
+		Debug_Log( group:ToString("CHARA"))
 	else
 		Debug_Log( chara.name .. "die, no group" )
 	end
@@ -137,6 +141,10 @@ function Chara_Die( chara )
 end
 
 function Chara_Join( chara, city )
+	if chara:GetStatus( CharaStatus.DEAD ) then
+		error( chara.name .. " already dead" )
+	end
+
 	local oldHome = Asset_Get( chara, CharaAssetID.HOME )
 	if oldHome == city then
 		return
@@ -154,6 +162,10 @@ end
 
 function Chara_Serve( chara, group, city )
 	if not chara then return end
+
+	if chara:GetStatus( CharaStatus.DEAD ) then
+		error( chara.name .. " already dead" )
+	end
 
 	if group then
 		group:AddChara( chara )

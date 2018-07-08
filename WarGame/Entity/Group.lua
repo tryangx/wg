@@ -79,6 +79,11 @@ function Group:ToString( type )
 		content = content .. " money=" .. self:GetProperty( CityAssetID.MONEY )		
 		content = content .. " mat=" .. self:GetProperty( CityAssetID.MATERIAL )
 	end	
+	if type == "CHARA" then
+		Asset_Foreach( self, GroupAssetID.CHARA_LIST, function ( chara)
+			content = content .. " " .. chara.name
+		end)
+	end
 	if type == "DIPLOMACY" then
 		local rels = Dipl_GetRelations( self )
 		for _, rel in pairs( rels ) do
@@ -92,8 +97,8 @@ function Group:ToString( type )
 	end
 	if type == "SPY" or type == "ALL" then
 		content = content .. " spy="
-		Asset_Foreach( self, GroupAssetID.SPY_LIST, function ( spy, city )
-			content = content .. city.name .. "=" .. spy.grade .. ","
+		Asset_Foreach( self, GroupAssetID.SPY_LIST, function ( spy )
+			content = content .. spy.city.name .. "=" .. spy.grade .. ","
 		end)
 	end
 	return content
@@ -212,7 +217,7 @@ function Group:UpdateSpy()
 		Asset_Foreach( city, CityAssetID.SPY_LIST, function( spy )
 			local existSpy = self:GetSpy( spy.city )
 			if not existSpy or existSpy.grade < spy.grade then
-				Asset_SetDictItem( self, GroupAssetID.SPY_LIST, city, spy )
+				Asset_SetDictItem( self, GroupAssetID.SPY_LIST, city.id, spy )
 			end
 		end )
 	end)

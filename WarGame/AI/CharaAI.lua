@@ -180,7 +180,7 @@ local function SubmitProposal( params )
 
 	--InputUtil_Pause( proposal:ToString() )
 
-	Asset_SetDictItem( _proposer, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD, Random_GetInt_Sync( 30, 50 ) )
+	--Asset_SetDictItem( _proposer, CharaAssetID.STATUSES, CharaStatus.PROPOSAL_CD, Random_GetInt_Sync( 30, 50 ) )
 end
 
 ----------------------------------------
@@ -193,12 +193,6 @@ local function CheckDate( params )
 		if params.day ~= g_Time:GetMonth() then return false end
 	end
 	return true
-end
-
---probability unit is 1 per 10000
-local function TestProbability( params )
-	local ratio = params.prob or 5000
-	return Random_GetInt_Sync( 1, 10000 ) < ratio
 end
 
 local function IsCityCapital()
@@ -311,6 +305,10 @@ end
 ----------------------------------------
 
 local function CanLeadCorps()
+	if Asset_Get( _actor, CharaAssetID.CORPS ) then
+		return false
+	end
+
 	local corpsList = {}
 	Asset_Foreach( _city, CityAssetID.CORPS_LIST, function ( corps )
 		if corps:IsAtHome() == false then
@@ -511,7 +509,7 @@ local function CanRegroupCorps()
 	return true
 end
 
-local function CheckEnemyCity( targetCity, city, soldier, scores )
+local function CheckEnemyCity( targetCity, city, soldier, scores, fn )
 	if targetCity:GetStatus( CityStatus.STARVATION ) then
 		return true
 	end
@@ -519,15 +517,25 @@ local function CheckEnemyCity( targetCity, city, soldier, scores )
 	local citySoldier = Intel_Get( targetCity, city, CityIntelType.DEFENDER )
 	--unknown
 	if citySoldier == -1 then
+		Debug_Log( targetCity.name .. " info unknown" )
 		return false
 	end
 	
 	--TODO: should consider about the officer ability
+	local score = 0
 
 	local ratio = soldier / citySoldier
 	local item = MathUtil_Approximate( ratio, scores, "ratio", true )
+	score = score + item.score
 	
-	if Random_GetInt_Sync( 1, 100 ) > item.score then
+	if fn then
+		score = score + fn( targetCity )
+	end
+
+	Debug_Log( targetCity.name .. " ratio=" .. ratio .. " score=" .. score )
+
+
+	if Random_GetInt_Sync( 1, 100 ) > score then
 		return false
 	end
 
@@ -538,15 +546,17 @@ local function CheckEnemyCity( targetCity, city, soldier, scores )
 	return true
 end
 
-local function FindEnemyCityList( city, soldier, scores )
+local function FindEnemyCityList( city, soldier, scores, fn )
 	local group = Asset_Get( city, CityAssetID.GROUP )
 	return city:FilterAdjaCities( function ( adja )
 		local adjaGroup = Asset_Get( adja, CityAssetID.GROUP )
-		if adjaGroup == group then return false end
+		if adjaGroup == group then
+			return false
+		end
 		if Dipl_IsAtWar( group, adjaGroup ) == false then
 			return false
 		end
-		return CheckEnemyCity( adja, city, soldier, scores )
+		return CheckEnemyCity( adja, city, soldier, scores, fn )
 	end )
 end
 
@@ -561,12 +571,23 @@ local function CanHarassCity()
 
 	local canHarassScores = 
 	{
-		{ ratio = 0.5, score = 0 },
-		{ ratio = 1,   score = 30 },
-		{ ratio = 1.5, score = 50 },
-		{ ratio = 2,   score = 85 },
+		{ ratio = 0.35, score = 0 },
+		{ ratio = 0.5,  score = 20 },
+		{ ratio = 1,    score = 40 },
+		{ ratio = 1.5,  score = 70 },
+		{ ratio = 2,    score = 100 },
 	}
-	local cities = FindEnemyCityList( _city, soldier, canHarassScores )
+
+	local group = Asset_Get( _city, CityAssetID.GROUP )
+	local goal = _group:GetGoal( GroupGoalType.OCCUPY_CITY )	
+
+	function CheckGoalCity( targetCity )
+		if targetCity == goal.city then
+			return 50
+		end
+	end
+
+	local cities = FindEnemyCityList( _city, soldier, canHarassScores, goal and CheckGoalCity or nil )
 
 	local number = #cities
 	if number == 0 then return false end
@@ -596,7 +617,7 @@ local function CanAttackCity()
 		return false
 	end
 
-	Debug_Log( "canattack", _city:ToString("MILITARY"), "SOL="..soldier, #list )
+	Debug_Log( "canattack self=", _city:ToString("MILITARY"), "SOL="..soldier, #list )
 
 	local canAttackScores = 
 	{
@@ -927,11 +948,16 @@ local function CanCorpsBack2Capital()
 		return false
 	end
 
+	local capital = Asset_Get( _group, GroupAssetID.CAPITAL )
+	if not capital then
+		return false
+	end
+
 	_registers["ACTOR"] = corps
 	_registers["CORPS"] = _registers["ACTOR"]
-	_registers["TARGET_CITY"] = Asset_Get( _group, GroupAssetID.CAPITAL )
+	_registers["TARGET_CITY"] = capital
 
-	InputUtil_Pause( "corps=" .. corps:ToString() .. " back to capital" .. capital:ToString() )
+	--InputUtil_Pause( "corps=" .. corps:ToString() .. " back to capital" .. capital:ToString() )
 
 	return true
 end
@@ -1344,7 +1370,12 @@ local function CanReconnoitre()
 	end )
 	if #list == 0 then return false end
 
-	local index = Random_GetInt_Sync( 1, #list )
+	local desc = ""
+	for _, spy in ipairs( list ) do
+		desc = desc .. " " .. spy.city.name
+	end
+
+	local index = Random_GetInt_Sync( 1, #list, desc )
 	local spy   = list[index]
 	_registers["TARGET_CITY"] = spy.city
 

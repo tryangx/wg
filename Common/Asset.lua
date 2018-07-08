@@ -11,7 +11,7 @@ AssetAttribType =
 	TEMPORARY    = 10,	
 }
 
-ASSET_DEBUG_SWITCH = true
+ASSET_DEBUG = true
 
 --[[
 	function Watcher( entity, id, value )
@@ -146,11 +146,31 @@ function AssetAttrib_SetTemporary( params )
 end
 
 ----------------------------------
+
+function Asset_Clear( entity, id )
+	if not id then error( "id is invalid" ) end
+	if typeof( entity ) == "number" then
+		print( "entity=", entity, "type=", typeof(entity), " or id=", id, " is invalid" )
+		return
+	end
+	entity[id] = {}
+	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "clear list" ) end
+end
+
+function Asset_Foreach( entity, id, fn )
+	local datas = entity[id]
+	if not datas then return end
+	for id, item in pairs( datas ) do
+		fn( item, id )
+	end
+end
+
+----------------------------------
 -- Asset Attrib : List 
 ----------------------------------
 
 function Asset_GetList( entity, id )
-	if ASSET_DEBUG_SWITCH then
+	if ASSET_DEBUG then
 		if not id then
 			error( "id is invalid" )
 		end
@@ -195,40 +215,28 @@ function Asset_GetListByIndex( entity, id, index )
 	return nil
 end
 
---simply 
-function Asset_CopyDict( entity, id, source, fn )
-	if not source then return end
-	Asset_Clear( entity, id )
-	local list = Asset_GetList( entity, id )
-	for k, v in pairs( source ) do
-		list[k] = v
-	end
-end
-
 -- list is just a list, not dictionary
 function Asset_CopyList( entity, id, source, fn )
 	if not source then return end
+	
 	Asset_Clear( entity, id )
+
 	local list = Asset_GetList( entity, id )
 
 	local attrib = Entity_GetAssetAttrib( entity, id )
-	local setter = nil		
+	local setter
 	if attrib and attrib.setter and typeof( item ) == "number" then
 		setter = attrib.setter
 	end
+	local changer = attrib and attrib.changer or nil
 
 	--only copy list, not dict
-	for k, item in ipairs( source ) do		
-		local value
-		if fn then
-			value = fn( item )
-		else
-			value = item
-		end
+	for id, item in ipairs( source ) do		
+		local value = fn and fn( item ) or item
 		if setter then
 			value = attrib.setter( entity, id, value )
 		end
-		if attrib and attrib.changer then
+		if changer then
 			attrib.changer( entity, id, value )
 		end
 		table.insert( list, value )
@@ -238,7 +246,10 @@ end
 
 function Asset_SetList( entity, id, list )
 	if not id then error( "id invalid" ) end
-	if typeof( entity ) == "number" then error( "entity invalid" ) return false end
+	if typeof( entity ) == "number" then		
+		error( "entity invalid" )
+		return false
+	end
 	entity[id] = list
 end
 
@@ -268,12 +279,19 @@ function Asset_SetListItem( entity, id, index, item )
 	if attrib and attrib.type == AssetAttribType.DICT then
 		error( entity.type, entity.id )
 	end
-	if attrib and attrib.setter and typeof( item ) == "number" then
-		item = attrib.setter( entity, id, item )
+	if attrib then
+		if attrib.setter and typeof( item ) == "number" then
+			item = attrib.setter( entity, id, item )
+		end
+		if attrib.changer then
+			attrib.changer( entity, id, item )
+		end
 	end
-	if attrib and attrib.changer then
-		attrib.changer( entity, id, item )
+
+	if typeof(index) ~= "number" then
+		error( "index should be number" )
 	end
+
 	entity[id][index] = item
 
 	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "set index=", index ) end	
@@ -290,10 +308,10 @@ function Asset_RemoveListItem( entity, id, item, name )
 	if not entity[id] then return false end
 
 	local list = entity[id]
-	for k, data in pairs( list ) do		
+	for id, data in pairs( list ) do		
 		if data == item or ( name and data.name == item ) then
-			if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "remove item=", k ) end
-			table.remove( list, k )
+			if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "remove item=", id ) end
+			table.remove( list, id )
 			return true
 		end
 	end
@@ -310,48 +328,12 @@ function Asset_RemoveIndexItem( entity, id, index )
 	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "remove index=", index ) end
 end
 
-function Asset_Clear( entity, id )
-	if not id then error( "id is invalid" ) end
-	if typeof( entity ) == "number" then
-		print( "entity=", entity, "type=", typeof(entity), " or id=", id, " is invalid" )
-		return
-	end
-	entity[id] = {}
-	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "clear list" ) end
-end
-
-function Asset_Foreach( entity, id, fn )
-	local datas = entity[id]
-	if not datas then return end
-	for k, item in pairs( datas ) do
-		fn( item , k )
-	end
-end
-
 function Asset_FindListItem( entity, id, fn )
 	local list = Asset_GetList( entity, id )
 	if not list then return nil end
 	--pairs should be ipairs
 	for k, item in pairs( list ) do if fn( item, k ) == true then return item end end
 	return nil
-end
-
-function Asset_FindDictItem( entity, id, fn )
-	local list = Asset_GetDict( entity, id )
-	if not list then return nil end
-	--pairs should be ipairs
-	for k, item in pairs( list ) do if fn( item, k ) == true then return item end end
-	return nil
-end
-
-function Asset_GetListFromDict( entity, id )
-	local list = Asset_GetList( entity, id )
-	if not list then return end
-	local ret = {}
-	for k, item in pairs( list ) do
-		table.insert( ret, item )
-	end
-	return ret
 end
 
 --[[
@@ -388,8 +370,18 @@ end
 -- Asset Attrib : Dict
 ----------------------------------
 
+--simply 
+function Asset_CopyDict( entity, id, source, fn )
+	if not source then return end
+	Asset_Clear( entity, id )
+	local list = Asset_GetList( entity, id )
+	for id, v in pairs( source ) do
+		list[id] = v
+	end
+end
+
 function Asset_GetDict( entity, id )
-	if ASSET_DEBUG_SWITCH then
+	if ASSET_DEBUG then
 		if not id then
 			error( "id is invalid" )
 		end
@@ -413,9 +405,12 @@ end
 
 -- Use this to add item into the dictionary
 function Asset_SetDictItem( entity, id, name, item )
-	if ASSET_DEBUG_SWITCH then
+	if ASSET_DEBUG then
 		if not name then
 			error( "name is invalid" )
+		end
+		if typeof( name ) == "table" or typeof( name ) == "object" then
+			error( "keyname should be number" )
 		end
 	end
 
@@ -430,12 +425,18 @@ function Asset_SetDictItem( entity, id, name, item )
 			attrib.changer( entity, id, item )
 		end
 	end
+
 	entity[id][name] = item
 
 	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, item ) end	
 end
 
 function Asset_GetDictItem( entity, id, name )
+	if ASSET_DEBUG then
+		if typeof( name ) == "table" or typeof( name ) == "object" then
+			error( "keyname should be number" )
+		end
+	end
 	local dict = Asset_GetDict( entity, id )
 	return dict and dict[name] or nil
 end
@@ -449,6 +450,28 @@ function Asset_GetDictSize( entity, id )
 	return size
 end
 
+function Asset_FindDictItem( entity, id, fn )
+	local dict = Asset_GetDict( entity, id )
+	if not dict then return nil end
+	--pairs should be ipairs
+	for name, item in pairs( dict ) do
+		if fn( item, name ) == true then
+			return item
+		end
+	end
+	return nil
+end
+
+function Asset_GetListFromDict( entity, id )
+	local dict = Asset_GetList( entity, id )
+	if not dict then return end
+	local list = {}
+	for id, item in pairs( dict ) do
+		table.insert( list, item )
+	end
+	return list
+end
+
 ----------------------------------
 --	Asset Attrib : Pointer
 ----------------------------------
@@ -456,8 +479,8 @@ end
 function Asset_ConvertID2Pointer( entity, id, fn )
 	if not id then error( "id is invalid" ) end
 	if entity[id] then
-		for k, item in pairs( entity[id] ) do
-			entity[id][k] = fn( item )
+		for key, item in pairs( entity[id] ) do
+			entity[id][key] = fn( item )
 		end
 	end
 end
@@ -527,7 +550,7 @@ end
 
 
 function Asset_Get( entity, id )
-	if ASSET_DEBUG_SWITCH then
+	if ASSET_DEBUG then
 		if not entity then
 			error( "invalid entity in Asset_Get()" )
 		end

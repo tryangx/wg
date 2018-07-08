@@ -44,10 +44,17 @@ local function Corps_RecalMovement( entity, id, value )
 	end
 end
 
+local function DebugChara( entity, id, value )
+	if value and value:GetStatus( CharaStatus.DEAD ) then
+		error( value.name .. " is dead")
+	end
+	return Entity_SetChara( entity, id, value )
+end
+
 CorpsAssetAttrib =
 {
 	group      = AssetAttrib_SetPointer    ( { id = CorpsAssetID.GROUP,         type = CorpsAssetType.BASE_ATTRIB, setter = Entity_SetGroup } ),
-	leader     = AssetAttrib_SetPointer    ( { id = CorpsAssetID.LEADER,        type = CorpsAssetType.BASE_ATTRIB, setter = Entity_SetChara } ),
+	leader     = AssetAttrib_SetPointer    ( { id = CorpsAssetID.LEADER,        type = CorpsAssetType.BASE_ATTRIB, setter = DebugChara } ),
 	troops     = AssetAttrib_SetPointerList( { id = CorpsAssetID.TROOP_LIST,    type = CorpsAssetType.BASE_ATTRIB, setter = Corps_SetTroop, changer = Corps_RecalMovement } ),	
 	officers   = AssetAttrib_SetPointerList( { id = CorpsAssetID.OFFICER_LIST,  type = CorpsAssetType.BASE_ATTRIB, setter = Entity_SetChara } ),
 	location   = AssetAttrib_SetPointer    ( { id = CorpsAssetID.LOCATION,      type = CorpsAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
@@ -85,7 +92,7 @@ end
 -------------------------------------------
 
 function Corps:ToString( type )
-	local content = "[" .. ( self.name or "" ) .. "]"	
+	local content = "[" .. ( self.name or "" ) .. "](" .. self.id .. ")"
 	local leader = Asset_Get( self, CorpsAssetID.LEADER )
 	if leader then
 		content = content .. leader:ToString()
@@ -120,6 +127,13 @@ function Corps:ToString( type )
 		end
 		content = content .. " " .. ( self:IsAtHome() and "athome" or "outside" )
 		content = content .. " " .. ( self:IsBusy() and "busy" or "idle" )
+	end
+
+	if type == "OFFICER" then
+		content = content .. " ldr=" .. String_ToStr( Asset_Get( self, CorpsAssetID.LEADER ), "name" )
+		Asset_Foreach( self, CorpsAssetID.OFFICER_LIST, function( chara )
+			content = content .. " " .. chara:ToString()
+		end)	
 	end
 	
 	if type == "BRIEF" then
@@ -263,6 +277,8 @@ function Corps:LoseChara( chara )
 	else
 		self:LoseOfficer( chara )
 	end
+
+	Debug_Log( chara:ToString(), "leave corps=" .. self:ToString() )
 end
 
 function Corps:LoseOfficer( officer )

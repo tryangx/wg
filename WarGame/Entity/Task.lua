@@ -157,9 +157,12 @@ function Task:ElpasedTime( time )
 end
 
 function Task:Contribute( actor, contribution )
-	local cur = Asset_GetDictItem( self, TaskAssetID.CONTRIBUTORS, actor )
-	cur = cur and cur + contribution or contribution
-	Asset_SetDictItem( self, TaskAssetID.CONTRIBUTORS, actor, cur )
+	local data = Asset_GetDictItem( self, TaskAssetID.CONTRIBUTORS, actor.id )
+	if not data then
+		data = { actor = actor, value = 0 }
+	end
+	data.value = data.value + contribution
+	Asset_SetDictItem( self, TaskAssetID.CONTRIBUTORS, actor.id, data )
 	--InputUtil_Pause( actor.name, contribution, Asset_GetDictItem( self, TaskAssetID.CONTRIBUTORS, actor ) )
 end
 

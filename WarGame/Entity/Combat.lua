@@ -628,8 +628,12 @@ function Combat:ClearRefStats()
 end
 
 function Combat:PrepareRefStats()
-	Asset_Foreach( self, CombatAssetID.TROOP_LIST, function ( troop )		
-		local exposure = 100 + Random_GetInt_Sync( ( troop:GetCombatData( TroopCombatData.EXPOSURE ) - 100 ) * 0.25, ( 100 - troop:GetCombatData( TroopCombatData.EXPOSURE ) ) * 0.25 )
+	local desc = ""
+	Asset_Foreach( self, CombatAssetID.TROOP_LIST, function ( troop )
+		desc = desc .. " " .. troop.id
+	end )
+	Asset_Foreach( self, CombatAssetID.TROOP_LIST, function ( troop )
+		local exposure = 100 + Random_GetInt_Sync( ( troop:GetCombatData( TroopCombatData.EXPOSURE ) - 100 ) * 0.25, ( 100 - troop:GetCombatData( TroopCombatData.EXPOSURE ) ) * 0.25, desc )
 		local soldier = Asset_Get( troop, TroopAssetID.SOLDIER )
 		local troopTable = Asset_Get( troop, TroopAssetID.TABLEDATA )
 		local side = troop:GetCombatData( TroopCombatData.SIDE )
