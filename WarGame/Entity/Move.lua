@@ -67,7 +67,7 @@ function Move:ToString( type )
 	if type == "END" then
 		content = content .. " day=" .. g_Time:CalcDiffDayByDates( Asset_Get( self, MoveAssetID.END_TIME ), Asset_Get( self, MoveAssetID.BEGIN_TIME ) )
 	else
-		content = content .. " pas=" .. g_Time:CalcDiffDayByDate( Asset_Get( self, MoveAssetID.BEGIN_TIME ) )
+		content = content .. " pas=" .. self:GetPassDay()
 	end
 	return content
 end
@@ -80,6 +80,10 @@ end
 
 function Move:IsArrived()
 	return Asset_Get( self, MoveAssetID.PROGRESS ) >= Asset_Get( self, MoveAssetID.DURATION )
+end
+
+function Move:GetPassDay()
+	return g_Time:CalcDiffDayByDate( Asset_Get( self, MoveAssetID.BEGIN_TIME ) )
 end
 
 --------------------------------------------

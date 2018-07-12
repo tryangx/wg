@@ -118,13 +118,17 @@ function Task:Load( data )
 	self.id = data.id
 end
 
-function Task:IsStepFinished()
+function Task:IsStepFinished()	
+	local status = Asset_Get( self, TaskAssetID.STATUS )
+	if status == TaskStatus.MOVING then
+		return false
+	end
+
 	local result = Asset_Get( self, TaskAssetID.RESULT )
 	if result ~= TaskResult.UNKNOWN then
 		return true
 	end
 
-	local status = Asset_Get( self, TaskAssetID.STATUS )
 	if status == TaskStatus.WAITING then
 		return Asset_Get( self, TaskAssetID.DURATION ) <= 0
 	end
@@ -135,6 +139,7 @@ function Task:IsStepFinished()
 		end
 		return Asset_Get( self, TaskAssetID.DURATION ) <= 0
 	end
+
 	return false
 end
 
@@ -180,7 +185,7 @@ end
 function Task:NextStep()
 	if Asset_Get( self, TaskAssetID.PROGRESS ) >= Asset_Get( self, TaskAssetID.WORKLOAD ) then
 		--finish task
-		Asset_Set( self, TaskAssetID.STATUS, TaskStatus.WAITING )
+		Asset_Set( self, TaskAssetID.STATUS, TaskStatus.RUNNING )
 		Asset_Set( self, TaskAssetID.DURATION, 0 )
 		self:Update()
 	end

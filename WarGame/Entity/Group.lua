@@ -161,12 +161,12 @@ function Group:VerifyData()
 		--check location and home
 		local home = Asset_Get( chara, CharaAssetID.HOME )		
 		if not home then
-			Asset_Set( chara, CharaAssetID.HOME, Asset_Get( self, GroupAssetID.CAPITAL ) )
+			chara:JoinCity( Asset_Get( self, GroupAssetID.CAPITAL ) )
 			CRR_Tolerate( chara.name .. " home correct to " .. String_ToStr( Asset_Get( chara, CharaAssetID.HOME ), "name" ) )
 		end
 		local loc = Asset_Get( chara, CharaAssetID.LOCATION )
 		if not loc then
-			Asset_Set( chara, CharaAssetID.HOME, Asset_Get( chara, CharaAssetID.HOME ) )
+			chara:JoinCity( Asset_Get( chara, CharaAssetID.HOME ) )
 			CRR_Tolerate( chara.name .. " loc correct to " .. String_ToStr( Asset_Get( chara, CharaAssetID.HOME ), "name" ) )
 		end
 
@@ -351,8 +351,8 @@ function Group:LoseCity( city, toCity )
 		elseif toCity then
 			--retreat to nearby city
 			--print( Move_Track( corps ) )
-			--InputUtil_Pause( corps:ToString( "POSITION" ), "retreat to", toCity:ToString() )
-			toCity:AddCorps( corps )
+			InputUtil_Pause( corps:ToString( "POSITION" ), "retreat to", toCity:ToString() )
+			Corps_Join( toCity, corps )
 		end
 	end )
 	Asset_Clear( city, CityAssetID.CORPS_LIST )

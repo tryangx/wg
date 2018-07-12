@@ -99,7 +99,7 @@ function Chara_Die( chara )
 	--remove from corps
 	local corps = Asset_Get( chara, CharaAssetID.CORPS )
 	if corps then
-		corps:LoseChara( chara )
+		corps:LoseOfficer( chara )
 		Debug_Log( corps:ToString("OFFICER"))
 	else
 		Debug_Log( chara.name .. "die, no corps" )
@@ -118,7 +118,7 @@ function Chara_Die( chara )
 	--remove task
 	local task = chara:GetTask()
 	if task then
-		Task_Terminate( task )
+		Task_Terminate( task, chara )
 	end
 
 	--remove from group
@@ -140,21 +140,21 @@ function Chara_Die( chara )
 	--InputUtil_Pause( "die")
 end
 
-function Chara_Join( chara, city )
+function Chara_Join( chara, city, isEnterCity )
 	if chara:GetStatus( CharaStatus.DEAD ) then
 		error( chara.name .. " already dead" )
 	end
 
-	local oldHome = Asset_Get( chara, CharaAssetID.HOME )
-	if oldHome == city then
+	local home = Asset_Get( chara, CharaAssetID.HOME )
+	if home == city then
+		error( chara.name .. " already in " ..city.name )
 		return
 	end
-
-	if oldHome then
-		oldHome:CharaLeave( chara )
+	if home then
+		home:CharaLeave( chara )
 	end
 
-	city:CharaJoin( chara )
+	city:CharaJoin( chara, isEnterCity )	
 end
 
 -------------------------------
@@ -178,8 +178,8 @@ function Chara_Serve( chara, group, city )
 		city:CharaJoin( chara )
 
 		--set home & location
-		Asset_Set( chara, CharaAssetID.HOME, city )
-		Asset_Set( chara, CharaAssetID.LOCATION, city )
+		chara:JoinCity( city )
+		chara:EnterCity( city )
 
 		--set job
 		Asset_Set( chara, CharaAssetID.JOB, CharaJob.OFFICER )
@@ -227,7 +227,7 @@ function Chara_FindPromoteJob( chara )
 			for _, bundle in pairs( data.has_skill ) do
 				local has = true
 				for _, id in pairs( bundle ) do
-					local findSkill = Asset_FindListItem( chara, CharaAssetID.SKILLS, function( skill )
+					local findSkill = Asset_FindItem( chara, CharaAssetID.SKILLS, function( skill )
 						return skill.id == id
 					end )
 					if not findSkill then
@@ -277,7 +277,7 @@ local function Chara_LearnSkill( chara )
 		Stat_Add( "GainSkill@Failed", chara:ToString( "TRAITS" ), StatType.LIST )
 		return false
 	end
-	chara:LearnSkill( skill )	
+	chara:LearnSkill( skill )
 end
 
 local function Chara_LevelUp( chara )

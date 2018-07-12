@@ -1,6 +1,9 @@
 function String_ToStr( data, item )
-	if not data or typeof( data ) == "number" then
+	if not data then
 		return "[??]"
+	end
+	if typeof( data ) == "number" then
+		return "" .. data
 	end
 	return data[item] or "[??]"
 end

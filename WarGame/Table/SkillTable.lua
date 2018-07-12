@@ -86,7 +86,11 @@ function SkillTable_QuerySkillList( chara )
 			if valid == false then break end
 		end
 		if valid == true then
-			table.insert( skills, skill )
+			if not Asset_HasItem( chara, CharaAssetID.SKILLS, skill ) then
+				table.insert( skills, skill )
+			else
+				--print( chara.name .. " already has skill=" .. skill.name)
+			end
 		end
 	end )
 --[[

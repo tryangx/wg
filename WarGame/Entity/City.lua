@@ -414,8 +414,8 @@ function City:VerifyData()
 	end )
 
 	Asset_Foreach( self, CityAssetID.CHARA_LIST, function( chara )
-		Asset_Set( chara, CharaAssetID.HOME, city )
-		Asset_Set( chara, CharaAssetID.LOCATION, city )
+		chara:JoinCity( city )
+		chara:EnterCity( city )
 	end )
 
 	Asset_VerifyList( self, CityAssetID.ADJACENTS )
@@ -442,7 +442,7 @@ function City:SetPlan( plan, task )
 end
 
 function City:GetConstruction( id )
-	return Asset_FindListItem( self, CityAssetID.CONSTR_LIST, function ( constr )
+	return Asset_FindItem( self, CityAssetID.CONSTR_LIST, function ( constr )
 		if constr.id == id then return constr end
 	end)
 end
@@ -567,7 +567,7 @@ end
 --type from enum CityJob
 function City:GetOfficer( job, index )
 	if not index then index = 0 end
-	local item = Asset_FindListItem( self, CityAssetID.OFFICER_LIST, function ( data )
+	local item = Asset_FindItem( self, CityAssetID.OFFICER_LIST, function ( data )
 		if data.job == job then
 			if index == 0 then
 				return true
@@ -590,7 +590,7 @@ end
 
 function City:GetCharaJob( chara )
 	local findJob = CityJob.NONE
-	Asset_FindListItem( self, CityAssetID.OFFICER_LIST, function ( data )		
+	Asset_FindItem( self, CityAssetID.OFFICER_LIST, function ( data )		
 		if data.officer == chara then
 			--InputUtil_Pause( "checker", officer.name, chara.name, job )
 			findJob = data.job
@@ -884,22 +884,25 @@ end
 -- Chra relative
 
 --character join into city, but no means he is there
-function City:CharaJoin( chara )
+function City:CharaJoin( chara, isEnterCity )
 	--debug
 	if chara:GetStatus( CharaStatus.DEAD ) then
 		DBG_Error( "why dead man", chara.name )
 		return
 	end
 
-	Asset_Set( chara, CharaAssetID.HOME, self )
+	chara:JoinCity( self )
+	if isEnterCity then
+		chara:EnterCity( self )
+	end
 
 	Asset_AppendList( self, CityAssetID.CHARA_LIST, chara )
 	
-	Debug_Log( chara:ToString(), "join city=", self.name, Asset_GetListSize( self, CityAssetID.CHARA_LIST ) )
+	Debug_Log( chara:ToString(), "join city=", self.name, isEnterCity and "true" or "false" )
 end
 
 function City:CharaLeave( chara )
-	Asset_Set( chara, CharaAssetID.HOME, nil )
+	chara:JoinCity()
 
 	Asset_RemoveListItem( self, CityAssetID.CHARA_LIST, chara )
 
@@ -912,22 +915,29 @@ end
 -- Corps relative
 
 --corps join into city, but no means reach there
-function City:AddCorps( corps )
+function City:CorpsJoin( corps, isEnterCity )
+	--set encampment
 	Asset_Set( corps, CorpsAssetID.ENCAMPMENT, self )
+	if isEnterCity then corps:EnterCity( self ) end
 
 	--insert trooplist
 	Asset_AppendList( self, CityAssetID.CORPS_LIST, corps )
 
 	--insert charalist
-	Asset_Foreach( corps, CorpsAssetID.OFFICER_LIST, function ( chara )
+	Asset_Foreach( corps, CorpsAssetID.OFFICER_LIST, function ( chara )	
+		chara:JoinCity( self )
+		if isEnterCity then chara:EnterCity( self ) end
 		Asset_AppendList( self, CityAssetID.CHARA_LIST, chara )
 	end)
 
 	--add from group
-	local group = Asset_Get( self, CityAssetID.GROUP )
-	if group then
-		group:AddCorps( corps )
-	end
+	if not Asset_Get( corps, CorpsAssetID.GROUP ) then
+		local group = Asset_Get( self, CityAssetID.GROUP )
+		if group then
+			group:AddCorps( corps )
+		end
+		error( "corps no group" )
+	end	
 
 	Debug_Log( corps:ToString(), "garrison city=" .. self.name )
 end
@@ -939,7 +949,7 @@ function City:RemoveCorps( corps )
 
 	--remove charalist
 	Asset_Foreach( corps, CorpsAssetID.OFFICER_LIST, function ( chara )
-		Asset_Set( chara, CharaAssetID.HOME, nil )
+		chara:JoinCity()
 		Asset_RemoveListItem( self, CityAssetID.CHARA_LIST,   chara )
 		Asset_RemoveListItem( self, CityAssetID.OFFICER_LIST, chara, "officer" )
 	end)
@@ -974,7 +984,7 @@ function City:AssignOfficer()
 		return
 	end
 
-	--print( self:ToString("OFFICER"),  #charaList, #jobList )
+	Debug_Log( self:ToString("OFFICER"),  #charaList, #jobList )
 
 	--fill vacancy position
 	local vacancies = #charaList - #jobList
@@ -985,13 +995,16 @@ function City:AssignOfficer()
 		--print( "add ", MathUtil_FindName( CityJob, job ), job )
 	end
 
+	for k, chara in ipairs( charaList ) do
+		Debug_Log( k, chara.name )
+	end
+
 	local jobIndex = 1
 	while #charaList > 0 do
 		local job = jobList[jobIndex]
 		jobIndex = jobIndex + 1
 		local chara = Chara_FindBestCharaForJob( job, charaList )
 		self:SetOfficer( chara, job )
-		--print( "setofficer", chara.name, MathUtil_FindName( CityJob, job ) )
 	end
 end
 
@@ -1013,7 +1026,7 @@ function City:SetOfficer( chara, job )
 
 	local oldJob = self:GetCharaJob( chara )
 	if oldJob ~= CityJob.NONE then
-		error( chara.name .. " already has a job" )
+		DBG_Error( chara.name .. " already has a job=" .. MathUtil_FindName( CityJob, oldJob ) .. " newjob=" .. MathUtil_FindName( CityJob, job ) )
 	end
 
 	Asset_AppendList( self, CityAssetID.OFFICER_LIST, { officer = chara, job = job } )	
@@ -1118,7 +1131,7 @@ end
 function City:LoseSpy( city, grade )
 	spy = self:GetSpy( city )	
 	if not grade then grade = -1 end
-	spy.intel = math.ceil( spy.intel * 0.5 )
+spy.intel = math.ceil( spy.intel * 0.5 )
 	spy.grade = MathUtil_Clamp( spy.grade - grade, CitySpyParams.INIT_GRADE, CitySpyParams.MAX_GRADE )
 
 	Stat_Add( "LoseSpy@" .. city.name, 1, StatType.TIMES )

@@ -30,7 +30,7 @@ function Troop_RemoveOfficer( troop, isKilled )
 		Chara_Die( officer )
 	elseif corps then
 		--not killed, just back to the corps officer-list
-		Asset_AppendList( corps, CorpsAssetID.OFFICER_LIST, officer )
+		corps:AddOfficer( officer )
 		InputUtil_Pause( "officer=" .. officer:ToString() .. " back to corps" )	
 	end
 end
@@ -134,39 +134,25 @@ function Corps_GetRequiredByCity( city )
 	return num
 end
 
-function Corps_Join( corps, city )	
+function Corps_Enter( corps, city )
+	Asset_Set( corps, CorpsAssetID.LOCATION, city )
+
+	Asset_Foreach( corps, CorpsAssetID.OFFICER_LIST, function ( chara )				
+		Chara_Join( chara, city, true )
+	end )
+end
+
+--join not means enter
+function Corps_Join( corps, city, isEnterCity )
 	--remove from old city
 	local encampment = Asset_Get( corps, CorpsAssetID.ENCAMPMENT )
-
 	if encampment == city then return end
 
 	if encampment then
 		encampment:RemoveCorps( corps )
 	end
 
-	if city then
-		city:AddCorps( corps )
-	end
-
-	--leader
-	local leader = Asset_Get( corps, CorpsAssetID.LEADER )
-	if leader then
-		Chara_Join( leader, city )
-	end
-
-	--officer
-	Asset_Foreach( corps, CorpsAssetID.OFFICER_LIST, function ( chara )
-		Chara_Join( chara, city )
-		InputUtil_Pause( chara.name, "join", city.name )
-	end )
-
-	Asset_Foreach( corps, CorpsAssetID.TROOP_LIST, function ( troop )
-		local officer = Asset_Get( troop, TroopAssetID.OFFICER )
-		if officer then
-			Chara_Join( officer, city )
-		end
-	end)
-
+	city:CorpsJoin( corps, isEnterCity )
 	Debug_Log( corps.name .. " join " .. city.name )
 end
 
@@ -195,20 +181,10 @@ function Corps_Dismiss( corps, neutralized )
 		end
 	end )
 
-	--remove leader
-	local leader = Asset_Get( corps, CorpsAssetID.LEADER )
-	if leader then
-		if neutralized then
-			Chara_Die( leader )
-		else
-			Asset_Set( leader, CharaAssetID.CORPS )
-		end
-	end
-
 	--remove task
 	local task = corps:GetTask()
 	if task then
-		Task_Terminate( task )
+		Task_Terminate( task, corps )
 	end
 
 	--remove troop
@@ -461,7 +437,11 @@ function Corps_EstablishInCity( city, leader, purpose, troopNumber )
 		corps.name = city.name .. "_Corps_" .. corps.id
 	end
 	
-	Asset_Set( corps, CorpsAssetID.LEADER,     leader )	
+	--remove leader from current city to pass sanity checker in later
+	Asset_RemoveListItem( city, CityAssetID.CHARA_LIST,   leader )
+
+	corps:AssignLeader( leader )
+
 	Asset_Set( leader, CharaAssetID.CORPS,     corps )
 
 	Asset_Set( corps, CorpsAssetID.LOCATION,   city )
@@ -513,7 +493,7 @@ function Corps_EstablishInCity( city, leader, purpose, troopNumber )
 	end)
 
 	--put corps into city
-	city:AddCorps( corps )
+	city:CorpsJoin( corps )
 
 	--InputUtil_Pause( "est corps food=" .. reservedfood, food, Asset_GetListSize( corps, CorpsAssetID.TROOP_LIST ) )
 	
@@ -521,7 +501,7 @@ function Corps_EstablishInCity( city, leader, purpose, troopNumber )
 end
 
 function Corps_ReinforceTroop( corps, soldier )
-	Asset_FindListItem( corps, CorpsAssetID.TROOP_LIST, function ( troop )
+	Asset_FindItem( corps, CorpsAssetID.TROOP_LIST, function ( troop )
 		local cur = Asset_Get( troop, TroopAssetID.SOLDIER )
 		local max = Asset_Get( troop, TroopAssetID.MAX_SOLDIER )
 		local req = max - cur		
@@ -586,8 +566,7 @@ function Corps_Regroup( corps, list )
 end
 
 function Corps_Dispatch( corps, city )
-	Corps_Join( corps, city )
-	Debug_Log( corps.name, "join", city.name )
+	Corps_Join( corps, city, true )
 end
 
 function Corps_AttackCity( corps, city, task )

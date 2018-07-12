@@ -48,6 +48,10 @@ local function DebugChara( entity, id, value )
 	if value and value:GetStatus( CharaStatus.DEAD ) then
 		error( value.name .. " is dead")
 	end
+	if typeof( value ) == "number" then
+		error( "sdf")
+	end
+	print( "set value=", value )
 	return Entity_SetChara( entity, id, value )
 end
 
@@ -127,6 +131,7 @@ function Corps:ToString( type )
 		end
 		content = content .. " " .. ( self:IsAtHome() and "athome" or "outside" )
 		content = content .. " " .. ( self:IsBusy() and "busy" or "idle" )
+		content = content .. " " .. ( Move_IsMoving( self ) and "moving" or "stay" )
 	end
 
 	if type == "OFFICER" then
@@ -147,6 +152,7 @@ function Corps:ToString( type )
 		end)	
 	
 	elseif type == "POSITION" then
+		content = content .. " camp=" .. Asset_Get( self, CorpsAssetID.ENCAMPMENT ):ToString()
 		content = content .. " @" .. Asset_Get( self, CorpsAssetID.LOCATION ):ToString()
 	
 	elseif type == "MAINTAIN" then
@@ -260,29 +266,55 @@ end
 -------------------------------------------
 
 function Corps:AddTroop( troop )
+	--local leader = Asset_Get( self, CorpsAssetID.LEADER )	
 	Asset_AppendList( self, CorpsAssetID.TROOP_LIST, troop )
-	Asset_AppendList( self, CorpsAssetID.OFFICER_LIST, Asset_Get( troop, TroopAssetID.OFFICER ) )
+
+	local officer = Asset_Get( troop, TroopAssetID.OFFICER )
+	Asset_AppendList( self, CorpsAssetID.OFFICER_LIST, officer )
 end
 
 function Corps:RemoveTroop( troop )
-	Asset_RemoveListItem( self, CorpsAssetID.OFFICER_LIST, Asset_Get( troop, TroopAssetID.OFFICER ) )
 	Asset_RemoveListItem( self, CorpsAssetID.TROOP_LIST, troop )
+
+	local officer = Asset_Get( troop, TroopAssetID.OFFICER )
+	Asset_RemoveListItem( self, CorpsAssetID.OFFICER_LIST, officer )
+
+	local leader = Asset_Get( self, CorpsAssetID.LEADER )	
+	if leader == officer then
+		error( "should consider about leader" )
+	end
 end
 
-function Corps:LoseChara( chara )
-	local leader = Asset_Get( self, CorpsAssetID.LEADER )
-	if leader == chara then
-		Asset_Set( self, CorpsAssetID.LEADER )
-		--print( self:ToString() .. "lose leader=" .. chara.name, Asset_Get( self, CorpsAssetID.LEADER ) )
-	else
-		self:LoseOfficer( chara )
+function Corps:AssignLeader( leader )
+	--debug
+	if self:HasOfficer( leader ) then
+		DBG_Error( leader.name .. " already as officer in " .. self:ToString() )
+	end
+	if Asset_Get( leader, CharaAssetID.CORPS ) then
+		DBG_Error( leader.name .. " already in corps=" .. Asset_Get( leader, CharaAssetID.CORPS ):ToString() )
 	end
 
-	Debug_Log( chara:ToString(), "leave corps=" .. self:ToString() )
+	Asset_Set( self, CorpsAssetID.LEADER, leader )
+	self:AddOfficer( leader )
 end
 
-function Corps:LoseOfficer( officer )
+function Corps:LoseOfficer( officer )	
+	local leader = Asset_Get( self, CorpsAssetID.LEADER )
+	if leader == officer then
+		Asset_Set( self, CorpsAssetID.LEADER )
+		--print( self:ToString() .. "lose leader=" .. chara.name, Asset_Get( self, CorpsAssetID.LEADER ) )
+	end
 	Asset_RemoveListItem( self, CorpsAssetID.OFFICER_LIST, officer )
+
+	Debug_Log( officer:ToString(), "leave corps=" .. self:ToString() )
+end
+
+function Corps:AddOfficer( officer )
+	Asset_AppendList( self, CorpsAssetID.OFFICER_LIST, officer )
+end
+
+function Corps:HasOfficer( officer )
+	return Asset_HasItem( self, CorpsAssetID.OFFICER_LIST, officer )
 end
 
 function Corps:GetStatus( status )
@@ -331,18 +363,20 @@ function Corps:Update( ... )
 		Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function ( troop )
 			troop:UpdateAtHome()
 		end)
-	end	
+	end
 end
 
 -------------------------------------------
 -- handler
 
 --dispatch 
-function Corps:Dispatch()
+function Corps:Departure()
 	Asset_SetDictItem( self, CorpsAssetID.STATUSES, CorpsStatus.DEPATURE_TIME, g_Time:GetDateValue() )
 end
 
-function Corps:EnterCity()
+function Corps:EnterCity( city )
+	Asset_Set( self, CorpsAssetID.LOCATION, city )
+
 	Asset_SetDictItem( self, CorpsAssetID.STATUSES, CorpsStatus.DEPATURE_TIME, nil )
 end
 

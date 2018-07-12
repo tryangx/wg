@@ -123,9 +123,10 @@ CombatAssetID =
 
 	DAY           = 200,
 	END_DAY       = 201,
-	TIME          = 202,
-	END_TIME      = 203,
-	STEPDATA      = 204,	
+	START_DATE    = 202,
+	TIME          = 203,
+	END_TIME      = 204,
+	STEPDATA      = 205,	
 	RESULT        = 210,
 	WINNER        = 211,
 
@@ -155,6 +156,7 @@ CombatAssetAttrib =
 	
 	day         = AssetAttrib_SetNumber( { id = CombatAssetID.DAY,      type = CombatAssetType.STATUS_ATTRIB, default = 0 } ),
 	endday      = AssetAttrib_SetNumber( { id = CombatAssetID.END_DAY,  type = CombatAssetType.STATUS_ATTRIB, default = 0 } ),
+	startDate   = AssetAttrib_SetNumber( { id = CombatAssetID.START_DATE,  type = CombatAssetType.STATUS_ATTRIB, default = 0 } ),
 	time        = AssetAttrib_SetNumber( { id = CombatAssetID.TIME,     type = CombatAssetType.STATUS_ATTRIB, default = 0 } ),
 	endtime     = AssetAttrib_SetNumber( { id = CombatAssetID.END_TIME, type = CombatAssetType.STATUS_ATTRIB, default = 0 } ),	
 	stepdaa     = AssetAttrib_SetPointer( { id = CombatAssetID.STEPDATA, type = CombatAssetType.STATUS_ATTRIB, default = CombatStepData[1] } ),	
@@ -231,6 +233,7 @@ function Combat:ToString( type )
 		content = content .. " pt=" .. Asset_Get( self, CombatAssetID.PLOT ):ToString()
 	end
 	content = content .. " typ=" .. MathUtil_FindName( CombatType, Asset_Get( self, CombatAssetID.TYPE ) )
+	content = content .. " beg=" .. g_Time:CreateDateDescByValue( Asset_Get( self, CombatAssetID.START_DATE ) )
 	if type == "BRIEF" then
 		content = content .. " date=" .. g_Time:CreateCurrentDateDesc()
 		content = content .. " day=" .. Asset_Get( self, CombatAssetID.DAY )
@@ -254,8 +257,8 @@ function Combat:ToString( type )
 		content = content .. " day=" .. Asset_Get( self, CombatAssetID.DAY )
 		content = content .. " atkkill=" .. self:GetStat( CombatSide.ATTACKER, CombatStatistic.KILL ) .. "/" .. self:GetStat( CombatSide.ATTACKER, CombatStatistic.TOTAL_SOLDIER )
 		content = content .. " defkill=" .. self:GetStat( CombatSide.DEFENDER, CombatStatistic.KILL ) .. "/" .. self:GetStat( CombatSide.DEFENDER, CombatStatistic.TOTAL_SOLDIER )
-		content = content .. " at_corps=" .. Asset_GetListSize( self, CombatAssetID.ATK_CORPS_LIST )
-		content = content .. " df_corps=" .. Asset_GetListSize( self, CombatAssetID.DEF_CORPS_LIST )
+		content = content .. " at_corps=" .. Asset_GetListSize( self, CombatAssetID.ATK_CORPS_LIST ) .. "=" .. self:GetGroupName( CombatSide.ATTACKER )
+		content = content .. " df_corps=" .. Asset_GetListSize( self, CombatAssetID.DEF_CORPS_LIST ) .. "=" .. self:GetGroupName( CombatSide.DEFENDER )
 		content = content .. " c_day=" .. self:GetStat( CombatSide.ALL, CombatStatistic.COMBAT_DAY )
 	end
 	return content
@@ -339,7 +342,7 @@ function Combat:AddCorps( corps, side )
 		self:AddTroop( troop, side )
 	end )
 
-	Asset_SetDictItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_COMBAT, true )
+	corps:SetStatus( CorpsStatus.IN_COMBAT, true )
 end
 
 function Combat:RemoveTroop( troop, isKilled )

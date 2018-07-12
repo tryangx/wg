@@ -23,7 +23,7 @@ function GoalSystem:Update()
 		local numOfCity = Asset_GetListSize( group, GroupAssetID.CITY_LIST )		
 
 		--check goal
-		Asset_FindListItem( group, GroupAssetID.GOAL_LIST, function ( goalData, goalType )
+		Asset_FindItem( group, GroupAssetID.GOAL_LIST, function ( goalData, goalType )
 			if day == 1 then
 				--check final goal in the 1st day of month
 				if goalType == GroupGoalType.TERRIORITY then

@@ -167,12 +167,15 @@ local function Move_DoAction( move )
 		Stat_Add( "Corps@Move", g_Time:CalcDiffDayByDates( Asset_Get( move, MoveAssetID.END_TIME ), Asset_Get( move, MoveAssetID.BEGIN_TIME ) ), StatType.ACCUMULATION )
 		Asset_Set( actor, CorpsAssetID.LOCATION, dest )
 		home = Asset_Get( actor, CorpsAssetID.ENCAMPMENT )
+	
 	elseif role == MoveRole.CHARA then
-		Asset_Set( actor, CharaAssetID.LOCATION, dest )
+		actor:EnterCity( dest )
 		home = Asset_Get( actor, CharaAssetID.HOME )
+
 	end
 	
-	--Debug_Log( actor:ToString() .. " move to " .. dest:ToString() )
+	Log_Write( "move", actor:ToString("LOCATION") .. " move to=" .. dest:ToString() )
+	Debug_Log( actor:ToString() .. " move to " .. dest:ToString() )
 
 	Message_Post( MessageType.ARRIVE_DESTINATION, { actor = Asset_Get( move, MoveAssetID.ACTOR ), destination = Asset_Get( move, MoveAssetID.DEST_PLOT ) } )
 
@@ -182,6 +185,11 @@ local function Move_DoAction( move )
 end
 
 local function Move_Update( move )
+	--sanity checker
+	if move:GetPassDay() > DAY_IN_YEAR then
+		Debug_Log( move:ToString() .. " is bug" )
+	end
+
 	--suspend or stop?
 	if Asset_Get( move, MoveAssetID.STATUS ) ~= MoveStatus.MOVING then return end
 
@@ -222,19 +230,24 @@ local function Move_OnCancelMoving( msg )
 	error( "it shouldn't be here" )
 end
 
-local function Move_OnCombatEnded( msg )
+local function Move_OnCombatEnded( msg )	
 	local combat  = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "combat" )
-	if not combat then return end
+	if not combat then
+		return
+	end
 
+--[[
 	Asset_Foreach( combat, CombatAssetID.CORPS_LIST, function ( corps )
 		if corps:IsBusy() == false then
+			Log_Write( "move", "on combat end" .. corps:ToString("STATUS") )
 			System_Get( SystemType.MOVE_SYS ):StopMoving( corps )
 		else
 			local task = corps:GetTask()
 			--print( "task=", task )
-			Debug_Log( "busy corps=" .. corps:ToString( "STATUS"), "is busying" )
+			--Debug_Log( "busy corps=" .. corps:ToString( "STATUS"), "is busying" )
 		end
 	end )
+	]]
 end
 
 ------------------------------------------------
@@ -268,7 +281,8 @@ function MoveSystem:Update()
 	--do actions
 	for _, move in ipairs( _plotMoves ) do
 		if move and Move_DoAction( move ) == true then
-			local actor = Asset_Get( move, MoveAssetID.ACTOR )
+			local actor = Asset_Get( move, MoveAssetID.ACTOR )			
+			Log_Write( "move", actor:ToString() .. " arrive destc=" .. String_ToStr( Asset_Get( move, MoveAssetID.TO_CITY ), "name" ) .. " destp=" .. Asset_Get( move, MoveAssetID.DEST_PLOT ):ToString() )
 			if Asset_Get( move, MoveAssetID.ROLE ) == MoveRole.CORPS then
 				if actor:IsAtHome() then
 					Asset_SetDictItem( actor, CorpsAssetID.STATUSES, CorpsStatus.DEPATURE_TIME, nil )
@@ -278,6 +292,20 @@ function MoveSystem:Update()
 			Entity_Remove( move )			
 		end
 	end
+
+	--debug checker
+	Entity_Foreach( EntityType.CHARA, function ( entity )
+		if entity:IsAtHome() then return end
+		if entity:IsBusy() then return end
+		if self:IsMoving( entity ) then return end
+		error( entity:ToString("LOCATION") .. "idle outside" )
+	end)
+	Entity_Foreach( EntityType.CORPS, function ( entity )
+		if entity:IsAtHome() then return end
+		if entity:IsBusy() then return end
+		if self:IsMoving( entity ) then return end
+		error( entity:ToString("POSITION") .. "idle outside" )
+	end)
 
 	--print( "move has", Entity_Number( EntityType.MOVE ) )
 end
@@ -327,11 +355,13 @@ function MoveSystem:MoveC2C( actor, fromCity, toCity, type )
 	Stat_Add( "Move@Start", actor:ToString() .. " move from=" .. fromCity.name .. " to " .. toCity.name, StatType.LIST )
 
 	--Debug_Log( actor:ToString( "LOCATION" ) .. " try to move from=" .. fromCity:ToString() .. " to " .. toCity:ToString() )
+	return move
 end
 
 function MoveSystem:CorpsMove( actor, destination )
-	actor:Dispatch()
-	self:MoveC2C( actor, Asset_Get( actor, CorpsAssetID.LOCATION ), destination, MoveRole.CORPS )
+	actor:Departure()
+	local move = self:MoveC2C( actor, Asset_Get( actor, CorpsAssetID.LOCATION ), destination, MoveRole.CORPS )
+	Log_Write( "move", actor:ToString() .. " moveto destc=" .. String_ToStr( Asset_Get( move, MoveAssetID.TO_CITY ), "name" ) .. " destp=" .. Asset_Get( move, MoveAssetID.DEST_PLOT ):ToString() )
 end
 
 function MoveSystem:CharaMove( actor, destination )	
@@ -341,6 +371,7 @@ end
 function MoveSystem:StopMoving( actor )
 	local move = self._actors[actor]
 	if move then
+		Log_Write( "move", "cancel move=" .. actor:ToString() .. " moveto destc=" .. String_ToStr( Asset_Get( move, MoveAssetID.TO_CITY ), "name" ) .. " destp=" .. Asset_Get( move, MoveAssetID.DEST_PLOT ):ToString() )
 		Debug_Log( "cancel move", move:ToString() )
 		self._actors[actor] = nil
 		Entity_Remove( move )

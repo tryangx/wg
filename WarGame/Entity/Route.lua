@@ -61,7 +61,7 @@ function Route:FindNext( cur, to )
 	print( "to   =", Asset_Get( Asset_Get( self, RouteAssetID.TO_PLOT ), CityAssetID.X ), ",", Asset_Get( Asset_Get( self, RouteAssetID.TO_PLOT ), CityAssetID.Y ) )	
 	--]]
 	local next
-	Asset_FindListItem( self, RouteAssetID.NODES, function ( node, index )
+	Asset_FindItem( self, RouteAssetID.NODES, function ( node, index )
 		--if cx == node.x and cy == node.y then
 		--print( "check  =", Asset_Get( node, PlotAssetID.X ), ",", Asset_Get( node, PlotAssetID.Y ), index )
 		if node == cur then

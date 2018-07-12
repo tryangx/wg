@@ -13,6 +13,8 @@ AssetAttribType =
 
 ASSET_DEBUG = true
 
+ASSET_CHECKER = true
+
 --[[
 	function Watcher( entity, id, value )
 		if entity.type == xxx then
@@ -147,6 +149,28 @@ end
 
 ----------------------------------
 
+local function Asset_SetRaw( entity, id, value )
+	entity[id] = value
+end
+
+local function Asset_GetRaw( entity, id )
+	local ret = entity[id]
+	if not ret then	
+		local attrib = Entity_GetAssetAttrib( entity, id )
+		if attrib then
+			if attrib.value_type == AssetAttribType.DATA then
+				ret = attrib.initer and attrib.initer() or nil
+			else
+				ret = attrib.default
+			end
+			Asset_SetRaw( entity, id, ret )
+		end
+	end
+	return ret
+end
+
+----------------------------------
+
 function Asset_Clear( entity, id )
 	if not id then error( "id is invalid" ) end
 	if typeof( entity ) == "number" then
@@ -267,6 +291,14 @@ function Asset_AppendList( entity, id, item, checker )
 	if attrib and attrib.changer then
 		attrib.changer( entity, id, item )
 	end
+
+	--sanity checker
+	if ASSET_CHECKER then
+		if Asset_HasItem( entity, id, item ) then
+			error( ( item.name or "" ) .. " already in " .. ( entity.name or "" ) )
+		end
+	end
+
 	table.insert( list, item )
 	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "append item=", ( item or "" ) ) end
 end
@@ -328,11 +360,11 @@ function Asset_RemoveIndexItem( entity, id, index )
 	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "remove index=", index ) end
 end
 
-function Asset_FindListItem( entity, id, fn )
-	local list = Asset_GetList( entity, id )
-	if not list then return nil end
+function Asset_FindItem( entity, id, fn )
+	local datas = Asset_GetRaw( entity, id )
+	if not datas then return nil end
 	--pairs should be ipairs
-	for k, item in pairs( list ) do if fn( item, k ) == true then return item end end
+	for k, item in pairs( datas ) do if fn( item, k ) == true then return item end end
 	return nil
 end
 
@@ -340,7 +372,7 @@ end
 	@return true/false
 --]]
 function Asset_HasItem( entity, id, value, name )
-	return Asset_FindListItem( entity, id, function( item, k )
+	return Asset_FindItem( entity, id, function( item, k )
 		if name then return item[name] == value end
 		return item == value
 	end ) ~= nil
@@ -545,9 +577,8 @@ function Asset_Set( entity, id, value )
 		end
 	end
 	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "set value=" .. ( typeof( value ) == "number" and value or "" ) ) end
-	entity[id] = value
+	Asset_SetRaw( entity, id, value )
 end
-
 
 function Asset_Get( entity, id )
 	if ASSET_DEBUG then
@@ -571,20 +602,7 @@ function Asset_Get( entity, id )
 			return
 		end
 	end
-
-	local ret = entity[id]
-	if not ret then	
-		local attrib = Entity_GetAssetAttrib( entity, id )
-		if attrib then
-			if attrib.value_type == AssetAttribType.DATA then
-				ret = attrib.initer and attrib.initer() or nil
-			else
-				ret = attrib.default
-			end
-			Asset_Set( entity, id, ret )
-		end
-	end
-	return ret
+	return Asset_GetRaw( entity, id )
 end
 
 

@@ -11,9 +11,8 @@ function InputUtil_Pause( ... )
 	if _disablePause == true then return end
 	if ... then
 		print( ... )
-	else
-		print( "Press any key to continue" )
 	end
+	print( ">>>Press any key to continue<<<" )
 	InputUtil_ReceiveInput()
 end
 

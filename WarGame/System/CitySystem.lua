@@ -760,7 +760,10 @@ function City_LevyTax( city, progress )
 end
 
 function City_Build( city, construction )
-	Asset_AppendList( city, CityAssetID.CONSTR_LIST, construction )
+	--insert list manually to pass the sanity checker
+	local list = Asset_GetList( city, CityAssetID.CONSTR_LIST )
+	table.insert( list, construction )
+	
 	--InputUtil_Pause( city:ToString( "CONSTRUCTION") )
 	Stat_Add( "BuildConstr", 1, StatType.TIMES )
 	Stat_Add( city.name .. "@Build", construction.name, StatType.LIST )
@@ -772,7 +775,7 @@ function City_Pillage( city )
 	local prod = math.ceil( Asset_Get( city, CityAssetID.PRODUCTION ) * -0.01 )
 	City_IncreaseDevelopment( city, { agri = agri, comm = comm, prod = prod } )	
 	Stat_Add( "Pillage@" .. city.name, 1, StatType.TIMES )
-	--InputUtil_Pause( "pillage")
+	Debug_Log( "pillage in=" .. city:ToString() )
 end
 
 function City_ConvReserves( city, params )

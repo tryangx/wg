@@ -167,7 +167,6 @@ function Chara:VerifyData()
 	end
 end
 
-
 function Chara:ToString( type )
 	local content = "[" .. self.name .. "]"
 
@@ -232,7 +231,7 @@ function Chara:GetTrait( traitType )
 end
 
 function Chara:GetSkillByEffect( effect )
-	return Asset_FindListItem( self, CharaAssetID.SKILLS, function ( skill )
+	return Asset_FindItem( self, CharaAssetID.SKILLS, function ( skill )
 		local ret = Skill_GetEffectValue( skill, effect )
 		if ret then return true end
 	end)
@@ -324,6 +323,19 @@ function Chara:Update()
 	end )
 
 	Asset_Plus( self, CharaAssetID.SERVICE_DAY, g_elapsed )
+end
+
+-------------------------------------------
+-- For easily to make misunderstand
+
+function Chara:JoinCity( city )
+	Asset_Set( self, CharaAssetID.HOME, city )
+	if city then Debug_Log( self.name, "set home=", city.name ) end
+end
+
+function Chara:EnterCity( city )
+	Asset_Set( self, CharaAssetID.LOCATION, city )
+	if city then Debug_Log( self.name, "set loc=", city.name ) end
 end
 
 -------------------------------------------

@@ -227,6 +227,7 @@ function Game_Test()
 
 		--set combat
 		local combat = Entity_New( EntityType.COMBAT )
+		Asset_Set( combat, CombatAssetID.START_DATE, g_Time:GetDateValue() )
 		combat:AddCorps( atkcorps, CombatSide.ATTACKER )
 		combat:AddCorps( defcorps, CombatSide.DEFENDER )
 		Asset_Set( combat, CombatAssetID.CITY, city )
@@ -321,6 +322,7 @@ function Game_Start()
 	Debug_Normal( "Task==>" .. Entity_Number( EntityType.TASK ) ) Entity_Foreach( EntityType.TASK, function( entity ) Debug_Normal( entity:ToString( "DEBUG" ), "exist" ) end )
 	Debug_Normal( "Move==>" .. Entity_Number( EntityType.MOVE ) ) Entity_Foreach( EntityType.MOVE, function( entity ) Debug_Normal( entity:ToString(), "still" ) end )
 	Debug_Normal( "Dipl==>" .. Entity_Number( EntityType.RELATION ) ) Entity_Foreach( EntityType.RELATION, function( entity ) Debug_Normal( entity:ToString( "ALL" ) ) end )
+	Debug_Normal( "Combat==>" .. Entity_Number( EntityType.COMBAT ) ) Entity_Foreach( EntityType.COMBAT, function( entity ) Debug_Normal( entity:ToString( "ALL" ) ) end )
 
 	Random_Result()
 

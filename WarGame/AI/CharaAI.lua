@@ -273,7 +273,7 @@ local function CanSubmitPlan( params )
 
 	if _city:IsCharaOfficer( CityJob.EXECUTIVE, _proposer ) == true then
 		--find the one who do the job
-		local actor = Asset_FindListItem( _city, CityAssetID.CHARA_LIST, function ( chara )
+		local actor = Asset_FindItem( _city, CityAssetID.CHARA_LIST, function ( chara )
 			if not chara:IsAtHome() then return false end
 			if chara:IsBusy() then return false end
 			if not _city:IsCharaOfficer( job, chara ) then return false end
@@ -426,7 +426,7 @@ local function CanEnrollCorps()
 	end
 
 	local findCorps = nil
-	Asset_FindListItem( _city, CityAssetID.CORPS_LIST, function ( corps )		
+	Asset_FindItem( _city, CityAssetID.CORPS_LIST, function ( corps )		
 		if corps:IsAtHome() == false then return false end
 		--print( corps:ToString("STATUS"), Asset_GetListSize( corps, CorpsAssetID.TROOP_LIST ) )
 		if corps:IsBusy() == true then return false end
@@ -456,7 +456,7 @@ end
 
 local function CanTrainCorps()
 	local findCorps = nil
-	Asset_FindListItem( _city, CityAssetID.CORPS_LIST, function ( corps )
+	Asset_FindItem( _city, CityAssetID.CORPS_LIST, function ( corps )
 		if corps:IsAtHome() == false then return false end
 		if corps:IsBusy() == true then return false end
 		--check corps can train
@@ -560,6 +560,16 @@ local function FindEnemyCityList( city, soldier, scores, fn )
 	end )
 end
 
+local function CheckTargetCity( targetCity )
+	if goal and targetCity == goal.city then
+		return 50
+	end
+	if not Asset_Get( targetCity, CityAssetID.GROUP ) then
+		return 30
+	end
+	return 0
+end
+
 local function CanHarassCity()
 	--check free corps
 	local list, soldier, power = _city:GetMilitaryCorps( 30 )
@@ -581,13 +591,7 @@ local function CanHarassCity()
 	local group = Asset_Get( _city, CityAssetID.GROUP )
 	local goal = _group:GetGoal( GroupGoalType.OCCUPY_CITY )	
 
-	function CheckGoalCity( targetCity )
-		if targetCity == goal.city then
-			return 50
-		end
-	end
-
-	local cities = FindEnemyCityList( _city, soldier, canHarassScores, goal and CheckGoalCity or nil )
+	local cities = FindEnemyCityList( _city, soldier, canHarassScores, CheckTargetCity )
 
 	local number = #cities
 	if number == 0 then return false end
@@ -626,7 +630,8 @@ local function CanAttackCity()
 		{ ratio = 3,   score = 70 },
 		{ ratio = 4,   score = 99 },
 	}
-	local cities = FindEnemyCityList( _city, soldier, canAttackScores )
+
+	local cities = FindEnemyCityList( _city, soldier, canAttackScores, CheckTargetCity )
 
 	local number = #cities
 	if number == 0 then
@@ -1493,7 +1498,7 @@ local function DetermineOccupyGoal( ... )
 	local cityList = {}
 
 	--set advanced base
-	local advanceBase = Asset_FindListItem( goalData.city, CityAssetID.ADJACENTS, function ( adjaCity )
+	local advanceBase = Asset_FindItem( goalData.city, CityAssetID.ADJACENTS, function ( adjaCity )
 		if Asset_Get( adjaCity, CityAssetID.GROUP ) ~= _group then
 			return
 		end

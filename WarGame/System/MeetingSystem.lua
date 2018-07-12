@@ -141,7 +141,7 @@ local function Meeting_Update( meeting )
 		--submit proposals
 		local freeParticiants = 0
 		--[[]]
-		Asset_FindListItem( meeting, MeetingAssetID.PARTICIPANTS, function ( chara )
+		Asset_FindItem( meeting, MeetingAssetID.PARTICIPANTS, function ( chara )
 			if not CheckTopicWithChara( city, chara, topic ) then
 				return
 			end
