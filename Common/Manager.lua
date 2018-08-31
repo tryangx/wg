@@ -107,6 +107,7 @@ function Manager:LoadFromData( datas )
 		local newData = self._clz()
 
 		if data.id == nil then
+			--less codes, use index as key-id
 			data.id = k
 		end
 		

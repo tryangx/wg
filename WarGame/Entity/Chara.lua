@@ -328,14 +328,24 @@ end
 -------------------------------------------
 -- For easily to make misunderstand
 
-function Chara:JoinCity( city )
+function Chara:JoinCity( city, isEnterCity )
 	Asset_Set( self, CharaAssetID.HOME, city )
-	if city then Debug_Log( self.name, "set home=", city.name ) end
+	
+	if isEnterCity then Asset_Set( self, CharaAssetID.LOCATION, city ) end
+
+	if city then
+		Debug_Log( self:ToString(), "set home=", city.name )
+	else
+		Debug_Log( self:ToString(), "set nohome" )
+	end
 end
 
 function Chara:EnterCity( city )
 	Asset_Set( self, CharaAssetID.LOCATION, city )
-	if city then Debug_Log( self.name, "set loc=", city.name ) end
+end
+
+function Chara:LeadCorps( corps )
+	Asset_Set( self, CharaAssetID.CORPS, corps )
 end
 
 -------------------------------------------

@@ -51,6 +51,7 @@ ProposalType =
 
 	RECONNOITRE     = 500,
 	SABOTAGE        = 501,
+	DESTROY_DEF     = 502,
 
 	RESEARCH        = 600,
 
@@ -101,6 +102,7 @@ TaskType =
 	STAFF_TASK      = 500, --seperator
 	RECONNOITRE     = 501,
 	SABOTAGE        = 502,
+	DESTROY_DEF     = 503,
 
 	TECH_TASK       = 600,	
 	RESEARCH        = 601,

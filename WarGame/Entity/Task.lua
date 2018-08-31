@@ -15,6 +15,7 @@ TaskAssetID =
 	STATUS       = 11,
 	RESULT       = 12,
 	STEP         = 13,
+	INCOMBAT     = 14,		
 
 	ACTOR        = 20,
 	ACTOR_TYPE   = 21,
@@ -33,6 +34,9 @@ TaskAssetID =
 	WORKLOAD     = 31,
 	--how many works finished
 	PROGRESS     = 32,
+
+	ELPASED_DAYS = 33,
+	COMBAT_DAYS  = 34,
 	
 	CONTRIBUTORS = 40,
 
@@ -47,6 +51,7 @@ TaskAssetAttrib =
 	status       = AssetAttrib_SetNumber ( { id = TaskAssetID.STATUS,     type = TaskAssetType.BASE_ATTRIB, enum = TaskStatus, default = TaskStatus.RUNNING } ),
 	result       = AssetAttrib_SetNumber ( { id = TaskAssetID.RESULT,     type = TaskAssetType.BASE_ATTRIB, enum = TaskResult, default = TaskResult.UNKNOWN } ),
 	step         = AssetAttrib_SetNumber ( { id = TaskAssetID.STEP,       type = TaskAssetType.BASE_ATTRIB, default = 1 } ),
+	incombat     = AssetAttrib_SetNumber ( { id = TaskAssetID.INCOMBAT,   type = TaskAssetType.BASE_ATTRIB, default = 0 } ),
 	
 	actor        = AssetAttrib_SetPointer( { id = TaskAssetID.ACTOR,      type = TaskAssetType.BASE_ATTRIB } ),
 	actortype    = AssetAttrib_SetNumber ( { id = TaskAssetID.ACTOR_TYPE, type = TaskAssetType.BASE_ATTRIB, enum = TaskActorType } ),	
@@ -61,6 +66,9 @@ TaskAssetAttrib =
 	duration     = AssetAttrib_SetNumber ( { id = TaskAssetID.DURATION,   type = TaskAssetType.BASE_ATTRIB, default = 0 } ),
 	workload     = AssetAttrib_SetNumber ( { id = TaskAssetID.WORKLOAD,   type = TaskAssetType.BASE_ATTRIB, default = 100 } ),
 	progress     = AssetAttrib_SetNumber ( { id = TaskAssetID.PROGRESS,   type = TaskAssetType.BASE_ATTRIB, default = 0 } ),	
+
+	elpasedDays  = AssetAttrib_SetNumber ( { id = TaskAssetID.ELPASED_DAYS,   type = TaskAssetType.BASE_ATTRIB, default = 0 } ),	
+	combatDays   = AssetAttrib_SetNumber ( { id = TaskAssetID.COMBAT_DAYS,   type = TaskAssetType.BASE_ATTRIB, default = 0 } ),	
 	
 	contributors = AssetAttrib_SetDict   ( { id = TaskAssetID.CONTRIBUTORS,  type = TaskAssetType.BASE_ATTRIB } ),
 
@@ -82,6 +90,9 @@ end
 function Task:ToString( type )
 	local content = self.id .. " " .. MathUtil_FindName( TaskType, Asset_Get( self, TaskAssetID.TYPE ) )
 	content = content .. " " .. String_ToStr( Asset_Get( self, TaskAssetID.GROUP ), "name" )
+	if Asset_Get( self, TaskAssetID.INCOMBAT ) ~= 0 then
+		content = content .. " in-combat=" .. Asset_Get( self, TaskAssetID.INCOMBAT )
+	end
 	if type == "SIMPLE" then
 		content = content .. " beg=" .. g_Time:CreateDateDescByValue( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )
 	elseif type == "DEBUG" then
@@ -91,6 +102,8 @@ function Task:ToString( type )
 		content = content .. " sts=" .. MathUtil_FindName( TaskStatus, Asset_Get( self, TaskAssetID.STATUS ) )		
 		content = content .. " prg=" .. Asset_Get( self, TaskAssetID.PROGRESS )
 		content = content .. " wrk=" .. Asset_Get( self, TaskAssetID.WORKLOAD )
+		content = content .. " cmd=" .. Asset_Get( self, TaskAssetID.COMBAT_DAYS )
+		content = content .. " epd=" .. Asset_Get( self, TaskAssetID.ELPASED_DAYS )
 	elseif type == "END" then
 		content = content .. " atr=" .. ( Asset_Get( self, TaskAssetID.ACTOR ):ToString() )
 		content = content .. " beg=" .. g_Time:CreateDateDescByValue( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )
@@ -99,12 +112,12 @@ function Task:ToString( type )
 	elseif type == "DETAIL" then
 		content = content .. " atr=" .. ( Asset_Get( self, TaskAssetID.ACTOR ):ToString() )
 		content = content .. " @" .. String_ToStr( Asset_Get( self, TaskAssetID.LOCATION ), "name" )	
-		content = content .. " dst=" .. String_ToStr( Asset_Get( self, TaskAssetID.DESTINATION ), "name" )
+		content = content .. " dst=" .. Asset_Get( self, TaskAssetID.DESTINATION ):ToString()
 		content = content .. " beg=" .. g_Time:CreateDateDescByValue( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )
 	else
 		content = content .. " atr=" .. ( Asset_Get( self, TaskAssetID.ACTOR ):ToString() )
-		content = content .. " @" .. String_ToStr( Asset_Get( self, TaskAssetID.LOCATION ), "name" )	
-		content = content .. " dst=" .. String_ToStr( Asset_Get( self, TaskAssetID.DESTINATION ), "name" )		
+		content = content .. " @"    .. String_ToStr( Asset_Get( self, TaskAssetID.LOCATION ), "name" )	
+		content = content .. " dst=" .. Asset_Get( self, TaskAssetID.DESTINATION ):ToString()
 		content = content .. " pas=" .. g_Time:CalcDiffDayByDate( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )
 	end	
 	local result = Asset_Get( self, TaskAssetID.RESULT )
@@ -120,6 +133,7 @@ end
 
 function Task:IsStepFinished()	
 	local status = Asset_Get( self, TaskAssetID.STATUS )
+
 	if status == TaskStatus.MOVING then
 		return false
 	end
@@ -135,7 +149,7 @@ function Task:IsStepFinished()
 
 	if status == TaskStatus.WORKING then
 		if Asset_Get( self, TaskAssetID.PROGRESS ) >= Asset_Get( self, TaskAssetID.WORKLOAD ) then
-			return true
+			return Asset_Get( self, TaskAssetID.INCOMBAT ) == 0
 		end
 		return Asset_Get( self, TaskAssetID.DURATION ) <= 0
 	end
@@ -144,21 +158,31 @@ function Task:IsStepFinished()
 end
 
 function Task:GetStepType()
-	local type = Asset_Get( self, TaskAssetID.TYPE )	
-	local step = Scenario_GetData( "TASK_STEP_DATA" )[type]	
+	local type = Asset_Get( self, TaskAssetID.TYPE )
+	local step = Scenario_GetData( "TASK_STEP_DATA" )[type]
 	if not step then
 		error( "task [" .. MathUtil_FindName( TaskType, type ) .. "] no step data" )
 		return
 	end
 
 	local stepIndex = Asset_Get( self, TaskAssetID.STEP )
-	local taskStep = step[stepIndex]	
+	local taskStep = step[stepIndex]
 	return taskStep
 end
 
 function Task:ElpasedTime( time )
 	local org = Asset_Get( self, TaskAssetID.DURATION )
 	Asset_Reduce( self, TaskAssetID.DURATION, time )
+
+	Asset_Plus( self, TaskAssetID.ELPASED_DAYS, time )	
+
+	if Asset_Get( self, TaskAssetID.INCOMBAT ) ~= 0 then
+		Asset_Plus( self, TaskAssetID.COMBAT_DAYS, 1 )
+	end
+
+	if id == 516 then
+		Log_Write( "tracebug", self:ToString("DEBUG") )
+	end
 end
 
 function Task:Contribute( actor, contribution )
@@ -178,10 +202,6 @@ function Task:DoTask( progress )
 	--Debug_Log( self:ToString() )
 end
 
-function Task:FinishStep()
-	Asset_Set( self, TaskAssetID.PROGRESS, Asset_Get( self, TaskAssetID.WORKLOAD ) )
-end
-
 function Task:NextStep()
 	if Asset_Get( self, TaskAssetID.PROGRESS ) >= Asset_Get( self, TaskAssetID.WORKLOAD ) then
 		--finish task
@@ -191,13 +211,18 @@ function Task:NextStep()
 	end
 end
 
+function Task:End()
+	Asset_Set( self, TaskAssetID.STATUS, TaskStatus.RUNNING )
+	Asset_Set( self, TaskAssetID.DURATION, 0 )
+	--step should be the maximum
+	Asset_Set( self, TaskAssetID.STEP, 100 )
+end
+
 function Task:Update()
 	if self:IsStepFinished() == true then
 		Asset_Set( self, TaskAssetID.STATUS, TaskStatus.RUNNING )
 		Asset_Set( self, TaskAssetID.DURATION, 0 )
-		--Asset_Set( self, TaskAssetID.PROGRESS, 0 )
 		Asset_Plus( self, TaskAssetID.STEP, 1 )
-		--InputUtil_Pause( self:ToString() .. " to next step" )
 		return true
 	end
 	--print( self:ToString() .. " update=" .. Asset_Get( self, TaskAssetID.DURATION ) )

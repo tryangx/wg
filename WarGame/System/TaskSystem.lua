@@ -13,10 +13,10 @@ local _removeTask
 
 local _combatTasks = {}
 
+local _targetTasks = {}
+
 --all moving corps need to register this
 local _interceptTasks = {}
-
-local _targetTasks = {}
 
 local WorkType = 
 {
@@ -28,19 +28,15 @@ local WorkType =
 -- Task Content Function
 
 local function Task_Breakpoint( task, fn )
-	if Asset_Get( task, TaskAssetID.TYPE ) == TaskType.RECONNOITRE then
+	if Asset_Get( task, TaskAssetID.TYPE ) == TaskType.HARASS_CITY then
 		fn( task )
 		InputUtil_Pause()
 	end
 end
 
 local function Task_Debug( task, content )
-	--if Asset_Get( task, TaskAssetID.TYPE ) == TaskType.HARASS_CITY and task.id == 174 then
-	--if Asset_Get( task, TaskAssetID.TYPE ) == TaskType.INTERCEPT then
-	if Asset_Get( task, TaskAssetID.TYPE ) == TaskType.RECONNOITRE then
-	--if nil then
-		Log_Write( "move", task:ToString() .. content )
-		--print( task:ToString( "DEBUG" ), content )
+	if task.id == 187 then
+		Log_Write( "tracebug", task:ToString( "DEBUG" ) .. content )
 	end	
 end
 
@@ -98,22 +94,20 @@ local function Task_Remove( task )
 end
 
 local function Task_Resume( task )
+	Task_Debug( task, "resume" )
+	Asset_Set( task, TaskAssetID.STATUS, TaskStatus.MOVING )
 	Message_Post( MessageType.START_MOVING, { actor = Asset_Get( task, TaskAssetID.ACTOR ) } )
 end
 
 local function Task_Failed( task )
 	Log_Write( "task", task:ToString("DEBUG") .. " Failed" )
+	
 	local actor = Asset_Get( task, TaskAssetID.ACTOR )
 	Message_Post( MessageType.STOP_MOVING, { actor = actor } )
 	Log_Write( "move", "task failed=" .. actor:ToString() .. " taks=" .. task:ToString("DEBUG") )
 
-	Task_Breakpoint( task, function()
-		print( "failed" )
-	end )
-
 	Asset_Set( task, TaskAssetID.RESULT, TaskResult.FAILED )
-	task:FinishStep()
-	task:Update()
+	task:End()
 
 	local type = Asset_Get( task, TaskAssetID.TYPE )
 	if type == TaskType.INTERCEPT then
@@ -131,10 +125,6 @@ local function Task_Success( task )
 	Message_Post( MessageType.STOP_MOVING, { actor = actor } )
 	Log_Write( "move", "task suc=" .. actor:ToString() .. " taks=" .. task:ToString() )
 
-	Task_Breakpoint( task, function()
-		print( "failed" )
-	end )
-
 	local type = Asset_Get( task, TaskAssetID.TYPE )
 	if type == TaskType.HARASS_CITY then
 		--destroy city
@@ -149,12 +139,26 @@ local function Task_Success( task )
 	end
 
 	Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
-	task:FinishStep()
-	task:Update()
+	task:End()
 
 	Stat_Add( "Task@Success", 1, StatType.TIMES )
 
 	--InputUtil_Pause( task:ToString(), "success" )
+end
+
+--debug
+local function Task_Verify( task )
+	local type = Asset_Get( task, TaskAssetID.TYPE )
+	local group    = Asset_Get( task, TaskAssetID.GROUP )
+
+	if type == TaskType.HARASS_CITY 
+	or type == TaskType.ATTACK_CITY then
+		local dest = Asset_Get( task, TaskAssetID.DESTINATION )
+		local oppGroup = Asset_Get( dest, CityAssetID.GROUP )
+		if group == oppGroup then
+			Log_Write( "task", task:ToString() )
+		end
+	end
 end
 
 --reserved
@@ -172,9 +176,7 @@ local function carryfood()
 	end
 end
 
-local function Task_GiveupWhenDestNotUs( taks )
-	InputUtil_Pause( "check dis")
-
+local function Task_GiveupWhenDestNotUs( task )
 	local curGroup  = Asset_Get( task, TaskAssetID.GROUP )
 	if not curGroup then
 		return false
@@ -191,12 +193,19 @@ local function Task_GiveupWhenDestNotUs( taks )
 	end
 
 	Task_Failed( task )
-	InputUtil_Pause( "give up" )
+	Log_Write( "task", "give up" .. task:ToString("DEBUG") )
+end
+
+local function Task_CombatMoving( task )
 end
 
 local _movingTask = 
 {
 	TRANSPORT      = Task_GiveupWhenDestNotUs,
+
+	HARASS_CITY    = Task_CombatMoving,
+	ATTACK_CITY    = Task_CombatMoving,
+	INTERCEPT      = Task_CombatMoving,
 
 	DISPATCH_CORPS = Task_GiveupWhenDestNotUs,
 	DISPATCH_CHARA = Task_GiveupWhenDestNotUs,
@@ -286,7 +295,7 @@ local _prepareTask =
 local _executeTask = 
 {
 	HARASS_CITY     = function ( task )
-		if Asset_Get( task, TaskAssetID.STATUS ) == TaskStatus.RUNNING then return false end		
+		if Asset_Get( task, TaskAssetID.STATUS ) == TaskStatus.RUNNING then return false end
 		local city = Asset_Get( task, TaskAssetID.DESTINATION )
 		local corps = Asset_Get( task, TaskAssetID.ACTOR )
 		if Asset_Get( city, CityAssetID.GROUP ) == Asset_Get( corps, CorpsAssetID.GROUP ) then
@@ -304,7 +313,7 @@ local _executeTask =
 			end			
 		end
 	end,
-	ATTACK_CITY     = function ( task )	
+	ATTACK_CITY     = function ( task )
 		if Asset_Get( task, TaskAssetID.STATUS ) == TaskStatus.RUNNING then return false end
 		local city = Asset_Get( task, TaskAssetID.DESTINATION )
 		local corps = Asset_Get( task, TaskAssetID.ACTOR )
@@ -399,6 +408,16 @@ local _executeTask =
 		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WORKING )
 	end,
 	SABOTAGE    = function ( task )
+		Asset_Set( task, TaskAssetID.DURATION, 80 )
+		local workload = 250
+		local dest = Asset_Get( task, TaskAssetID.DESTINATION )
+		if dest:GetStatus( CityStatus.VIGILANT ) then
+			workload = workload + 100
+		end
+		Asset_Set( task, TaskAssetID.WORKLOAD, workload )
+		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WORKING )
+	end,
+	DESTROY_DEF = function ( task )
 		Asset_Set( task, TaskAssetID.DURATION, 80 )
 		local workload = 250
 		local dest = Asset_Get( task, TaskAssetID.DESTINATION )
@@ -526,6 +545,11 @@ local _workOnTask =
 		return Task_Contribute( task, "work" )
 	end,
 	SABOTAGE        = function ( task )
+		local progress = Random_GetInt_Sync( 2, 5 )
+		task:DoTask( progress )
+		return Task_Contribute( task, "work" )
+	end,
+	DESTROY_DEF     = function ( task )
 		local progress = Random_GetInt_Sync( 2, 5 )
 		task:DoTask( progress )
 		return Task_Contribute( task, "work" )
@@ -725,6 +749,26 @@ local _finishTask =
 			return Task_Contribute( task, "failed" )
 		end
 	end,
+	DESTROY_DEF = function ( task )
+		local city = Asset_Get( task, TaskAssetID.DESTINATION )
+		local loc  = Asset_Get( task, TaskAssetID.LOCATION )
+		local spy  = loc:GetSpy( city )
+		local progress = Asset_Get( task, TaskAssetID.PROGRESS )		
+		local workload = Asset_Get( task, TaskAssetID.WORKLOAD )
+		progress = progress + CitySpyParams.GRADE_OP_BONUS[spy.grade]		
+		if progress >= workload then
+			--InputUtil_Pause( "dest", progress, workload, g_Time:CalcDiffDayByDate( Asset_Get( task, TaskAssetID.BEGIN_TIME ) ) )
+			city:DestroyDefensive()
+			loc:LoseSpy( city, 1 )
+			Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
+			Stat_Add( "OP@Suc", 1, StatType.TIMES )
+			return Task_Contribute( task, "success" )
+		else
+			Asset_Set( task, TaskAssetID.RESULT, TaskResult.FAILED )
+			Stat_Add( "OP@Failed", 1, StatType.TIMES )
+			return Task_Contribute( task, "failed" )
+		end
+	end,
 
 	RESEARCH  = function ( task )
 		local group = Asset_Get( task, TaskAssetID.GROUP )
@@ -860,6 +904,8 @@ local function Task_Move2Destination( task )
 		local actor     = Asset_Get( task, TaskAssetID.ACTOR )
 		local actorType = Asset_Get( task, TaskAssetID.ACTOR_TYPE )		
 		local loc       = Asset_Get( task, TaskAssetID.DESTINATION )
+
+		Task_Debug( task, "move2dest" )
 		if actorType == TaskActorType.CHARA then
 			Log_Write( "task", task:ToString() .. " move to dest=" .. String_ToStr( loc, "name" ) )
 			Move_Chara( actor, loc )
@@ -888,9 +934,11 @@ end
 
 local function Task_End( task )
 	if not Task_IsBackHome( task ) then
+		--[[
 		local actor = Asset_Get( task, TaskAssetID.ACTOR )
 		print( actor:ToString("LOCATION") )
 		error( task:ToString() .. " actor not at home" )
+		]]
 		return
 	end
 
@@ -1039,6 +1087,7 @@ function Task_Create( taskType, actor, location, destination, params )
 
 		or type == TaskType.RECONNOITRE
 		or type == TaskType.SABOTAGE
+		or type == TaskType.DESTROY_DEF
 
 		or type == TaskType.RESEARCH
 		then
@@ -1046,7 +1095,7 @@ function Task_Create( taskType, actor, location, destination, params )
 		Task_CharaReceive( actor, task )
 
 	else
-		error( "Should deal with this type=" .. MathUtil_FindName( TaskType, type ) )
+		error( "Should deal with this type=" .. MathUtil_FindName( TaskType, type ) .. "/" .. type )
 	end
 
 	local actorType = Asset_Get( task, TaskAssetID.ACTOR_TYPE )
@@ -1092,9 +1141,11 @@ end
 local function Task_Reply( task )
 	Task_Debug( task, "in reply progress--" .. ( Task_IsAtHome( task ) and "at home" or "outside" ) )
 
-	if not Task_IsBackHome( task ) then
+	if not Task_IsBackHome( task ) then		
 		return
 	end
+
+	--Task_Breakpoint( task, function() print( "reply", task:ToString("DEBUG") ) end )
 
 	--bonus to contributor
 	if Asset_Get( task, TaskAssetID.ACTOR_TYPE ) == TaskActorType.CHARA then
@@ -1175,7 +1226,7 @@ local function Task_Execute( task )
 		else
 			local fn = _movingTask[taskType]
 			if fn then
-				fn( task )				
+				fn( task )
 			end
 		end
 		return
@@ -1188,6 +1239,7 @@ local function Task_Execute( task )
 			--Task_Debug( task, "arrived " .. task:ToString() )
 		end
 	end
+	Task_Debug( task, "2" )
 
 	if Asset_Get( task, TaskAssetID.STATUS ) == TaskStatus.WORKING then
 		--Task_Debug( task, "wokring " .. task:ToString() )
@@ -1195,8 +1247,9 @@ local function Task_Execute( task )
 		return
 	end
 
+Task_Debug( task, "3" )
 	local fn = _executeTask[taskType]
-	if fn then		
+	if fn then
 		if fn( task ) == false then
 			return
 		end
@@ -1241,7 +1294,7 @@ local function Task_Update( task )
 	--Task_Debug( task, "update" )
 
 	if task:Update() == true then
-		Task_Debug( task, "update " .. task:ToString() )
+		Task_Debug( task, "next step" .. task:ToString() )
 		--Stat_Add( "Task@Update", task:ToString() .. " step=" .. MathUtil_FindName( TaskStep, taskStep ), StatType.LIST )		
 		Task_Update( task )
 	end
@@ -1263,27 +1316,24 @@ local function Task_OnCombatTriggered( msg )
 	if not _combatTasks[id] then _combatTasks[id] = {} end
 
 	local task   = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "task" )
-	if not task then
-		local atk = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "atk" )
-		local def = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "def" )
-		if atk then
-			task = _interceptTasks[atk]
-			Log_Write( "task", "atk=" .. atk:ToString("STATUS") )
-			if task then
-				Log_Write( "task", "trigger combat?", combat:ToString() )
-				table.insert( _combatTasks[id], task )
-			end
-		end
-		if def then
-			task = _interceptTasks[def]
-			Log_Write( "task", "def=" .. def:ToString("STATUS") )
-			if task then
-				Log_Write( "task", "trigger combat?", combat:ToString() )
-				table.insert( _combatTasks[id], task )
-			end
-		end
-		
+	if task then return end
+
+	function CheckInterceptTask( actor )
+		if not actor then return end
+		task = _interceptTasks[actor]
+		Log_Write( "task", "actir=" .. actor:ToString("STATUS") )
+		if not task then return end
+
+		Asset_Set( task, TaskAssetID.INCOMBAT, id )
+		table.insert( _combatTasks[id], task )
+		Task_Debug( task, "!!!!trigger combat=" .. id )
+		Log_Write( "task", "trigger combat?", combat:ToString() )
 	end
+	
+	local atk = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "atk" )
+	local def = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "def" )
+	CheckInterceptTask( atk )
+	CheckInterceptTask( def )
 end
 
 local function Task_OnCombatEnded( msg )
@@ -1296,13 +1346,17 @@ local function Task_OnCombatEnded( msg )
 	local taskList = _combatTasks[id]
 	if not taskList or #taskList == 0 then return end	
 
-	function CheckTask( task )
-		local isTaskSuccess = false
+	function CheckTask( task )		
 		local taskType = Asset_Get( task, TaskAssetID.TYPE )
+
+		Asset_Set( task, TaskAssetID.INCOMBAT, 0 )
 
 		Log_Write( "task",  "CombatEnd=" .. combat.id .. " Checker" .. task:ToString() )
 		Log_Write( "move",  "CombatEnd=" .. combat.id .. " Checker" .. task:ToString() )
 
+		Task_Debug( task, "!!!end combat" .. combat.id )
+
+		local isTaskSuccess = false
 		local combatType = Asset_Get( combat, CombatAssetID.TYPE )
 		if combatType == CombatType.SIEGE_COMBAT then
 			if Asset_Get( combat, CombatAssetID.WINNER ) == CombatSide.ATTACKER then
@@ -1311,7 +1365,12 @@ local function Task_OnCombatEnded( msg )
 		elseif combatType == CombatType.FIELD_COMBAT then
 			if combat:GetGroup( Asset_Get( combat, CombatAssetID.WINNER ) ) == Asset_Get( task, TaskAssetID.GROUP ) then
 				if taskType == TaskType.INTERCEPT or taskType == TaskType.HARASS_CITY then
+					local status = Asset_Get( task, TaskAssetID.STATUS )
+					if status == TaskStatus.MOVING then
+						Task_Debug( task, "should move to the destination" .. task:ToString() )
+					end
 					isTaskSuccess = true
+
 				elseif taskType == TaskType.ATTACK_CITY
 					or taskType == TaskType.DISPATCH_CORPS then
 					--resume to attack city
@@ -1327,6 +1386,7 @@ local function Task_OnCombatEnded( msg )
 			Task_Success( task )
 		end
 	end
+
 	for _, task in ipairs( taskList ) do
 		CheckTask( task )
 	end
@@ -1360,14 +1420,26 @@ function TaskSystem:Start()
 	_executeTask = MathUtil_ConvertKeyToID( TaskType, _executeTask )
 	_finishTask  = MathUtil_ConvertKeyToID( TaskType, _finishTask )
 	_workOnTask  = MathUtil_ConvertKeyToID( TaskType, _workOnTask )
+	_movingTask  = MathUtil_ConvertKeyToID( TaskType, _movingTask )
 end
 
 function TaskSystem:Update()
 	--Debug_Log( "Task Running=" .. Entity_Number( EntityType.TASK ) )	
 	Entity_Foreach( EntityType.TASK, function( task )
+		Task_Verify( task )
+
 		local ret = false
 		while ret == false do
 			ret = Task_Update( task )
+		end
+
+		--sanity checker
+		if Asset_Get( task, TaskAssetID.ELPASED_DAYS ) - Asset_Get( task, TaskAssetID.COMBAT_DAYS ) > 400 then
+			print( "turn=" .. g_Time:ToString() )
+			print( Asset_Get( task, TaskAssetID.ELPASED_DAYS ), Asset_Get( task, TaskAssetID.COMBAT_DAYS ) )
+			if Asset_Get( task, TaskAssetID.INCOMBAT ) == 0 then
+				DBG_Error( task:ToString("DEBUG") .. " is bug" )
+			end
 		end
 	end )
 end

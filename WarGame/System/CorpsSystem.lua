@@ -151,8 +151,8 @@ function Corps_Join( corps, city, isEnterCity )
 	if encampment then
 		encampment:RemoveCorps( corps )
 	end
-
 	city:CorpsJoin( corps, isEnterCity )
+
 	Debug_Log( corps.name .. " join " .. city.name )
 end
 
@@ -164,14 +164,6 @@ function Corps_Dismiss( corps, neutralized )
 		group:RemoveCorps( corps )
 	end
 
-	--remove from old city
-	local encampment = Asset_Get( corps, CorpsAssetID.ENCAMPMENT )
-	if encampment then
-		encampment:RemoveCorps( corps )
-	else
-		Debug_Log( corps:ToString() .. " not belong to any group or city!" )
-	end
-
 	--remove officers
 	Asset_Foreach( corps, CorpsAssetID.OFFICER_LIST, function ( chara )
 		if neutralized then
@@ -180,6 +172,14 @@ function Corps_Dismiss( corps, neutralized )
 			Asset_Set( chara, CharaAssetID.CORPS )
 		end
 	end )
+
+	--remove from old city
+	local encampment = Asset_Get( corps, CorpsAssetID.ENCAMPMENT )
+	if encampment then
+		encampment:RemoveCorps( corps )
+	else
+		Debug_Log( corps:ToString() .. " not belong to any group or city!" )
+	end
 
 	--remove task
 	local task = corps:GetTask()

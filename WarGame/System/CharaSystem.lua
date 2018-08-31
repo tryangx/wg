@@ -112,7 +112,7 @@ function Chara_Die( chara )
 		home:CharaLeave( chara )
 		Debug_Log( home:ToString("CHARA"))		
 	else
-		error( "no home?" )
+		error( "no home?" .. chara.name )
 	end
 
 	--remove task
@@ -178,8 +178,7 @@ function Chara_Serve( chara, group, city )
 		city:CharaJoin( chara )
 
 		--set home & location
-		chara:JoinCity( city )
-		chara:EnterCity( city )
+		chara:JoinCity( city, true )
 
 		--set job
 		Asset_Set( chara, CharaAssetID.JOB, CharaJob.OFFICER )

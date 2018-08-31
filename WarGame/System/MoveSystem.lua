@@ -191,7 +191,9 @@ local function Move_Update( move )
 	end
 
 	--suspend or stop?
-	if Asset_Get( move, MoveAssetID.STATUS ) ~= MoveStatus.MOVING then return end
+	if Asset_Get( move, MoveAssetID.STATUS ) ~= MoveStatus.MOVING then
+		return
+	end
 
 	--move on
 	local actor = Asset_Get( move, MoveAssetID.ACTOR )

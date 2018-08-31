@@ -778,6 +778,21 @@ function City_Pillage( city )
 	Debug_Log( "pillage in=" .. city:ToString() )
 end
 
+function City_DestroyDefensive( city )
+	local list = {}
+	Asset_Foreach( city, CityAssetID.CONSTR_LIST, function ( constr, index )		
+		if constr.type == "DEFENSIVE" then
+			table.insert( list, index )
+		end
+	end )
+	if #list == 0 then
+		DBG_Warning( "why no defensive", city:ToString("CONSTRUCTION") .. " no defensive" )
+	end
+
+	local index = Random_GetListItem( list )
+	Asset_RemoveIndexItem( city, CityAssetID.CONSTR_LIST, index )
+end
+
 function City_ConvReserves( city, params )
 	local totalNum = 0
 	for _, item in pairs( params ) do

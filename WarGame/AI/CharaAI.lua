@@ -131,6 +131,7 @@ local function SubmitProposal( params )
 
 	elseif params.type == "RECONNOITRE" 
 		or params.type == "SABOTAGE"
+		or params.type == "DESTROY_DEF"
 		then
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
 
@@ -308,6 +309,13 @@ local function CanLeadCorps()
 	if Asset_Get( _actor, CharaAssetID.CORPS ) then
 		return false
 	end
+
+	--sanity check
+	Entity_Foreach( EntityType.CORPS, function ( corps )
+		if Asset_Get( corps, CorpsAssetID.LEADER ) == _actor then
+			DBG_Error( _actor:ToString("CORPS") .. " alread lead corps=" .. corps:ToString() )
+		end
+	end)
 
 	local corpsList = {}
 	Asset_Foreach( _city, CityAssetID.CORPS_LIST, function ( corps )
@@ -1390,22 +1398,63 @@ end
 local function CanSabotage()
 	if _actor:IsBusy() then return false end
 
-	local list = {}
-	Asset_Foreach( _city, CityAssetID.SPY_LIST, function( spy )
-		if _city:IsEnemeyCity( spy.city ) == false then return end
-		if spy.grade >= CitySpyParams.REQ_GRADE then
+	local destCity
+	local group = Asset_Get( _city, CityAssetID.GROUP )
+	local goal = _group:GetGoal( GroupGoalType.OCCUPY_CITY )
+	
+	if goal then
+		destCity = goal.city
+	else
+		local list = {}
+		Asset_Foreach( _city, CityAssetID.SPY_LIST, function( spy )
+			if _city:IsEnemeyCity( spy.city ) == false then return end
+			if spy.grade < CitySpyParams.REQ_GRADE then return end
 			table.insert( list, spy )
-		end
-	end )
-	if #list == 0 then return false end
+		end )
+		if #list == 0 then return false end
 
-	local index = Random_GetInt_Sync( 1, #list )
-	local spy   = list[index]
-	_registers["TARGET_CITY"] = spy.city
+		local index = Random_GetInt_Sync( 1, #list )
+		destCity = list[index].city
+	end
+	_registers["TARGET_CITY"] = destCity
 
 	return true
 end
 
+local function CanDestoryDefensive()
+	if _actor:IsBusy() then return false end
+
+	local destCity
+	local group = Asset_Get( _city, CityAssetID.GROUP )
+	local goal = _group:GetGoal( GroupGoalType.OCCUPY_CITY )
+	
+	if goal then
+		destCity = goal.city
+	else
+		local list = {}
+		Asset_Foreach( _city, CityAssetID.SPY_LIST, function( spy )
+			if _city:IsEnemeyCity( spy.city ) == false then return end
+			if spy.grade < CitySpyParams.REQ_GRADE then return end
+			if Asset_FindItem( spy.city, CityAssetID.CONSTR_LIST, function ( constr, index )
+				--if constr.type == "DEFENSIVE" then
+					return true
+				--end
+			end ) then
+				table.insert( list, spy )
+			end
+		end )
+		if #list == 0 then return false end
+
+		local index = Random_GetInt_Sync( 1, #list )
+		destCity = list[index].city
+	end
+
+	if not destCity then return false end
+
+	_registers["TARGET_CITY"] = destCity
+
+	return true
+end
 
 
 local function DetermineDefendGoal( ... )
@@ -2069,7 +2118,13 @@ local _SubmitStaffProposal =
 						{ type = "ACTION", action = SubmitProposal, params = { type = "SABOTAGE" } },
 					},
 				},
-			}
+				{ type = "SEQUENCE", children = 
+					{
+						{ type = "FILTER", condition = CanDestoryDefensive },
+						{ type = "ACTION", action = SubmitProposal, params = { type = "DESTROY_DEF" } },
+					},
+				},				
+			}			
 		},
 	}
 }

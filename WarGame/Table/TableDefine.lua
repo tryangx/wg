@@ -9,6 +9,7 @@ require "Table/BattlefieldTable"
 require "Table/WeaponTable"
 require "Table/SkillTable"
 require "Table/TraitTable"
+require "Table/ConstructionTable"
 
 function Table_SetTroop( entity, id, value )
 	return TroopTable_Get( value ) or value

@@ -277,22 +277,49 @@ function Corps:RemoveTroop( troop )
 	Asset_RemoveListItem( self, CorpsAssetID.TROOP_LIST, troop )
 
 	local officer = Asset_Get( troop, TroopAssetID.OFFICER )
-	Asset_RemoveListItem( self, CorpsAssetID.OFFICER_LIST, officer )
+	if not officer then return end
 
-	local leader = Asset_Get( self, CorpsAssetID.LEADER )	
+	local leader = Asset_Get( self, CorpsAssetID.LEADER )
 	if leader == officer then
-		error( "should consider about leader" )
+		function AssignToEmptyTroop( troop )
+			local officer = Asset_Get( troop, TroopAssetID.OFFICER )
+			if not officer then
+				Asset_Set( troop, TroopAssetID.OFFICER, leader )
+				InputUtil_Pause( "set leader=" .. leader:ToString() .. " to empty-troop=" .. troop:ToString() )
+				return true
+			end
+		end
+		--move to empty troop
+		if Asset_FindItem( self, CorpsAssetID.TROOP_LIST, AssignToEmptyTroop ) then
+			return
+		end
+
+		function AssignToTroop( troop )
+			local officer = Asset_Get( troop, TroopAssetID.OFFICER )
+			if officer then
+				Asset_Set( troop, TroopAssetID.OFFICER_LIST, leader )
+				InputUtil_Pause( "set leader=" .. leader:ToString() .. " to empty-troop=" .. troop:ToString() )
+				return true
+			end
+		end
+		--instead of low rank troop
+		if Asset_FindItem( self, CorpsAssetID.TROOP_LIST, AssignToTroop ) then
+			return
+		end
+		error( "should consider about leader" )		
 	end
 end
 
 function Corps:AssignLeader( leader )
-	--debug
+	--debug checker
 	if self:HasOfficer( leader ) then
 		DBG_Error( leader.name .. " already as officer in " .. self:ToString() )
 	end
 	if Asset_Get( leader, CharaAssetID.CORPS ) then
 		DBG_Error( leader.name .. " already in corps=" .. Asset_Get( leader, CharaAssetID.CORPS ):ToString() )
 	end
+
+	leader:LeadCorps( self )
 
 	Asset_Set( self, CorpsAssetID.LEADER, leader )
 	self:AddOfficer( leader )
@@ -354,6 +381,7 @@ function Corps:Update( ... )
 		local chara = Chara_FindBestCharaForJob( CityJob.COMMANDER, Asset_GetList( self, CorpsAssetID.OFFICER_LIST ) )
 		if chara then
 			Asset_Set( self, CorpsAssetID.LEADER, chara )
+			chara:LeadCorps( self )
 			--InputUtil_Pause( "set corps leader=" .. chara.name )
 		end
 	end

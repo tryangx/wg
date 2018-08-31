@@ -195,6 +195,7 @@ CHUHAN_CityData =
 		level = 14,
 
 		defenses = { 15000, 10000, 15000 },
+		constrs  = { 4000, },
 	},
 	[2] = 
 	{
@@ -205,6 +206,7 @@ CHUHAN_CityData =
 		level = 14,
 
 		defenses = { 15000, 10000, 15000 },
+		constrs  = { 4000, },
 	},
 	[3] = 
 	{
@@ -215,6 +217,7 @@ CHUHAN_CityData =
 		charas = { 100, 101, 102, 103, 104 },
 
 		defenses = { 15000, 10000, 15000 },
+		constrs  = { 4000, },
 	},
 	[4] = 
 	{
@@ -224,6 +227,7 @@ CHUHAN_CityData =
 		level = 13,
 
 		defenses = { 15000, 10000, 15000 },
+		constrs  = { 4000, },
 	},
 	[5] = 
 	{
@@ -231,8 +235,10 @@ CHUHAN_CityData =
 		coordinate = { x = 30, y = 12 },
 		adjacents = { 2, 4, 7 },
 		level = 12,
+
 		charas = { 200, 201, 202, 203 },
 		defenses = { 15000, 10000, 15000 },
+		constrs  = { 4000, },
 	},
 	[6] = 
 	{
@@ -243,6 +249,7 @@ CHUHAN_CityData =
 		level = 12,
 
 		defenses = { 15000, 10000, 15000 },
+		constrs  = { 4000, },
 	},
 	[7] = 
 	{
@@ -253,6 +260,7 @@ CHUHAN_CityData =
 		level = 10,
 
 		defenses = { 15000, 10000, 15000 },
+		constrs  = { 4000, },
 	},
 }
 

@@ -208,8 +208,7 @@ end
 function CharaCreator_GenerateFictionalChara( city )
 	local chara = Entity_New( EntityType.CHARA )
 	chara.name = CharaCreator_GenerateName()
-	chara:JoinCity( city )
-	chara:EnterCity( city )
+	chara:JoinCity( city, true )
 	Asset_Set( chara, CharaAssetID.ORIGIN, CharaOrigin[FICTIONAL] )
 
 	--age
@@ -256,8 +255,7 @@ function CharaCreator_GenerateHistoricChara( city )
 	local index = Random_GetInt_Sync( 1, #self.freeHistoricCharas )	
 	local chara = self.freeHistoricCharas[index]
 	table.remove( self.freeHistoricCharas, index )
-	chara:JoinCity( city )
-	chara:EnterCity( city )
+	chara:JoinCity( city, true )
 	Asset_Set( chara, CharaAssetID.ORIGIN, CharaOrigin[HISTORIC] )	
 	return chara
 end

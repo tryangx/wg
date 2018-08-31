@@ -34,6 +34,7 @@ DefaultTaskSteps =
 
 	RECONNOITRE     = { "EXECUTE", "FINISH", "REPLY" },
 	SABOTAGE        = { "EXECUTE", "FINISH", "REPLY" },
+	DESTROY_DEF     = { "EXECUTE", "FINISH", "REPLY" },
 
 	RESEARCH        = { "EXECUTE", "FINISH", "REPLY" },
 
@@ -76,6 +77,7 @@ DefaultTaskContribution =
 
 	RECONNOITRE     = { success = 30, failed = 0 },
 	SABOTAGE        = { success = 30, failed = 0 },
+	DESTROY_DEF     = { success = 30, failed = 0 },
 
 	RESEARCH        = { success = 50, failed = 0 },
 

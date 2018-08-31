@@ -703,6 +703,9 @@ function MathUtil_ConvertKeyToID( keyEnum, list )
 	local newList = {}	
 	if not list then return newList end
 	for k, v in pairs( list ) do
+		if not keyEnum[k] then
+			error( "invalid key=" .. k )
+		end
 		newList[keyEnum[k]] = v
 	end
 	return newList

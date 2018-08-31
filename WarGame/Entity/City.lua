@@ -384,6 +384,9 @@ function City:Init()
 
 	--keep minimum food
 	Asset_Set( self, CityAssetID.FOOD, ( self:GetConsumeFood() + self:GetSupplyFood() ) * 360 )
+
+	--!!!we can check the city data here
+	--InputUtil_Pause( self:ToString( 'CONSTRUCTION'), Asset_GetListSize( self, CityAssetID.CONSTR_LIST ) )
 end
 
 function City:InitPlots()
@@ -414,8 +417,7 @@ function City:VerifyData()
 	end )
 
 	Asset_Foreach( self, CityAssetID.CHARA_LIST, function( chara )
-		chara:JoinCity( city )
-		chara:EnterCity( city )
+		chara:JoinCity( city, true )
 	end )
 
 	Asset_VerifyList( self, CityAssetID.ADJACENTS )
@@ -891,10 +893,7 @@ function City:CharaJoin( chara, isEnterCity )
 		return
 	end
 
-	chara:JoinCity( self )
-	if isEnterCity then
-		chara:EnterCity( self )
-	end
+	chara:JoinCity( self, isEnterCity )
 
 	Asset_AppendList( self, CityAssetID.CHARA_LIST, chara )
 	
@@ -925,8 +924,7 @@ function City:CorpsJoin( corps, isEnterCity )
 
 	--insert charalist
 	Asset_Foreach( corps, CorpsAssetID.OFFICER_LIST, function ( chara )	
-		chara:JoinCity( self )
-		if isEnterCity then chara:EnterCity( self ) end
+		chara:JoinCity( self, isEnterCity )
 		Asset_AppendList( self, CityAssetID.CHARA_LIST, chara )
 	end)
 
@@ -1152,6 +1150,12 @@ end
 function City:Sabotage()
 	City_Pillage( self )
 	--InputUtil_Pause( "sabotage" )
+
+	Asset_SetDictItem( self, CityAssetID.STATUSES, CityStatus.VIGILANT, DAY_IN_SEASON )	
+end
+
+function City:DestroyDefensive()
+	City_DestroyDefensive( self )
 
 	Asset_SetDictItem( self, CityAssetID.STATUSES, CityStatus.VIGILANT, DAY_IN_SEASON )	
 end

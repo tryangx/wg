@@ -9,6 +9,7 @@ EntityType =
 	TROOP  = 5,
 
 	WEAPON = 22,
+	CONSTRUCTION = 23,
 
 	EVENT    = 30,
 	RELATION = 31,
@@ -49,9 +50,6 @@ function Entity_SetTroop( entity, id, value )
 	return Entity_Get( EntityType.TROOP, value ) or value
 end
 
-function Entity_SetSkill( entity, id, value )
-	--return Entity_Get( EntityType.SKILL, value ) or value
-end
 
 function Entity_SetPlot( entity, id, value )
 	return Entity_Get( EntityType.PLOT, value ) or value
@@ -61,7 +59,13 @@ function Entity_SetWeapon( entity, id, value )
 	return Entity_Get( EntityType.WEAPON, value ) or value
 end
 
+
+function Entity_SetSkill( entity, id, value )
+	return SkillTable_Get( value )
+end
+
 function Entity_SetConstruction( entity, id, value )
+	return ConstructionTable_Get( value )
 end
 
 

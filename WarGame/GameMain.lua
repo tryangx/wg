@@ -14,7 +14,9 @@ require "GameData"
 
 ------------------------------
 
-function Game_Init()
+function Game_Init()	
+	g_gameSeed = 1535709326--os.time()
+
 	-- Initialize random generator
 	Random_SetSeed( g_gameSeed )
 	Random_SetSeed_Unsync( g_unsyncSeed )
@@ -93,7 +95,8 @@ function Game_Init()
 	TacticTable_Load      ( Scenario_GetData( "TACTIC_DATA" ), EntityType )
 	BattlefieldTable_Load ( Scenario_GetData( "BATTLEFIELD_DATA" ), EntityType )
 	WeaponTable_Load      ( Scenario_GetData( "WEAPON_DATA" ), EntityType )
-	SkillTable_Load       ( Scenario_GetData( "CHARA_SKILL_DATA" ), EntityType )
+	SkillTable_Load       ( Scenario_GetData( "CHARA_SKILL_DATA" ), EntityType )	
+	ConstructionTable_Load( Scenario_GetData( "CITY_CONSTR_DATA" ), EntityType )
 
 	--init weapon pointers
 	TroopTable_Init()
@@ -184,8 +187,8 @@ function Game_Init()
 		City_Harvest( data )
 	end )
 
-	Entity_Foreach( EntityType.CHARA, function ( chara )
-		
+	--init chara's atomic trait
+	Entity_Foreach( EntityType.CHARA, function ( chara )		
 		CharaCreator_GenerateAtomicTrait( chara )
 	end)
 
