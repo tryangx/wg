@@ -32,13 +32,14 @@ CityPopu =
 {
 	ALL      = 0,
 
+	PLEB     = 100,
+
 	--military
 	REFUGEE  = 1,
 
 	---------------------
 	--Below is not include in city
-	INCITY_SEPERATOR = 10,
-
+	
 	--lower-class
 	HOBO     = 10,	
 	CHILDREN = 11,

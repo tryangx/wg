@@ -193,7 +193,11 @@ function City:ToString( type )
 		content = content .. "+" .. math.ceil( money / salary ) .. "M"
 		content = content .. " food=" .. food
 		--content = content .. "-" .. consume
-		content = content .. "+" .. math.ceil( food / ( DAY_IN_MONTH * ( consume + supply ) ) ) .."M" .. "(" .. consume .. "+" .. supply .. ")"
+		if consume + supply > 0 then
+			content = content .. "+" .. math.ceil( food / ( DAY_IN_MONTH * ( consume + supply ) ) ) .."M" .. "(" .. consume .. "+" .. supply .. ")"
+		else
+			content = content .. "+" .. math.ceil( food / DAY_IN_YEAR * 10 ) .."P"
+		end
 		content = content .. " mat=" .. Asset_Get( self, CityAssetID.MATERIAL )
 
 	elseif type == "CONSUME" then
@@ -425,7 +429,7 @@ function City:VerifyData()
 	--verify adjacents
 	Asset_Foreach( self, CityAssetID.ADJACENTS, function ( adjaCity )
 		if not Asset_HasItem( adjaCity, CityAssetID.ADJACENTS, self ) then
-			error( adjaCity.name .. " not connect to " .. self.name )
+			DBG_Trace( "data-verify", adjaCity.name .. " not connect to " .. self.name )
 		end
 	end)
 
@@ -808,6 +812,14 @@ function City:GetFreeCorps( fn )
 	Asset_Foreach( self, CityAssetID.CORPS_LIST, function ( corps )
 		if corps:IsAtHome() == false then return end
 		if corps:IsBusy() == true then return end
+
+		--check troop
+		if corps:GetSoldier() == 0 then
+			DBG_TrackBug( "why no soldier" .. corps:ToString() )
+			return
+		end
+
+		--check leader
 		local leader = Asset_Get( corps, CorpsAssetID.LEADER )
 		if leader then
 			if leader:IsBusy() then return end
@@ -1108,7 +1120,7 @@ end
 --------------------------------------------
 
 function City:CreateSpy( city, grade )
-	return { sour = self, city = city, grade = grade, intel = 0 }
+	return Intel_CreateSpy( city, self, grade )
 end
 
 function City:GetSpy( city )
@@ -1127,11 +1139,13 @@ end
 
 --execute an op will lose spy
 function City:LoseSpy( city, grade )
-	spy = self:GetSpy( city )	
+	local spy = self:GetSpy( city )
+	
+	Intel_LoseSpy( spy )
+	
 	if not grade then grade = -1 end
-spy.intel = math.ceil( spy.intel * 0.5 )
+	spy.intel = math.ceil( spy.intel * 0.5 )
 	spy.grade = MathUtil_Clamp( spy.grade - grade, CitySpyParams.INIT_GRADE, CitySpyParams.MAX_GRADE )
-
 	Stat_Add( "LoseSpy@" .. city.name, 1, StatType.TIMES )
 end
 

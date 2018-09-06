@@ -186,6 +186,7 @@ CHUHAN_CityData =
 	--3  --4--  5
 	-- \       /
 	--  6 --- 7
+	--[[
 	[1] = 
 	{
 		name = "XianYan",
@@ -208,11 +209,13 @@ CHUHAN_CityData =
 		defenses = { 15000, 10000, 15000 },
 		constrs  = { 4000, },
 	},
+	]]
 	[3] = 
 	{
-		name = "GuangZhong",
+		name = "GuanZhong",
 		coordinate = { x = 6, y = 12 },
-		adjacents = { 1, 4, 6 },
+		--adjacents = { 1, 4, 6 },
+		adjacents = { 4 },
 		level = 12,		
 		charas = { 100, 101, 102, 103, 104 },
 
@@ -233,13 +236,15 @@ CHUHAN_CityData =
 	{
 		name = "KuaiJi",
 		coordinate = { x = 30, y = 12 },
-		adjacents = { 2, 4, 7 },
+		--adjacents = { 2, 4, 7 },
+		adjacents = { 4 },
 		level = 12,
 
 		charas = { 200, 201, 202, 203 },
 		defenses = { 15000, 10000, 15000 },
 		constrs  = { 4000, },
 	},
+	--[[
 	[6] = 
 	{
 		name = "JinZhou",
@@ -262,6 +267,7 @@ CHUHAN_CityData =
 		defenses = { 15000, 10000, 15000 },
 		constrs  = { 4000, },
 	},
+	]]
 }
 
 CHUHAN_GroupData =

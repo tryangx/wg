@@ -56,6 +56,7 @@ function City_GetPopuParams( city )
 	return params
 end
 
+--[[
 function City_GetPopuTypeByAssetID( id )
 	if id == CityAssetID.AGRICULTURE then
 		return "FARMER"
@@ -65,7 +66,8 @@ function City_GetPopuTypeByAssetID( id )
 		return "WORKER"
 	end
 end
-
+]]
+--[[
 function City_GetAssetIDByPopuName( popuname )
 	if popuname == "FARMER" then
 		return CityAssetID.MAX_AGRICULTURE
@@ -75,6 +77,7 @@ function City_GetAssetIDByPopuName( popuname )
 		return CityAssetID.MAX_COMMERCE
 	end	
 end
+]]
 
 ----------------------------------------------------------------------------------
 -- !!! VERY IMPORTANT
@@ -83,7 +86,7 @@ function City_NeedPopu( city, popuname )
 	--get params
 	local cityparams = City_GetPopuParams( city )
 	local needparam  = cityparams.POPU_NEED_RATIO
-	local unitparam  = cityparams.POPU_PER_UNIT
+	--local unitparam  = cityparams.POPU_PER_UNIT
 
 	--some career needs the fixed ratio of the total population
 	if needparam[popuname] then
@@ -91,32 +94,20 @@ function City_NeedPopu( city, popuname )
 		return math.floor( needparam[popuname].req * popu )
 	end
 
-	--some career needs the number of population per development index 
-
+	return 0
+	--[[
+	--some career needs the number of population per development index
 	local assetid = City_GetAssetIDByPopuName( popuname )
 	if not assetid then
+		InputUtil_Pause( "0")
 		return 0
 	end
 
+
 	return Asset_Get( city, assetid ) * unitparam[popuname]
+
+	]]
 end
-
---[[
-function City_NeedDevIndex( city, id )
-	local cityparams = City_GetPopuParams( city )
-	local unitparam  = cityparams.POPU_PER_UNIT
-
-	if id == CityAssetID.AGRICULTURE then
-		return math.ceil( Asset_Get( city, CityAssetID.AGRICULTURE ) / unitparam.FARMER )
-	elseif id == CityAssetID.COMMERCE then
-		return math.ceil( Asset_Get( city, CityAssetID.COMMERCE ) / unitparam.MERCHANT )
-	elseif id == CityAssetID.PRODUCTION then
-		return math.ceil( Asset_Get( city, CityAssetID.PRODUCTION ) / unitparam.WORKER )
-	end
-
-	return 0
-end
-]]
 
 -------------------------------------------------------
 -- City Statu
@@ -173,18 +164,18 @@ end
 
 function City_GetFoodIncome( city )
 	local income = 0
-	local popustparams = City_GetPopuParams( city )
+	local popustparams = City_GetPopuParams( city )	
 	local agri         = Asset_Get( city, CityAssetID.AGRICULTURE )
-	local maxAgri      = Asset_Get( city, CityAssetID.MAX_AGRICULTURE )
-	local modifier     = ( agri + agri ) / maxAgri
+	local modifier     = Random_GetInt_Sync( 80, 120 ) * 0.01
 	for type, _ in pairs( CityPopu ) do
 		local value = popustparams.POPU_HARVEST[type]
 		if value then
 			local num = Asset_GetDictItem( city, CityAssetID.POPU_STRUCTURE, CityPopu[type] )
-			income = income + modifier * num * value
+			income = income + modifier * num * value			
 		end
 	end
-	return math.ceil( income )
+	income = math.ceil( income )
+	return income
 end
 
 --collect food
@@ -198,11 +189,56 @@ end
 --------------------------------------
 -- City Population Structure
 
+-- 
+--
+--
 function City_InitPopuStructure( city )
+	--get params
 	local popu   = Asset_Get( city, CityAssetID.POPULATION )
 	local popustparams = City_GetPopuParams( city )
 	local needparam  = popustparams.POPU_NEED_RATIO
 	local initparam  = popustparams.POPU_INIT
+	
+	--initalize population structure
+	local nums = {}	
+	for k, v  in pairs( CityPopu ) do
+		if initparam[k] then
+			local num = math.floor( popu * math.min( needparam[k].limit, needparam[k].req * Random_GetInt_Sync( initparam[k].min, initparam[k].max ) * 0.01 ) )
+			nums[v] = num
+		end
+	end
+
+	--check pleb is in the range of limitation
+	local lastPleb = nums[CityPopu.FARMER] + nums[CityPopu.WORKER] + nums[CityPopu.MERCHANT]		
+	local needPleb = popu * needparam["PLEB"].limit
+	if lastPleb >= needPleb then
+		local ratio = needPleb / lastPleb
+		nums[CityPopu.FARMER]   = math.floor( nums[CityPopu.FARMER] * ratio )
+		nums[CityPopu.WORKER]   = math.floor( nums[CityPopu.WORKER] * ratio )
+		nums[CityPopu.MERCHANT] = math.floor( nums[CityPopu.MERCHANT] * ratio )
+		local curPleb = nums[CityPopu.FARMER] + nums[CityPopu.WORKER] + nums[CityPopu.MERCHANT]			
+	end
+
+	--calculate the hobo
+	local hobo = popu
+	for k, v  in pairs( CityPopu ) do
+		if initparam[k] and v ~= CityPopu.HOBO then
+			hobo = hobo - nums[v]
+		end
+	end
+
+	for k, v in pairs( CityPopu ) do
+		city:SetPopu( v, nums[v] )
+		if nums[v] then
+			--print( city.name .. " " .. k  .. "=" .. nums[v] .. "+" .. PercentString( nums[v] / popu ) )
+		end		
+	end
+	--InputUtil_Pause( k, v, nums[v], Asset_GetDictItem( city, CityAssetID.POPU_STRUCTURE, v ) )
+
+	--[[
+	local needfarmer   = City_NeedPopu( city, "FARMER" )
+	local needworker   = City_NeedPopu( city, "WORKER" )
+	local needmerchant = City_NeedPopu( city, "MERCHANT" )
 	
 	local nums = {}	
 	local notpleb = 0
@@ -214,9 +250,6 @@ function City_InitPopuStructure( city )
 		end
 	end
 
-	local needfarmer   = City_NeedPopu( city, "FARMER" )
-	local needworker   = City_NeedPopu( city, "WORKER" )
-	local needmerchant = City_NeedPopu( city, "MERCHANT" )
 	local needpleb = needfarmer + needworker + needmerchant
 	
 	local leftpopu = popu - notpleb
@@ -230,6 +263,7 @@ function City_InitPopuStructure( city )
 		city:SetPopu( v, nums[v] )
 		--InputUtil_Pause( k, v, nums[v], Asset_GetDictItem( city, CityAssetID.POPU_STRUCTURE, v ) )
 	end
+	]]
 end
 
 function City_PopuConv( city )
@@ -241,7 +275,7 @@ function City_PopuConv( city )
 	local popu     = Asset_Get( city, CityAssetID.POPULATION )	
 
 	local popustparams = City_GetPopuParams( city )
-	local unitparam  = popustparams.POPU_PER_UNIT
+	--local unitparam  = popustparams.POPU_PER_UNIT
 	local needparam = popustparams.POPU_NEED_RATIO
 	
 	local needlist = {}
@@ -856,7 +890,7 @@ function CitySystem:Update()
 
 		--3rd income /consume
 		if day == 1 then
-			if monthe == 9 then
+			if month == 9 then
 				City_Harvest( city )
 			end
 			

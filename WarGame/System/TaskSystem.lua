@@ -16,7 +16,7 @@ local _combatTasks = {}
 local _targetTasks = {}
 
 --all moving corps need to register this
-local _interceptTasks = {}
+local _corpsTasks = {}
 
 local WorkType = 
 {
@@ -35,8 +35,8 @@ local function Task_Breakpoint( task, fn )
 end
 
 local function Task_Debug( task, content )
-	if task.id == 187 then
-		Log_Write( "tracebug", task:ToString( "DEBUG" ) .. content )
+	if task.id == 273 then
+		DBG_TrackBug( task:ToString( "DEBUG" ) .. content )
 	end	
 end
 
@@ -82,8 +82,6 @@ local function Task_Remove( task )
 
 	Debug_Log( "remove task" .. task:ToString() )
 
-	_interceptTasks[actor] = nil
-
 	local dest = Asset_Get( task, TaskAssetID.DESTINATION )	
 	local taskList = _targetTasks[dest]
 	if taskList then
@@ -100,6 +98,8 @@ local function Task_Resume( task )
 end
 
 local function Task_Failed( task )
+	Task_Debug( task, "task failed!!!!!" )
+
 	Log_Write( "task", task:ToString("DEBUG") .. " Failed" )
 	
 	local actor = Asset_Get( task, TaskAssetID.ACTOR )
@@ -179,16 +179,19 @@ end
 local function Task_GiveupWhenDestNotUs( task )
 	local curGroup  = Asset_Get( task, TaskAssetID.GROUP )
 	if not curGroup then
+		error( "not belong to any group" )
 		return false
 	end
 	
 	local dest = Asset_Get( task, TaskAssetID.DESTINATION )
 	if not dest then
+		error( "not destination" )
 		return false
 	end
 
 	local destGroup = Asset_Get( dest, CityAssetID.GROUP )
 	if curGroup == destGroup then
+		Task_Debug( task, "same group" .. curGroup.name )
 		return false
 	end
 
@@ -217,24 +220,20 @@ local _prepareTask =
 		Intel_Post( IntelType.HARASS_CITY, Asset_Get( task, TaskAssetID.LOCATION ), { actor = Asset_Get( task, TaskAssetID.ACTOR ) } )
 		Asset_Set( task, TaskAssetID.DURATION, 10 )
 		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WAITING )
-		_interceptTasks[Asset_Get( task, TaskAssetID.ACTOR)] = task
 	end,
 	ATTACK_CITY     = function ( task )
 		Intel_Post( IntelType.ATTACK_CITY, Asset_Get( task, TaskAssetID.LOCATION ), { actor = Asset_Get( task, TaskAssetID.ACTOR ) } )
 		Asset_Set( task, TaskAssetID.DURATION, 10 )
-		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WAITING )
-		_interceptTasks[Asset_Get( task, TaskAssetID.ACTOR )] = task		
+		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WAITING )	
 	end,
 	INTERCEPT       = function ( task )
 		Stat_Add( "Intercept@" .. Asset_Get( task, TaskAssetID.GROUP ).name, 1, StatType.TIMES )
 		Asset_Set( task, TaskAssetID.DURATION, 10 )
 		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WAITING )
-		_interceptTasks[Asset_Get( task, TaskAssetID.ACTOR)] = task
 	end,
 	DISPATCH_CORPS  = function ( task )
 		Asset_Set( task, TaskAssetID.DURATION, 10 )
 		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WAITING )
-		_interceptTasks[Asset_Get( task, TaskAssetID.ACTOR)] = task
 	end,
 
 	ESTABLISH_CORPS = function ( task )
@@ -299,6 +298,7 @@ local _executeTask =
 		local city = Asset_Get( task, TaskAssetID.DESTINATION )
 		local corps = Asset_Get( task, TaskAssetID.ACTOR )
 		if Asset_Get( city, CityAssetID.GROUP ) == Asset_Get( corps, CorpsAssetID.GROUP ) then
+			Task_Debug( task, city:ToString(), "is belong to", Asset_Get( corps, CorpsAssetID.GROUP ) )
 			Task_Failed( task )
 		else
 			local defenders = city:GetDefendCorps()
@@ -313,7 +313,7 @@ local _executeTask =
 			end			
 		end
 	end,
-	ATTACK_CITY     = function ( task )
+	ATTACK_CITY     = function ( task )		
 		if Asset_Get( task, TaskAssetID.STATUS ) == TaskStatus.RUNNING then return false end
 		local city = Asset_Get( task, TaskAssetID.DESTINATION )
 		local corps = Asset_Get( task, TaskAssetID.ACTOR )
@@ -490,7 +490,9 @@ local _workOnTask =
 		end
 		return 0
 	end,
+
 	ESTABLISH_CORPS = Task_DoDefault,
+
 	REINFORCE_CORPS = function( task )
 		local progress = Random_GetInt_Sync( 10, 35 )
 		task:DoTask( progress )
@@ -500,7 +502,8 @@ local _workOnTask =
 			local reserves= city:GetPopu( CityPopu.RESERVES )
 			local number  = reserves < workload and reserves or workload
 			local corps   = Asset_GetDictItem( task, TaskAssetID.PARAMS, "corps" )
-			--Log_Write( "task",  "reinforce-corps=" .. corps:ToString() .. "+" .. number )
+			--Log_Write( "task",  "reinforce-corps=" .. corps:ToString() .. "+" .. number )			
+			--DBG_TrackBug( "reinforce-corps=" .. corps:ToString() .. "+" .. number .. "/" .. reserves )
 			Corps_ReinforceTroop( corps, number )
 			reserves = reserves - number
 			city:SetPopu( CityPopu.RESERVES, reserves )
@@ -512,7 +515,9 @@ local _workOnTask =
 		end
 		return Task_Contribute( task, "work" )
 	end,
+
 	ENROLL_CORPS    = Task_DoDefault,	
+
 	TRAIN_CORPS     = function ( task )
 		local progress = Random_GetInt_Sync( 10, 35 )
 		task:DoTask( progress )
@@ -592,7 +597,7 @@ local _finishTask =
 {
 	INTERCEPT       = function ( task )
 		--failed
-		Asset_Set( task, TaskAssetID.RESULT, TaskResult.FAILED )
+		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
 		return 0
 	end,
 	ESTABLISH_CORPS = function ( task )
@@ -876,17 +881,16 @@ local function Task_BackHome( task )
 			local loc = Asset_Get( actor, CorpsAssetID.LOCATION )
 			local dest = Asset_Get( actor, CorpsAssetID.ENCAMPMENT )			
 			if dest then
-				--if task.id == 174 then InputUtil_Pause( "back home" ) end
-				Task_Debug( task, "back home" )
 				if dest ~= loc then
+					Task_Debug( task, "back loc=" .. loc.name .. " dest=" .. dest.name )
 					Log_Write( "task", task:ToString() .. " back home=" .. String_ToStr( dest, "name" ) )
 					Move_Corps( actor, dest )
 				end
 			else
 				dest = Asset_Get( task, TaskAssetID.LOCATION )
-				Task_Debug( task, "back home=" .. loc.name .. " to=" .. dest.name )
 				if loc ~= dest then
 					--back to location where start the task
+					Task_Debug( task, "back loc=" .. loc.name .. " dest=" .. dest.name )
 					Log_Write( "task", task:ToString() .. " back home=" .. String_ToStr( dest, "name" ) )
 					Move_Corps( actor, dest )
 				end
@@ -977,6 +981,8 @@ function Task_CorpsReceive( corps, task )
 		print( task:ToString() )
 		error( corps:ToString() .. "already has task" )
 	end
+
+	_corpsTasks[corps] = task
 
 	corps:SetTask( task )
 
@@ -1239,7 +1245,6 @@ local function Task_Execute( task )
 			--Task_Debug( task, "arrived " .. task:ToString() )
 		end
 	end
-	Task_Debug( task, "2" )
 
 	if Asset_Get( task, TaskAssetID.STATUS ) == TaskStatus.WORKING then
 		--Task_Debug( task, "wokring " .. task:ToString() )
@@ -1247,7 +1252,6 @@ local function Task_Execute( task )
 		return
 	end
 
-Task_Debug( task, "3" )
 	local fn = _executeTask[taskType]
 	if fn then
 		if fn( task ) == false then
@@ -1310,24 +1314,31 @@ end
 
 local function Task_OnCombatTriggered( msg )	
 	local combat = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "combat" )
-	if not combat then return end
+	if not combat then error( "invalid combat?" ) return end
 
 	local id = combat.id
-	if not _combatTasks[id] then _combatTasks[id] = {} end
 
-	local task   = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "task" )
-	if task then return end
+	if not _combatTasks[id] then _combatTasks[id] = {} end
 
 	function CheckInterceptTask( actor )
 		if not actor then return end
-		task = _interceptTasks[actor]
-		Log_Write( "task", "actir=" .. actor:ToString("STATUS") )
-		if not task then return end
+
+		local task = _corpsTasks[actor]		
+		if not task then
+			print( "why corps no task?" )
+			return
+		end
+
+		if MathUtil_IndexOf( _combatTasks[id], task ) then
+			--print( "task combat exist" )
+			return
+		end
 
 		Asset_Set( task, TaskAssetID.INCOMBAT, id )
 		table.insert( _combatTasks[id], task )
-		Task_Debug( task, "!!!!trigger combat=" .. id )
-		Log_Write( "task", "trigger combat?", combat:ToString() )
+		
+		Task_Debug( task, "!!!!trigger combat=" .. combat:ToString("DEBUG_CORPS") )
+		Log_Write( "task", "trigger combat? actor=" .. actor:ToString("STATUS") .. " " .. combat:ToString("DEBUG_CORPS") .. " " .. task:ToString() )
 	end
 	
 	local atk = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "atk" )
@@ -1351,12 +1362,18 @@ local function Task_OnCombatEnded( msg )
 
 		Asset_Set( task, TaskAssetID.INCOMBAT, 0 )
 
-		Log_Write( "task",  "CombatEnd=" .. combat.id .. " Checker" .. task:ToString() )
-		Log_Write( "move",  "CombatEnd=" .. combat.id .. " Checker" .. task:ToString() )
+		Task_Debug( task, "combat end=" .. combat:ToString() )
 
-		Task_Debug( task, "!!!end combat" .. combat.id )
+		if Asset_Get( task, TaskAssetID.RESULT ) ~= TaskResult.UNKNOWN then
+			--DBG_TrackBug( task:ToString("SIMPLE") .. " has result" )
+			return
+		end
 
-		local isTaskSuccess = false
+		Log_Write( "task",  "CombatEnd=" .. combat.id .. " Check task=" .. task:ToString() )
+		Log_Write( "move",  "CombatEnd=" .. combat.id .. " Check task=" .. task:ToString() )
+
+		local isTaskSuccess = false		
+
 		local combatType = Asset_Get( combat, CombatAssetID.TYPE )
 		if combatType == CombatType.SIEGE_COMBAT then
 			if Asset_Get( combat, CombatAssetID.WINNER ) == CombatSide.ATTACKER then
@@ -1390,6 +1407,7 @@ local function Task_OnCombatEnded( msg )
 	for _, task in ipairs( taskList ) do
 		CheckTask( task )
 	end
+
 	_combatTasks[id] = nil
 end
 

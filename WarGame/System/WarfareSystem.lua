@@ -306,7 +306,6 @@ local function Warfare_OnFieldCombatTrigger( msg )
 	local plot = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "plot" )
 	local atk  = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "atk" )
 	local def  = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "def" )
-	local task = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "task" )
 
 	local combat
 	if plot then
@@ -319,9 +318,9 @@ local function Warfare_OnFieldCombatTrigger( msg )
 		else
 			combat = Warefare_HarassCombatOccur( atk, city )
 		end
-
 	end
-	Message_Post( MessageType.COMBAT_TRIGGERRED, { task = task, combat = combat, atk = atk, def = def } )
+
+	Message_Post( MessageType.COMBAT_TRIGGERRED, { combat = combat, atk = atk, def = def } )
 
 	Stat_Add( "Combat@Field", 1, StatType.TIMES )
 end
@@ -331,7 +330,7 @@ local function Warfare_OnSiegeCombatTrigger( msg )
 	local city  = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "city" )
 	local combat = Warefare_SiegeCombatOccur( atk, city )
 
-	Message_Post( MessageType.COMBAT_TRIGGERRED, { task = task, combat = combat, atk = atk } )
+	Message_Post( MessageType.COMBAT_TRIGGERRED, { combat = combat, atk = atk } )
 
 	Stat_Add( "Combat@Siege", 1, StatType.TIMES )
 end

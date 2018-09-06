@@ -70,6 +70,7 @@ local function SubmitProposal( params )
 		local city = Asset_Get( enemyCorps, CorpsAssetID.LOCATION )
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, city )
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "TARGET_CORPS", enemyCorps )
 	
 	elseif params.type == "DISPATCH_CORPS" then
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
@@ -729,6 +730,11 @@ local function CanIntercept()
 		return false
 	end
 
+	--sanity checker
+	if Asset_Get( corps, CorpsAssetID.GROUP ) == Asset_Get( target, CorpsAssetID.GROUP ) then
+		DBG_Error( "why they are same group", corps:ToString(), target:ToString() )
+	end
+
 	--print( target:ToString() )
 	--InputUtil_Pause( "intercept", _city:ToString(), destcity.name )
 
@@ -756,8 +762,8 @@ local function NeedMoreReserves()
 	end
 	if _city:GetStatus( CityStatus.AGGRESSIVE_ADV ) then
 		return true
-	end	
-	if reserves > _city:GetLimitPopu( CityPopu.RESERVES ) or reserves > _city:GetStatus( CityStatus.RESERVE_NEED ) then
+	end
+	if reserves > _city:GetLimitPopu( CityPopu.RESERVES ) or reserves > ( _city:GetStatus( CityStatus.RESERVE_NEED ) or 0 ) then
 		--print( _city:ToString( "BRIEF") )
 		--InputUtil_Pause( _city.name, "too many reserves", _city:GetPopu( CityPopu.RESERVES ) .."/".. _city:GetLimitPopu( CityPopu.RESERVES ), _city:GetReqPopu( CityPopu.RESERVES ) )
 		return false
@@ -1954,6 +1960,7 @@ local DispatchCorpsProposal =
 	},
 }
 
+--Conscript will establish troop immediately, mostly conscript militia/reserves that can be upgrade into 
 local ConscriptProposal =
 {
 	type = "SEQUENCE", children = 
@@ -2177,7 +2184,7 @@ local _SubmitCommanderProposal =
 				EnrollProposal,
 				DispatchCorpsProposal,
 				EstablishCorpsProposal,
-				ConscriptProposal,
+				--ConscriptProposal,
 				RecruitProposal,
 				HireGuardProposal,
 				TrainProposal,

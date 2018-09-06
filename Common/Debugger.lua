@@ -45,6 +45,10 @@ function DBG_Trace( content, cond, lv )
 	end
 end
 
+function DBG_TrackBug( content )
+	Log_Write( "tracebug", content )
+end
+
 -- print content once
 function DBG_Warning( key, content )
 	if _warnings[key] then return end

@@ -4,16 +4,28 @@ local DEFAULT_MOVE_DURATION = 30
 
 ------------------------------------------------
 
---record all moves from plot to plot
+--record moves that they are ready to go to the next plot
+--DS: [id] = move
 local _plotMoves = {}
 
 --record all actor in every plot
+--DS: [plot] = { move1, move2, ... }
 local _plotActors = {}
 
 --record all encouter
 local _encounters = {}
 
 ------------------------------------------------
+
+local function Move_Debug( move, content )
+	local actor = Asset_Get( move, MoveAssetID.ACTOR )
+	local role = Asset_Get( move, MoveAssetID.ROLE )
+	if role ~= MoveRole.CORPS then return end
+	--if actor.id == 5 or actor.id == 17 then
+	if actor.id == 2 then
+		DBG_TrackBug( move:ToString( "DEBUG" ) .. " " .. content )
+	end
+end
 
 function Move_Track( actor )
 	return System_Get( SystemType.MOVE_SYS ):TrackMove( actor )
@@ -38,16 +50,18 @@ end
 
 function Move_GetIntelMovement( group )
 	--1 unit means 1KM/DAY
-	--pigeon
+	--depends on pigeon can fly 500KM one day
 	return 500
 end
 
+--return days
 function Move_CalcIntelTransDuration( group, from, to )
 	local distance = Route_CalcCityCoorDistance( from, to )
 	local movement = Move_GetIntelMovement( chara )
 	return math.ceil( distance / movement )
 end
 
+--return days
 function Move_CalcCharaMoveDuration( chara, from, to )
 	local distance = Route_CalcCityDistance( from, to )
 	local movement = Move_GetCharaMovement( chara )
@@ -72,34 +86,56 @@ local function Move_AddToPlot( move )
 end
 
 local function Move_CheckEncounter( move )
-	--is there an enemy in the destination?
-	local curplot = Asset_Get( move, MoveAssetID.CUR_PLOT )
-	local list = _plotActors[curplot]
+	--check the CUR_PLOT whthere there is an enemy in the plot
+	--local plot = Asset_Get( move, MoveAssetID.CUR_PLOT )
+	local plot = Asset_Get( move, MoveAssetID.NEXT_PLOT )
+	local list = _plotActors[plot]
 	if not list then return false end
 
-	if Asset_Get( move, MoveAssetID.ROLE ) == MoveRole.CHARA then
-		--chara no encounter now
+	if Asset_Get( move, MoveAssetID.ROLE ) ~= MoveRole.CORPS then
+		--pass chara encouter checker now
 		return
 	end
 
-	local actor = Asset_Get( move, MoveAssetID.ACTOR )
-	local curGroup = Asset_Get( actor, CorpsAssetID.GROUP )	
+	local actor = Asset_Get( move, MoveAssetID.ACTOR )		
+	local task = actor:GetTask()
+	if Asset_Get( task, TaskAssetID.RESULT ) ~= TaskResult.UNKNOWN then
+		return
+	end
+
 	local isEncounter = false
-	for k, other in ipairs( list ) do
-		if Asset_Get( other, MoveAssetID.ROLE ) == MoveRole.CORPS then
-			--is enemy corps?
-			local otherActor = Asset_Get( other, MoveAssetID.ACTOR )
-			local othGroup = Asset_Get( otherActor, CorpsAssetID.GROUP )
-			if Dipl_IsAtWar( curGroup, othGroup ) then
-				--encounter, actually we should send a message to other system, but now, we call Combat by myself							
-				Debug_Normal( "Encounter in", curplot:ToString(), actor:ToString( "MILITARY" ), otherActor:ToString( "MILITARY" ) )
-				isEncounter = true
-				_plotMoves[k] = nil
-				Asset_Set( move, MoveAssetID.STATUS, MoveStatus.SUSPEND )
-				Asset_Set( other, MoveAssetID.STATUS, MoveStatus.SUSPEND )
-				Message_Post( MessageType.FIELD_COMBAT_TRIGGER, { plot = curplot, atk = actor, def = otherActor } )
-				break
-			end
+	
+	local curGroup = Asset_Get( actor, CorpsAssetID.GROUP )	
+	
+	function CanTriggerCombat( actor, opponent )
+		--is opponent corps?
+		if Asset_Get( opponent, MoveAssetID.ROLE ) ~= MoveRole.CORPS then return end
+
+		--is opponent corps?
+		local oppActor = Asset_Get( opponent, MoveAssetID.ACTOR )
+		local oppGroup = Asset_Get( oppActor, CorpsAssetID.GROUP )
+		if not Dipl_IsAtWar( curGroup, oppGroup ) then return end
+
+		--is task failed?
+		local oppTask = oppActor:GetTask()
+		if oppTask and Asset_Get( oppTask, TaskAssetID.RESULT ) ~= TaskResult.UNKNOWN then
+			return
+		end
+
+		Log_Write( "move", "encounter plot=" .. plot:ToString() .. " " .. actor:ToString( "MILITARY" ) .. " " .. oppActor:ToString( "MILITARY" ) )
+
+		return oppActor
+	end
+
+	for _, otherMove in ipairs( list ) do
+		local oppActor = CanTriggerCombat( move, otherMove )
+		if oppActor then
+			--encounter, actually we should send a message to other system, but now, we call Combat by myself
+			isEncounter = true
+			Asset_Set( move,  MoveAssetID.STATUS, MoveStatus.SUSPEND )
+			Asset_Set( otherMove, MoveAssetID.STATUS, MoveStatus.SUSPEND )
+			Message_Post( MessageType.FIELD_COMBAT_TRIGGER, { plot = plot, atk = actor, def = oppActor } )
+			break
 		end
 	end
 	return isEncounter
@@ -109,19 +145,27 @@ local function Move_MoveToNext( move )
 	local dur = Asset_Get( move, MoveAssetID.DURATION )
 	Asset_Reduce( move, MoveAssetID.PROGRESS, dur )
 	Asset_Set( move, MoveAssetID.DURATION, 0 )
-	local path     = Asset_Get( move, MoveAssetID.PATH )
-	local curplot  = Asset_Get( move, MoveAssetID.CUR_PLOT )
+
 	local nextplot = Asset_Get( move, MoveAssetID.NEXT_PLOT )
-	local tocity   = Asset_Get( move, MoveAssetID.TO_CITY )	
+	--check encounter in the new plot
+	if Move_CheckEncounter( move ) == true then
+		Move_Debug( move, "encounter in" .. nextplot:ToString() )
+		return true
+	end
+
+	local curplot  = Asset_Get( move, MoveAssetID.CUR_PLOT )
+	--local tocity   = Asset_Get( move, MoveAssetID.TO_CITY )	
 	local routeplot
+	local path     = Asset_Get( move, MoveAssetID.PATH )	
 	for inx, p in ipairs( path ) do
 		if not curplot or p == curplot then
 			routeplot = path[inx+1]
 			break
 		end
 	end
+
 	--print( "cur  =", Asset_Get( curplot, PlotAssetID.X ), ",", Asset_Get( curplot, PlotAssetID.Y ) )
-	--print( route, curplot, nextplot, toCity, routeplot )	
+	--print( route, curplot, nextplot, toCity, routeplot )
 	--print( "next =", Asset_Get( routeplot, PlotAssetID.X ), ",", Asset_Get( routeplot, PlotAssetID.Y ) )
 	Asset_Set( move, MoveAssetID.CUR_PLOT, nextplot )
 	Asset_Set( move, MoveAssetID.NEXT_PLOT, routeplot )
@@ -132,17 +176,14 @@ local function Move_MoveToNext( move )
 	--Follow tracks
 	--Debug_Log( "moving-->" .. move:ToString() )
 
-	--check encounter in the new plot
-	if Move_CheckEncounter( move ) == true then
-		return true
-	end
-
 	--is route finished?
 	if not routeplot then
 		--MathUtil_Dump( path )
 		--InputUtil_Pause( "FINISH PATH" )
 		return false
 	end
+
+	Move_Debug( move, "moveto=" .. nextplot:ToString() )
 
 	Move_AddToPlot( move )
 
@@ -151,9 +192,15 @@ end
 
 --return weather finish the move
 local function Move_DoAction( move )
-	if Asset_Get( move, MoveAssetID.STATUS ) ~= MoveStatus.MOVING then return end
+	if Asset_Get( move, MoveAssetID.STATUS ) ~= MoveStatus.MOVING then
+		Move_Debug( move, "not moving" )
+		return
+	end
 
-	if Move_MoveToNext( move ) == true then return false end
+	if Move_MoveToNext( move ) == true then
+		--haven't reach the destination
+		return false
+	end
 	
 	--reach the destination
 	Asset_Set( move, MoveAssetID.END_TIME, g_Time:GetDateValue() )
@@ -175,7 +222,7 @@ local function Move_DoAction( move )
 	end
 	
 	Log_Write( "move", actor:ToString("LOCATION") .. " move to=" .. dest:ToString() )
-	Debug_Log( actor:ToString() .. " move to " .. dest:ToString() )
+	--Debug_Log( actor:ToString() .. " move to " .. dest:ToString() )
 
 	Message_Post( MessageType.ARRIVE_DESTINATION, { actor = Asset_Get( move, MoveAssetID.ACTOR ), destination = Asset_Get( move, MoveAssetID.DEST_PLOT ) } )
 
@@ -206,9 +253,11 @@ local function Move_Update( move )
 		movement = Move_GetCharaMovement( actor )
 	end
 	Asset_Plus( move, MoveAssetID.PROGRESS, movement )
+
+	--Move_Debug( move, "update mv=" .. movement .. " role=" .. role )
 	
 	if move:IsArrived() then
-		table.insert( _plotMoves, move )
+		_plotMoves[move.id] = move
 		return
 	end
 	
@@ -281,8 +330,8 @@ function MoveSystem:Update()
 	Entity_Foreach( EntityType.MOVE, Move_Update )
 
 	--do actions
-	for _, move in ipairs( _plotMoves ) do
-		if move and Move_DoAction( move ) == true then
+	for _, move in pairs( _plotMoves ) do
+		if Move_DoAction( move ) == true then
 			local actor = Asset_Get( move, MoveAssetID.ACTOR )			
 			Log_Write( "move", actor:ToString() .. " arrive destc=" .. String_ToStr( Asset_Get( move, MoveAssetID.TO_CITY ), "name" ) .. " destp=" .. Asset_Get( move, MoveAssetID.DEST_PLOT ):ToString() )
 			if Asset_Get( move, MoveAssetID.ROLE ) == MoveRole.CORPS then
@@ -322,7 +371,7 @@ end
 
 function MoveSystem:MoveC2C( actor, fromCity, toCity, type )
 	if fromCity == toCity then
-		DBG_Warning( actor:ToString(), "already in", toCity:ToString() )
+		DBG_TrackBug( actor:ToString() .. " already in=" .. fromCity.name )
 		return
 	end
 
@@ -333,10 +382,6 @@ function MoveSystem:MoveC2C( actor, fromCity, toCity, type )
 	end
 	if self._actors[actor] then
 		InputUtil_Pause( actor:ToString() .. " is moving" )
-		--[[
-		print( "actors")
-		MathUtil_Dump( self._actors )
-		]]
 		return
 	end
 
@@ -356,6 +401,8 @@ function MoveSystem:MoveC2C( actor, fromCity, toCity, type )
 
 	Stat_Add( "Move@Start", actor:ToString() .. " move from=" .. fromCity.name .. " to " .. toCity.name, StatType.LIST )
 
+	Move_Debug( move, "moving" )
+
 	--Debug_Log( actor:ToString( "LOCATION" ) .. " try to move from=" .. fromCity:ToString() .. " to " .. toCity:ToString() )
 	return move
 end
@@ -373,6 +420,7 @@ end
 function MoveSystem:StopMoving( actor )
 	local move = self._actors[actor]
 	if move then
+		Move_Debug( move, "cancel move" )
 		Log_Write( "move", "cancel move=" .. actor:ToString() .. " moveto destc=" .. String_ToStr( Asset_Get( move, MoveAssetID.TO_CITY ), "name" ) .. " destp=" .. Asset_Get( move, MoveAssetID.DEST_PLOT ):ToString() )
 		Debug_Log( "cancel move", move:ToString() )
 		self._actors[actor] = nil
@@ -383,6 +431,7 @@ end
 function MoveSystem:StartMoving( actor )
 	local move = self._actors[actor]
 	if move then
+		Move_Debug( move, "start move" )
 		--InputUtil_Pause( "resume moving", move:ToString() )
 		Asset_Set( move, MoveAssetID.STATUS, MoveStatus.MOVING )
 	end

@@ -7,10 +7,10 @@ IntelAssetType =
 
 IntelAssetID = 
 {
-	TYPE          = 1,
-	SOURCE        = 2,
-	PARAMS        = 3,
-	SPYS_DURATION = 4,
+	TYPE           = 1,
+	SOURCE         = 2,
+	PARAMS         = 3,
+	SPYS_EXPRESSES = 4,
 }
 
 IntelAssetAttrib = 
@@ -18,7 +18,7 @@ IntelAssetAttrib =
 	type     = AssetAttrib_SetPointer( { id = IntelAssetID.TYPE,   type = IntelAssetType.BASE_ATTRIB } ),
 	source   = AssetAttrib_SetPointer( { id = IntelAssetID.SOURCE, type = IntelAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
 	params   = AssetAttrib_SetDict   ( { id = IntelAssetID.PARAMS, type = IntelAssetType.BASE_ATTRIB } ),
-	spy_durs = AssetAttrib_SetDict   ( { id = IntelAssetID.SPYS_DURATION,   type = IntelAssetType.BASE_ATTRIB } ),
+	spy_expresses = AssetAttrib_SetDict   ( { id = IntelAssetID.SPYS_EXPRESSES,   type = IntelAssetType.BASE_ATTRIB } ),
 }
 
 

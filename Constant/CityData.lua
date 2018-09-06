@@ -1,16 +1,39 @@
 
 ----------------------------------------------
 -- City population structure
+--
+-- Feature:
+--
+-- Abbreviate
+--
+-- AGRI * 100 -> POPULATION
+-- AGRI * 65  -> FARMER
+-- FARMER * 2 -> FOOD 
+--
 
+DefaultCitySupply =
+{
+	------------------------------
+	--Agriculture
+
+	--measure 1 argiculture can supply how many population
+	AGRI_SUPPLY_POPU = 100,
+}
+
+--Concept: 
+--  1. Food Harvest/Consume Unit : 1 means 100 grams( per day )
+--  2. One farmer can supply 2 population normally
 DefaultCityPopuHarvest = 
 {
-	FARMER   = 100,
+	FARMER   = 500,
 }
 
 DefaultCityPopuConsumeFood = 
 {
-	--RESERVES = 2,
-	--SOLDIER  = 2,
+	RESERVES = 15,
+	SOLDIER  = 20,
+	GUARD    = 12,
+	CORVEE   = 10,
 	--[[
 	OFFICER  = 1,
 	BACHELOR = 1,
@@ -66,42 +89,49 @@ DefaultCityPopuDevelopCost =
 
 DefaultCityPopuInit = 
 {
-	RESERVES = { min = 60, max = 120 },	
+	RESERVES = { min = 60,  max = 120 },	
 
-	HOBO     = { min = 60, max = 240 },
-	CHILDREN = { min = 60, max = 120 },
-	OLD      = { min = 60, max = 120 },
+	HOBO     = { min = 60,  max = 240 },
+	CHILDREN = { min = 60,  max = 120 },
+	OLD      = { min = 60,  max = 120 },
 
-	CORVEE   = { min = 40, max = 80 },
+	FARMER   = { min = 100, max = 150 },
+	WORKER   = { min = 60,  max = 120 },
+	MERCHANT = { min = 60,  max = 120 },
+	CORVEE   = { min = 40,  max = 80 },
 
-	MIDDLE   = { min = 80, max = 120 },
+	MIDDLE   = { min = 80,  max = 120 },
 
-	BACHELOR = { min = 40, max = 120 },
-	OFFICER  = { min = 40, max = 120 },
-	GUARD    = { min = 20, max = 80 },
+	BACHELOR = { min = 40,  max = 120 },
+	OFFICER  = { min = 40,  max = 120 },
+	GUARD    = { min = 20,  max = 80 },
 
-	RICH     = { min = 20, max = 120 },
-	NOBLE    = { min = 20, max = 120 },
+	RICH     = { min = 20,  max = 120 },
+	NOBLE    = { min = 20,  max = 120 },
 }
 
 --IMPT, affect initialize of the population structure
+--  req   : means percent of population
+--  limit : means maximum percent of population
 DefaultCityPopuNeed = 
 {
+	PLEB     = { req = 0.5,   limit = 0.8 },
+
 	RESERVES = { req = 0.005, limit = 0.02 },
 
 	HOBO     = { req = 0.005, limit = 0.1 },
 	CHILDREN = { req = 0.15,  limit = 0.35 },
 	OLD      = { req = 0.05,  limit = 0.3 },	
 
-	FARMER   = { req = 0.3,   limit = 0.8 },
-	WORKER   = { req = 0.2,   limit = 0.4 },
-	MERCHANT = { req = 0.1,   limit = 0.2 },
-	CORVEE   = { req = 0.01,  limit = 0.1 },
+	FARMER   = { req = 0.65,  limit = 0.8 },
+	WORKER   = { req = 0.1,   limit = 0.3 },
+	MERCHANT = { req = 0.05,  limit = 0.15 },
+	CORVEE   = { req = 0.05,  limit = 0.1 },
 
 	MIDDLE   = { req = 0.05,  limit = 0.2 },
 
-	OFFICER  = { req = 0.005, limit = 0.02 },
-	BACHELOR = { req = 0.002, limit = 0.01 },
+	OFFICER  = { req = 0.005, limit = 0.01 },
+	BACHELOR = { req = 0.005, limit = 0.01 },
 	GUARD    = { req = 0.005, limit = 0.01 },
 
 	RICH     = { req = 0.005, limit = 0.01 },
@@ -144,13 +174,6 @@ DefaultCityPopuMentalMin =
 	HOBO     = -20,
 }
 
-DefaultCityPopuPerUnit =
-{
-	FARMER   = 40,  --need farmer per agriculture
-	WORKER   = 20,  --need worker per production
-	MERCHANT = 10,  --need merchant per commerce
-}
-
 DefaultCityPopuConv = 
 {
 	--guard 
@@ -173,16 +196,16 @@ DefaultCityPopuConv =
 	{ from = "MIDDLE",   to = "RICH",     sat_more_than = 75, prob = 20 },	
 
 	--high to low
-	{ from = "FARMER",   to = "HOBO", sec_less_than = 40, prob = 40, force_conv = true },
-	{ from = "WORKER",   to = "HOBO", sec_less_than = 40, prob = 40, force_conv = true },
-	{ from = "MERCHANT", to = "HOBO", sec_less_than = 40, prob = 40, force_conv = true },
-	{ from = "MIDDLE",   to = "HOBO", sec_less_than = 30, prob = 30, force_conv = true },
-	{ from = "MIDDLE",   to = "CORVEE",  sec_more_than = 40, prob = 30, force_conv = true },
+	{ from = "FARMER",   to = "HOBO",     sec_less_than = 40, prob = 40, force_conv = true },
+	{ from = "WORKER",   to = "HOBO",     sec_less_than = 40, prob = 40, force_conv = true },
+	{ from = "MERCHANT", to = "HOBO",     sec_less_than = 40, prob = 40, force_conv = true },
+	{ from = "MIDDLE",   to = "HOBO",     sec_less_than = 30, prob = 30, force_conv = true },
+	{ from = "MIDDLE",   to = "CORVEE",   sec_more_than = 40, prob = 30, force_conv = true },
 
-	{ from = "OFFICER",  to = "MIDDLE", sat_less_than = 40, prob = 20, force_conv = true },
-	{ from = "BACHELOR", to = "MIDDLE", sat_less_than = 35, prob = 20, force_conv = true },
-	{ from = "RICH",     to = "MIDDLE", sat_less_than = 30, sec_less_than = 30, prob = 10, force_conv = true },
-	{ from = "NOBLE",    to = "MIDDLE", sat_less_than = 25, sec_less_than = 25, prob = 10, force_conv = true },
+	{ from = "OFFICER",  to = "MIDDLE",   sat_less_than = 40, prob = 20, force_conv = true },
+	{ from = "BACHELOR", to = "MIDDLE",   sat_less_than = 35, prob = 20, force_conv = true },
+	{ from = "RICH",     to = "MIDDLE",   sat_less_than = 30, sec_less_than = 30, prob = 10, force_conv = true },
+	{ from = "NOBLE",    to = "MIDDLE",   sat_less_than = 25, sec_less_than = 25, prob = 10, force_conv = true },
 }
 
 --rate unit is 1 per 10000
@@ -227,6 +250,7 @@ DefaultCityPopuStructureParams =
 {
 	[1] = 
 	{
+		POPU_SUPPLY       = DefaultCitySupply,
 		POPU_HARVEST      = DefaultCityPopuHarvest,
 		POPU_PRODUCE      = DefaultCityPopuProduce,
 		POPU_PERSONAL_TAX = DefaultCityPopuPersonalTax,	
@@ -238,12 +262,9 @@ DefaultCityPopuStructureParams =
 
 		--use to initialize population structure in city
 		POPU_INIT         = DefaultCityPopuInit,
-		
-		--reveal the productive of the scenario time
-		POPU_PER_UNIT     = DefaultCityPopuPerUnit,
-		
-		--reveal the manpower requirement of each job in the city
 		POPU_NEED_RATIO   = DefaultCityPopuNeed,
+
+		--reveal the manpower requirement of each job in the city		
 		POPU_MENTAL_RATIO = DefaultCityPopuMental,		
 		POPU_MENTAL_MAX   = DefaultCityPopuMentalMax,		
 		POPU_MENTAL_MIN   = DefaultCityPopuMentalMin,

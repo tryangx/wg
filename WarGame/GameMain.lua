@@ -15,7 +15,7 @@ require "GameData"
 ------------------------------
 
 function Game_Init()	
-	g_gameSeed = 1535709326--os.time()
+	g_gameSeed = 1536141028--os.time()
 
 	-- Initialize random generator
 	Random_SetSeed( g_gameSeed )
@@ -55,7 +55,6 @@ function Game_Init()
 	Scenario_InitData()
 
 	local date = Scenario_GetData( "BASE_DATA" )
-
 	g_Time:SetDate( date.start_date.year, date.start_date.month, date.start_date.day, date.start_date.year < 0 and true or false )
 
 	-- Initialize Entity
@@ -327,9 +326,13 @@ function Game_Start()
 	Debug_Normal( "Dipl==>" .. Entity_Number( EntityType.RELATION ) ) Entity_Foreach( EntityType.RELATION, function( entity ) Debug_Normal( entity:ToString( "ALL" ) ) end )
 	Debug_Normal( "Combat==>" .. Entity_Number( EntityType.COMBAT ) ) Entity_Foreach( EntityType.COMBAT, function( entity ) Debug_Normal( entity:ToString( "ALL" ) ) end )
 
+	Debug_Normal( "turn=" .. g_Time:ToString() )
+
 	Random_Result()
 
 	GameMap_Draw( g_map )
 
+	local date = Scenario_GetData( "BASE_DATA" )
+	print( "From:", g_Time:CreateDateDesc( date.start_date.year, date.start_date.month, date.start_date.day, date.start_date.year < 0 and true or false ) )
 	print( g_Time:CreateCurrentDateDesc(), "win=" .. ( g_winner and g_winner.name or "[NONE]" ) )
 end

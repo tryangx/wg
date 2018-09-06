@@ -205,6 +205,11 @@ local function Meeting_Update( meeting )
 	if totalSubmit == 0 then Stat_Add( "Meeting@Waste", g_Time:ToString() .. " " .. city.name .. " n=" .. Asset_GetListSize( meeting, MeetingAssetID.PARTICIPANTS ), StatType.LSIT ) end
 
 	local content = g_Time:ToString() .. " " .. city.name .. " sp=" .. String_ToStr( superior, "name" ) .. " meeting over, n=" .. Asset_GetListSize( meeting, MeetingAssetID.PARTICIPANTS ) .. " num_p=" .. totalSubmit
+
+	content = content .. " charas="
+	Asset_Foreach( city, CityAssetID.OFFICER_LIST, function ( data )
+		content = content .. MathUtil_FindName( CityJob, data.job ) .. "=" .. data.officer.name .. ","
+	end)
 	Log_Write( "meeting", content )
 	DBG_Watch( "Debug_Meeting", content )
 end

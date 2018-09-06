@@ -418,7 +418,7 @@ end
 --[[
 	This is not really remove, just set id to nil
 	
-	@param target It's item in the list which should be 'removed'
+	@param target is the item in the list which should be 'removed'
 ]]
 function MathUtil_RemoveAndReserved( list, target, name )
 	if not list then return end
@@ -440,6 +440,9 @@ function MathUtil_RemoveAndReserved( list, target, name )
 	return false
 end
 
+--[[
+	
+]]
 function MathUtil_Remove( list, target, name )
 	if not list then 
 		print( "List is invalid", list, target, name )

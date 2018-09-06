@@ -125,21 +125,19 @@ function Plot:InitGrowth( params )
 	end
 
 	--2nd, determine the current development indexs by any method	
-	local min, max = 60, 90--30, 60
+	local min, max = 40, 90
 	Asset_Set( self, PlotAssetID.AGRICULTURE, math.ceil( Random_GetInt_Sync( min, max ) * 0.01 * Asset_Get( self, PlotAssetID.MAX_AGRICULTURE ) ) )
 	Asset_Set( self, PlotAssetID.COMMERCE,    math.ceil( Random_GetInt_Sync( min, max ) * 0.01 * Asset_Get( self, PlotAssetID.MAX_COMMERCE ) ) )
 	Asset_Set( self, PlotAssetID.PRODUCTION,  math.ceil( Random_GetInt_Sync( min, max ) * 0.01 * Asset_Get( self, PlotAssetID.MAX_PRODUCTION ) ) )
-	
-	--3rd, determine the population of each career in the population struction depends on the development indexs
-	local agr    = Asset_Get( self, PlotAssetID.AGRICULTURE )
-	local popuType = "FARMER"
-	local outputFood = DefaultCityPopuHarvest[popuType] * DefaultCityPopuPerUnit[popuType] * agr
-	local supplyPopu = math.ceil( outputFood / DAY_IN_YEAR )
 
-	local totalPopu = supplyPopu / DefaultCityPopuNeed.FARMER.req
-	local popu = math.ceil( totalPopu * Random_GetInt_Sync( 100, 250 ) * 0.01 )
+	--3rd, determine the population of each career in the population struction depends on the development indexs
+	local city         = Asset_Get( self, PlotAssetID.CITY )
+	local supplyParams = City_GetPopuParams( city ).POPU_SUPPLY
+	local agr          = Asset_Get( self, PlotAssetID.AGRICULTURE )	
+	local supplyPopu   = agr * supplyParams.AGRI_SUPPLY_POPU
+	local popu         = math.ceil( supplyPopu * Random_GetInt_Sync( 60, 120 ) * 0.01 )
 	Asset_Set( self, PlotAssetID.POPULATION, popu )
-	--InputUtil_Pause( "supply=" .. supplyPopu, "ratio=" .. DefaultCityPopuNeed.FARMER.req, "set popu=" .. popu, DefaultCityPopuPerUnit[popuType] * agr )
+	--InputUtil_Pause( "agr=" .. agr, " supply=" .. supplyPopu, " popu=" .. popu )
 
 	--[[
 	print( "agr=" .. Asset_Get( self, PlotAssetID.AGRICULTURE ) )

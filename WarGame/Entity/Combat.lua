@@ -229,7 +229,8 @@ function Combat:ToString( type )
 	local city = Asset_Get( self, CombatAssetID.CITY )
 	if city then
 		content = content .. " @" .. String_ToStr( city, "name" )
-	else
+	end
+	if Asset_Get( self, CombatAssetID.PLOT ) then
 		content = content .. " pt=" .. Asset_Get( self, CombatAssetID.PLOT ):ToString()
 	end
 	content = content .. " typ=" .. MathUtil_FindName( CombatType, Asset_Get( self, CombatAssetID.TYPE ) )
@@ -238,7 +239,16 @@ function Combat:ToString( type )
 		content = content .. " date=" .. g_Time:CreateCurrentDateDesc()
 		content = content .. " day=" .. Asset_Get( self, CombatAssetID.DAY )
 	end
-	if type == "DEBUG_CORPS" then
+	if type == "DEBUG_CORPS" or type == "ALL" then
+		content = content .. " corps="
+		Asset_Foreach( self, CombatAssetID.ATK_CORPS_LIST, function( corps )
+			content = content .. corps:ToString( ) .. ","
+		end )
+		Asset_Foreach( self, CombatAssetID.DEF_CORPS_LIST, function ( corps )
+			content = content .. corps:ToString( ) .. ","
+		end )
+	end
+	if type == "DEBUG_TROOP" then
 		content = content .. " corps="
 		Asset_Foreach( self, CombatAssetID.ATK_CORPS_LIST, function( corps )
 			content = content .. corps:ToString( "MILITARY" ) .. ","
@@ -250,7 +260,8 @@ function Combat:ToString( type )
 		Asset_Foreach( self, CombatAssetID.TROOP_LIST, function ( troop )
 			content = content .. troop:ToString( "COMBAT" ) .. ","
 		end )
-	elseif type == "RESULT" then		
+	end
+	if type == "RESULT" then		
 		content = content .. " rsult=" .. MathUtil_FindName( CombatResult, Asset_Get( self, CombatAssetID.RESULT ) )
 		content = content .. " winner=" .. self:GetGroupName( self:GetWinner() )
 		content = content .. " date=" .. g_Time:CreateCurrentDateDesc()
@@ -1009,7 +1020,7 @@ function Combat:Prepare()
 	end
 	if atkWithdraw and defWithdraw then
 		--WriteCombatLog( self:ToString( "DEBUG_CORPS" ) )
-		InputUtil_Pause( "both withdraw" )
+		--InputUtil_Pause( "both withdraw" )
 		Asset_Set( self, CombatAssetID.RESULT, CombatResult.DRAW )
 		return CombatPrepareResult.BOTH_DECLINED
 	elseif atkWithdraw then

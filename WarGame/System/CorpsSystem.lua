@@ -495,6 +495,11 @@ function Corps_EstablishInCity( city, leader, purpose, troopNumber )
 	--put corps into city
 	city:CorpsJoin( corps )
 
+	--sanity checker
+	if corps:GetSoldier() == 0 then
+		DBG_TrackBug( "failed=" .. corps:ToString() .. " in=" .. city.name .. " reserves=" .. reserves )
+	end
+
 	--InputUtil_Pause( "est corps food=" .. reservedfood, food, Asset_GetListSize( corps, CorpsAssetID.TROOP_LIST ) )
 	
 	return corps
@@ -569,20 +574,19 @@ function Corps_Dispatch( corps, city )
 	Corps_Join( corps, city, true )
 end
 
-function Corps_AttackCity( corps, city, task )
+function Corps_AttackCity( corps, city )
 	--return Warefare_SiegeCombatOccur( corps, city )
-	Message_Post( MessageType.SIEGE_COMBAT_TRIGGER, { city = city, atk = corps, task = task } )
+	Message_Post( MessageType.SIEGE_COMBAT_TRIGGER, { city = city, atk = corps } )
 end
 
-function Corps_HarassCity( corps, city, task )
+function Corps_HarassCity( corps, city )
 	--return Warefare_HarassCombatOccur( corps, city )
-	Message_Post( MessageType.FIELD_COMBAT_TRIGGER, { city = city, atk = corps, task = task } )
+	Message_Post( MessageType.FIELD_COMBAT_TRIGGER, { city = city, atk = corps } )
 end
 
 --------------------------------------------------
 -- For COMBAT testing
 --------------------------------------------------
-
 function Corps_EstablishTest( params )
 	local corps = Entity_New( EntityType.CORPS )
 	corps.name = "Corps"

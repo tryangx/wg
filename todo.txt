@@ -25,12 +25,11 @@ To Do List
 [inprog] troop medal: kill troop + honor --> medals
 [inprog] reputation system( 1. can inc/dec, 2. affect all things like san5 )
 [inprog] influence system( 1. only increase, 2. dec in event or special situ )
+
 [inprog] add solider limitation/requirement, reduce the complex of algorithm about Establish CROPS/TROOP
 
 add task=DESTORY_DEFENSIVE
-
 add task=ASSASSINATE_CHARA
-
 refactor chara loyality 
 
 add chara skills / troop tactics etc

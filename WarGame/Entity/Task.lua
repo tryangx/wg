@@ -104,6 +104,10 @@ function Task:ToString( type )
 		content = content .. " wrk=" .. Asset_Get( self, TaskAssetID.WORKLOAD )
 		content = content .. " cmd=" .. Asset_Get( self, TaskAssetID.COMBAT_DAYS )
 		content = content .. " epd=" .. Asset_Get( self, TaskAssetID.ELPASED_DAYS )
+
+		if Asset_Get( self, TaskAssetID.TYPE ) == TaskType.INTERCEPT then			
+			content = content .. " tc=" .. Asset_GetDictItem( self, TaskAssetID.PARAMS, "TARGET_CORPS" ):ToString()
+		end
 	elseif type == "END" then
 		content = content .. " atr=" .. ( Asset_Get( self, TaskAssetID.ACTOR ):ToString() )
 		content = content .. " beg=" .. g_Time:CreateDateDescByValue( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )
