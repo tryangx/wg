@@ -190,6 +190,7 @@ function Task:ElpasedTime( time )
 end
 
 function Task:Contribute( actor, contribution )
+	if not contribution then return end
 	local data = Asset_GetDictItem( self, TaskAssetID.CONTRIBUTORS, actor.id )
 	if not data then
 		data = { actor = actor, value = 0 }

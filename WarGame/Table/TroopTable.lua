@@ -69,9 +69,9 @@ end
 
 function TroopTable_ListAbility( troop )
 	print( troop.name
-		.. " armor="  .. Asset_Get( troop, TroopAssetID.ARMOR )
-		.. " toughness="  .. Asset_Get( troop, TroopAssetID.TOUGHNESS )
-	    .. " movement="  .. Asset_Get( troop, TroopAssetID.MOVEMENT ) )
+		.. " armor="     .. troop:GetArmor()
+		.. " toughness=" .. troop:GetToughness()
+	    .. " movement="  .. troop:GetMovement() )
 end
 
 function TroopTable_List()
@@ -79,12 +79,13 @@ function TroopTable_List()
 end
 
 function TroopTable_GetPower( troop )
-	local armor     = Asset_Get( troop, TroopAssetID.ARMOR )
-	local toughness = Asset_Get( troop, TroopAssetID.TOUGHNESS )
-	local atk = 0
-	Asset_Foreach( troop, TroopAssetID.WEAPONS, function( weapon )
-		atk = atk + math.ceil( Asset_Get( weapon, WeaponAssetID.POWER ) * Asset_Get( weapon, WeaponAssetID.ACCURACY ) * 0.01 )
-	end )
+	local armor     = troop:GetArmor()
+	local toughness = troop:GetToughness()
+	local tableData = Asset_Get( troop, TroopAssetID.TABLEDATA )
+	local atk = 0	
+	for _, weapon in pairs( tableData.weapons ) do
+		atk = atk + weapon.weight + weapon.sharpness
+	end
 	local def = armor + toughness
 	return atk + def
 end

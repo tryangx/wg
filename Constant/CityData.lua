@@ -30,10 +30,10 @@ DefaultCityPopuHarvest =
 
 DefaultCityPopuConsumeFood = 
 {
-	RESERVES = 15,
-	SOLDIER  = 20,
-	GUARD    = 12,
-	CORVEE   = 10,
+	RESERVES = 1,
+	SOLDIER  = 2,
+	GUARD    = 1,
+	--CORVEE   = 1,
 	--[[
 	OFFICER  = 1,
 	BACHELOR = 1,
@@ -45,11 +45,12 @@ DefaultCityPopuConsumeFood =
 
 DefaultCityPopuSalary = 
 {
-	RESERVES = 10,
+	SOLDIER  = 2,
+	RESERVES = 1,
 
-	OFFICER  = 5,
-	BACHELOR = 5,
-	GUARD    = 5,
+	OFFICER  = 1,
+	BACHELOR = 2,
+	GUARD    = 1,
 
 	NOBLE    = 100,
 }
@@ -395,6 +396,7 @@ CitySpyParams =
 	--G4 known everything 
 	--G5 improve op success probability
 	INIT_GRADE  = 1,
+	MIN_GRADE   = 1,
 	REQ_GRADE   = 3,
 	MAX_GRADE   = 5,	
 	GRADE_INTEL = { 100, 200, 400, 1000 },
@@ -454,7 +456,7 @@ Default_CityBuildingData =
 		type = "DEVELOPMENT",
 		duration = 60,
 		effects = {},
-		prerequsite = { city_lv = 1, },
+		prerequsite = { city_lv = 1 },
 	},
 	[1000] = 
 	{

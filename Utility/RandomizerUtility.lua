@@ -17,10 +17,9 @@ function Randomizer:GetInt( min, max )
 	self.times = self.times + 1		
 	self.seed = ( self.seed * 32765 + 12345 ) % 2147483647
 	if min < max then
-		return self.seed % ( max - min ) + min
+		return self.seed % ( max - min + 1 ) + min
 	elseif min > max then
-		error( "rev " .. min ..","..max)
-		return self.seed % ( min - max ) + max
+		return self.seed % ( min - max + 1 ) + max
 	end
 	return min
 end

@@ -60,31 +60,14 @@ DefaultCharaGivenName =
 --------------------------------------------------------
 --Chara
 
+--
+-- atmoic = 
+-- {
+--
+-- }
+--
 DefaultCharaTrait = 
 {
-	LIBIDO       =
-	{
-		SELFISH       = 40,		
-		IRRITATION    = 40,
-		INSIDIOUS     = 40,		
-		DISPASSIONATE = -40,				
-		LOVE_MONEY    = 40,
-		LOVE_HONOR    = 40,
-
-		HARDWORK      = 40,
-	},
-	SEXLESS     =
-	{
-		SELFISH       = 20,		
-		AGGRESSIVE    = 60,
-		CONSERVATIVE  = 100,		
-		INSIDIOUS     = 40,		
-		IRRITATION    = -40,
-		DISPASSIONATE = 40,
-		LOVE_MONEY    = -40,
-		LOVE_HONOR    = -40,
-	},
-
 	IDEAL        =
 	{
 		AGGRESSIVE    = 20,
@@ -111,6 +94,7 @@ DefaultCharaTrait =
 		LOVE_MONEY    = 50,
 		LOVE_HONOR    = 50,
 	},
+
 	ACTIVELY     =
 	{
 		AGGRESSIVE   = 50,
@@ -131,26 +115,7 @@ DefaultCharaTrait =
 		LOVE_MONEY    = -20,
 		LOVE_HONOR    = -20,
 	},
-	STRONG       =
-	{
-		HARDWORK      = -20,
-		CAREFUL       = -50,
-		CARELESS      = 50,
-		IRRITATION    = 40,
-		LOVE_MONEY    = 20,
-		LOVE_HONOR    = 20,
-		SMART         = -40,
-		FOOLISH       = -40,
-	},
-	WEAK         =
-	{
-		HARDWORK      = 40,
-		CAREFUL       = 50,
-		CARELESS      = -50,
-		IRRITATION    = -40,
-		SMART         = 40,
-		FOOLISH       = -40,
-	},
+
 	INTROVERT    =
 	{
 		CAREFUL       = 50,
@@ -172,19 +137,21 @@ DefaultCharaTrait =
 	},
 }
 
+--"conditions"   means to learn the skill should match these conditions
 --"prerequisite" means these condition should always be satisfied
---"traits" means one of every subset conditions should be satisfied
+--"traits"       means one of every subset conditions should be satisfied
 DefaultCharaSkill = 
 {
 	[2000] =
 	{
-		name="HR expert",
-		effects = { HIRE_CHARA_BONUS = 150, },
-		prerequisite = { exp_above = 100 },
+		name="LOBBYIST", desc = "hr expert who is good at hiring chara",
+		effects =
+		{
+			{ type = "HIRE_CHARA_BONUS", value = 50 },
+		},		
 		conditions = 
 		{
-			{ trait = "OPEN", prob = 70 },
-			{ trait = "GENEROUS", prob = 30 },
+			{ pot_above = 50, prob = 30, traits = { "OPEN", "VOLUBLE", "CONFIDENCE" }, },
 		},
 		consume = { TACTIC = 100 },
 	},
@@ -192,179 +159,302 @@ DefaultCharaSkill =
 	[3010] =
 	{
 		name="Agri expert",
-		effects = { AGRICULTURE_BONUS = 150, },
-		prerequisite = { exp_above = 100 },
+		effects =
+		{
+			{ type = "AGRICULTURE_BONUS", value = 50 },
+		},
 		conditions = 
 		{
-			{ trait = "HARDWORK", prob = 60 },
-			{ trait = "CONSERVATIVE", prob = 40 },
+			{ pot_above = 30, prob = 30, traits = { "HARDWORK", "CONSERVATIVE" }, },
 		},
 	},
 	[3020] =
 	{
 		name="Comm expert",
-		effects = { COMMERCE_BONUS = 150, },
-		prerequisite = { exp_above = 100 },
+		effects =
+		{
+			{ type = "COMMERCE_BONUS", value = 50 },
+		},
 		conditions = 
 		{
-			{ trait = "HARDWORK", prob = 60 },
-			{ trait = "LOVE_MONEY", prob = 50 },
-			{ trait = "SELFISH", prob = 50 },
+			{ pot_above = 40, prob = 30, traits = { "ACCOUNTING" }, },
 		},
 	},
 	[3030] = 
 	{
 		name="Prod expert",
-		effects = { PRODUCTION_BONUS = 150, },
-		prerequisite = { exp_above = 100 },
+		effects =
+		{
+			{ type = "PRODUCTION_BONUS", value = 50 },
+		},
 		conditions = 
 		{
-			{ trait = "HARDWORK", prob = 60 },
-			{ trait = "AGGRESSIVE", prob = 40 },			
+			{ pot_above = 20, prob = 30, traits = { "HARDWORK", "AGGRESSIVE" }, },
 		},
 	},
 	[3040] =
 	{
 		name="Builder expert",
-		effects = { BUILD_BONUS = 150, },
-		prerequisite = { exp_above = 100 },
+		effects =
+		{
+			{ type = "BUILD_BONUS", value = 50 },
+		},
 		conditions = 
 		{
-			{ trait = "HARDWORK", prob = 50 },
-			{ trait = "CAREFUL", prob = 30 },			
+			{ pot_above = 35, prob = 30, traits = { "CLOSE", "HARDWORK", "CAREFUL" }, },
 		},
 	},
 	{
 		id=3050, name="Tax expert",
-		effects = { LEVY_TAX_BONUS = 150, },
-		prerequisite = { exp_above = 100 },
+		effects =
+		{
+			{ type = "LEVY_TAX_BONUS", value = 50 },
+		},
 		conditions = 
 		{
-			{ trait = "HARDWORK", prob = 30 },
-			{ trait = "LOVE_MONEY", prob = 50 },
+			{ pot_above = 30, prob = 30, traits = { "GREED", "CAREFUL" }, },
 		},
 	},
 
 	{
 		id=4010, name="SCOUT expert",
-		effects = { RECONNOITRE_BONUS = 150, },
-		prerequisite = { exp_above = 100 },
+		effects =
+		{
+			{ type = "RECONNOITRE_BONUS", value = 50 },
+		},
 		conditions = 
 		{
-			{ trait = "INSIDIOUS", prob = 50 },
-			{ trait = "CAREFUL", prob = 50 },
+			{ pot_above = 40, prob = 30, traits = { "OBSERVANT", "CAREFUL" }, },
 		},
 	},
 	{
-		id=4020, name="SPY expert",
-		effects = { SABOTAGE_BONUS = 150, },
-		prerequisite = { exp_above = 100 },
+		id=4020, name="Spy TypeB", desc = "who is good at operation likes sabotage",
+		effects =
+		{
+			{ type = "SABOTAGE_BONUS", value = 50 },
+		},
 		conditions = 
 		{
-			{ trait = "INSIDIOUS", prob = 50 },
-			{ trait = "CAREFUL", prob = 50 },
+			{ pot_above = 50, prob = 30, traits = { "OBSERVANT", "CAREFUL", "INSIDIOUS" }, },
+		},
+	},
+	{
+		id=4030, name="Spy TypeC", desc = "who is good at operation likes sabotage",
+		effects =
+		{
+			{ type = "ASSASSINATE", value = 50 },
+		},
+		conditions = 
+		{
+			{ pot_above = 50, prob = 30, traits = { "OBSERVANT", "CAREFUL", "INSIDIOUS" }, },
 		},
 	},
 
 	{
 		id=5010, name="dipl expert",
-		effects = { IMPROVE_RELATION_BONUS = 150, },
-		prerequisite = { exp_above = 100 },
+		effects =
+		{
+			{ type = "IMPROVE_RELATION_BONUS", value = 50 },
+		},
 		conditions = 
 		{
-			{ trait = "INSIDIOUS", prob = 50 },
-			{ trait = "SMART", prob = 50 },
-			{ trait = "OPEN", prob = 50 },			
+			{ pot_above = 60, prob = 20, traits = { "OPEN", "VOLUBLE", "GENEROUS" }, },
 		},
 	},
 	{
 		id=5020, name="pact expert",
-		effects = { SIGN_PACT_BONUS = 150, },
-		prerequisite = { exp_above = 100 },
+		effects =
+		{
+			{ type = "SIGN_PACT_BONUS", value = 50 },
+		},
 		conditions = 
 		{
-			{ trait = "INSIDIOUS", prob = 50 },
-			{ trait = "SMART", prob = 50 },
-			{ trait = "OPEN", prob = 50 },
+			{ pot_above = 60, prob = 20, traits = { "OPEN", "VOLUBLE", "DISPASSIONATE" }, },
 		},
 	},
 
 	{
 		id=6010, name="tech expert",
-		effects = { RESEARCH_BONUS = 150, },
-		prerequisite = { exp_above = 100 },
+		effects =
+		{
+			{ type = "RESEARCH_BONUS", value = 50 },
+		},
 		conditions = 
 		{
-			{ trait = "CAREFUL", prob = 50 },
-			{ trait = "HARDWORK", prob = 50 },
+			{ pot_above = 60, prob = 20, traits = { "CLOSE", "HARDWORK", "SMART", "CREATIVITY" }, },
 		},
 	},
 
 	{
 		id=7010, name="atk expert",
-		effects = { ATTACK = 150, },
-		prerequisite = { exp_above = 100 },
+		effects = 
+		{
+			{ type = "ORG_DAMAGE_BONUS", value = 20 },
+			{ type = "ORG_DAMAGE_BONUS", prob = 50, value = 10 },
+		},
 		conditions = 
 		{
-			{ traits = { "STRONG", "AGGRESSIVE" }, prob = 70 },
-			{ traits = { "STRONG", "IRRITABLE" }, prob = 70 },			
+			{ pot_above = 40, prob = 30, traits = { "HARDWORK", "BRAVE", "STRENGTH", "AGGRESSIVE" }, },
 		},
 	},
 	{
-		id=7020, name="def expert",
-		effects = { DEFEND = 150, },
-		prerequisite = { exp_above = 100 },
+		id=7010, name="infantry expert",
+		effects = 
+		{
+			{ type = "ORG_DAMAGE_BONUS", prob = 80, value = 10 },
+			{ type = "ORG_DAMAGE_RESIST", prob = 80, value = 10 },
+		},
 		conditions = 
 		{
-			{ trait = "CONSERVATIVE", prob = 50 },
-			{ trait = "CAREFUL", prob = 50 },
+			{ pot_above = 40, prob = 30, traits = { "HARDWORK", "STRENGTH", "CAREFUL", "CONSERVATIVE", }, },
 		},
 	},
 	{
-		id=7110, name="field expert",
-		effects = { FIELD_COMBAT_BONUS = 150, },
-		prerequisite = { exp_above = 100 },
+		id=7020, name="cavalry expert",
+		effects = 
+		{
+			{ type = "ORG_DAMAGE_BONUS", value = 10 },
+			{ type = "ORG_DAMAGE_RESIST", value = 10 },
+		},		
 		conditions = 
 		{
-			{ traits = { "STRONG", "INSIDIOUS" }, prob = 70 },
+			{ pot_above = 40, prob = 30, traits = { "HARDWORK", "STRENGTH", "AGGRESSIVE", "AGILITY", "BRAVE" }, },
 		},
 	},
 	{
-		id=7120, name="siege expert",
-		effects = { SIEGE_COMBAT_BONUS = 150, },
-		prerequisite = { exp_above = 100 },
+		id=7030, name="archer expert",
+		effects = 
+		{
+			{ type = "ORG_DAMAGE_BONUS", value = 10 },
+			{ type = "ORG_DAMAGE_RESIST", value = 10 },
+		},
 		conditions = 
 		{
-			{ traits = { "STRONG", "CAREFUL" }, prob = 30 },
+			{ pot_above = 40, prob = 30, traits = { "HARDWORK", "STRENGTH", "CONSERVATIVE", "DISPASSIONATE" }, },
+		},
+	},	
+	{
+		id=7040, name="siegeweapon expert",
+		effects = 
+		{
+			{ type = "ORG_DAMAGE_BONUS", value = 10 },
+			{ type = "ORG_DAMAGE_RESIST", value = 10 },
+		},
+		conditions = 
+		{
+			{ pot_above = 40, prob = 30, traits = { "HARDWORK", "STRENGTH", "DISPASSIONATE", "MECHANICAL" }, },
+		},
+	},
+	{
+		id=7100, name="def expert",
+		effects = 
+		{
+			{ type = "ORG_DAMAGE_RESIST", type = "ORG_DAMAGE_BONUS", value = 20 },
+			{ type = "ORG_DAMAGE_RESIST", prob = 50, value = 10 },
+		},
+		conditions = 
+		{
+			{ pot_above = 40, prob = 30, traits = { "HARDWORK", "STRENGTH", "CONSERVATIVE", "DISPASSIONATE", }, },
+		},
+	},
+	{
+		id=7200, name="field expert",
+		effects = 
+		{
+			{ type = "ORG_DAMAGE_BONUS", conditions = { "IS_FIELD_COMBAT", }, value = 10 },
+			{ type = "ORG_DAMAGE_BONUS", prob = 50, conditions = { "IS_FIELD_COMBAT", }, value = 15 },			
+			{ type = "ORG_DAMAGE_RESIST", conditions = { "IS_FIELD_COMBAT", }, value = 10 },
+			{ type = "ORG_DAMAGE_RESIST", prob = 60, conditions = { "IS_FIELD_COMBAT", }, value = 15 },
+		},
+		conditions = 
+		{
+			{ pot_above = 40, prob = 30, traits = { "HARDWORK", "STRENGTH", "DISPASSIONATE", "CAREFUL", "OPEN" }, },
+		},
+	},
+	{
+		id=7300, name="siege expert",
+		effects = 
+		{
+			{ type = "ORG_DAMAGE_BONUS", conditions = { "IS_SIEGE_COMBAT", }, value = 10 },
+			{ type = "ORG_DAMAGE_BONUS", prob = 50, conditions = { "IS_SIEGE_COMBAT", }, value = 15 },
+			{ type = "ORG_DAMAGE_RESIST", conditions = { "IS_SIEGE_COMBAT", }, value = 10 },
+			{ type = "ORG_DAMAGE_RESIST", prob = 60, conditions = { "IS_SIEGE_COMBAT", }, value = 15 },
+		},
+		conditions = 
+		{
+			{ pot_above = 40, prob = 30, traits = { "HARDWORK", "CONSERVATIVE", "DISPASSIONATE", "CAREFUL", "CLOSE" }, },
+		},
+	},
+	{
+		id=7400, name="Leadership Lv1",
+		effects = 
+		{
+			{ type = "ORGANIZATION_BONUS", value = 20 },
+		},
+		conditions = 
+		{
+			{ pot_above = 50, prob = 30, traits = { "CONFIDENCE", "CLOSE", "VOLUBLE", "OBSERVANT", "GENEROUS" }, },
+		},
+	},
+	{
+		id=7410, name="Commander Lv1",
+		effects = 
+		{
+			{ type = "MORALE_BONUS", value = 20 },
+		},
+		conditions = 
+		{
+			{ pot_above = 50, prob = 30, traits = { "CONFIDENCE", "OPEN", "VOLUBLE", "OBSERVANT", "AGGRESSIVE" }, },
 		},
 	},
 	{
 		id=7500, name="training expert",
-		effects = { TRAINING = 50, },
-		prerequisite = { exp_above = 100 },
+		effects = 
+		{
+			{ type = "TRAINING_BONUS", value = 20 },
+			{ type = "TRAINING_BONUS", prob = 80, value = 15 },
+			{ type = "TRAINING_BONUS", prob = 50, value = 15 },
+		},
 		conditions = 
 		{
-			--{ trait = "CAREFUL", prob = 30 },
+			{ pot_above = 50, prob = 30, traits = { "HARDWORK", "VOLUBLE", "OBSERVANT", "CAREFUL" }, },
+		},
+	},
+
+	--historical role
+	{
+		id=10000, name="Overlord of West Chu",
+		effects = 
+		{ 
+			{ type = "DAMAGE_BONUS",     value = 15 },
+			{ type = "ORG_DAMAGE_BONUS", value = 15 },
+			{ type = "DAMAGE_BONUS",     conditions = { "IS_FIELD_COMBAT", }, value = 10 },
+			{ type = "DAMAGE_BONUS",     conditions = { "IS_FIELD_COMBAT", "LEAD_CAVALRY" }, value = 20 },
+			{ type = "ORG_DAMAGE_BONUS", conditions = { "IS_FIELD_COMBAT" }, value = 10 },
+			{ type = "ORG_DAMAGE_BONUS", conditions = { "IS_FIELD_COMBAT", "LEAD_CAVALRY" }, value = 25 },
+		},
+		conditions = 
+		{
+			{ pot_above = 90, prob = 20, traits = { "HARDWORK", "VOLUBLE", "OBSERVANT", "CAREFUL" }, },
 		},
 	},
 	{
-		id=7510, name="Leadership Lv1",
-		effects = { LEADERSHIP = 30, },
-		prerequisite = { exp_above = 100 },
+		id=10001, name="GuoShiWuShuang",
+		effects = 
+		{
+			{ type = "DAMAGE_RESIST",     value = 15 },
+			{ type = "ORG_DAMAGE_RESIST", value = 15 },
+			{ type = "DAMAGE_RESIST",     prob = 80, value = 10 },
+			{ type = "ORG_DAMAGE_RESIST", prob = 80, value = 10 },
+			{ type = "DAMAGE_RESIST",     prob = 30, value = 5 },
+			{ type = "ORG_DAMAGE_RESIST", prob = 30, value = 5 },
+		},
 		conditions = 
 		{
-			--{ trait = "CAREFUL", prob = 30 },
+			{ pot_above = 90, prob = 20, traits = { "HARDWORK", "VOLUBLE", "OBSERVANT", "CAREFUL" }, },
 		},
 	},
 }
-
-DefaultTraitData = 
-{
-	{
-
-	},
-}
-
 
 DefaultJobPromoteData = 
 {

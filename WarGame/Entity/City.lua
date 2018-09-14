@@ -103,7 +103,7 @@ CityAssetAttrib =
 	DISS = AssetAttrib_SetNumber( { id = CityAssetID.DISS,  type = CityAssetType.GROWTH_ATTRIB,  min = 0, max = 100, default = 50 } ),
 
 	charas     = AssetAttrib_SetPointerList( { id = CityAssetID.CHARA_LIST,   type = CityAssetType.PROPERTY_ATTRIB, setter = Entity_SetChara } ),	
-	officers   = AssetAttrib_SetPointerList( { id = CityAssetID.OFFICER_LIST, type = CityAssetType.PROPERTY_ATTRIB, setter = Entity_SetChara } ),
+	officers   = AssetAttrib_SetPointerList( { id = CityAssetID.OFFICER_LIST, type = CityAssetType.PROPERTY_ATTRIB } ),
 	corps      = AssetAttrib_SetPointerList( { id = CityAssetID.CORPS_LIST,   type = CityAssetType.PROPERTY_ATTRIB, setter = Entity_SetCorps } ),
 	constrs    = AssetAttrib_SetPointerList( { id = CityAssetID.CONSTR_LIST,  type = CityAssetType.PROPERTY_ATTRIB, setter = Entity_SetConstruction } ),
 	prisoner   = AssetAttrib_SetPointerList( { id = CityAssetID.PRISONER_LIST,type = CityAssetType.PROPERTY_ATTRIB, setter = Entity_SetChara } ),
@@ -167,16 +167,7 @@ function City:ToString( type )
 			content = content .. constr.name .. ","
 		end)		
 	end
-	if type == "BRIEF" then
-		content = content .. "(" .. Asset_Get( self, CityAssetID.CENTER_PLOT ):ToString() ..  ")"
-		content = content .. " chars=" .. Asset_GetListSize( self, CityAssetID.CHARA_LIST )
-		content = content .. " corps=" .. Asset_GetListSize( self, CityAssetID.CORPS_LIST )
-		content = content .. " offr=" .. Asset_GetListSize( self, CityAssetID.OFFICER_LIST )
-		content = content .. " cons=" .. Asset_GetListSize( self, CityAssetID.CONSTR_LIST )
-		content = content .. " popu=" .. Asset_Get( self, CityAssetID.POPULATION )
-		content = content .. " resv=" .. self:GetPopu( CityPopu.RESERVES )
-	
-	elseif type == "OFFICER" then
+	if type == "OFFICER" then
 		content = content .. " chars=" .. Asset_GetListSize( self, CityAssetID.CHARA_LIST )
 		content = content .. " ofi=" .. Asset_GetListSize( self, CityAssetID.OFFICER_LIST )
 		Asset_Foreach( self, CityAssetID.OFFICER_LIST, function ( data )
@@ -190,13 +181,17 @@ function City:ToString( type )
 		local money   = Asset_Get( self, CityAssetID.MONEY )
 		local salary  = self:GetSalary()
 		content = content .. " money=" .. money
-		content = content .. "+" .. math.ceil( money / salary ) .. "M"
+		if false then
+			content = content .. "+" .. math.ceil( money / salary ) .. "M"
+		else
+			content = content .. "+" .. math.ceil( money ) .. "P"
+		end
 		content = content .. " food=" .. food
 		--content = content .. "-" .. consume
-		if consume + supply > 0 then
+		if false and consume + supply > 0 then
 			content = content .. "+" .. math.ceil( food / ( DAY_IN_MONTH * ( consume + supply ) ) ) .."M" .. "(" .. consume .. "+" .. supply .. ")"
 		else
-			content = content .. "+" .. math.ceil( food / DAY_IN_YEAR * 10 ) .."P"
+			content = content .. "+" .. math.ceil( food / DAY_IN_YEAR ) .."P"
 		end
 		content = content .. " mat=" .. Asset_Get( self, CityAssetID.MATERIAL )
 
@@ -281,13 +276,20 @@ function City:ToString( type )
 			end
 		end)
 	end	
-	
-	if type == "MILITARY" or type == "ALL" then
-		content = content .. " popu=" .. Asset_Get( self, CityAssetID.POPULATION )
+
+	if type == "ALL" then
+		content = content .. "(" .. Asset_Get( self, CityAssetID.CENTER_PLOT ):ToString() ..  ")"
 		content = content .. " chars=" .. Asset_GetListSize( self, CityAssetID.CHARA_LIST )
 		content = content .. " corps=" .. Asset_GetListSize( self, CityAssetID.CORPS_LIST )
-		content = content .. " sldr=" .. self:GetSoldier()
-		content = content .. " resv=" .. self:GetPopu( CityPopu.RESERVES )
+		content = content .. " offr=" .. Asset_GetListSize( self, CityAssetID.OFFICER_LIST )
+		content = content .. " cons=" .. Asset_GetListSize( self, CityAssetID.CONSTR_LIST )
+		content = content .. " popu=" .. Asset_Get( self, CityAssetID.POPULATION )
+	end
+	
+	if type == "MILITARY" or type == "ALL" then
+		content = content .. " popu="  .. Asset_Get( self, CityAssetID.POPULATION )
+		content = content .. " sldr="  .. self:GetSoldier()
+		content = content .. " resv="  .. self:GetPopu( CityPopu.RESERVES )
 		content = content .. " guard=" .. self:GetPopu( CityPopu.GUARD )
 	end
 
@@ -522,36 +524,27 @@ function City:GetTransCapacity()
 end
 
 function City:GetMaxBulidArea()
-	local area = 10
-	local center = Asset_Get( self, CityAssetID.CENTER_PLOT )
-	local template = Asset_Get( center, PlotAssetID.TEMPLATE )	
-	if template.type == PlotType.LAND then
-		area = 16
-	elseif template.type == PlotType.HILLS then
-		area = 8
-	elseif template.type == PlotType.MOUNTAIN then
-		area = 4
-	elseif template.type == PlotType.WATER then
-		area = 12
-	end
-
-	if template.terrain == PlotTerrainType.PLAINS then
-		area = area + 4
-	elseif template.terrain == PlotTerrainType.GRASSLAND then
-		area = area + 4
-	elseif template.terrain == PlotTerrainType.DESERT then
-		area = area - 4
-	elseif template.terrain == PlotTerrainType.TUNDRA then
-		area = area - 2
-	elseif template.terrain == PlotTerrainType.SNOW then
-		area = area - 2
-	elseif template.terrain == PlotTerrainType.LAKE then
-	elseif template.terrain == PlotTerrainType.COAST then
-		area = area - 2
-	elseif template.terrain == PlotTerrainType.OCEAN then
-		area = 0
-	end
-	return math.max( 2, area )
+	local area = 0
+	Asset_Foreach( self, CityAssetID.PLOTS, function ( plot )
+		local template = Asset_Get( plot, PlotAssetID.TEMPLATE )	
+		if template.type == PlotType.LAND then
+			area = area + 4
+		elseif template.type == PlotType.HILLS then
+			area = area + 1
+		end
+		if template.terrain == PlotTerrainType.PLAINS then
+			area = area + 2
+		elseif template.terrain == PlotTerrainType.GRASSLAND then
+			area = area + 1
+		elseif template.terrain == PlotTerrainType.DESERT then
+		elseif template.terrain == PlotTerrainType.TUNDRA then
+		elseif template.terrain == PlotTerrainType.SNOW then
+		elseif template.terrain == PlotTerrainType.LAKE then
+		elseif template.terrain == PlotTerrainType.COAST then
+		elseif template.terrain == PlotTerrainType.OCEAN then
+		end
+	end)
+	return math.max( 10, area )
 end
 
 --get number of population structure 
@@ -784,10 +777,22 @@ end
 function City:FindNonOfficerFreeCharas( charaList )
 	if not charaList then charaList = {} end
 	Asset_Foreach( self, CityAssetID.CHARA_LIST, function( chara )
-		if chara:IsAtHome() == false then return end
-		if chara:IsBusy() == true then return end
-		if Asset_Get( chara, CharaAssetID.CORPS ) then return end
-		if self:GetCharaJob( chara ) ~= CityJob.NONE then return end
+		if chara:IsAtHome() == false then
+			--print( chara.name .. " not at home" )
+			return
+		end
+		if chara:IsBusy() == true then
+			--print( chara.name .. " is busy" )
+			return
+		end
+		if Asset_Get( chara, CharaAssetID.CORPS ) then
+			--print( chara.name .. " has corps" )
+			return
+		end
+		if self:GetCharaJob( chara ) ~= CityJob.NONE then
+			--print( chara.name .. " has job" )
+			return
+		end
 		table.insert( charaList, chara )
 	end )
 	return charaList
@@ -994,8 +999,6 @@ function City:AssignOfficer()
 		return
 	end
 
-	Debug_Log( self:ToString("OFFICER"),  #charaList, #jobList )
-
 	--fill vacancy position
 	local vacancies = #charaList - #jobList
 	while vacancies > 0 do
@@ -1005,9 +1008,8 @@ function City:AssignOfficer()
 		--print( "add ", MathUtil_FindName( CityJob, job ), job )
 	end
 
-	for k, chara in ipairs( charaList ) do
-		Debug_Log( k, chara.name )
-	end
+	Debug_Log( "assignofficer-->" .. self:ToString("OFFICER"),  "chara=" .. #charaList, "job=" .. #jobList )
+	--for k, chara in ipairs( charaList ) do Debug_Log( k, chara.name ) end
 
 	local jobIndex = 1
 	while #charaList > 0 do
@@ -1016,19 +1018,23 @@ function City:AssignOfficer()
 		local chara = Chara_FindBestCharaForJob( job, charaList )
 		self:SetOfficer( chara, job )
 	end
+
+	Debug_Log( "assignofficer end" .. self:ToString("OFFICER") )
 end
 
 --exclude executive
 function City:RemoveOfficer( chara )
 	local job = self:GetCharaJob( chara )
 	if job == CityJob.NONE then	return end
-	Debug_Log( "remove job=" .. MathUtil_FindName( CityJob, job ), chara:ToString( "STATUS")  )
-	Asset_RemoveListItem( self, CityAssetID.OFFICER_LIST, chara, "officer" )end
+
+	Debug_Log( "remove job=" .. MathUtil_FindName( CityJob, job ), chara:ToString( "STATUS" )  )
+	Asset_RemoveListItem( self, CityAssetID.OFFICER_LIST, chara, "officer" )
+end
 
 function City:ClearOfficer()
-	local executive = self:GetOfficer( CityJob.EXECUTIVE )
+	local officer = self:GetOfficer( CityJob.EXECUTIVE )
 	Asset_Clear( self, CityAssetID.OFFICER_LIST )
-	self:SetOfficer( executive, CityJob.EXECUTIVE )
+	self:SetOfficer( officer, CityJob.EXECUTIVE )
 end
 
 function City:SetOfficer( chara, job )
@@ -1039,11 +1045,29 @@ function City:SetOfficer( chara, job )
 		DBG_Error( chara.name .. " already has a job=" .. MathUtil_FindName( CityJob, oldJob ) .. " newjob=" .. MathUtil_FindName( CityJob, job ) )
 	end
 
-	Asset_AppendList( self, CityAssetID.OFFICER_LIST, { officer = chara, job = job } )	
-	Debug_Log( self.name, "Assign " .. chara.name .. "-->" .. MathUtil_FindName( CityJob, job ) )
-	Stat_Add( "SetOfficer@" .. self.name, 1, StatType.TIMES )
+	--sanity checker
+	Asset_Foreach( self, CityAssetID.OFFICER_LIST, function ( data )
+		--print( chara.name, MathUtil_FindName( CityJob, job ) )
+		if data.officer == chara then
+			DBG_Error( "why add officer duplicated", chara.name, MathUtil_FindName( CityJob, job ) 	)
+		end
+	end)
 
-	--InputUtil_Pause( "set officer", chara.name, MathUtil_FindName( CityJob, job ) )
+	Asset_AppendList( self, CityAssetID.OFFICER_LIST, { officer = chara, job = job } )
+	Debug_Log( self.name, "Assign " .. chara.name .. "-->" .. MathUtil_FindName( CityJob, job ) )	
+	Stat_Add( "SetOfficer@" .. self.name, chara.name .. "=" .. MathUtil_FindName( CityJob, job ) .. " " .. g_Time:ToString(), StatType.LIST )
+	Stat_Add( "SetPosition@" .. chara.name, MathUtil_FindName( CityJob, job ) .. " " .. self.name .. " " .. g_Time:ToString(), StatType.LIST )
+end
+
+--------------------------------------------
+
+function City:BuildConstruction( constr )
+	--to avoid duplicated checker, insert the construction manually
+	local list = Asset_GetList( self, CityAssetID.CONSTR_LIST )
+	table.insert( list, constr )
+
+	Stat_Add( "BuildConstr", 1, StatType.TIMES )
+	Stat_Add( self.name .. "@Build", constr.name, StatType.LIST )
 end
 
 --------------------------------------------
@@ -1093,6 +1117,15 @@ function City:Update()
 		--dismiss
 		if month == 1 then self:ClearOfficer() end
 		self:AssignOfficer()
+
+		--sanity checker
+		if Asset_GetListSize( self, CityAssetID.CHARA_LIST ) > Asset_GetListSize( self, CityAssetID.OFFICER_LIST ) + Asset_GetListSize( self, CityAssetID.OFFICER_LIST ) then
+			--too many chara isn't officer, why?
+			Asset_Foreach( self, CityAssetID.CHARA_LIST, function ( chara )
+				--print( self.name .. " chara=" .. chara:ToString("TASK") .. " officer=" .. MathUtil_FindName( CityJob, self:GetCharaJob( chara ) ) )
+			end )
+			--InputUtil_Pause( self:ToString( "OFFICER" ) )
+		end
 	end
 
 	--print( self.name, "food=" .. Asset_Get( self, CityAssetID.FOOD ))
@@ -1138,15 +1171,17 @@ function City:GetSpy( city )
 end
 
 --execute an op will lose spy
-function City:LoseSpy( city, grade )
+function City:LoseSpy( city, decGrade )
 	local spy = self:GetSpy( city )
-	
-	Intel_LoseSpy( spy )
-	
-	if not grade then grade = -1 end
+
+	if not decGrade then decGrade = -1 end
 	spy.intel = math.ceil( spy.intel * 0.5 )
-	spy.grade = MathUtil_Clamp( spy.grade - grade, CitySpyParams.INIT_GRADE, CitySpyParams.MAX_GRADE )
+	spy.grade = MathUtil_Clamp( spy.grade - decGrade, CitySpyParams.INIT_GRADE, CitySpyParams.MAX_GRADE )
 	Stat_Add( "LoseSpy@" .. city.name, 1, StatType.TIMES )
+
+	if spy.grade <= CitySpyParams.MIN_GRADE then
+		--Intel_EvacuateSpy( spy )
+	end
 end
 
 function City:Reconnoitre( city, intel )
@@ -1173,6 +1208,18 @@ function City:DestroyDefensive()
 
 	Asset_SetDictItem( self, CityAssetID.STATUSES, CityStatus.VIGILANT, DAY_IN_SEASON )	
 end
+
+function City:Assassinate( target, killer )
+	--!!!Should test the case about the leader of outside-corps
+	Chara_Die( target )
+
+	Stat_Add( "Assassinate", target:ToString() .. " by " .. killer:ToString(), StatType.LIST )
+	--InputUtil_Pause( target:ToString() .. " was assassinated" )
+
+	Asset_SetDictItem( self, CityAssetID.STATUSES, CityStatus.VIGILANT, DAY_IN_SEASON )	
+end
+
+---------------------------------------
 
 function City:UseMoney( money, comment )
 	Asset_Reduce( self, CityAssetID.MONEY, money )

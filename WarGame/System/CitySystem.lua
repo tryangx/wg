@@ -795,12 +795,7 @@ end
 
 function City_Build( city, construction )
 	--insert list manually to pass the sanity checker
-	local list = Asset_GetList( city, CityAssetID.CONSTR_LIST )
-	table.insert( list, construction )
-	
-	--InputUtil_Pause( city:ToString( "CONSTRUCTION") )
-	Stat_Add( "BuildConstr", 1, StatType.TIMES )
-	Stat_Add( city.name .. "@Build", construction.name, StatType.LIST )
+	city:BuildConstruction( construction )
 end
 
 function City_Pillage( city )

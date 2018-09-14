@@ -1,3 +1,12 @@
+--
+-- Global Settings
+--
+-- Chara Level 1~20
+-- Troop Level 1~20
+-- City  Level 1~20
+--
+--
+
 --scenario
 require "scenario_test"
 require "scenario_threekindoms"
@@ -51,7 +60,7 @@ ScenarioData =
 	CITY_CONSTR_DATA             = Default_CityBuildingData,
 
 	TASK_STEP_DATA   = DefaultTaskSteps,
-	TASK_CONTRIBUTION_DATA = DefaultTaskContribution,	
+	TASK_BONUS_DATA  = DefaultTaskBonus,	
 
 	TACTIC_DATA      = DefaultTacticData,
 	BATTLEFIELD_DATA = DefaultBattlefieldData,
@@ -116,10 +125,12 @@ function Scenario_InitData()
 		_Scenario.CHARA_PROMOTE_METHOD[id] = MathUtil_ConvertDataStringToID( CharaJob, method )
 	end
 
+	--trait key2id
 	_Scenario.CHARA_TRAIT_DATA = MathUtil_ConvertKeyToID( CharaTraitType, _Scenario.CHARA_TRAIT_DATA )	
 
+	--skill key2id
 	for id, skill in pairs( _Scenario.CHARA_SKILL_DATA ) do
-		skill.effects = MathUtil_ConvertKeyToID( CharaSkillEffect, skill.effects )
+		--skill.effects = MathUtil_ConvertKeyToID( CharaSkillEffect, skill.effects )
 		skill.consume = MathUtil_ConvertKeyToID( CharaActionPoint, skill.consume )
 	end
 
@@ -128,7 +139,7 @@ function Scenario_InitData()
 		_Scenario.TASK_STEP_DATA[id] = MathUtil_ConvertDataStringToID( TaskStep, list )
 	end
 
-	_Scenario.TASK_CONTRIBUTION_DATA = MathUtil_ConvertKeyToID( TaskType, _Scenario.TASK_CONTRIBUTION_DATA )
+	_Scenario.TASK_BONUS_DATA = MathUtil_ConvertKeyToID( TaskType, _Scenario.TASK_BONUS_DATA )
 
 	_Scenario.RELATION_OPINION = MathUtil_ConvertKeyToID( RelationOpinion, _Scenario.RELATION_OPINION )
 

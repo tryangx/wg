@@ -14,7 +14,7 @@ local _registers = {}
 local _task  = nil
 
 local function pause()
-	InputUtil_Pause( "debug combat ai" )
+	InputUtil_Pause( "debug combat ai~" )
 	return true
 end
 
@@ -471,7 +471,6 @@ local CombatTroopAI_DefaultAttack =
 					{
 						{ type = "FILTER", condition = IsTargetInRange },
 						{ type = "FILTER", condition = CanCharge },
-						bp,
 						{ type = "ACTION", action = IssueTroopTask, params = { type = CombatTask.CHARGE, target = true } },
 					}
 				},

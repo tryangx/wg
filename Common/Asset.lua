@@ -295,7 +295,7 @@ function Asset_AppendList( entity, id, item, checker )
 	--sanity checker
 	if ASSET_CHECKER then
 		if Asset_HasItem( entity, id, item ) then
-			error( ( item.name or "" ) .. " already in " .. ( entity.name or "" ) )
+			error( ( item[name] or "" ) .. " already in " .. ( entity[name] or "" ) )
 		end
 	end
 
@@ -340,9 +340,9 @@ function Asset_RemoveListItem( entity, id, item, name )
 	if not entity[id] then return false end
 
 	local list = entity[id]
-	for id, data in pairs( list ) do		
-		if data == item or ( name and data.name == item ) then
-			if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "remove item=", id ) end
+	for id, data in ipairs( list ) do
+		if data == item or ( name and data[name] == item ) then			
+			if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, "remove index=", index ) end
 			table.remove( list, id )
 			return true
 		end

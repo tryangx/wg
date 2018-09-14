@@ -4,12 +4,22 @@ function WeaponTable:Load( data )
 	self.id   = data.id or 0	
 	self.name = data.name or 0
 
+	--[[]]
+	self.level     = data.level
+	self.weight    = data.weight
+	self.sharpness = data.sharpness
+	self.range     = WeaponRangeType[data.range]
+	self.ballistic = WeaponBallisticType[data.ballistic]
+	self.attributes = MathUtil_Copy( data.attributes )
+	--]]
+--[[
 	self.level = data.level
 	self.dmg   = WeaponDamageType[data.dmg]
 	self.range = WeaponRangeType[data.range]
 	self.power = data.power
 	self.accuracy = data.accuracy
 	self.duration = data.duration
+	--]]
 end
 
 -------------------------------

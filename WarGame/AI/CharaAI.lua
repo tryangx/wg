@@ -15,6 +15,7 @@ local _topic   = nil
 local _registers = {}
 
 local function pause()
+	print( g_Time:ToString() )
 	--print( "topic=", MathUtil_FindName( MeetingTopic, _topic ) )
 	InputUtil_Pause( "debug chara ai", _city.name, MathUtil_FindName( MeetingTopic, _topic ) )
 	return true
@@ -32,6 +33,11 @@ end }
 
 local function dbg( content )
 	InputUtil_Pause( content )
+end
+
+local function statfilter( params )
+	Stat_Add( params.type, params.content )
+	return false
 end
 
 ----------------------------------------
@@ -136,6 +142,10 @@ local function SubmitProposal( params )
 		then
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
 
+	elseif params.type == "ASSASSINATE" then
+		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "chara", _registers["TARGET_CHARA"] )
+
 	elseif params.type == "RESEARCH" then
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "tech", _registers["TARGET_TECH"] )
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.RESEARCH )
@@ -195,6 +205,11 @@ local function CheckDate( params )
 		if params.day ~= g_Time:GetMonth() then return false end
 	end
 	return true
+end
+
+local function CheckProbablity( params )
+	local prob = params.prob or 100
+	return Random_GetInt_Sync( 1, 100 ) < prob
 end
 
 local function IsCityCapital()
@@ -1034,12 +1049,13 @@ end
 
 ----------------------------------------
 
-local function CanBuildCity()
+local function CanBuildConstruction( fn )
 	if _actor:IsBusy() then return false end
 
 	local area = _city:GetMaxBulidArea()
 	local has = Asset_GetListSize( _city, CityAssetID.CONSTR_LIST )
 	if has >= area then
+		--print( _city.name, "no area" )
 		return false
 	end
 
@@ -1048,12 +1064,37 @@ local function CanBuildCity()
 		return false
 	end
 
-	local constr = Random_GetListItem( list )
+	local constrList
+	if not fn then
+		constrList = list
+	else
+		for _, constr in pairs( list ) do
+			if fn( constr ) == true then
+				table.insert( constrList, constr )
+			end
+		end
+		if #constrList == 0 then
+			DBG_Error( "no fit constr ha~")
+			return false
+		end
+	end
+
+	local constr = Random_GetListItem( constrList )
 	_registers["CONSTRUCTION"] = constr
 
 	--InputUtil_Pause( "build", constr.name )
 
 	return true
+end
+
+local function CanBuildDefensive()
+	return CanBuildConstruction( function ( constr )
+		return constr.type == CityConstructionType.DEFENSIVE
+	end )
+end
+
+local function CanBuildCity()
+	return CanBuildConstruction()
 end
 
 function NeedLevyTax( score )
@@ -1383,7 +1424,7 @@ local function CanReconnoitre()
 	--whether to reconnoitre
 	local list = {}
 	Asset_Foreach( _city, CityAssetID.SPY_LIST, function( spy )
-		if spy.grade <= CitySpyParams.REQ_GRADE then
+		if spy.grade <= CitySpyParams.MAX_GRADE then
 			table.insert( list, spy )
 		end
 	end )
@@ -1462,6 +1503,35 @@ local function CanDestoryDefensive()
 	return true
 end
 
+local function CanAssassinate()
+	if _actor:IsBusy() then return false end
+
+	local assassinate = _actor:GetEffectValue( CharaSkillEffect.ASSASSINATE )
+	if assassinate < 0 then return false end
+
+	local curLv = Asset_Get( _actor, CharaAssetID.LEVEL )
+
+	local list = {}
+	Asset_Foreach( _city, CityAssetID.SPY_LIST, function( spy )
+		if _city:IsEnemeyCity( spy.city ) == false then return end
+		--if spy.grade < CitySpyParams.REQ_GRADE then return end
+		Asset_Foreach( spy.city, CityAssetID.CHARA_LIST, function ( chara )
+			local lv = Asset_Get( chara, CharaAssetID.LEVEL )
+			if curLv > lv then
+				table.insert( list, { city = spy.city, target = chara } )
+			end
+		end)
+	end )
+	if #list == 0 then return false end
+
+	local index = Random_GetInt_Sync( 1, #list )
+	_registers["TARGET_CITY"] = list[index].city
+	_registers["TARGET_CHARA"] = list[index].target
+
+
+
+	 return true
+end
 
 local function DetermineDefendGoal( ... )
 	local goalData = _group:GetGoal( GroupGoalType.DEFEND_CITY )
@@ -2001,7 +2071,7 @@ local _BuildDefensiveProposal =
 {
 	type = "SEQUENCE", children = 
 	{
-		{ type = "FILTER", condition = CanBuildCity },
+		{ type = "FILTER", condition = CanBuildDefensive },
 		{ type = "ACTION", action = SubmitProposal, params = { type = "BUILD_CITY" } },
 	},	
 }
@@ -2113,6 +2183,7 @@ local _SubmitStaffProposal =
 			{
 				--COLLECT INTELS
 				--EXECUTE OP
+				--[[
 				{ type = "SEQUENCE", children = 
 					{		
 						{ type = "FILTER", condition = CanReconnoitre },
@@ -2130,8 +2201,15 @@ local _SubmitStaffProposal =
 						{ type = "FILTER", condition = CanDestoryDefensive },
 						{ type = "ACTION", action = SubmitProposal, params = { type = "DESTROY_DEF" } },
 					},
-				},				
-			}			
+				},
+				--]]
+				{ type = "SEQUENCE", children = 
+					{
+						{ type = "FILTER", condition = CanAssassinate },
+						{ type = "ACTION", action = SubmitProposal, params = { type = "ASSASSINATE" } },
+					},
+				},
+			}
 		},
 	}
 }
@@ -2140,10 +2218,15 @@ local _SubmitAffairsProposal =
 {
 	type = "SEQUENCE", children = 
 	{
-		{ type = "FILTER", condition = CanSubmitPlan, params = { topic = "AFFAIRS" } },
-
+		{ type = "FILTER", condition = CanSubmitPlan, params = { topic = "AFFAIRS" } },				
 		{ type = "SELECTOR", children = 
 			{
+				{ type = "SEQUENCE", children =
+					{
+						{ type = "FILTER", condition = CheckProbablity, params = { prob = 50 } },
+						_BuildProposal,
+					},
+				},
 				{ type = "SEQUENCE", children =
 					{
 						{ type = "FILTER", condition = HasCityStatus, params = { status = "PRODUCTION_BASE" } },
@@ -2162,7 +2245,6 @@ local _SubmitAffairsProposal =
 						_TransportProposal,
 						_DevelopProposal,
 						_BuildProposal,
-						_TransportProposal,
 						_TaxProposal,
 					}
 				},	
@@ -2435,16 +2517,14 @@ local _MeetingProposal =
 	type = "SELECTOR", desc = "entrance", children = 
 	{
 		_QualificationChecker,
-
 		_UnderAttackProposal,
-
 		_GoalProposal,
-
 		_CapitalProposal,
 
 		--_PriorityProposals,
 
 		--test slot
+		--_BuildProposal,
 
 		--default
 		--[[]]

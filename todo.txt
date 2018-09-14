@@ -20,6 +20,9 @@ To Do List
 [ok] add task=regroup corps task, combine small corps to bigger one
 [ok] #bug_fixed: random-seed bug, reason=asset_dict use table as key, but table address isn't fixed in run-time
 [ok] #bug_fixed: task will update to the next step and end without go back home
+
+[ok] add task=DESTORY_DEFENSIVE
+
 ---------------------------------------------------------
 
 [inprog] troop medal: kill troop + honor --> medals
@@ -28,7 +31,9 @@ To Do List
 
 [inprog] add solider limitation/requirement, reduce the complex of algorithm about Establish CROPS/TROOP
 
-add task=DESTORY_DEFENSIVE
+*to solve the situation that A-group & B-group attack the neutral city at the same time
+
+
 add task=ASSASSINATE_CHARA
 refactor chara loyality 
 

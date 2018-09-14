@@ -35,6 +35,7 @@ DefaultTaskSteps =
 	RECONNOITRE     = { "EXECUTE", "FINISH", "REPLY" },
 	SABOTAGE        = { "EXECUTE", "FINISH", "REPLY" },
 	DESTROY_DEF     = { "EXECUTE", "FINISH", "REPLY" },
+	ASSASSINATE     = { "EXECUTE", "FINISH", "REPLY" },
 
 	RESEARCH        = { "EXECUTE", "FINISH", "REPLY" },
 
@@ -43,45 +44,52 @@ DefaultTaskSteps =
 	SIGN_PACT        = { "EXECUTE", "FINISH", "REPLY" },
 }
 
-DefaultTaskContribution = 
+--success: contribution bonus when task successed
+--failed : contribution bonus when task failed
+--work   : contribution bonus when works every day
+--mil_exp: military exp bonus
+--dip_exp: diplomatic exp bonus
+--off_exp: officer exp bonus
+DefaultTaskBonus = 
 {
-	HARASS_CITY     = { success = 200, failed = 0, city_level_ratio = 20 },
-	ATTACK_CITY     = { success = 400, failed = 0, city_level_ratio = 20 },
-	INTERCEPT       = { success = 300, failed = 0, city_level_ratio = 20 },
-	DISPATCH_CORPS  = { success = 20,  failed = 0 },
+	HARASS_CITY      = { success = 200, failed = 0, city_level_ratio = 20, mil_exp = 100 },
+	ATTACK_CITY      = { success = 400, failed = 0, city_level_ratio = 20, mil_exp = 100 },
+	INTERCEPT        = { success = 300, failed = 0, city_level_ratio = 20, mil_exp = 100 },
+	DISPATCH_CORPS   = { success = 20,  failed = 0, mil_exp = 20 },
 
-	ESTABLISH_CORPS = { success = 40, failed = 0, },
-	REINFORCE_CORPS = { success = 20, failed = 0 },
-	DISMISS_CORPS   = { success = 10, failed = 0 },
-	TRAIN_CORPS     = { success = 40, failed = 0 },
-	UPGRADE_CORPS   = { success = 40, failed = 0 },
-	ENROLL_CORPS    = { success = 20, failed = 0 },	
-	REGROUP_CORPS   = { success = 40, failed = 0 },
-	LEAD_CORPS      = { success = 20, failed = 0 },
+	ESTABLISH_CORPS  = { success = 40, failed = 0, mil_exp = 100 },
+	REINFORCE_CORPS  = { success = 20, failed = 0, mil_exp = 20 },
+	DISMISS_CORPS    = { success = 10, failed = 0, mil_exp = 10 },
+	TRAIN_CORPS      = { success = 40, failed = 0, mil_exp = 20 },
+	UPGRADE_CORPS    = { success = 40, failed = 0, mil_exp = 20 },
+	ENROLL_CORPS     = { success = 20, failed = 0, mil_exp = 20 },	
+	REGROUP_CORPS    = { success = 40, failed = 0, mil_exp = 20 },
+	LEAD_CORPS       = { success = 20, failed = 0, mil_exp = 10 },
 
-	CONSCRIPT       = { success = 20, failed = 0 },
-	RECRUIT         = { success = 20, failed = 0 },
-	HIRE_GUARD      = { success = 20, failed = 0 },
+	CONSCRIPT        = { success = 20, failed = 0, mil_exp = 20 },
+	RECRUIT          = { success = 20, failed = 0, mil_exp = 20 },
+	HIRE_GUARD       = { success = 20, failed = 0, mil_exp = 20 },
 
-	DEV_AGRICULTURE = { success = 30, failed = 0, work = 1 },
-	DEV_COMMERCE    = { success = 30, failed = 0, work = 1 },
-	DEV_PRODUCTION  = { success = 30, failed = 0, work = 1 },
-	BUILD_CITY      = { success = 50, failed = 0, work = 1 },
-	LEVY_TAX        = { success = 40, failed = 0, work = 1 },
-	TRANSPORT       = { success = 40, failed = 0 },
+	DEV_AGRICULTURE  = { success = 30, failed = 0, work = 1, off_exp = 20 },
+	DEV_COMMERCE     = { success = 30, failed = 0, work = 1, off_exp = 20 },
+	DEV_PRODUCTION   = { success = 30, failed = 0, work = 1, off_exp = 20 },
+	BUILD_CITY       = { success = 50, failed = 0, work = 1, off_exp = 20 },
+	LEVY_TAX         = { success = 40, failed = 0, work = 1, off_exp = 20 },
+	TRANSPORT        = { success = 40, failed = 0, off_exp = 20 },
 
-	HIRE_CHARA      = { success = 40, failed = 0 },
-	PROMOTE_CHARA   = { success = 20, failed = 0 },
-	DISPATCH_CHARA  = { success = 20, failed = 0 },
-	CALL_CHARA      = { success = 20, failed = 0 },
+	HIRE_CHARA       = { success = 40, failed = 0, off_exp = 50 },
+	PROMOTE_CHARA    = { success = 20, failed = 0, off_exp = 50 },
+	DISPATCH_CHARA   = { success = 20, failed = 0, off_exp = 50 },
+	CALL_CHARA       = { success = 20, failed = 0, off_exp = 50 },
 
-	RECONNOITRE     = { success = 30, failed = 0 },
-	SABOTAGE        = { success = 30, failed = 0 },
-	DESTROY_DEF     = { success = 30, failed = 0 },
+	RECONNOITRE      = { success = 30, failed = 0, mil_exp = 20, dip_exp = 10 },
+	SABOTAGE         = { success = 30, failed = 0, mil_exp = 20, dip_exp = 10 },
+	DESTROY_DEF      = { success = 30, failed = 0, mil_exp = 20, dip_exp = 10 },
+	ASSASSINATE      = { success = 30, failed = 0, mil_exp = 20, dip_exp = 10 },
 
-	RESEARCH        = { success = 50, failed = 0 },
+	RESEARCH         = { success = 50, failed = 0, off_exp = 100 },
 
-	IMPROVE_RELATION = { success = 40, failed = 0 },
-	DECLARE_WAR      = { success = 10, failed = 0 },
-	SIGN_PACT        = { success = 40, failed = 0 },
+	IMPROVE_RELATION = { success = 40, failed = 0, dip_exp = 20 },
+	DECLARE_WAR      = { success = 10, failed = 0, dip_exp = 20 },
+	SIGN_PACT        = { success = 40, failed = 0, dip_exp = 20 },
 }

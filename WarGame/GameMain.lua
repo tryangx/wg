@@ -12,6 +12,8 @@ require "AI"
 --Local gamedata, not framework
 require "GameData"
 
+require "GameDebug"
+
 ------------------------------
 
 function Game_Init()	
@@ -22,6 +24,7 @@ function Game_Init()
 	Random_SetSeed_Unsync( g_unsyncSeed )
 
 	-- Set asset watcher
+	--[[
 	AssetAttrib_SetWatcher( function( entity, id, operation )
 		if entity.type == EntityType.CHARA then
 			if id == CharaAssetID.LOCATION then
@@ -47,8 +50,9 @@ function Game_Init()
 				--print( "set rel", operation )
 			end
 
-		end		
+		end
 	end)
+	]]
 
 	--------------------------------------
 	-- Initialize table
@@ -217,55 +221,7 @@ function Game_Test()
 
 	--[[]]
 	--test combat
-	if nil then
-		Combat_EnablePrinter()
-		local city = Entity_Get( EntityType.CITY, 1 )
-		local from = Entity_Get( EntityType.CITY, 2 )
-		local atkcorps = Corps_EstablishTest( { numoftroop = 10, siege = true, encampment = from } )
-		local defcorps = Corps_EstablishTest( { numoftroop = 4, encampment = city } )
-		Asset_Set( atkcorps, CorpsAssetID.LOCATION, 2 )
-		Asset_Set( defcorps, CorpsAssetID.LOCATION, 1 )
-		Asset_AppendList( city, CityAssetID.CORPS_LIST, defcorps )
-
-		--set combat
-		local combat = Entity_New( EntityType.COMBAT )
-		Asset_Set( combat, CombatAssetID.START_DATE, g_Time:GetDateValue() )
-		combat:AddCorps( atkcorps, CombatSide.ATTACKER )
-		combat:AddCorps( defcorps, CombatSide.DEFENDER )
-		Asset_Set( combat, CombatAssetID.CITY, city )
-		Asset_Set( combat, CombatAssetID.PLOT, Asset_Get( city, CityAssetID.CENTER_PLOT ) )		
-
-		local testSiege = true--true
-		if testSiege == true then
-			Asset_Set( combat, CombatAssetID.TYPE, CombatType.SIEGE_COMBAT )
-			Asset_Set( combat, CombatAssetID.BATTLEFIELD, BattlefieldTable_Get( 100 ) )
-			Asset_Set( combat, CombatAssetID.ATKCAMPFIELD, BattlefieldTable_Get( 200 ) )
-			Asset_Set( combat, CombatAssetID.DEFCAMPFIELD, BattlefieldTable_Get( 300 ) )
-		else
-			Asset_Set( combat, CombatAssetID.TYPE, CombatType.FIELD_COMBAT )
-			Asset_Set( combat, CombatAssetID.BATTLEFIELD, BattlefieldTable_Get( 100 ) )
-			Asset_Set( combat, CombatAssetID.ATKCAMPFIELD, BattlefieldTable_Get( 200 ) )
-			Asset_Set( combat, CombatAssetID.DEFCAMPFIELD, BattlefieldTable_Get( 200 ) )
-		end
-		--in siege combat, if attacker purpose not aggressive, they won't attack
-		Asset_Set( combat, CombatAssetID.ATK_PURPOSE, CombatPurpose.AGGRESSIVE )
-		Asset_Set( combat, CombatAssetID.DEF_PURPOSE, CombatPurpose.CONSERVATIVE )
-		System_Get( SystemType.WARFARE_SYS ):AddCombat( combat )
-
-		FeatureOption.DISABLE_FOOD_SUPPLY = true
-
-		if nil then
-			combat:TestDamage()
-		else
-			local result = false
-			while not result do
-				result = Warfare_UpdateCombat( combat )
-			end
-		end
-		
-		--Entity_Dump( combat )
-		return true
-	end
+	return Game_Debug()
 	--]]
 
 	--check route
@@ -280,6 +236,7 @@ end
 function Game_Start()
 	Game_Init()
 	
+	--test
 	if Game_Test() then return end
 	
 	--local city = Entity_Get( EntityType.CITY, 1 )

@@ -61,6 +61,14 @@ CharaAssetID =
 	SUPERIOR        = 401,
 }
 
+local function Chara_SetTrait( entity, id, value )
+	if typeof( value ) == "string" then
+		value = CharaTraitType[value]
+		InputUtil_Pause( "settrait", value, CharaTraitType[value] )
+	end
+	return value
+end
+
 CharaAssetAttrib = 
 {
 	--base
@@ -89,13 +97,13 @@ CharaAssetAttrib =
 	tactic_lim   = AssetAttrib_SetNumber( { id = CharaAssetID.TACTIC_LIMIT,  type = CharaAssetType.ACTION_ATTRIB, min = 0, max = 9999 } ),
 
 	grade        = AssetAttrib_SetNumber     ( { id = CharaAssetID.GRADE,        type = CharaAssetType.GROWTH_ATTRIB, enum = CharaGrade, default = CharaGrade.NORMAL } ),
-	potential    = AssetAttrib_SetNumber     ( { id = CharaAssetID.POTENTIAL,    type = CharaAssetType.GROWTH_ATTRIB, min = 0, max = 20 } ),	
 	level        = AssetAttrib_SetNumber     ( { id = CharaAssetID.LEVEL,        type = CharaAssetType.GROWTH_ATTRIB, min = 1, max = 20 } ),
+	potential    = AssetAttrib_SetNumber     ( { id = CharaAssetID.POTENTIAL,    type = CharaAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),
 	loyality     = AssetAttrib_SetNumber     ( { id = CharaAssetID.LOYALITY,     type = CharaAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),
 	contribution = AssetAttrib_SetNumber     ( { id = CharaAssetID.CONTRIBUTION, type = CharaAssetType.GROWTH_ATTRIB, min = 0 } ),
 	service_day  = AssetAttrib_SetNumber     ( { id = CharaAssetID.SERVICE_DAY,  type = CharaAssetType.GROWTH_ATTRIB } ),
 
-	traits       = AssetAttrib_SetDict       ( { id = CharaAssetID.TRAITS,       type = CharaAssetType.GROWTH_ATTRIB } ),
+	traits       = AssetAttrib_SetDict       ( { id = CharaAssetID.TRAITS,       type = CharaAssetType.GROWTH_ATTRIB, setter = Chara_SetTrait } ),
 	skills       = AssetAttrib_SetPointerList( { id = CharaAssetID.SKILLS,       type = CharaAssetType.GROWTH_ATTRIB, setter = Entity_SetSkill } ),
 
 	superior     = AssetAttrib_SetPointer    ( { id = CharaAssetID.SUPERIOR,     type = CharaAssetType.RELATION_ATTRIB } ),
@@ -142,11 +150,12 @@ function Chara:Load( data )
 	--growth
 	Asset_Set( self, CharaAssetID.GRADE, CharaGrade[data.grade] )
 	Asset_Set( self, CharaAssetID.POTENTIAL, data.potential )
-	Asset_Set( self, CharaAssetID.LOYALITY, data.loyality )
+	Asset_Set( self, CharaAssetID.LOYALITY, data.loyality or 50 )
 	Asset_Set( self, CharaAssetID.CONTRIBUTION, data.contribution )
-	Asset_Set( self, CharaAssetID.LEVEL, data.level )
+	Asset_Set( self, CharaAssetID.LEVEL, data.level or 1 )
 	Asset_CopyList( self, CharaAssetID.SKILLS, data.skills )
-
+	Asset_CopyList( self, CharaAssetID.TRAITS, data.traits )
+ 
 	--FOR TEST
 	if data.politics[2] + data.strategy[2] + data.tactic[2] <= 0 then
 		CharaCreator_GenerateCharaActionData( self, Asset_Get( self, CharaAssetID.GRADE ) )
@@ -170,6 +179,10 @@ end
 function Chara:ToString( type )
 	local content = "[" .. self.name .. "]"
 
+	if type == "GROWTH" or type == "ALL" then
+		content = content .. " lv=" .. Asset_Get( self, CharaAssetID.LEVEL )
+	end
+
 	if type == "TASK" or type == "ALL" then
 		local task = self:GetTask()
 		if task then
@@ -187,10 +200,19 @@ function Chara:ToString( type )
 		local home = Asset_Get( self, CharaAssetID.HOME )
 		content = content .. " job=" .. ( home and MathUtil_FindName( CityJob, home:GetCharaJob( self ) ) or "" )
 		content = content .. " cot=" .. Asset_Get( self, CharaAssetID.CONTRIBUTION )
+		content = content .. " txp=" .. ( self:GetStatus( CharaStatus.TOTAL_EXP ) or 0 )
+		content = content .. " mxp=" .. ( self:GetStatus( CharaStatus.MILITARY_EXP ) or 0 )
+		content = content .. " oop=" .. ( self:GetStatus( CharaStatus.OFFICER_EXP ) or 0 )
+		content = content .. " dpp=" .. ( self:GetStatus( CharaStatus.DIPLOMATIC_EXP ) or 0 )
 	end	
-	if type == "TRAITS" then
+	if type == "TRAITS" or type == "GROWTH" then
 		for trait, _ in pairs( Asset_GetDict( self, CharaAssetID.TRAITS ) ) do
 			content = content .. " " .. MathUtil_FindName( CharaTraitType, trait )
+		end
+	end
+	if type == "SKILL" or type == "GROWTH" then
+		for _, skill in pairs( Asset_GetDict( self, CharaAssetID.SKILLS ) ) do
+			content = content .. " " .. skill.name .. ","
 		end
 	end
 	if type == "STATUS" then
@@ -230,21 +252,36 @@ function Chara:GetTrait( traitType )
 	return Asset_SetDictItem( self, CharaAssetID.TRAITS, traitType )
 end
 
-function Chara:GetSkillByEffect( effect )
+--[[
+function Chara:GetSkillByEffect( effectType )
 	return Asset_FindItem( self, CharaAssetID.SKILLS, function ( skill )
-		local ret = Skill_GetEffectValue( skill, effect )
+		local ret = Chara_GetEffectValueBySkill( skill, effectType )
 		if ret then return true end
 	end)
 end
+]]
 
-function Chara:GetEffectValue( effect )
+function Chara:GetEffectValue( effectType )
 	local value = 0
+	local reqLoyality = 0
+	local loyality = Asset_Get( self, CharaAssetID.LOYALITY )
 	Asset_Foreach( self, CharaAssetID.SKILLS, function ( skill )
-		local ret = Skill_GetEffectValue( skill, effect )
+		if loyality < reqLoyality then
+			print( self.name, skill.name, "req loy=" .. reqLoyality )
+			return
+		end
+		--skill only enable when loyality matches
+		local ret = Chara_GetEffectValueBySkill( skill, effectType )		
 		if ret then
 			value = value + ret
 		end
+		reqLoyality = reqLoyality + 10
 	end )
+
+	--if value ~= 0 then InputUtil_Pause( "get eff", value, MathUtil_FindName( CharaSkillEffect, effectType ) ) end
+	if value ~= 0 then
+		Stat_Add( "Eff_" .. MathUtil_FindName( CharaSkillEffect, effectType ) .. "@" .. self.name , value, StatType.ACCUMULATION )
+	end
 	return value
 end
 
@@ -266,8 +303,8 @@ function Chara:IsBusy()
 	return self:GetTask() ~= nil
 end
 
-function Chara:GetStatus( status )
-	return Asset_GetDictItem( self, CharaAssetID.STATUSES, status )
+function Chara:GetStatus( status, default )
+	return Asset_GetDictItem( self, CharaAssetID.STATUSES, status ) or default
 end
 
 function Chara:SetStatus( status, value )
@@ -278,36 +315,46 @@ function Chara:SetStatus( status, value )
 	end
 end
 
-function Chara:CanLearnSkill()
+function Chara:AffectStatus( status, value )
+	if not value then return end
+	local cur = Asset_GetDictItem( self, CharaAssetID.STATUSES, status ) or 0
+	cur = cur + value
+	Asset_SetDictItem( self, CharaAssetID.STATUSES, status, value )
+end
+
+function Chara:HasPotential()
 	local level     = Asset_Get( self, CharaAssetID.LEVEL )
 	local potential = Asset_Get( self, CharaAssetID.POTENTIAL )
 	local hasSkill  = Asset_GetListSize( self, CharaAssetID.SKILLS )
-	if level + hasSkill >= potential then
-		return false
-	end
-	if hasSkill >= level then
-		return false
-	end
-	return true
+
+	local ca = 0
+	--level: [1,20]*2 + 5 = [7,45]
+	ca = ca + level * 2 + 5
+	--skill: ( 1 + skill_num ) * skill_num / 2 = [ 1, 55 ]
+	ca = ca + ( 1 + hasSkill ) * hasSkill * 0.5
+
+	--print( self.name, "ca=" .. ca .. " pot=" .. potential )
+
+	return ca < potential
 end
 
 function Chara:CanLevelUp()
-	if not self:CanLearnSkill() then return false end
-
-	local exp = self:GetStatus( CharaStatus.EXP )
-	local maxExp = 100
-	if not exp or exp < maxExp then return false end
-	return true
+	if not self:HasPotential() then return false end
+	local exp = self:GetStatus( CharaStatus.EXP ) or 0
+	local lvupExp = 100
+	return exp and exp >= lvupExp or false
 end
 
 function Chara:LevelUp()
-	if self:CanLevelUp() == false then
-		return false
-	end
-	local exp = Asset_GetDictItem( self, CharaAssetID.STATUSES, CharaStatus.EXP )
-	exp = exp - 100
+	--print( self:ToString("ALL"))
+
+	local exp = self:GetStatus( CharaStatus.EXP ) or 0
+	local lvupExp = 100
+	exp = math.max( exp - lvupExp, 0 )
 	self:SetStatus( CharaStatus.EXP, exp )
 	Asset_Plus( self, CharaAssetID.LEVEL, 1 )
+
+	--print( self:ToString() .. " lvup=" .. Asset_Get( self, CharaAssetID.LEVEL ), exp )
 
 	Stat_Add( "CharaLevelUp@" .. self.name, 1, StatType.TIMES )
 	return true
@@ -350,12 +397,18 @@ end
 
 -------------------------------------------
 
+function Chara:AffectExp( status, value )
+	if not value then return end
+	local cur = Asset_GetDictItem( self, CharaAssetID.STATUSES, status ) or 0
+	cur = cur + value
+	Asset_SetDictItem( self, CharaAssetID.STATUSES, status, value )
+	self:AffectStatus( CharaStatus.EXP, value )
+	--for debug
+	self:AffectStatus( CharaStatus.TOTAL_EXP, value )
+	--InputUtil_Pause( "affect exp", self.name, value, MathUtil_FindName( CharaStatus, status ))
+end
+
 function Chara:Contribute( value )
-	local exp = Asset_GetDictItem( self, CharaAssetID.STATUSES, CharaStatus.EXP )
-	if not exp then exp = 0 end
-	exp = exp + value
-	Asset_SetDictItem( self, CharaAssetID.STATUSES, CharaStatus.EXP, exp )
-	
 	Asset_Plus( self, CharaAssetID.CONTRIBUTION, value )
 	Stat_Add( "Chara@Contribute", value, StatType.ACCUMULATION )
 end
@@ -363,15 +416,15 @@ end
 function Chara:GainTrait( trait )
 	Asset_SetDictItem( self, CharaAssetID.TRAITS, trait, 100 )
 
-	--InputUtil_Pause( self.name, "gain trait=" .. MathUtil_FindName( CharaTraitType, trait ), Asset_GetDictSize( self, CharaAssetID.TRAITS ) )
+	--InputUtil_Pause( self:ToString( "BRIEF" ), "gain trait=" .. MathUtil_FindName( CharaTraitType, trait ), Asset_GetDictSize( self, CharaAssetID.TRAITS ) )
 	Stat_Add( "Trait@Gain", self.name .. "+" .. MathUtil_FindName( CharaTraitType, trait ), StatType.LIST )
 	Stat_Add( "Trait@GainTimes", 1, StatType.TIMES )
 end
 
 function Chara:LearnSkill( skill )
 	Asset_AppendList( self, CharaAssetID.SKILLS, skill )
-	--InputUtil_Pause( self.name, "gain skill=" .. skill.name )
+	--print( self:ToString(), "gain skill=" .. skill.name )
 
 	Stat_Add( "Skill@Learn", g_Time:ToString() .. " " .. self.name .. "->" .. skill.name, StatType.LIST )
-	Stat_Add( "Skill@LearnTimes", 1, StatType.TIMES )
+	Stat_Add( "Skill@Times", 1, StatType.TIMES )
 end

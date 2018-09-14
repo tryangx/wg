@@ -59,7 +59,6 @@ function Entity_SetWeapon( entity, id, value )
 	return Entity_Get( EntityType.WEAPON, value ) or value
 end
 
-
 function Entity_SetSkill( entity, id, value )
 	return SkillTable_Get( value )
 end

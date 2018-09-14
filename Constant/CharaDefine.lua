@@ -15,11 +15,9 @@ CharaOrigin =
 {
 	--Load by data
 	HISTORIC  = 0,
-
 	--Generate randomly
 	FICTIONAL = 1,
-
-	--
+	--??
 	GOD       = 2,
 }
 
@@ -82,14 +80,16 @@ CharaStatus =
 	----------------------------
 	--Flag / Data
 	IN_TASK           = 1,
-
 	DEAD              = 2,
-
 	SURRENDER         = 3,
 
 	----------------------------
 	--ACCUMULATION
 	EXP               = 100,
+	TOTAL_EXP         = 101,	
+	OFFICER_EXP       = 102,
+	MILITARY_EXP      = 103,
+	DIPLOMATIC_EXP    = 104,
 
 	----------------------------
 	-- Time Status( use to gain new trait )
@@ -114,6 +114,17 @@ CharaActionPoint =
 	POLITICS = 3,
 }
 
+CharaSkillEffectCondition = 
+{
+	IS_FIELD_COMBAT    = 10,
+	IS_SIEGE_COMBAT    = 11,
+
+	LEAD_INFANTRY      = 20,
+	LEAD_CAVALRY       = 21,
+	LEAD_MISSILE_UNIT  = 22,
+	LEAD_SIEGEWEAPON   = 23,
+}
+
 CharaSkillEffect = 
 {
 	HIRE_CHARA_BONUS   = 201,
@@ -125,77 +136,113 @@ CharaSkillEffect =
 	LEVY_TAX_BONUS     = 305,
 
 	RECONNOITRE_BONUS  = 401,
-	SABOTAGE_BONUS     = 402,
+	SABOTAGE_BONUS     = 402,	
+	ASSASSINATE        = 403,
 
 	IMPROVE_RELATION_BONUS = 501,
 	SIGN_PACT_BONUS        = 502,
 	
 	RESEARCH_BONUS     = 601,
 
-	ATTACK             = 701,
-	DEFEND             = 702,
-	FIELD_COMBAT_BONUS = 711,
-	SIEGE_COMBAT_BONUS = 711,
+	------------------------------
+	-- Combat Relate
 
-	TRAINING           = 800,
-	LEADERSHIP         = 801,
+	--Affect the damage made
+	DAMAGE_BONUS       = 1001,
+	--Affect the surffered damage
+	DAMAGE_RESIST      = 1002,
+	--Affect the damage to organization
+	ORG_DAMAGE_BONUS   = 1003,
+	--Affect the suffered damage to organization
+	ORG_DAMAGE_RESIST  = 1004,
+
+	ARMOR_BONUS        = 1005,--not test
+	ARMOR_BREAK        = 1006,--not test
+	
+	--increase the maximum of the troop morale	
+	MORALE_BONUS       = 1101,
+	--increase the maximum of the troop organization, ratio not exactly number
+	ORGANIZATION_BONUS = 1102,
+	--affect the movement
+	MOVEMENT_BONUS     = 1104,
+	--speed up the troop training
+	TRAINING_BONUS     = 1100,
 }
 
 --
 --
 CharaTraitType = 
 {
-	------------------------
-	--atomic( won't changed after initialize except trigger event )
+	------------------------------------------------
+	-- Atomic Trait
+	--   Initialized at first( Generated )
+	--   Only change in Event
+	------------------------------------------------
 
-	LIBIDO       = 10,
-	SEXLESS      = 20,
+	IDEAL        = 100,
+	REALISM      = 110,
+
+	ACTIVELY     = 200,
+	PASSIVE      = 210,
+
+	INTROVERT    = 300,
+	EXTROVERT    = 310,
+
+	------------------------------------------------
+	-- Extension
+	--   Depends on atomic trait
+	------------------------------------------------	
+	EXTENSION_TRAIT = 1000, --seperator
+
+	--Needs
+	LUST          = 1000,
+	SEXLESS       = 1001,
+	HOMO          = 1002, 
+	GLUTTONY      = 1003, --for food
+	GREED         = 1004, --for money
+	PRIDE         = 1005, --for honor
+	AMBITION      = 1006, --for power
+
+	--Mood
+	BRAVE         = 1100,
+	COWARD        = 1101,
+	AGGRESSIVE    = 1102,
+	CONSERVATIVE  = 1103,
+	IRRITABLE     = 1104,
+	DISPASSIONATE = 1105,
+	CONTROL       = 1106,
+	ENDURANCE     = 1107,
 	
-	IDEAL        = 200,
-	REALISM      = 210,
+	--attitude to people
+	OPEN          = 1200,
+	CLOSE         = 1201,
+	SELFISH       = 1202,
+	GENEROUS      = 1203,
+	FRIENDSHIP    = 1204,
+	CONFIDENCE    = 1205,
+	INSIDIOUS     = 1206,
+	ENVY          = 1207,	
 
-	ACTIVELY     = 300,
-	PASSIVE      = 310,
+	--attitude to work
+	CAREFUL       = 1301,
+	CARELESS      = 1302,
+	HARDWORK      = 1303,
+	SLOTH         = 1304,
 
-	INTROVERT    = 400,
-	EXTROVERT    = 410,
+	--talent
+	FOOLISH       = 1401,
+	SMART         = 1402,
+	STRENGTH      = 1403,
+	AGILITY       = 1404,
+	
+	----------------------------------------------
+	--Normally
+	--  Depends on Extension Trait
+	NORMAL_TRAIT  = 10000, --seperator
 
-	STRONG       = 500,
-	WEAK         = 510,
-
-	------------------------
-	--extension( leads by atomic trait when level up )
-	EXTENSION_TRAIT = 1000,
-
-	--mental
-	LOVE_MONEY   = 1010,
-	LOVE_HONOR   = 1011,
-
-	AGGRESSIVE   = 1020,
-	CONSERVATIVE = 1021,
-
-	SELFISH    = 1030,
-	GENEROUS   = 1031,
-
-	CAREFUL    = 1040,
-	CARELESS   = 1041,
-
-	INSIDIOUS  = 1050,
-	NOBEL      = 1051,
-
-	IRRITABLE     = 1060,
-	DISPASSIONATE = 1061,
-
-	HARDWORK   = 2020,
-	LAZY       = 2021,
-
-	SMART      = 2030,
-	FOOLISH    = 2031,
-
-	OPEN       = 2040,
-	CLOSE      = 2041,
-
-	-----------------------
-	--Normally ( which will leads to extension )
-	NORMAL_TRAIT   = 10000,
+	VOLUBLE       = 10001, --good at talk
+	ACCOUNTING    = 10002, --good at calculate 
+	OBSERVANT     = 10003, --good at observe
+	INVENTION     = 10004, --good at creativity work
+	MECHANICAL    = 10005, --good at mechanical work
 }

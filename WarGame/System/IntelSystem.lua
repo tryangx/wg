@@ -1,22 +1,26 @@
+--this list stores the spys in the destination city
+--key is Destination City
+--data is the spy
 local _citySpys = {}
 
 function Intel_CreateSpy( city, fromCity, grade )
 	local spy = { sour = fromCity, city = city, grade = grade, intel = 0 }
 	if not _citySpys[city] then _citySpys[city] = {} end
 	table.insert( _citySpys[city], spy )
+	--print( "create spy c=" .. spy.city.name, "s=" .. spy.sour.name, spy, #_citySpys[city], city )
 	return spy
 end
 
-function Intel_LoseSpy( spy )
+function Intel_EvacuateSpy( spy )
 	local fromCity = spy.sour
 	local curCity  = spy.city
 	if not _citySpys[curCity] then
-		print( "why no spy list in=" .. curCity.name )
+		--print( "why no spy list in=" .. curCity.name )
 		return
 	end
 	local list = _citySpys[curCity]
 	if not MathUtil_Remove( list, spy ) then
-		print( "spy not in the list, why?" )
+		DBG_Error( "spy not in the list, why?" )
 	end
 end
 

@@ -22,7 +22,7 @@ local function Move_Debug( move, content )
 	local role = Asset_Get( move, MoveAssetID.ROLE )
 	if role ~= MoveRole.CORPS then return end
 	--if actor.id == 5 or actor.id == 17 then
-	if actor.id == 2 then
+	if false then
 		DBG_TrackBug( move:ToString( "DEBUG" ) .. " " .. content )
 	end
 end

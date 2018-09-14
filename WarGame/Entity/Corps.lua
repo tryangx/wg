@@ -38,7 +38,8 @@ end
 local function Corps_RecalMovement( entity, id, value )
 	--recalculate movement
 	local movement = Asset_Get( entity, CorpsAssetID.MOVEMENT )
-	local troopmove = Asset_Get( value, TroopAssetID.MOVEMENT )
+	local troopmove = value:GetMovement()
+	--troopmove = math.ceil( troopmove * ( 100 + Chara_GetSkillEffectValue( Asset_Get( value, TroopAssetID.OFFICER ), CharaSkillEffect.MOVEMENT_BONUS ) * 0.01 ) )
 	if troopmove < movement or movement == 0 then
 		Asset_Set( entity, CorpsAssetID.MOVEMENT, troopmove )
 	end
@@ -266,9 +267,9 @@ end
 -------------------------------------------
 
 function Corps:AddTroop( troop )
-	--local leader = Asset_Get( self, CorpsAssetID.LEADER )	
 	Asset_AppendList( self, CorpsAssetID.TROOP_LIST, troop )
 
+	--add officer into list
 	local officer = Asset_Get( troop, TroopAssetID.OFFICER )
 	Asset_AppendList( self, CorpsAssetID.OFFICER_LIST, officer )
 end
@@ -353,8 +354,8 @@ function Corps:SetStatus( status, value )
 end
 
 function Corps:GetMaxTraining()	
-	local leader = Asset_Get( self, CorpsAssetID.LEADER )
-	return 50 + Chara_GetSkillEffectValue( leader, CharaSkillEffect.LEADERSHIP )
+	return 100
+	--return 100 + Chara_GetSkillEffectValue( Asset_Get( self, CorpsAssetID.LEADER ), CharaSkillEffect.MAX_TRAINING )
 end
 
 ---------------------------------------------

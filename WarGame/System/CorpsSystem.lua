@@ -28,10 +28,6 @@ function Troop_RemoveOfficer( troop, isKilled )
 	local leader = corps and Asset_Get( corps, CorpsAssetID.LEADER ) or nil
 	if isKilled then
 		Chara_Die( officer )
-	elseif corps then
-		--not killed, just back to the corps officer-list
-		corps:AddOfficer( officer )
-		InputUtil_Pause( "officer=" .. officer:ToString() .. " back to corps" )	
 	end
 end
 
@@ -164,7 +160,7 @@ function Corps_Dismiss( corps, neutralized )
 		group:RemoveCorps( corps )
 	end
 
-	--remove officers
+	--Remove officers
 	Asset_Foreach( corps, CorpsAssetID.OFFICER_LIST, function ( chara )
 		if neutralized then
 			Chara_Die( chara )
@@ -584,70 +580,7 @@ function Corps_HarassCity( corps, city )
 	Message_Post( MessageType.FIELD_COMBAT_TRIGGER, { city = city, atk = corps } )
 end
 
---------------------------------------------------
--- For COMBAT testing
---------------------------------------------------
-function Corps_EstablishTest( params )
-	local corps = Entity_New( EntityType.CORPS )
-	corps.name = "Corps"
-	Asset_Set( corps, CorpsAssetID.GROUP,      params.group )
-	Asset_Set( corps, CorpsAssetID.LEADER,     params.leader )
-	Asset_Set( corps, CorpsAssetID.LOCATION,   params.location )
-	Asset_Set( corps, CorpsAssetID.ENCAMPMENT, params.encampment )
-	--InputUtil_Pause( corps.id, params.encampment )
-	
-	local troopids = {}
-	if params.siege == true then
- 		troopids = { 400, 401 }
-	end
-	local defaultid = 10
-	local index = 1
-	local soldier = params.soldier or 1000
-	local org = params.org or soldier
-	local numoftroop = params.numoftroop or 5
-	for k = 1, numoftroop do
-		local id = troopids[index]
-		if not id then
-			id = defaultid
-		else
-			index = index + 1
-		end
-		local troopTable = TroopTable_Get( id )
-		local troop = Entity_New( EntityType.TROOP )		
-		Asset_Set( troop, TroopAssetID.CORPS, corps )
-		Asset_Set( troop, TroopAssetID.SOLDIER, soldier )
-		Asset_Set( troop, TroopAssetID.MAX_SOLDIER, soldier )		
-		Asset_Set( troop, TroopAssetID.ORGANIZATION, org )
-		troop:LoadFromTable( troopTable )
-		corps:AddTroop( troop )
-	end
-
-	return corps
-end
-
-function Corps_EstablishTroopByIndex( index, number )
-	if not number then  number = 1000 end
-	local troopTable = TroopTable_Get( index )
-	local troop = Entity_New( EntityType.TROOP )
-	Asset_Set( troop, TroopAssetID.CORPS, corps )
-	Asset_Set( troop, TroopAssetID.SOLDIER, number )
-	Asset_Set( troop, TroopAssetID.MAX_SOLDIER, number )
-	troop:LoadFromTable( troopTable )
-	return troop
-end
-
-function Corps_EstablishTroopByTable( table, number )
-	if not number then  number = 1000 end
-	local troop = Entity_New( EntityType.TROOP )
-	Asset_Set( troop, TroopAssetID.CORPS, corps )
-	Asset_Set( troop, TroopAssetID.SOLDIER, number )
-	Asset_Set( troop, TroopAssetID.MAX_SOLDIER, number )
-	troop:LoadFromTable( table )
-	return troop
-end
-
 -----------------------------------------------------------
-
 
 CorpsSystem = class()
 

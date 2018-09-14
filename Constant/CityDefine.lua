@@ -73,6 +73,7 @@ CityStatus =
 	STARVATION         = 21,
 
 	OLD_CAPITAL        = 30,
+	
 	--startegy priority
 	--build defensive in DEFEND_CITY goal	
 	--receive resources
@@ -124,12 +125,12 @@ CityJob =
 	--All city
 	EXECUTIVE       = 1,
 
-	POSITION_BEGIN  = 10,
+	POSITION_BEGIN  = 10,  --begin
 	COMMANDER       = 11,
 	STAFF           = 12,
 	HR              = 13,
 	AFFAIRS         = 14,
-	POSITION_END    = 15,
+	POSITION_END    = 15,  --end
 
 	--capital
 	DIPLOMATIC      = 15,

@@ -122,7 +122,7 @@ function Map:MatchCondition( plot, condition )
 			end
 		end
 	elseif condition.type == ResourceCondition.PROBABILITY then
-		if g_synRandomizer:GetInt( 1, 10000 ) > condition.value then return false end
+		if Random_GetInt_Sync( 1, 10000 ) > condition.value then return false end
 	elseif condition.type == ResourceCondition.PLOT_TYPE then
 		if condition.value == "LIVING" then				
 			if plot:GetPlotType() ~= PlotType.HILLS and plot:GetPlotType() ~= PlotType.LAND then					
@@ -237,7 +237,7 @@ function Map:GeneratePlotResource( items )
 			local plotList = self:FindPlotSuitable( resource.conditions )
 			plotList = MathUtil_Shuffle_Sync( plotList )
 			for number = 1, #plotList do
-				if number > item.count then break end
+				if number > item.count then break end				
 				local plot = plotList[number]
 				Asset_Set( plot, PlotAssetID.RESOURCE, item.id )
 				--print( "put ", resource.name, "on", Asset_Get( plot, PlotAssetID.X ), Asset_Get( plot, PlotAssetID.Y ) )

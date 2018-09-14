@@ -52,6 +52,7 @@ ProposalType =
 	RECONNOITRE     = 500,
 	SABOTAGE        = 501,
 	DESTROY_DEF     = 502,
+	ASSASSINATE     = 503,
 
 	RESEARCH        = 600,
 
@@ -103,6 +104,7 @@ TaskType =
 	RECONNOITRE     = 501,
 	SABOTAGE        = 502,
 	DESTROY_DEF     = 503,
+	ASSASSINATE     = 504,
 
 	TECH_TASK       = 600,	
 	RESEARCH        = 601,

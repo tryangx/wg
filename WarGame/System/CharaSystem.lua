@@ -1,20 +1,78 @@
 -------------------------------------------
 
-function Skill_GetEffectValue( skill, effect, default )
-	for type, value in ipairs( skill.effects ) do
-		if type == effect then
-			InputUtil_Pause( "get skill effect", MathUtil_FindName( CharaSkillEffect, value) )
-			return value
+local _SkillEnviroments = {}
+
+function Chara_ResetSkillEnvironment()
+	_SkillEnviroments = {}
+end
+
+--name is CharaSkillEffectCondition
+function Chara_SetSkillEnvironment( name, data )
+	--print( "setskillenv--> " .. MathUtil_FindName( CharaSkillEffectCondition, name ) .."=", data )
+	_SkillEnviroments[name] = data
+end
+
+function Chara_GetSkillEnvironment( name )
+	return _SkillEnviroments[name]
+end
+
+function Chara_GetEffectValueBySkill( skill, effectType, default )
+	local function CheckConditions( effect )		
+		if effect.prob then
+			if Random_GetInt_Sync( 1, 100 ) > effect.prob then
+				--probability test failed
+				return default
+			end
+		end
+		if effect.conditions then
+			for _, condType in ipairs( effect.conditions ) do
+				--print( "check env=", condType, Chara_GetSkillEnvironment( CharaSkillEffectCondition[condType] ) )
+				if Chara_GetSkillEnvironment( CharaSkillEffectCondition[condType] ) == false then					
+					return false
+				end				
+			end
+			return true
+		elseif effect.condition then
+			InputUtil_Pause( "check env=" .. CharaSkillEffectCondition[condType] )
+			return Chara_GetSkillEnvironment( CharaSkillEffectCondition[condType] )
+		end
+		return true
+	end
+	for _, effect in ipairs( skill.effects ) do		
+		if CharaSkillEffect[effect.type] == effectType and CheckConditions( effect ) == true then
+			--InputUtil_Pause( "get skill effect", effect.type, effect.value, skill.name )
+			return effect.value
 		end
 	end
 	return default
 end
 
--------------------------------------------
-
-function Chara_GetSkillEffectValue( chara, effect )
+--return the effect value( all skills )
+function Chara_GetSkillEffectValue( chara, effectType )
 	if not chara then return 0 end
-	return chara:GetEffectValue( effect )
+	return chara:GetEffectValue( effectType )
+end
+
+-------------------------------------------
+-- Chara Job Relative 
+
+function Chara_GetRatingCharaSuitJob( chara, job )
+	local score = 100
+	if job == CityJob.EXECUTIVE then
+
+	elseif job == CityJob.COMMANDER then
+		score = score + chara:GetStatus( CharaStatus.MILITARY_EXP, 0 )
+	elseif job == CityJob.STAFF then
+		score = score + chara:GetStatus( CharaStatus.MILITARY_EXP, 0 )
+	elseif job == CityJob.HR then
+		score = score + chara:GetStatus( CharaStatus.OFFICER_EXP, 0 )
+	elseif job == CityJob.AFFAIRS then
+		score = score + chara:GetStatus( CharaStatus.OFFICER_EXP, 0 )
+	elseif job == CityJob.DIPLOMATIC then
+		score = score + chara:GetStatus( CharaStatus.DIPLOMATIC_EXP, 0 )
+	elseif job == CityJob.TECHNICIAN then
+	end
+	return 100
 end
 
 function Chara_FindBestCharaForJob( job, charaList )
@@ -31,10 +89,7 @@ function Chara_FindBestCharaForJob( job, charaList )
 	return bestChara
 end
 
-function Chara_GetRatingCharaSuitJob( chara, job )
-	--to do
-	return 100
-end
+-------------------------------------------
 
 function Chara_GetLimitByGroup( group )
 	if not group then return 0 end
@@ -96,7 +151,7 @@ function Chara_Die( chara )
 
 	--print( chara.name, "died" )
 
-	--remove from corps
+	--Remove from corps
 	local corps = Asset_Get( chara, CharaAssetID.CORPS )
 	if corps then
 		corps:LoseOfficer( chara )
@@ -105,7 +160,7 @@ function Chara_Die( chara )
 		Debug_Log( chara.name .. "die, no corps" )
 	end
 
-	--remove from city
+	--Remove from city
 	local home = Asset_Get( chara, CharaAssetID.HOME )
 	if home then
 		--print( home.name, "leave", chara.name )
@@ -115,13 +170,13 @@ function Chara_Die( chara )
 		error( "no home?" .. chara.name )
 	end
 
-	--remove task
+	--Remove task
 	local task = chara:GetTask()
 	if task then
 		Task_Terminate( task, chara )
 	end
 
-	--remove from group
+	--Remove from group
 	local group = Asset_Get( chara, CharaAssetID.GROUP )
 	if group then
 		group:LoseChara( chara )
@@ -134,9 +189,10 @@ function Chara_Die( chara )
 
 	Stat_Add( "Chara@Die", chara:ToString(), StatType.LIST )
 
+	--error( chara:ToString() .. " died" )
+
 	Entity_Remove( chara )
 
-	--if chara.name == "Qian XII" then error( "" ) end
 	--InputUtil_Pause( "die")
 end
 
@@ -264,33 +320,42 @@ local function Chara_WorkForJob( chara )
 	Task_Do( task, chara )
 end
 
-local function Chara_LearnSkill( chara )
-	if not chara:CanLearnSkill() then
-		return false
-	end
+function Chara_LearnSkill( chara )
+	if not chara:HasPotential() then return false end
+
+	--check prob
+	local lv = Asset_Get( chara, CharaAssetID.LEVEL )
+	local hasSkill = Asset_GetListSize( chara, CharaAssetID.SKILLS )	
+	local prob = 35 + lv * 5 - hasSkill * 10
+	if Random_GetInt_Sync( 1, 100 ) > prob then return false end
 
 	local skills = SkillTable_QuerySkillList( chara )
 	local skill = Random_GetListItem( skills )
 	if not skill then
 		--should diagnose what situation( triats ) won't gain new skill
-		Stat_Add( "GainSkill@Failed", chara:ToString( "TRAITS" ), StatType.LIST )
+		--Stat_Add( "GainSkill@Failed", chara:ToString( "TRAITS" ), StatType.LIST )
 		return false
 	end
 	chara:LearnSkill( skill )
 end
 
-local function Chara_LevelUp( chara )
-	if chara:LevelUp() == true then
-		if Chara_LearnSkill( chara ) then
-			if Random_GetInt_Sync( 1, 100 ) < 20 then
-				Chara_GainTrait( chara )
-			end
-		end
+function Chara_LevelUp( chara )
+	if not chara:CanLevelUp() then return false end
+
+	local lv = Asset_Get( chara, CharaAssetID.LEVEL )
+	local attrib = Entity_GetAssetAttrib( chara, CharaAssetID.LEVEL )
+	if lv >= attrib.max then
+		--InputUtil_Pause( chara:ToString(), "lv out of range", lv, attrib.max )
+		return
 	end
+
+	chara:LevelUp()
 end
 
-local function Chara_GainTrait( chara )
+function Chara_GainTrait( chara )	
 	local numOfTrait = Asset_GetDictSize( chara, CharaAssetID.TRAITS )
+	if Random_GetInt_Sync( 1, 100 ) > 25 - numOfTrait * 3 then return end
+	
 	local reqNumOfTrait = 6
 	if numOfTrait > reqNumOfTrait then
 		return
@@ -321,6 +386,9 @@ function CharaSystem:Update()
 
 		if day % 10 == 0 then
 			Chara_LevelUp( chara )
+			if Chara_LearnSkill( chara ) == false then
+				Chara_GainTrait( chara )
+			end
 		end
 		
 		Chara_WorkForJob( chara )

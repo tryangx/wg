@@ -18,6 +18,19 @@ WeaponRangeType =
 	MISSILE = 3,
 }
 
+WeaponBallisticType =
+{
+	NONE        = 1,
+	FLAT_FIRE   = 2,
+	PROJECTTILE = 3,
+}
+
+WeaponAttributeType =
+{
+	CHARGE_ADD    = 1,
+	FORTIFIED_ADD = 2,
+}
+
 ConveyanceType = 
 {
 	FOOT    = 0,
@@ -338,6 +351,16 @@ CombatDirection =
 
 --------------------------------------------------------
 -- Tactic Relative
+
+-- Category Definition
+--	Light Footman   : Common, Universal
+--	Regular Footman : LF advanced
+--  Heavy Footman   : No shoot ability, melee is strong, but mostly use to resist to heavy cavalry
+--  Long bow        : Long Range
+--  Cross bow       : Adavantage to charger
+--  Scout           : Adavantage to collect intel
+--  Regular cavalry : Advantage to flank
+--  Heavy cavalry   : Strongest soldier, break the lineup easily
 
 TacticCategory = 
 {

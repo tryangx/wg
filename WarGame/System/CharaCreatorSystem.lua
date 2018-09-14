@@ -54,12 +54,12 @@ CharaGradeProb =
 
 CharaAtomicTraitProb = 
 {
-	{ prob  = 20, { LIBIDO = 40 }, },
-	{ prob  = 60, { LOVE_MONEY = 60, LOVE_HONOR = 40 }, },
-	{ prob  = 60, { IDEAL = 60, REALISM = 40 }, },
-	{ prob  = 60, { ACTIVELY = 60, PASSIVE = 40 }, },
-	{ prob  = 40, { STRONG = 60, WEAK = 40 }, },
-	{ prob  = 40, { INTROVERT = 60, EXTROVERT = 40 }, },	
+	{ prob  = 80, { IDEAL = 50, REALISM = 50 }, },
+	{ prob  = 80, { ACTIVELY = 50, PASSIVE = 50 }, },
+	{ prob  = 80, { INTROVERT = 50, EXTROVERT = 50 }, },
+	{ prob  = 50, { IDEAL = 50, REALISM = 50 }, },
+	{ prob  = 50, { ACTIVELY = 50, PASSIVE = 50 }, },
+	{ prob  = 50, { INTROVERT = 50, EXTROVERT = 50 }, },
 }
 
 CharaCreatorParams = 
@@ -125,10 +125,9 @@ function CharaCreator_GenerateAtomicTrait( chara, num )
 	while reqNumOfTrait > 0 do
 		for _, item in ipairs( CharaAtomicTraitProb ) do
 			if Random_GetInt_Sync( 1, 100 ) < item.prob then
-				if not item.subProb then
-					item.subProb = MathUtil_Sum( item[1] )
-				end
-				local rand = Random_GetInt_Sync( 1, item.subProb )
+				--calculate total probability
+				if not item.totalProb then item.totalProb = MathUtil_Sum( item[1] ) end
+				local rand = Random_GetInt_Sync( 1, item.totalProb )
 				for traitName, prob in pairs( item[1] ) do
 					--print( traitName, prob )
 					if rand < prob then
@@ -140,13 +139,9 @@ function CharaCreator_GenerateAtomicTrait( chara, num )
 					end
 				end
 			end
-			if reqNumOfTrait <= 0 then
-				break
-			end
+			if reqNumOfTrait <= 0 then break end
 		end
-		if reqNumOfTrait <= 0 then
-			break
-		end
+		if reqNumOfTrait <= 0 then break end
 	end
 end
 

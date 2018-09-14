@@ -103,11 +103,8 @@ end
 
 local function Meeting_Update( meeting )
 	--Log_Write( "meeting", g_Time:ToString() .. " hold" .. meeting:ToString() )	
-
 	local city = Asset_Get( meeting, MeetingAssetID.LOCATION )
-	--determine topic	
 	local topic = Asset_Get( meeting, MeetingAssetID.TOPIC )
-
 	local begTopic, endTopic
 	if topic == MeetingTopic.NONE then		
 		begTopic = MeetingTopic.MEETING_LOOP
@@ -140,7 +137,6 @@ local function Meeting_Update( meeting )
 
 		--submit proposals
 		local freeParticiants = 0
-		--[[]]
 		Asset_FindItem( meeting, MeetingAssetID.PARTICIPANTS, function ( chara )
 			if not CheckTopicWithChara( city, chara, topic ) then
 				return
@@ -161,7 +157,6 @@ local function Meeting_Update( meeting )
 			end
 			return numofproposer <= 0
 		end )
-		--]]
 		
 		--print( "free=" .. freeParticiants, "submit=" .. submitProposal )
 		if freeParticiants == 0 or submitProposal == 0 then
@@ -262,14 +257,16 @@ function Meeting_Hold( city, topic, target )
 	Asset_Foreach( city, CityAssetID.OFFICER_LIST, function ( data )
 		local chara = data.officer
 		if chara:IsBusy() == true then
-			--Debug_Log( chara.name, " is busy", chara:ToString( "TASK" ) )
+			Log_Write( "meeting", city.name .. "-->" .. chara:ToString() .. " is busy=" .. chara:GetTask():ToString() )
 			return
 		end
 		if chara:IsAtHome() == false then
 			--Debug_Log( chara.name, " isn't at home" )
+			Log_Write( "meeting", city.name .. "-->" .. chara:ToString() .. " not at home" )
 			return
 		end
 		if chara == executive then
+			Log_Write( "meeting", city.name .. "-->" .. chara:ToString() .. " is executive" )
 			return
 		end
 		table.insert( participants, chara )
@@ -279,9 +276,11 @@ function Meeting_Hold( city, topic, target )
 	participants = MathUtil_Shuffle_Sync( participants )
 	Asset_CopyList( meeting, MeetingAssetID.PARTICIPANTS, participants )
 
+	Log_Write( "meeting", "prepare=" .. city.name .. " chara=" .. Asset_GetListSize( city, CityAssetID.CHARA_LIST ) .. " parti=" .. Asset_GetListSize( meeting, MeetingAssetID.PARTICIPANTS ) )
+
 	Stat_Add( "Meeting@HoldTimes", 1, StatType.TIMES )
 	Stat_Add( "Meeting@CityHold_" .. city.name, 1, StatType.TIMES )
-
+	
 	--print( city:ToString( "OFFICER" ) )
 	--local group = Asset_Get( city, CityAssetID.GROUP )	
 	--Log_Write( "meeting", g_Time:ToString() .. " " .. city.name .. " hold meeting t=" .. MathUtil_FindName( MeetingTopic, topic ) .. " p=" .. #participants .. ( group and " g=" .. group:ToString( "GOAL" ) or "" ) )

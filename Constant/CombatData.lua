@@ -251,8 +251,24 @@ DefaultCorpsTemplate =
 	},
 }
 
+--weight   : affect KINECT damage， against TOUGHNESS
+--sharpness: affect PIERCE damage, against ARMOR
 DefaultWeaponTable = 
 {
+	[10] = { name = "fork",      level = 1, weight = 15,  sharpness = 15,  range = "CLOSE",   ballistic = "NONE", attributes = {} },
+	[20] = { name = "sword",     level = 1, weight = 10,  sharpness = 40,  range = "CLOSE",   ballistic = "NONE", attributes = {} },
+	[30] = { name = "spear",     level = 1, weight = 30,  sharpness = 30,  range = "LONG",    ballistic = "NONE", attributes = {} },
+	[31] = { name = "lance",     level = 1, weight = 50,  sharpness = 50,  range = "LONG",    ballistic = "NONE", attributes = {} },
+	[40] = { name = "bow",       level = 1, weight = 15,  sharpness = 15,  range = "MISSILE", ballistic = "PROJECTTILE", attributes = {} },	
+	[41] = { name = "slingshot", level = 1, weight = 15,  sharpness = 5,   range = "MISSILE", ballistic = "FLAT_FIRE", attributes = {} },
+	[42] = { name = "crossbow",  level = 1, weight = 15,  sharpness = 30,  range = "MISSILE", ballistic = "FLAT_FIRE", attributes = {} },
+	[50] = { name = "stone",     level = 1, weight = 500, sharpness = 100, range = "MISSILE", ballistic = "PROJECTTILE", attributes = {} },
+	[51] = { name = "ram",       level = 1, weight = 300, sharpness = 50,  range = "CLOSE",   ballistic = "NONE", attributes = {} },
+}
+
+--[[
+DefaultWeaponTable = 
+{	
 	[10] = { name = "fork",      level = "1", dmg = "at_normal",    range = "CLOSE",   power = 40, accuracy = 25,  duration = 30, },
 	[20] = { name = "sword",     level = "3", dmg = "at_normal",    range = "CLOSE",   power = 35, accuracy = 35,  duration = 30, },
 	[30] = { name = "spear",     level = "3", dmg = "PIERCE",    range = "LONG",    power = 30, accuracy = 45,  duration = 30, },
@@ -262,7 +278,7 @@ DefaultWeaponTable =
 	[50] = { name = "stone",     level = "5", dmg = "FORTIFIED", range = "MISSILE", power = 80, accuracy = 5,  duration = 20, },
 	[51] = { name = "ram",       level = "5", dmg = "FORTIFIED", range = "CLOSE",   power = 50, accuracy = 10, duration = 20, },
 }
-
+]]
 
 ----------------------------------------------------------------------
 -- Results
@@ -492,16 +508,6 @@ DefaultFormationData =
 
 CombatPurposeParam = 
 {
-	--power_comparison_ratio
-	--  self.power / enemy.solder
-	--
-	--soldier_comparison_ratio
-	--  self.soldier / enemy.soldier
-	--
-	--intense
-	--	power_comparsion_ration
-	--
-
 	--casualty, morale, food, proportion
 	CONSERVATIVE = 
 	{
@@ -524,11 +530,11 @@ CombatPurposeParam =
 			{ reason = "wd_chaos2",    org_below = 20, score = 15 },
 			{ reason = "wd_downcast1", mor_below = 60, score = 15 },
 			{ reason = "wd_downcast2", mor_below = 40, score = 15 },
-			{ reason = "wd_danger1",   prop_below = 35, score = 10 },
-			{ reason = "wd_danger2",   prop_below = 25, score = 10 },
-			{ reason = "wd_danger3",   prop_below = 20, score = 20 },
 			{ reason = "wd_nofood1",  food_below = 20, is_atk = 1,   score = 80 },
 			{ reason = "wd_nofood2",  food_below = 30, is_field = 1, score = 60 },
+			{ reason = "wd_danger1",   prop_below = 35, score = 10 },
+			{ reason = "wd_danger2",   prop_below = 25, score = 10 },
+			{ reason = "wd_danger3",   prop_below = 20, score = 20 },			
 		},
 		REST =
 		{
@@ -565,11 +571,11 @@ CombatPurposeParam =
 			{ reason = "wd_chaos2",    org_below = 20, score = 15 },
 			{ reason = "wd_downcast1", mor_below = 60, score = 15 },
 			{ reason = "wd_downcast2", mor_below = 40, score = 15 },
+			{ reason = "wd_nofood1",   food_below = 20, is_atk = 1,   score = 80 },
+			{ reason = "wd_nofood2",   food_below = 30, is_field = 1, score = 60 },
 			{ reason = "wd_danger1",   prop_below = 35, score = 10 },
 			{ reason = "wd_danger2",   prop_below = 25, score = 10 },
 			{ reason = "wd_danger3",   prop_below = 20, score = 20 },
-			{ reason = "wd_nofood1",  food_below = 20, is_atk = 1,   score = 80 },
-			{ reason = "wd_nofood2",  food_below = 30, is_field = 1, score = 60 },
 		},
 		REST =
 		{
@@ -606,11 +612,11 @@ CombatPurposeParam =
 			{ reason = "wd_chaos2",    org_below = 20, score = 15 },
 			{ reason = "wd_downcast1", mor_below = 60, score = 15 },
 			{ reason = "wd_downcast2", mor_below = 40, score = 15 },
+			{ reason = "wd_nofood1",  food_below = 20, is_atk = 1,   score = 80 },
+			{ reason = "wd_nofood2",  food_below = 30, is_field = 1, score = 60 },
 			{ reason = "wd_danger1",   prop_below = 35, score = 10 },
 			{ reason = "wd_danger2",   prop_below = 25, score = 10 },
 			{ reason = "wd_danger3",   prop_below = 20, score = 20 },
-			{ reason = "wd_nofood1",  food_below = 20, is_atk = 1,   score = 80 },
-			{ reason = "wd_nofood2",  food_below = 30, is_field = 1, score = 60 },
 		},
 		REST =
 		{

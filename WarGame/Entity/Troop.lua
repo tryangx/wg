@@ -25,18 +25,17 @@ TroopAssetID =
 	SKILLS       = 220,
 	STATUSES     = 221,
 
-	--Combat
-	SOLDIER      = 300,	
-	TIRENESS     = 301,		
-	MORALE       = 302,
-	ORGANIZATION = 303,
-	LEVEL        = 304,
-	
-	ARMOR        = 320,	--anti physical damage
-	TOUGHNESS    = 321,	--anti tactic/mental damage
-
-	MOVEMENT     = 330,
-	WEAPONS      = 340,
+	-------------------------------
+	--Combat	
+	SOLDIER      = 300,
+	LEVEL        = 301,	
+	--Determine: CHAOS, RETREAT
+	--DependsOn: TRAINING, OFFICER
+	ORGANIZATION = 302,
+	--Determine: CHAOS, FLEE
+	--DependsOn: LEVEL, OFFICER
+	MORALE       = 303,
+	TIRENESS     = 304,
 }
 
 TroopAssetAttrib =
@@ -54,16 +53,10 @@ TroopAssetAttrib =
 	statuses     = AssetAttrib_SetDict   ( { id = TroopAssetID.STATUSES,      type = TroopAssetType.GROWTH_ATTRIB } ),
 	
 	soldier      = AssetAttrib_SetNumber ( { id = TroopAssetID.SOLDIER,       type = TroopAssetType.COMBAT_ATTRIB, min = 0 } ),
-	tireness     = AssetAttrib_SetNumber ( { id = TroopAssetID.TIRENESS,      type = TroopAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),
 	level        = AssetAttrib_SetNumber ( { id = TroopAssetID.LEVEL,         type = TroopAssetType.GROWTH_ATTRIB, min = 0, max = 20 } ),
 	morale       = AssetAttrib_SetNumber ( { id = TroopAssetID.MORALE,        type = TroopAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),
 	organization = AssetAttrib_SetNumber ( { id = TroopAssetID.ORGANIZATION,  type = TroopAssetType.GROWTH_ATTRIB, min = 0 } ),	
-
-	armor        = AssetAttrib_SetNumber ( { id = TroopAssetID.ARMOR,         type = TroopAssetType.COMBAT_ATTRIB, min = 0, max = 1000 } ),
-	toughness    = AssetAttrib_SetNumber ( { id = TroopAssetID.TOUGHNESS,     type = TroopAssetType.COMBAT_ATTRIB, min = 0, max = 1000 } ),	
-		
-	weapons      = AssetAttrib_SetList   ( { id = TroopAssetID.WEAPONS,       type = TroopAssetType.COMBAT_ATTRIB } ),
-	movement     = AssetAttrib_SetNumber ( { id = TroopAssetID.MOVEMENT,      type = TroopAssetType.COMBAT_ATTRIB, min = 0, max = 1000 } ),
+	tireness     = AssetAttrib_SetNumber ( { id = TroopAssetID.TIRENESS,      type = TroopAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),	
 }
 
 
@@ -82,9 +75,14 @@ function Troop:ToString( type )
 	content = content .. ( self:GetCombatData( TroopCombatData.SIDE ) and ( self:GetCombatData( TroopCombatData.SIDE ) == CombatSide.ATTACKER and "-ATK" or "-DEF" ) or "" )
 
 	if type == "COMBAT" or type == "COMBAT_ALL" then
+		local officer = Asset_Get( self, TroopAssetID.OFFICER )
+		if officer then
+			content = content .. " o=" .. officer:ToString()
+		end
 		content = content .. " org=" .. Asset_Get( self, TroopAssetID.ORGANIZATION )
 		content = content .. " mor=" .. Asset_Get( self, TroopAssetID.MORALE )
 		content = content .. " n=" .. Asset_Get( self, TroopAssetID.SOLDIER ) .. "/" .. Asset_Get( self, TroopAssetID.MAX_SOLDIER )
+		content = content .. " ar=" .. self:GetArmor() .. " tg=" .. self:GetToughness()
 	end
 	if type == "COMBAT_DATA" or type == "COMBAT_ALL" then
 		if self._combatDatas then
@@ -129,30 +127,29 @@ function Troop:LoadFromTable( tableData )
 	Asset_Set( self, TroopAssetID.MORALE, 100 )
 	Asset_Set( self, TroopAssetID.ORGANIZATION, Asset_Get( self, TroopAssetID.SOLDIER ) )	
 	Asset_Set( self, TroopAssetID.CONVEYANCE, tableData.conveyance )
-
-	Asset_Set( self, TroopAssetID.ARMOR, 	 tableData.armor )
-	Asset_Set( self, TroopAssetID.TOUGHNESS, tableData.toughness )
-	Asset_Set( self, TroopAssetID.MOVEMENT,  tableData.movement )
 end
 
 -------------------------------------
 
 function Troop:GetMaxMorale()	
 	local maxMorale = 50
+	--level effect
 	maxMorale = maxMorale + Asset_Get( self, TroopAssetID.LEVEL ) * 5
-	maxMorale = maxMorale + math.ceil( self:GetStatus( TroopStatus.TRAINING ) * 0.2 )
-	--todo, leader's ability
+	--officer effect
+	maxMorale = maxMorale + Chara_GetSkillEffectValue( Asset_Get( self, TroopAssetID.OFFICER ), CharaSkillEffect.MORALE_BONUS )
 	return maxMorale
 end
 
-function Troop:GetMaxOrg()
+function Troop:GetMaxOrg()	
+	local rate = 50
+	--training effect
+	rate = rate + self:GetStatus( TroopStatus.TRAINING )
+	--officer effect
+	rate = rate + Chara_GetSkillEffectValue( Asset_Get( self, TroopAssetID.OFFICER ), CharaSkillEffect.ORGANIZATION_BONUS )
+	--calculate final
 	local soldier = Asset_Get( self, TroopAssetID.SOLDIER )
-	local rate   = 50
-	rate = rate + math.min( 100, self:GetStatus( TroopStatus.TRAINING ) )
-	rate = rate + math.min( 0, Asset_Get( self, TroopAssetID.LEVEL ) * 10 )
-	--todo, leader's ability
-	local maxOrg = soldier * rate
-	return math.ceil( maxOrg )
+	local maxOrg = math.ceil( soldier * rate * 0.01 )
+	return maxOrg
 end
 
 function Troop:GetWeaponBy( name, value )
@@ -204,6 +201,19 @@ function Troop:LeaveCombat( ... )
 end
 
 -------------------------------------
+
+function Troop:GetArmor()
+	local tableData = Asset_Get( self, TroopAssetID.TABLEDATA )
+	return tableData and tableData.armor or 0
+end
+function Troop:GetToughness()
+	local tableData = Asset_Get( self, TroopAssetID.TABLEDATA )
+	return tableData and tableData.toughness or 0
+end
+function Troop:GetMovement()
+	local tableData = Asset_Get( self, TroopAssetID.TABLEDATA )
+	return tableData and tableData.movement or 0
+end
 
 function Troop:GetStatus( status )
 	local value = Asset_GetDictItem( self, TroopAssetID.STATUSES, status )
@@ -285,9 +295,7 @@ function Troop:CanLevelUp()
 end
 
 function Troop:LevelUp()
-	if self:CanLevelUp() == false then
-		return false
-	end
+	if self:CanLevelUp() == false then return false end
 	local exp = Asset_GetDictItem( self, TroopAssetID.STATUSES, TroopStatus.EXP )
 	exp = exp - Scenario_GetData( "TROOP_PARAMS" ).TROOP_LEVELUP_EXP
 	self:SetStatus( TroopStatus.EXP, exp )

@@ -35,26 +35,21 @@ local function Task_Breakpoint( task, fn )
 end
 
 local function Task_Debug( task, content )
-	if task.id == 273 then
+	if task.id == -1 then
 		DBG_TrackBug( task:ToString( "DEBUG" ) .. content )
 	end	
 end
 
-local function Task_Contribute( task, type )
-	if not type then
-		error( "no type for contribute" )
-		return 0
-	end
+local function Task_GetBonus( task )
 	local taskType = Asset_Get( task, TaskAssetID.TYPE )
-	local datas = Scenario_GetData( "TASK_CONTRIBUTION_DATA" )
-	local contribution = datas[taskType][type] or 0
-	return contribution
+	local datas = Scenario_GetData( "TASK_BONUS_DATA" )
+	return datas[taskType]
 end
 
 local function Task_DoDefault( task )	
 	local progress = Random_GetInt_Sync( 5, 10 )
 	task:DoTask( progress )
-	return Task_Contribute( task, "work" )
+	return Task_GetBonus( task, "work" )
 end
 
 local function Task_Remove( task )
@@ -427,6 +422,16 @@ local _executeTask =
 		Asset_Set( task, TaskAssetID.WORKLOAD, workload )
 		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WORKING )
 	end,
+	ASSASSINATE = function ( task )
+		Asset_Set( task, TaskAssetID.DURATION, 80 )
+		local workload = 250
+		local dest = Asset_Get( task, TaskAssetID.DESTINATION )
+		if dest:GetStatus( CityStatus.VIGILANT ) then
+			workload = workload + 100
+		end
+		Asset_Set( task, TaskAssetID.WORKLOAD, workload )
+		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WORKING )
+	end,
 
 	RESEARCH    = function ( task )
 		local tech  = Asset_GetDictItem( task, TaskAssetID.PARAMS, "tech" )
@@ -477,7 +482,7 @@ local function Task_DoConvPopu( task )
 		if not old then old = 0 end
 		Asset_SetDictItem( task, TaskAssetID.PARAMS, "number", old + number )
 	end
-	return Task_Contribute( task, "work" )
+	return Task_GetBonus( task, "work" )
 end
 
 --in WORKING status, task progress should increase by actor, 
@@ -513,13 +518,16 @@ local _workOnTask =
 				Asset_Set( task, TaskAssetID.PROGRESS, 0 )
 			end
 		end
-		return Task_Contribute( task, "work" )
+		return Task_GetBonus( task, "work" )
 	end,
 
 	ENROLL_CORPS    = Task_DoDefault,	
 
 	TRAIN_CORPS     = function ( task )
-		local progress = Random_GetInt_Sync( 10, 35 )
+		local progress = Random_GetInt_Sync( 20, 30 )
+		local corps    = Asset_GetDictItem( task, TaskAssetID.PARAMS, "corps" )
+		local officer  = Asset_Get( corps, CorpsAssetID.LEADER )
+		progress = math.ceil( progress * ( 100 + Chara_GetSkillEffectValue( officer, CharaSkillEffect.TRAINING_BONUS ) ) * 0.01 )
 		task:DoTask( progress )
 		local workload = Asset_Get( task, TaskAssetID.WORKLOAD )
 		if Asset_Get( task, TaskAssetID.PROGRESS ) >= workload then
@@ -528,7 +536,7 @@ local _workOnTask =
 			Asset_Set( task, TaskAssetID.PROGRESS, 0 )
 			return DEFAULT_TASK_CONTRIBUTION
 		end
-		return Task_Contribute( task, "work" )
+		return Task_GetBonus( task, "work" )
 	end,
 	CONSCRIPT       = Task_DoConvPopu,
 	RECRUIT         = Task_DoConvPopu,
@@ -547,17 +555,22 @@ local _workOnTask =
 		local city = Asset_Get( task, TaskAssetID.DESTINATION )
 		local loc  = Asset_Get( task, TaskAssetID.LOCATION )
 		loc:Reconnoitre( city, intel )
-		return Task_Contribute( task, "work" )
+		return Task_GetBonus( task, "work" )
 	end,
 	SABOTAGE        = function ( task )
 		local progress = Random_GetInt_Sync( 2, 5 )
 		task:DoTask( progress )
-		return Task_Contribute( task, "work" )
+		return Task_GetBonus( task, "work" )
 	end,
 	DESTROY_DEF     = function ( task )
 		local progress = Random_GetInt_Sync( 2, 5 )
 		task:DoTask( progress )
-		return Task_Contribute( task, "work" )
+		return Task_GetBonus( task, "work" )
+	end,
+	ASSASSINATE     = function ( task )
+		local progress = Random_GetInt_Sync( 2, 5 )
+		task:DoTask( progress )
+		return Task_GetBonus( task, "work" )
 	end,
 
 	RESEARCH        = function ( task )
@@ -565,7 +578,7 @@ local _workOnTask =
 		local progress = Random_GetInt_Sync( 50, 250 )
 		task:DoTask( progress )
 		--InputUtil_Pause( "do", Asset_Get( task, TaskAssetID.PROGRESS ) )
-		return Task_Contribute( task, "work" )
+		return Task_GetBonus( task, "work" )
 	end,
 
 	IMPROVE_RELATION = Task_DoDefault,
@@ -590,7 +603,7 @@ local function Task_MoveChara( task )
 		dest:CharaJoin( actor )
 	end
 	Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
-	return Task_Contribute( task, "success" )
+	return Task_GetBonus( task, "success" )
 end
 
 local _finishTask = 
@@ -602,41 +615,41 @@ local _finishTask =
 	end,
 	ESTABLISH_CORPS = function ( task )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
-		return Task_Contribute( task, "success" )
+		return Task_GetBonus( task, "success" )
 	end,
 	REINFORCE_CORPS = function ( task )
 		local corps = Asset_Get( task, TaskAssetID.ACTOR )
 		local loc   = Asset_Get( task, TaskAssetID.DESTINATION )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
-		return Task_Contribute( task, "success" )
+		return Task_GetBonus( task, "success" )
 	end,
 	ENROLL_CORPS    = function ( task )		
 		local corps = Asset_Get( task, TaskAssetID.ACTOR )
 		local city  = Asset_Get( task, TaskAssetID.DESTINATION )
 		Corps_EnrollInCity( corps, city )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
-		return Task_Contribute( task, "success" )
+		return Task_GetBonus( task, "success" )
 	end,	
 	DISPATCH_CORPS  = function ( task )
 		local city = Asset_Get( task, TaskAssetID.DESTINATION )
 		local corps = Asset_GetDictItem( task, TaskAssetID.PARAMS, "corps" )
 		Corps_Dispatch( corps, city )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
-		return Task_Contribute( task, "success" )
+		return Task_GetBonus( task, "success" )
 	end,
 	LEAD_CORPS      = function ( task )
 		local corps = Asset_Get( task, TaskAssetID.ACTOR )
 		local actor = Asset_GetDictItem( task, TaskAssetID.PARAMS, "leader" )		
 		corps:AssignLeader( actor )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
-		return Task_Contribute( task, "success" )
+		return Task_GetBonus( task, "success" )
 	end,
 	REGROUP_CORPS   = function ( task )
 		local list = Asset_GetDictItem( task, TaskAssetID.PARAMS, "corps_list" )
 		local actor = Asset_Get( task, TaskAssetID.ACTOR )
 		Corps_Regroup( actor, list )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
-		return Task_Contribute( task, "success" )
+		return Task_GetBonus( task, "success" )
 	end,
 	CONSCRIPT       = function ( task )
 		--InputUtil_Pause( task:ToString(), "conscript=" .. Asset_GetDictItem( task, TaskAssetID.PARAMS, "number" ) )
@@ -644,44 +657,44 @@ local _finishTask =
 		local loc = Asset_Get( task, TaskAssetID.DESTINATION )
 		loc:SetStatus( CityStatus.RESERVE_UNDERSTAFFED )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
-		return Task_Contribute( task, "success" )
+		return Task_GetBonus( task, "success" )
 	end,
 	RECRUIT         = function ( task )
 		local loc = Asset_Get( task, TaskAssetID.DESTINATION )
 		loc:SetStatus( CityStatus.RESERVE_UNDERSTAFFED )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
-		return Task_Contribute( task, "success" )
+		return Task_GetBonus( task, "success" )
 	end,
 	HIRE_GUARD      = function ( task )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
-		return Task_Contribute( task, "success" )
+		return Task_GetBonus( task, "success" )
 	end,
 
 	DEV_AGRICULTURE = function( task )
 		--InputUtil_Pause( "dev agri", Asset_Get( task, TaskAssetID.PROGRESS ))
 		City_Develop( Asset_Get( task, TaskAssetID.DESTINATION ), Asset_Get( task, TaskAssetID.PROGRESS ), CityAssetID.AGRICULTURE )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
-		return Task_Contribute( task, "success" )
+		return Task_GetBonus( task, "success" )
 	end,
 	DEV_COMMERCE = function( task )
 		City_Develop( Asset_Get( task, TaskAssetID.DESTINATION ), Asset_Get( task, TaskAssetID.PROGRESS ), CityAssetID.COMMERCE )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
-		return Task_Contribute( task, "success" )
+		return Task_GetBonus( task, "success" )
 	end,
 	DEV_PRODUCTION = function( task )
 		City_Develop( Asset_Get( task, TaskAssetID.DESTINATION ), Asset_Get( task, TaskAssetID.PROGRESS ), CityAssetID.PRODUCTION )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
-		return Task_Contribute( task, "success" )
+		return Task_GetBonus( task, "success" )
 	end,
 	BUILD_CITY      = function ( task )
 		City_Build( Asset_Get( task, TaskAssetID.DESTINATION ), Asset_GetDictItem( task, TaskAssetID.PARAMS, "construction" ) )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
-		return Task_Contribute( task, "success" )
+		return Task_GetBonus( task, "success" )
 	end,
 	LEVY_TAX      = function ( task )
 		City_LevyTax( Asset_Get( task, TaskAssetID.DESTINATION ), Asset_Get( task, TaskAssetID.PROGRESS ) )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
-		return Task_Contribute( task, "success" )
+		return Task_GetBonus( task, "success" )
 	end,
 	TRANSPORT     = function ( task )
 		local food  = Asset_GetDictItem( task, TaskAssetID.PARAMS, "food" )
@@ -698,7 +711,7 @@ local _finishTask =
 		Stat_Add( "Transport@MONEY", money, StatType.ACCUMULATION )
 		Stat_Add( "Transport@MATERIAL", mat, StatType.ACCUMULATION )
 		
-		return Task_Contribute( task, "success" )
+		return Task_GetBonus( task, "success" )
 	end,
 	
 	HIRE_CHARA = function( task )		
@@ -713,26 +726,26 @@ local _finishTask =
 			Chara_Serve( chara, group, city )
 			Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
 			Stat_Add( "Hire@Success", 1, StatType.TIMES )
-			return Task_Contribute( task, "success" )
+			return Task_GetBonus( task, "success" )
 		else
 			Report_Feedback( task:ToString( "SIMPLE" ) .. " FAILED" )
 			Asset_Set( task, TaskAssetID.RESULT, TaskResult.FAILED )
 			Stat_Add( "Hire@Failed", 1, StatType.TIMES )
-			return Task_Contribute( task, "failed" )
+			return Task_GetBonus( task, "failed" )
 		end
 	end,
 	PROMOTE_CHARA = function ( task )
 		local actor = Asset_Get( task, TaskAssetID.ACTOR )
 		local job = Asset_GetDictItem( task, TaskAssetID.PARAMS, "job" )
 		Chara_Promote( actor, job )
-		return Task_Contribute( task, "success" )
+		return Task_GetBonus( task, "success" )
 	end,
 	DISPATCH_CHARA  = Task_MoveChara,
 	CALL_CHARA      = Task_MoveChara,
 
 	RECONNOITRE = function ( task )		
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
-		return Task_Contribute( task, "success" )
+		return Task_GetBonus( task, "success" )
 	end,
 	SABOTAGE    = function ( task )
 		local city = Asset_Get( task, TaskAssetID.DESTINATION )
@@ -747,11 +760,11 @@ local _finishTask =
 			loc:LoseSpy( city, 1 )
 			Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
 			Stat_Add( "OP@Suc", 1, StatType.TIMES )
-			return Task_Contribute( task, "success" )
+			return Task_GetBonus( task, "success" )
 		else
 			Asset_Set( task, TaskAssetID.RESULT, TaskResult.FAILED )
 			Stat_Add( "OP@Failed", 1, StatType.TIMES )
-			return Task_Contribute( task, "failed" )
+			return Task_GetBonus( task, "failed" )
 		end
 	end,
 	DESTROY_DEF = function ( task )
@@ -762,25 +775,46 @@ local _finishTask =
 		local workload = Asset_Get( task, TaskAssetID.WORKLOAD )
 		progress = progress + CitySpyParams.GRADE_OP_BONUS[spy.grade]		
 		if progress >= workload then
-			--InputUtil_Pause( "dest", progress, workload, g_Time:CalcDiffDayByDate( Asset_Get( task, TaskAssetID.BEGIN_TIME ) ) )
 			city:DestroyDefensive()
 			loc:LoseSpy( city, 1 )
 			Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
 			Stat_Add( "OP@Suc", 1, StatType.TIMES )
-			return Task_Contribute( task, "success" )
+			return Task_GetBonus( task, "success" )
 		else
 			Asset_Set( task, TaskAssetID.RESULT, TaskResult.FAILED )
 			Stat_Add( "OP@Failed", 1, StatType.TIMES )
-			return Task_Contribute( task, "failed" )
+			return Task_GetBonus( task, "failed" )
 		end
 	end,
+	ASSASSINATE = function ( task )
+		local city = Asset_Get( task, TaskAssetID.DESTINATION )
+		local loc  = Asset_Get( task, TaskAssetID.LOCATION )
+		local spy  = loc:GetSpy( city )
+		local progress = Asset_Get( task, TaskAssetID.PROGRESS )		
+		local workload = Asset_Get( task, TaskAssetID.WORKLOAD )
+		progress = progress + CitySpyParams.GRADE_OP_BONUS[spy.grade]
+		if progress >= workload then
+			local target = Asset_GetDictItem( task, TaskAssetID.PARAMS, "chara" )
+			local actor = Asset_Get( task, TaskAssetID.ACTOR )
+			city:Assassinate( target, actor )
+			loc:LoseSpy( city, 1 )
+			Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
+			Stat_Add( "OP@Suc", 1, StatType.TIMES )
+			return Task_GetBonus( task, "success" )
+		else
+			Asset_Set( task, TaskAssetID.RESULT, TaskResult.FAILED )
+			Stat_Add( "OP@Failed", 1, StatType.TIMES )
+			return Task_GetBonus( task, "failed" )
+		end
+	end,
+
 
 	RESEARCH  = function ( task )
 		local group = Asset_Get( task, TaskAssetID.GROUP )
 		local tech  = Asset_GetDictItem( task, TaskAssetID.PARAMS, "tech" )
 		group:MasterTech( tech )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
-		return Task_Contribute( task, "success" )
+		return Task_GetBonus( task, "success" )
 	end,
 
 	IMPROVE_RELATION = function ( task )
@@ -792,10 +826,10 @@ local _finishTask =
 			Dipl_ImproveRelation( group, oppGroup, progress )			
 			Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
 			Stat_Add( "Dipl@Improve", g_Time:CreateCurrentDateDesc() .. " " .. group:ToString() .. "-->" .. oppGroup:ToString(), StatType.LIST )
-			return Task_Contribute( task, "success" )
+			return Task_GetBonus( task, "success" )
 		else
 			Asset_Set( task, TaskAssetID.RESULT, TaskResult.FAILED )
-			return Task_Contribute( task, "failed" )
+			return Task_GetBonus( task, "failed" )
 		end
 	end,
 	DECLARE_WAR      = function ( task )
@@ -804,7 +838,7 @@ local _finishTask =
 		Dipl_DeclareWar( group, oppGroup )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
 		Stat_Add( "Dipl@DeclareWar", g_Time:CreateCurrentDateDesc() .. " " .. group:ToString() .. "-->" .. oppGroup:ToString(), StatType.LIST )
-		return Task_Contribute( task, "success" )
+		return Task_GetBonus( task, "success" )
 	end,
 	SIGN_PACT        = function ( task )
 		local progress = Asset_Get( task, TaskAssetID.PROGRESS )
@@ -821,10 +855,10 @@ local _finishTask =
 			end
 			Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
 			Stat_Add( "Dipl@SignPact", g_Time:CreateCurrentDateDesc() .. " " .. group:ToString() .. "-->" .. oppGroup:ToString() .. "=" .. MathUtil_FindName( RelationPact, pact ), StatType.LIST )
-			return Task_Contribute( task, "success" )
+			return Task_GetBonus( task, "success" )
 		else
 			Asset_Set( task, TaskAssetID.RESULT, TaskResult.FAILED )
-			return Task_Contribute( task, "failed" )
+			return Task_GetBonus( task, "failed" )
 		end
 	end,
 }
@@ -1094,6 +1128,7 @@ function Task_Create( taskType, actor, location, destination, params )
 		or type == TaskType.RECONNOITRE
 		or type == TaskType.SABOTAGE
 		or type == TaskType.DESTROY_DEF
+		or type == TaskType.ASSASSINATE
 
 		or type == TaskType.RESEARCH
 		then
@@ -1157,7 +1192,11 @@ local function Task_Reply( task )
 	if Asset_Get( task, TaskAssetID.ACTOR_TYPE ) == TaskActorType.CHARA then
 		Asset_Foreach( task, TaskAssetID.CONTRIBUTORS, function( data )
 			--local type = Asset_Get( task, TaskAssetID.TYPE )
-			--if type == TaskType.LEAD_CORPS then print( actor.name, "contribute", value, task:ToString() ) end
+			--if type == TaskType.LEAD_CORPS then print( actor.name, "contribute", value, task:ToString() ) end			
+			local bonus = Task_GetBonus( task )
+			data.actor:AffectExp( CharaStatus.MILITARY_EXP, bonus.mil_exp )
+			data.actor:AffectExp( CharaStatus.OFFICER_EXP, bonus.off_exp )
+			data.actor:AffectExp( CharaStatus.DIPLOMATIC_EXP, bonus.dip_exp )
 			data.actor:Contribute( data.value )
 		end )
 	else
@@ -1178,14 +1217,19 @@ local function Task_Finish( task )
 	local contribution
 	local fn = _finishTask[Asset_Get( task, TaskAssetID.TYPE )]
 	if fn then
-		contribution = fn( task )
+		bonus = fn( task )
 	else
 		--default set status to WAITING, in order to go next step
 		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WAITING )
 	end
 
-	if contribution and contribution > 0 then
-		task:Contribute( Asset_Get( task, TaskAssetID.ACTOR ), contribution )
+	if bonus then
+		local result = Asset_Get( task, TaskAssetID.RESULT )
+		if result == TaskResult.SUCCESS then
+			task:Contribute( Asset_Get( task, TaskAssetID.ACTOR ), bonus["success"] )
+		elseif result == TaskResult.FAILED then
+			task:Contribute( Asset_Get( task, TaskAssetID.ACTOR ), bonus["failed"] )
+		end
 	end
 
 	--Stat_Add( "Task@Finish", task:ToString(), StatType.LIST )
@@ -1205,18 +1249,16 @@ function Task_Do( task, actor )
 	if Asset_Get( task, TaskAssetID.DURATION ) <= 0 then
 	end
 
-	local contribution = DEFAULT_TASK_CONTRIBUTION
-
 	local contribution
 	local fn = _workOnTask[Asset_Get( task, TaskAssetID.TYPE )]	
 	if fn then
-		contribution = fn( task, actor and WorkType.ACTOR or WorkType.EXECUTION )
+		bonus = fn( task, actor and WorkType.ACTOR or WorkType.EXECUTION )
 	else
 		error( "no work function for working status, " .. MathUtil_FindName( TaskType, type ) )
 	end
 
-	if contribution and contribution > 0 then
-		task:Contribute( Asset_Get( task, TaskAssetID.ACTOR ), contribution )
+	if bonus then
+		task:Contribute( Asset_Get( task, TaskAssetID.ACTOR ), bonus["work"] )
 	end
 
 	--Stat_Add( "Task@Do", 1, StatType.TIMES )

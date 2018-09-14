@@ -58,7 +58,7 @@ CHUHAN_CharaData =
 		name = "Liu Bang",
 		birth       = 150,
 		ability     = 60,
-		potential   = 80,
+		potential   = 85,
 		grade       = "BEST",
 		purpose     = 0,
 		job         = "LEADER",
@@ -66,13 +66,14 @@ CHUHAN_CharaData =
 		politics    = { 0, 10, 1000 },
 		strategy    = { 0, 10, 1000 },
 		tactic      = { 0, 10, 1000 },
+		traits      = {},
 	},
 	[101] = 
 	{
 		name = "Zhang Liang",	
 		birth       = 150,
 		ability     = 60,
-		potential   = 80,
+		potential   = 95,
 		grade       = "PERFECT",
 		purpose     = 0,
 		job 		= "",
@@ -86,11 +87,11 @@ CHUHAN_CharaData =
 		name = "Han Xin",	
 		birth       = 150,
 		ability     = 60,
-		potential   = 80,
+		potential   = 95,
 		grade       = "PERFECT",
 		purpose     = 0,
 		job 		= "",
-		skills      = { 1000, 1030 },
+		skills      = { 7200, 7300, 7400, 7410, 7500, 10001 },
 		politics    = { 0, 10, 1000 },
 		strategy    = { 0, 10, 1000 },
 		tactic      = { 0, 10, 1000 },
@@ -100,7 +101,7 @@ CHUHAN_CharaData =
 		name = "Xiao He",	
 		birth       = 150,
 		ability     = 60,
-		potential   = 80,
+		potential   = 90,
 		grade       = "BEST",
 		purpose     = 0,
 		job         = "",
@@ -114,7 +115,7 @@ CHUHAN_CharaData =
 		name = "Chen Pin",	
 		birth       = 150,
 		ability     = 60,
-		potential   = 80,
+		potential   = 90,
 		grade       = "BEST",
 		purpose     = 0,
 		job         = "",
@@ -127,13 +128,14 @@ CHUHAN_CharaData =
 	[200] = 
 	{
 		name = "Xiang Yu",
+		level       = 8,
 		birth       = 150,
 		ability     = 50,
-		potential   = 90,	
+		potential   = 95,	
 		grade       = "PERFECT",	
 		purpose     = 0,		
 		job         = "LEADER",
-		skills      = { 1001, 1010, 1040 },
+		skills      = { 1001, 1010, 1040, 10000 },
 		politics    = { 0, 10, 1000 },
 		strategy    = { 0, 10, 1000 },
 		tactic      = { 0, 10, 1000 },
@@ -156,7 +158,7 @@ CHUHAN_CharaData =
 		name = "Long ju",
 		birth       = 150,
 		ability     = 50,
-		potential   = 90,
+		potential   = 85,
 		grade       = "BEST",
 		purpose     = 0,	
 		skills      = { 1001, 1010, 1040 },
@@ -169,10 +171,23 @@ CHUHAN_CharaData =
 		name = "Zhong Limei",		
 		birth       = 150,
 		ability     = 50,
-		potential   = 90,
+		potential   = 85,
 		grade       = "BEST",
 		purpose     = 0,	
 		skills      = { 1001, 1010, 1040 },
+		politics    = { 0, 10, 1000 },
+		strategy    = { 0, 10, 1000 },
+		tactic      = { 0, 10, 1000 },
+	},
+	[204] = 
+	{
+		name = "Ji Bu",		
+		birth       = 150,
+		ability     = 50,
+		potential   = 90,
+		grade       = "BEST",
+		purpose     = 0,	
+		skills      = { 1001, 1010, 1040, 4030 },
 		politics    = { 0, 10, 1000 },
 		strategy    = { 0, 10, 1000 },
 		tactic      = { 0, 10, 1000 },
@@ -307,7 +322,7 @@ CHUHAN_GroupRelationData =
 
 ---------------------------------
 --
-
+--[[]]
 CHUHAN_WeaponTable = 
 {
 	[10] = { name = "fork",      level = "1", dmg = "NORMAL",    range = "CLOSE",   power = 40, accuracy = 25,  duration = 30, },
@@ -319,6 +334,20 @@ CHUHAN_WeaponTable =
 	[50] = { name = "stone",     level = "5", dmg = "FORTIFIED", range = "MISSILE", power = 80, accuracy = 80,  duration = 20, },
 	[51] = { name = "ram",       level = "5", dmg = "FORTIFIED", range = "CLOSE",   power = 50, accuracy = 100, duration = 20, },
 }
+--]]
+--[[
+CHUHAN_WeaponTable = 
+{
+	[10] = { name = "fork",      level = "2", weight = 120, sharpness = 80,  attributes = {} },
+	[20] = { name = "sword",     level = "4", weight = 100, sharpness = 100, attributes = {} },
+	[30] = { name = "spear",     level = "4", weight = 150, sharpness = 50,  attributes = {} },
+	[31] = { name = "lance",     level = "5", weight = 200, sharpness = 50,  attributes = {} },
+	[40] = { name = "bow",       level = "4", weight = 40,  sharpness = 80,  attributes = {} },
+	[41] = { name = "slingshot", level = "3", weight = 80,  sharpness = 20,  attributes = {} },
+	[41] = { name = "stone",     level = "4", weight = 500, sharpness = 0,   attributes = { accuracy = 0.1 } },
+	[41] = { name = "ram",       level = "4", weight = 600, sharpness = 0,   attributes = { accuracy = 0 } },
+}
+]]
 
 ---------------------------------
 

@@ -6,6 +6,7 @@ function ConstructionTable:Load( data )
 	self.name = data.name
 	self.type = CityConstructionType[data.type]
 
+	self.area     = data.area or 1
 	self.duration = data.duration
 	self.effects  = MathUtil_Copy( data.effects )
 	self.prerequsite = MathUtil_Copy( data.prerequsite )
