@@ -849,3 +849,5 @@ function MathUtil_Approximate( value, list, name, ascend )
 	end
 	return default
 end
+
+Dump = MathUtil_Dump

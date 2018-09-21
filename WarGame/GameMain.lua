@@ -190,9 +190,16 @@ function Game_Init()
 		City_Harvest( data )
 	end )
 
+	-----------------------------------
 	--init chara's atomic trait
 	Entity_Foreach( EntityType.CHARA, function ( chara )		
 		CharaCreator_GenerateAtomicTrait( chara )
+
+		--in order to test, we add random trait for each players
+		for i = 1, 3 do
+			Chara_GainTrait( chara )
+		end
+		print( chara:ToString( "TRAITS") )
 	end)
 
 	--set debugger watcher( print on the console )
@@ -282,6 +289,7 @@ function Game_Start()
 	Debug_Normal( "Move==>" .. Entity_Number( EntityType.MOVE ) ) Entity_Foreach( EntityType.MOVE, function( entity ) Debug_Normal( entity:ToString(), "still" ) end )
 	Debug_Normal( "Dipl==>" .. Entity_Number( EntityType.RELATION ) ) Entity_Foreach( EntityType.RELATION, function( entity ) Debug_Normal( entity:ToString( "ALL" ) ) end )
 	Debug_Normal( "Combat==>" .. Entity_Number( EntityType.COMBAT ) ) Entity_Foreach( EntityType.COMBAT, function( entity ) Debug_Normal( entity:ToString( "ALL" ) ) end )
+	Debug_Normal( "Troop==>" .. Entity_Number( EntityType.TROOP ) ) Entity_Foreach( EntityType.TROOP, function( entity ) Debug_Normal( entity:ToString( "ALL" ) ) end )
 
 	Debug_Normal( "turn=" .. g_Time:ToString() )
 

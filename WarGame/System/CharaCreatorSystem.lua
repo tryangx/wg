@@ -132,7 +132,7 @@ function CharaCreator_GenerateAtomicTrait( chara, num )
 					--print( traitName, prob )
 					if rand < prob then
 						local trait = CharaTraitType[traitName]
-						--InputUtil_Pause( "add atomic", traitName, chara.name )
+						--print( "add atomic", traitName, chara.name, trait )						
 						chara:GainTrait( trait )
 						reqNumOfTrait = reqNumOfTrait - 1
 						break
@@ -145,30 +145,65 @@ function CharaCreator_GenerateAtomicTrait( chara, num )
 	end
 end
 
+--
+-- 1. Find 3 list from traits data, essential traits / possible traits
+--    1a. Essential traits means it should be added at first
+-- 2. 
+--
 function CharaCreator_GenerateTrait( chara, reqTrait )
 	if not reqTrait then reqTrait = 1 end
 
 	local traitData = Scenario_GetData( "CHARA_TRAIT_DATA" )
 
-	local totalProb = 0
-	local possibleTraits = {}
+	--possible traits
+	local possibleTraits  = {}
+	local totalPossProb = 0
+	local essentialTraits = {}
 	local traitDict = Asset_GetDict( chara, CharaAssetID.TRAITS )
-	for trait, value in pairs( traitDict ) do		
-		if trait < CharaTraitType.EXTENSION_TRAIT then			
-			local list = traitData[trait]			
-			for trait2, value2 in pairs( list ) do
-				if not MathUtil_IndexOf( traitDict, trait ) then
-					if not possibleTraits[trait2] then
-						possibleTraits[trait2] = 0
+	for trait, value in pairs( traitDict ) do
+		--if trait >= CharaTraitType.ATOMIC_TRAIT and trait < CharaTraitType.TEMPLATE_TRAIT then
+		--print( "cp", trait, value )
+		if trait <= CharaTraitType.EXTENSION_TRAIT then
+			--check catalog by atomic trait 
+			local list = traitData[trait]
+			--print( "atomic", trait, #list )
+			for traitName, value2 in pairs( list ) do
+				local trait2 = CharaTraitType[traitName]
+				--check that should not exist
+				if not MathUtil_IndexOf( traitDict, trait2 ) then
+					if value2 >= 100 then
+						--add to essential traits list
+						table.insert( essentialTraits, trait2 )
+						--[[
+					elseif trait2 >= CharaTraitType.NORMAL_TRAIT then
+						if not noramlTraits[trait2] then noramlTraits[trait2] = 0 end
+						noramlTraits[trait2] = noramlTraits[trait2] + value2
+						totalPossProb = totalPossProb + value2
+						]]
+					else
+						if not possibleTraits[trait2] then possibleTraits[trait2] = 0 end
+						possibleTraits[trait2] = possibleTraits[trait2] + value2
+						totalPossProb = totalPossProb + value2
 					end
-					possibleTraits[trait2] = possibleTraits[trait2] + value2
-					totalProb = totalProb + value2
 				end
 			end
 		end
 	end
-	if totalProb == 0 then
-		--no atmoic trait		
+
+	--process with essential traits
+	if #essentialTraits > 0 then
+		InputUtil_Pause( "essentialTraits", #essentialTraits )
+		essentialTraits = MathUtil_Shuffle_Sync( essentialTraits )
+		for i = 1, reqTrait do
+			chara:GainTrait( essentialTraits[i] )
+		end
+		return
+	end
+
+	--check if no atmoic trait
+	if totalPossProb == 0 then
+		--for debug
+		DBG_Error( "TRAIT", chara.name .. " don't have atomic trait" )		
 		CharaCreator_GenerateAtomicTrait( chara )
 		CharaCreator_GenerateTrait( chara, reqTrait )
 		return
@@ -176,21 +211,25 @@ function CharaCreator_GenerateTrait( chara, reqTrait )
 
 	--remove impossible
 	for trait, prob in pairs( possibleTraits ) do
-		if prob < 0 then
+		if prob <= 0 then
 			possibleTraits[trait] = nil
-			totalProb = totalProb - prob
+			totalPossProb = totalPossProb - prob
 		end
 	end
 
+	if totalPossProb <= 0 then
+		return
+	end
+
+	--InputUtil_Pause( "possibleTraits", #possibleTraits, totalPossProb, reqTrait )
 	--try to add
-	while reqTrait > 1 do
-		local rand = Random_GetInt_Sync( 1, totalProb )
-		for trait, prob in pairs( possibleTraits ) do
+	while reqTrait >= 1 do
+		local rand = Random_GetInt_Sync( 1, totalPossProb )
+		for trait, prob in pairs( possibleTraits ) do			
 			if rand < prob then
 				chara:GainTrait( trait )
-				--print( "add trait", trait, chara.name )
 				possibleTraits[trait] = nil
-				totalProb = totalProb - prob
+				totalPossProb = totalPossProb - prob
 				reqTrait = reqTrait - 1
 				break
 			end

@@ -62,11 +62,11 @@ CHUHAN_CharaData =
 		grade       = "BEST",
 		purpose     = 0,
 		job         = "LEADER",
-		skills      = { 1000, 1030 },
+		skills      = {},
 		politics    = { 0, 10, 1000 },
 		strategy    = { 0, 10, 1000 },
 		tactic      = { 0, 10, 1000 },
-		traits      = {},
+		traits      = { OPEN = 80, VOLUBLE = 80, CONFIDENCE = 80, CAREFUL = 60, GREED = 80 },
 	},
 	[101] = 
 	{

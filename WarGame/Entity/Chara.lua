@@ -61,12 +61,12 @@ CharaAssetID =
 	SUPERIOR        = 401,
 }
 
-local function Chara_SetTrait( entity, id, value )
-	if typeof( value ) == "string" then
-		value = CharaTraitType[value]
-		InputUtil_Pause( "settrait", value, CharaTraitType[value] )
+local function Chara_SetTrait( entity, id, value, key )
+	if typeof( key ) == "string" then		
+		key = CharaTraitType[key]
 	end
-	return value
+	--InputUtil_Pause( "settrait", key, value )
+	return value, key
 end
 
 CharaAssetAttrib = 
@@ -154,8 +154,8 @@ function Chara:Load( data )
 	Asset_Set( self, CharaAssetID.CONTRIBUTION, data.contribution )
 	Asset_Set( self, CharaAssetID.LEVEL, data.level or 1 )
 	Asset_CopyList( self, CharaAssetID.SKILLS, data.skills )
-	Asset_CopyList( self, CharaAssetID.TRAITS, data.traits )
- 
+	Asset_CopyDict( self, CharaAssetID.TRAITS, data.traits )
+
 	--FOR TEST
 	if data.politics[2] + data.strategy[2] + data.tactic[2] <= 0 then
 		CharaCreator_GenerateCharaActionData( self, Asset_Get( self, CharaAssetID.GRADE ) )
@@ -178,6 +178,10 @@ end
 
 function Chara:ToString( type )
 	local content = "[" .. self.name .. "]"
+
+	if type == "BELONG" or type == "ALL" then
+		content = content .. " gp=" .. String_ToStr( Asset_Get( self, CharaAssetID.GROUP ), "name" )
+	end
 
 	if type == "GROWTH" or type == "ALL" then
 		content = content .. " lv=" .. Asset_Get( self, CharaAssetID.LEVEL )
@@ -205,12 +209,12 @@ function Chara:ToString( type )
 		content = content .. " oop=" .. ( self:GetStatus( CharaStatus.OFFICER_EXP ) or 0 )
 		content = content .. " dpp=" .. ( self:GetStatus( CharaStatus.DIPLOMATIC_EXP ) or 0 )
 	end	
-	if type == "TRAITS" or type == "GROWTH" then
+	if type == "TRAITS" or type == "GROWTH" then		
 		for trait, _ in pairs( Asset_GetDict( self, CharaAssetID.TRAITS ) ) do
 			content = content .. " " .. MathUtil_FindName( CharaTraitType, trait )
 		end
 	end
-	if type == "SKILL" or type == "GROWTH" then
+	if type == "SKILL" or type == "GROWTH" or type == "ALL" then
 		for _, skill in pairs( Asset_GetDict( self, CharaAssetID.SKILLS ) ) do
 			content = content .. " " .. skill.name .. ","
 		end
@@ -228,6 +232,12 @@ function Chara:ToString( type )
 		end
 	end
 	return content
+end
+
+------------------------------------------
+
+function Chara:GetLoyality()
+	return Asset_Get( self, CharaAssetID.LOYALITY )
 end
 
 ------------------------------------------
@@ -264,7 +274,7 @@ end
 function Chara:GetEffectValue( effectType )
 	local value = 0
 	local reqLoyality = 0
-	local loyality = Asset_Get( self, CharaAssetID.LOYALITY )
+	local loyality = self:GetLoyality()
 	Asset_Foreach( self, CharaAssetID.SKILLS, function ( skill )
 		if loyality < reqLoyality then
 			print( self.name, skill.name, "req loy=" .. reqLoyality )
@@ -416,7 +426,10 @@ end
 function Chara:GainTrait( trait )
 	Asset_SetDictItem( self, CharaAssetID.TRAITS, trait, 100 )
 
-	--InputUtil_Pause( self:ToString( "BRIEF" ), "gain trait=" .. MathUtil_FindName( CharaTraitType, trait ), Asset_GetDictSize( self, CharaAssetID.TRAITS ) )
+	--sanity checker
+	if MathUtil_FindName( CharaTraitType, trait ) == "" then error( "1") end
+
+	--InputUtil_Pause( self:ToString( "BRIEF" ), "gain trait=" .. MathUtil_FindName( CharaTraitType, trait ) .. "/" .. trait, "size=" .. Asset_GetDictSize( self, CharaAssetID.TRAITS ) )
 	Stat_Add( "Trait@Gain", self.name .. "+" .. MathUtil_FindName( CharaTraitType, trait ), StatType.LIST )
 	Stat_Add( "Trait@GainTimes", 1, StatType.TIMES )
 end

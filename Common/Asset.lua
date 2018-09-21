@@ -405,10 +405,22 @@ end
 --simply 
 function Asset_CopyDict( entity, id, source, fn )
 	if not source then return end
+	
 	Asset_Clear( entity, id )
-	local list = Asset_GetList( entity, id )
-	for id, v in pairs( source ) do
-		list[id] = v
+
+	local dict = Asset_GetDict( entity, id )
+
+	local attrib = Entity_GetAssetAttrib( entity, id )
+	local setter = attrib and attrib.setter or nil
+
+	for key, value in pairs( source ) do
+		if setter then
+			local newValue, newKey = setter( entity, id, value, key )
+			if not newKey then newKey = key end
+			dict[newKey] = newValue
+		else
+			dict[key] = value
+		end
 	end
 end
 

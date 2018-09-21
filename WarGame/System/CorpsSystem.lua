@@ -107,6 +107,12 @@ function Corps_GetTroopMaxNumber( city, troop )
 	return number
 end
 
+function Corps_GetLimitByGroup( group )
+	local numOfCity = Asset_GetListSize( group, GroupAssetID.CITY_LIST )
+	--at least more than on capital
+	return numOfCity * 2 + 2
+end
+
 function Corps_GetLimitByCity( city )
 	if city:IsCapital() == true then return 4 end
 	return 2
@@ -426,8 +432,10 @@ function Corps_EstablishInCity( city, leader, purpose, troopNumber )
 
 	--set group and name
 	local group = Asset_Get( city, CityAssetID.GROUP )	
-	Asset_Set( corps, CorpsAssetID.GROUP, group )	
+	Asset_Set( corps, CorpsAssetID.GROUP, group )
 	if group then
+		--insert into corps_list
+		group:AddCorps( corps )
 		corps.name = group.name .. "_Corps_" .. corps.id
 	else
 		corps.name = city.name .. "_Corps_" .. corps.id
@@ -490,6 +498,9 @@ function Corps_EstablishInCity( city, leader, purpose, troopNumber )
 
 	--put corps into city
 	city:CorpsJoin( corps )
+
+	--put corps into group
+
 
 	--sanity checker
 	if corps:GetSoldier() == 0 then

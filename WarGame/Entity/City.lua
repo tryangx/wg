@@ -951,7 +951,7 @@ function City:CorpsJoin( corps, isEnterCity )
 		if group then
 			group:AddCorps( corps )
 		end
-		error( "corps no group" )
+		--error( "corps no group" )
 	end	
 
 	Debug_Log( corps:ToString(), "garrison city=" .. self.name )
@@ -974,19 +974,22 @@ end
 -- Character relative
 function City:ElectExecutive()
 	local executive = self:GetOfficer( CityJob.EXECUTIVE )
-	if not executive then
-		--find a leader from officer
-		local charaList = Asset_GetList( self, CityAssetID.CHARA_LIST )
-		executive = Chara_FindLeader( charaList )
+	if executive then return end
+	
+	--find a leader from officer
+	local charaList = Asset_GetList( self, CityAssetID.CHARA_LIST )
+	officer = Chara_FindLeader( charaList )
 
-		--executive = Random_GetListData( self, CityAssetID.CHARA_LIST )		
-		--DBG_Trace( "city=" .. self.name .. " no executive, num_chara=" .. Asset_GetListSize( self, CityAssetID.CHARA_LIST ) )
-		if executive then
-			self:SetOfficer( executive, CityJob.EXECUTIVE )
-			CRR_Tolerate( "city=" .. self.name .. " set default executive=" .. executive.name )
-			--InputUtil_Pause( "select chief executive=" .. executive.name )
-		end
-	end
+	--executive = Random_GetListData( self, CityAssetID.CHARA_LIST )		
+	--DBG_Trace( "city=" .. self.name .. " no executive, num_chara=" .. Asset_GetListSize( self, CityAssetID.CHARA_LIST ) )
+	if not officer then return end
+
+	--dismiss old job
+	self:RemoveOfficer( officer )
+	--assign new job as executive
+	self:SetOfficer( officer, CityJob.EXECUTIVE )
+	CRR_Tolerate( "city=" .. self.name .. " set default executive=" .. officer:ToString() )
+	--InputUtil_Pause( "select chief executive=" .. executive.name )
 end
 
 function City:AssignOfficer()

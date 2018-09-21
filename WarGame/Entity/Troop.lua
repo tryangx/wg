@@ -74,7 +74,7 @@ function Troop:ToString( type )
 	
 	content = content .. ( self:GetCombatData( TroopCombatData.SIDE ) and ( self:GetCombatData( TroopCombatData.SIDE ) == CombatSide.ATTACKER and "-ATK" or "-DEF" ) or "" )
 
-	if type == "COMBAT" or type == "COMBAT_ALL" then
+	if type == "COMBAT" or type == "COMBAT_ALL" or type == "ALL" then
 		local officer = Asset_Get( self, TroopAssetID.OFFICER )
 		if officer then
 			content = content .. " o=" .. officer:ToString()
@@ -103,7 +103,7 @@ function Troop:ToString( type )
 		content = content .. " n=" .. Asset_Get( self, TroopAssetID.SOLDIER )
 	elseif type == "ALL" then
 		content = content .. " n=" .. Asset_Get( self, TroopAssetID.SOLDIER )
-		content = content .. " exp=" .. Asset_GetDictItem( self, TroopAssetID.STATUSES, TroopStatus.EXP )
+		content = content .. " exp=" .. ( Asset_GetDictItem( self, TroopAssetID.STATUSES, TroopStatus.EXP ) or 0 )
 		local corps = Asset_Get( self, TroopAssetID.CORPS )
 		if corps then
 			content = content .. " corp=" .. corps.name

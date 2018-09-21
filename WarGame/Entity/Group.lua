@@ -406,7 +406,7 @@ function Group:LoseChara( chara )
 	Debug_Log( chara:ToString(), "leave group=" .. self:ToString() )
 end
 
-function Group:AddCorps( corps )	
+function Group:AddCorps( corps )
 	Asset_AppendList( self, GroupAssetID.CORPS_LIST, corps )
 end
 

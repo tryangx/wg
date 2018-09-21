@@ -178,15 +178,23 @@ CharaTraitType =
 	--   Initialized at first( Generated )
 	--   Only change in Event
 	------------------------------------------------
+	
+	ATOMIC_TRAIT = 0, --seperator, below is ATOMIC
 
-	IDEAL        = 100,
-	REALISM      = 110,
+	IDEAL        = 1,
+	REALISM      = 2,
+	ACTIVELY     = 3,
+	PASSIVE      = 4,
+	INTROVERT    = 5,
+	EXTROVERT    = 6,
+	
+	TEMPLATE_TRAIT      = 100,
 
-	ACTIVELY     = 200,
-	PASSIVE      = 210,
+	TEMPLATE_OFFICER    = 101,
+	TEMPLATE_LOBBYIST   = 102,
+	TEMPLATE_DIPLOMATIC = 103,
 
-	INTROVERT    = 300,
-	EXTROVERT    = 310,
+	TEMPLATE_GENERAL    = 200,
 
 	------------------------------------------------
 	-- Extension
@@ -195,9 +203,9 @@ CharaTraitType =
 	EXTENSION_TRAIT = 1000, --seperator
 
 	--Needs
-	LUST          = 1000,
-	SEXLESS       = 1001,
-	HOMO          = 1002, 
+	LUST          = 1000, --sex
+	SEXLESS       = 1001, --sex
+	HOMO          = 1002, --sex
 	GLUTTONY      = 1003, --for food
 	GREED         = 1004, --for money
 	PRIDE         = 1005, --for honor

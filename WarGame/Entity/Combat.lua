@@ -318,7 +318,7 @@ function Combat:AddTroop( troop, side )
 	local officer= Asset_Get( troop, TroopAssetID.OFFICER )	
 	if officer then
 		Asset_AppendList( self, CombatAssetID.OFFICER_LIST, officer )
-		Stat_Add( "AttendCombat@" .. officer.name, 1, StatType.TIMES )
+		Stat_Add( "Chara_CombatAt@" .. officer:ToString(), 1, StatType.TIMES )
 	end
 end
 
@@ -2079,8 +2079,10 @@ function Combat:DealDamage( attacker, defender, params )
 	-- Damage( Kill ) Statistic	
 	local atkcorps = Asset_Get( attacker, TroopAssetID.CORPS )
 	local defcorps = Asset_Get( defender, TroopAssetID.CORPS )
-	Stat_Add( "KILL@" .. self:GetTroopGroupName( attacker ), kill, StatType.ACCUMULATION )	
-	Stat_Add( "DIE@" .. self:GetTroopGroupName( defender ), kill, StatType.ACCUMULATION )		
+	local atkOfficer = Asset_Get( attacker, TroopAssetID.OFFICER )
+	if atkOfficer then Stat_Add( "CHARA_CombatKill@" .. atkOfficer:ToString(), kill, StatType.ACCUMULATION ) end
+	Stat_Add( "TROOP_KILL@" .. self:GetTroopGroupName( attacker ), kill, StatType.ACCUMULATION )	
+	Stat_Add( "GROUP_DIE@" .. self:GetTroopGroupName( defender ), kill, StatType.ACCUMULATION )		
 	Stat_Add( "Combat@Kill", kill, StatType.ACCUMULATION )
 	--Stat_Add( "Combat@" .. self.id .. "_KILL", kill, StatType.ACCUMULATION )
 	--Stat_Add( "DIE@" .. atkcorps.name,  kill, StatType.ACCUMULATION )

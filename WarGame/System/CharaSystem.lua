@@ -134,7 +134,8 @@ end
 function Chara_FindLeader( charaList )
 	local findChara
 	for _, chara in pairs( charaList ) do
-		if not findChara or Asset_Get( findChara, CharaAssetID.JOB ) < Asset_Get( chara, CharaAssetID.JOB ) then
+		if not findChara
+			or findChara:GetLoyality() < chara:GetLoyality() then
 			findChara = chara
 		end
 	end
@@ -327,8 +328,11 @@ function Chara_LearnSkill( chara )
 	local lv = Asset_Get( chara, CharaAssetID.LEVEL )
 	local hasSkill = Asset_GetListSize( chara, CharaAssetID.SKILLS )	
 	local prob = 35 + lv * 5 - hasSkill * 10
+
 	if Random_GetInt_Sync( 1, 100 ) > prob then return false end
 
+	--InputUtil_Pause( "try learn", prob )
+	
 	local skills = SkillTable_QuerySkillList( chara )
 	local skill = Random_GetListItem( skills )
 	if not skill then
@@ -356,7 +360,7 @@ function Chara_GainTrait( chara )
 	local numOfTrait = Asset_GetDictSize( chara, CharaAssetID.TRAITS )
 	if Random_GetInt_Sync( 1, 100 ) > 25 - numOfTrait * 3 then return end
 	
-	local reqNumOfTrait = 6
+	local reqNumOfTrait = 8
 	if numOfTrait > reqNumOfTrait then
 		return
 	end

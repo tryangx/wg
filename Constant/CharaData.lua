@@ -68,72 +68,197 @@ DefaultCharaGivenName =
 --
 DefaultCharaTrait = 
 {
+	TEMPLATE_GENERAL = 
+	{
+		LUST          = 50,
+		SEXLESS       = 0,
+		HOMO          = 20,
+		GLUTTONY      = 30,
+		GREED         = 30,
+		PRIDE         = 30,
+		AMBITION      = 30,
+
+		BRAVE         = 50,
+		COWARD        = -20,
+		AGGRESSIVE    = 30,
+		CONSERVATIVE  = 20,
+		IRRITABLE     = 30,
+		DISPASSIONATE = 0,
+		CONTROL       = 20,
+		ENDURANCE     = 20,
+		
+		OPEN          = 20,
+		CLOSE         = 10,
+		SELFISH       = 10,
+		GENEROUS      = 10,
+		FRIENDSHIP    = 10,
+		CONFIDENCE    = 30,
+		INSIDIOUS     = 20,
+		ENVY          = 20,	
+
+		CAREFUL       = 30,
+		CARELESS      = 30,
+		HARDWORK      = 30,
+		SLOTH         = 10,
+
+		FOOLISH       = 20,
+		SMART         = 20,
+		STRENGTH      = 50,
+		AGILITY       = 30,
+	},
+
+	TEMPLATE_OFFICER = 
+	{
+		LUST          = 20,
+		SEXLESS       = 20,
+		HOMO          = 20,
+		GLUTTONY      = 10,
+		GREED         = 20,
+		PRIDE         = 30,
+		AMBITION      = 30,
+
+		BRAVE         = 0,
+		COWARD        = 20,
+		AGGRESSIVE    = 20,
+		CONSERVATIVE  = 50,
+		IRRITABLE     = 10,
+		DISPASSIONATE = 30,
+		CONTROL       = 50,
+		ENDURANCE     = 30,
+		
+		OPEN          = 20,
+		CLOSE         = 20,
+		SELFISH       = 30,
+		GENEROUS      = 20,
+		FRIENDSHIP    = 20,
+		CONFIDENCE    = 50,
+		INSIDIOUS     = 30,
+		ENVY          = 30,	
+
+		CAREFUL       = 50,
+		CARELESS      = 0,
+		HARDWORK      = 10,
+		SLOTH         = 10,
+
+		FOOLISH       = 0,
+		SMART         = 30,
+		STRENGTH      = 0,
+		AGILITY       = 0,
+
+		VOLUBLE       = 35, --good at talk
+		ACCOUNTING    = 35, --good at calculate 
+		OBSERVANT     = 35, --good at observe
+		INVENTION     = 35, --good at creativity work
+		MECHANICAL    = 35, --good at mechanical work
+	},
+
+	TEMPLATE_LOBBYIST = 
+	{
+		LUST          = 20,
+		SEXLESS       = 20,
+		HOMO          = 20,
+		GLUTTONY      = 10,
+		GREED         = 20,
+		PRIDE         = 30,
+		AMBITION      = 30,
+
+		BRAVE         = 0,
+		COWARD        = 20,
+		AGGRESSIVE    = 20,
+		CONSERVATIVE  = 50,
+		IRRITABLE     = 10,
+		DISPASSIONATE = 30,
+		CONTROL       = 50,
+		ENDURANCE     = 30,
+		
+		OPEN          = 70,
+		CLOSE         = 20,
+		SELFISH       = 30,
+		GENEROUS      = 20,
+		FRIENDSHIP    = 20,
+		CONFIDENCE    = 70,
+		INSIDIOUS     = 30,
+		ENVY          = 30,	
+
+		CAREFUL       = 50,
+		CARELESS      = 0,
+		HARDWORK      = 10,
+		SLOTH         = 10,
+
+		FOOLISH       = 0,
+		SMART         = 30,
+		STRENGTH      = 0,
+		AGILITY       = 0,
+
+		VOLUBLE       = 100,
+	},
+
+	TEMPLATE_DIPLOMATIC = 
+	{
+		LUST          = 20,
+		SEXLESS       = 20,
+		HOMO          = 20,
+		GLUTTONY      = 10,
+		GREED         = 20,
+		PRIDE         = 30,
+		AMBITION      = 30,
+
+		BRAVE         = 0,
+		COWARD        = 20,
+		AGGRESSIVE    = 20,
+		CONSERVATIVE  = 50,
+		IRRITABLE     = 10,
+		DISPASSIONATE = 70,
+		CONTROL       = 50,
+		ENDURANCE     = 30,
+		
+		OPEN          = 70,
+		CLOSE         = 20,
+		SELFISH       = 30,
+		GENEROUS      = 20,
+		FRIENDSHIP    = 20,
+		CONFIDENCE    = 50,
+		INSIDIOUS     = 30,
+		ENVY          = 30,	
+
+		CAREFUL       = 50,
+		CARELESS      = 0,
+		HARDWORK      = 10,
+		SLOTH         = 10,
+
+		FOOLISH       = 0,
+		SMART         = 30,
+		STRENGTH      = 0,
+		AGILITY       = 0,
+
+		VOLUBLE       = 100,
+	},
+
 	IDEAL        =
 	{
-		AGGRESSIVE    = 20,
-		HARDWORK      = 20,
-		CAREFUL       = -50, 
-		CARELESS      = 50,
-		INSIDIOUS     = -40,
-		NOBEL         = 50,
-		INSIDIOUS     = 20,
-		DISPASSIONATE = -40,
-		LOVE_MONEY    = -40,
-		LOVE_HONOR    = -40,
+		INVENTION     = 30,
 	},
 	REALISM      =
 	{
-		CONSERVATIVE  = 20,
-		HARDWORK      = 50,
-		CAREFUL       = 50, 
-		CARELESS      = -50,
-		INSIDIOUS     = 40,
-		NOBEL         = -50,
-		INSIDIOUS     = -20,
-		DISPASSIONATE = 40,
-		LOVE_MONEY    = 50,
-		LOVE_HONOR    = 50,
+		MECHANICAL    = 30,
 	},
 
 	ACTIVELY     =
 	{
-		AGGRESSIVE   = 50,
-		IRRITATION   = 30,
-		CONSERVATIVE = -100,
-		LOVE_MONEY    = 20,
-		LOVE_HONOR    = 20,
-		HARDWORK      = 40,
-		LAZY          = -20,
+		OBSERVANT     = 20,
 	},
 	PASSIVE      =
 	{
-		CONSERVATIVE  = 50,
-		LAZY          = 20,
-		DISPASSIONATE = 30,
-		AGGRESSIVE    = -100,
-		HARDWORK      = -100,
-		LOVE_MONEY    = -20,
-		LOVE_HONOR    = -20,
+		ACCOUNTING    = 20,
 	},
 
 	INTROVERT    =
 	{
-		CAREFUL       = 50,
-		CARELESS      = -50,
-		IRRITATION    = -50,
-		DISPASSIONATE = 50,
-		LOVE_HONOR    = 40,
-		HARDWORK      = 40,
+		VOLUBLE       = 30,
 	},
 	EXTROVERT    =
 	{
-		CARELESS      = 50,
-		CAREFUL       = -50,
-		IRRITATION    = 40,
-		DISPASSIONATE = -40,
-		LOVE_MONEY    = 40,
-		LOVE_HONOR    = 40,		
-		HARDWORK      = 20,
+		VOLUBLE       = -100,
 	},
 }
 

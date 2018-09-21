@@ -53,10 +53,10 @@ function SkillTable_QuerySkillList( chara )
 
 	local function CheckCondition( cond )
 		if cond.prob and Random_GetInt_Sync( 1, 100 ) > cond.prob then return end
-		if cond.pot_above and Asset_Get( chara, CharaAssetID.POTENTIAL ) < cond.pot_above then return end
-		if cond.lv_above and Asset_Get( chara, CharaAssetID.LEVEL ) < cond.lv_above then return end
-		if cond.trait and not traitDict[cond.trait] then return end
-		if cond.no_trait and traitDict[cond.trait] then return end
+		if cond.pot_above and Asset_Get( chara, CharaAssetID.POTENTIAL ) < cond.pot_above then return end		
+		if cond.lv_above and Asset_Get( chara, CharaAssetID.LEVEL ) < cond.lv_above then return end		
+		if cond.trait and not traitDict[cond.trait] then return end		
+		if cond.no_trait and traitDict[cond.trait] then return end		
 		if cond.traits then
 			for _, traitName in ipairs( cond.traits ) do
 				local traitType = CharaTraitType[traitName]
@@ -92,5 +92,6 @@ function SkillTable_QuerySkillList( chara )
 			table.insert( skills, skill )
 		end
 	end )
+
 	return skills
 end

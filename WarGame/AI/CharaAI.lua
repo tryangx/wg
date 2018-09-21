@@ -366,21 +366,29 @@ local function CanEstablishCorps()
 	--print( "limit=" .. Corps_GetLimitByCity( _city ), "corps=" .. Asset_GetListSize( _city, CityAssetID.CORPS_LIST ) )
 
 	--check corps limitation
-	local hasCorps   = Asset_GetListSize( _city, CityAssetID.CORPS_LIST )
-	local limitCorps = Corps_GetLimitByCity( _city )
-	if hasCorps >= limitCorps then
-		Debug_Log( _city.name, "EstCorpsFailed! corps limit, cann't est corps", _city.name, hasCorps .. "/" .. limitCorps )
+	local hasCorpsInCity   = Asset_GetListSize( _city, CityAssetID.CORPS_LIST )
+	local limitCorpsInCity = Corps_GetLimitByCity( _city )
+	if hasCorpsInCity >= limitCorpsInCity then
+		Debug_Log( _city.name, "EstCorpsFailed! corps limit, cann't est corps", _city.name, hasCorpsInCity .. "/" .. limitCorpsInCity )
+		return false
+	end
+	local hasCorpsInGroup = Asset_GetListSize( _group, GroupAssetID.CORPS_LIST )
+	local limitCorpsInGroup = Corps_GetLimitByGroup( _group )
+
+	if hasCorpsInGroup > limitCorpsInGroup then
+		Debug_Log( _city.name, "EstCorpsFailed! corps limit, cann't est corps", _city.name, hasCorpsInGroup .. "/" .. limitCorpsInGroup )
 		return false
 	end
 
 	--need a leader
 	local charaList = _city:FindFreeCharas( function ( chara )
+		--not a leader
 		if Asset_Get( chara, CharaAssetID.CORPS ) then
 			return false
 		end
 		local job = _city:GetCharaJob( chara )
 		--Debug_Log( chara.name, MathUtil_FindName( CityJob, job ) )
-		return job == CityJob.COMMANDER
+		return job == CityJob.COMMANDER or job == CityJob.EXECUTIVE
 	end)
 	if #charaList == 0 then
 		Debug_Log( _city.name, "EstCorpsFailed! no commander", _city:ToString("OFFICER") )
@@ -394,8 +402,8 @@ local function CanEstablishCorps()
 
 		--check req corps
 		local reqCorps = Corps_GetRequiredByCity( _city )
-		if hasCorps < reqCorps then
-			--print( "has" .. hasCorps .."/"..reqCorps)
+		if hasCorpsInCity < reqCorps then
+			--print( "has" .. hasCorpsInCity .."/"..reqCorps)
 			--_city:SetStatus( CityStatus.RESERVE_UNDERSTAFFED, 1 )
 		end
 
