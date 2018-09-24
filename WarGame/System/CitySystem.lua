@@ -113,10 +113,9 @@ end
 -- City Statu
 
 --
--- Budget Safty Rules
--- 1. Monthly income > Salary
--- 2. Current Property > Req Property( now is one year, maybe half year? )
---
+-- Budget Safty Conditions
+-- 1. Monthly income > Salary( High )
+-- 2. Current Property > Req Property( One Year )
 function City_IsBudgetSafe( city )
 	local req = city:GetSalary()
 	--check salary covered by commerce tax( monthly )
@@ -126,7 +125,7 @@ function City_IsBudgetSafe( city )
 	--print( city:ToString( "POPULATION" ) )
 	--print( "budget" .. city:ToString( "BUDGET_MONTH" ) )
 
-	local req_food, req_money = city:GetReqProperty()
+	local req_food, req_money = city:GetReqProperty( MONTH_PER_YEAR )
 
 	--check salary reserve
 	if Asset_Get( city, CityAssetID.MONEY ) < req_money then
@@ -142,6 +141,29 @@ function City_IsBudgetSafe( city )
 	--InputUtil_Pause( "budget safe")
 	return true
 end
+
+-- Budget Danger Conditions
+-- 1. Curernt Property < Req Property ( One month )
+function City_IsBudgetDanger( city )
+	local req_food, req_money = city:GetReqProperty( 1 )
+	
+	--check salary reserve
+	if Asset_Get( city, CityAssetID.MONEY ) < req_money then
+		--print( "budgetdanger", city.name, Asset_Get( city, CityAssetID.MONEY ) .."/".. req_money, Asset_Get( city, CityAssetID.FOOD ) .."/".. req_food )
+		--InputUtil_Pause( city.name, "danger money reserve" )
+		return true
+	end
+
+	--check food reserve
+	if Asset_Get( city, CityAssetID.FOOD ) < req_food * 4 then
+		--print( "budgetdanger", city.name, Asset_Get( city, CityAssetID.MONEY ) .."/".. req_money, Asset_Get( city, CityAssetID.FOOD ) .."/".. req_food )
+		--InputUtil_Pause( city.name, "danger food reserve" )
+		return true
+	end
+	--InputUtil_Pause( "budget safe")
+	return false
+end
+
 
 -------------------------------------------------------
 
@@ -165,16 +187,18 @@ end
 function City_GetFoodIncome( city )
 	local income = 0
 	local popustparams = City_GetPopuParams( city )	
-	local agri         = Asset_Get( city, CityAssetID.AGRICULTURE )
-	local modifier     = Random_GetInt_Sync( 80, 120 ) * 0.01
+	local agri         = Asset_Get( city, CityAssetID.AGRICULTURE )	
 	for type, _ in pairs( CityPopu ) do
 		local value = popustparams.POPU_HARVEST[type]
 		if value then
 			local num = Asset_GetDictItem( city, CityAssetID.POPU_STRUCTURE, CityPopu[type] )
-			income = income + modifier * num * value			
+			income = income + num * value
 		end
 	end
-	income = math.ceil( income )
+	--simply random from 40~80
+	--we should seperate the modifier into Water, Plough, Disease etc
+	local modifier = Random_GetInt_Sync( 20, 100 ) * 0.01
+	income = math.ceil( income * modifier )
 	return income
 end
 
@@ -189,7 +213,11 @@ end
 --------------------------------------
 -- City Population Structure
 
--- 
+-- #Initialize
+--   Determined by the given constant ratio
+--
+-- #Convert flow
+--   Determined by the City Index( Development, Security, etc )
 --
 --
 function City_InitPopuStructure( city )
@@ -403,7 +431,7 @@ function City_Mental( city )
 end
 
 function City_PopuGrow( city )
-	local rate  = 1 / GlobalTime.MONTH_PER_YEAR
+	local rate  = 1 / MONTH_IN_YEAR
 	local population = Asset_Get( city, CityAssetID.POPULATION )
 	local growthRate = Random_GetInt_Sync( PopulationParams.GROWTH_MIN_RATE , PopulationParams.GROWTH_MAX_RATE )
 	local sec = Asset_Get( city, CityAssetID.SECURITY )
@@ -458,12 +486,12 @@ function City_CheckFlag( city )
 	city:SetStatus( CityStatus.SAFETY )
 	city:SetStatus( CityStatus.BATTLEFRONT )
 	city:SetStatus( CityStatus.FRONTIER )
-	city:SetStatus( CityStatus.BUDGET_DANGER, not City_IsBudgetSafe( city ) )
+	city:SetStatus( CityStatus.BUDGET_DANGER, City_IsBudgetDanger( city ) )
 
 	city:SetStatus( CityStatus.DEFENSIVE_WEAK )
 	city:SetStatus( CityStatus.DEFENSIVE_DANGER )
 
-	--soldier less than half	
+	--soldier less than half
 	city:SetStatus( CityStatus.RESERVE_NEED, maxPower - power )
 	city:SetStatus( CityStatus.RESERVE_UNDERSTAFFED, power + power < maxPower )
 
@@ -685,7 +713,6 @@ function City_CalcPersonalTax( city )
 			local num = Asset_GetDictItem( city, CityAssetID.POPU_STRUCTURE, CityPopu[type] )
 			if num then
 				tax = tax + value * num
-				--print( MathUtil_FindName( CityPopu, type ) .. "=" .. num .. "*" .. value )
 			end
 		end
 	end
@@ -696,40 +723,44 @@ function City_CalcCommerceTax( city )
 	local tax = 0
 	local popustparams = City_GetPopuParams( city )
 	local comm     = Asset_Get( city, CityAssetID.COMMERCE )
-	local maxComm  = Asset_Get( city, CityAssetID.MAX_COMMERCE )
-	local modifier = ( comm + comm ) / maxComm
+	local maxComm  = Asset_Get( city, CityAssetID.MAX_COMMERCE )	
 	for type, _ in pairs( CityPopu ) do
 		local value = popustparams.POPU_COMMERCE_TAX[type]
 		if value then
 			local num = Asset_GetDictItem( city, CityAssetID.POPU_STRUCTURE, CityPopu[type] )
-			tax = tax + modifier * num * value
+			if num then
+				tax = tax + num * value
+			end
 		end
 	end
-	return math.ceil( tax )
+	local modifier = Random_GetInt_Sync( 40, 80 ) * 0.01
+	return math.ceil( tax * modifier )
 end
 
 function City_CalcTradeTax( city )
 	local tax = 0
 	local popustparams = City_GetPopuParams( city )
-	local prod         = Asset_Get( city, CityAssetID.PRODUCTION )
-	local maxProd      = Asset_Get( city, CityAssetID.MAX_PRODUCTION )
 	local group = Asset_Get( city, CityAssetID.GROUP )
 	Asset_Foreach( city, CityAssetID.ADJACENTS, function ( adjaCity )		
 		local factor = 0.5
 		local adjaGroup = Asset_Get( adjaCity, CityAssetID.GROUP )
 		if adjaGroup ~= group then
+			factor = factor + 0.25
+		end
+		if Dipl_IsBelong( adjaGroup, group ) or Dipl_IsBelong( group, adjaGroup ) then
+			factor = factor + 0.25
+		end
+		if Dipl_HasPact( group, adjaGroup, RelationPact.TRADE ) then
 			factor = factor + 0.5
 		end
 		if Dipl_IsAtWar( adjaGroup, group ) == true then
 			factor = factor * 0.25
 		end
-		local curProd = math.min( prod, Asset_Get( adjaCity, CityAssetID.PRODUCTION ) )
-		local modifier = curProd / maxProd
 		for type, _ in pairs( CityPopu ) do
 			local value = popustparams.POPU_TRADE_TAX[type]
 			if value then
 				local num = Asset_GetDictItem( city, CityAssetID.POPU_STRUCTURE, CityPopu[type] )
-				tax = tax + num * modifier * factor * value
+				tax = tax + num * factor * value
 			end
 		end
 	end )
@@ -759,6 +790,7 @@ function City_GetYearTax( city )
 	income = income + City_CalcPersonalTax( city )
 	income = income + City_CalcCommerceTax( city ) * 12
 	income = income + City_CalcTradeTax( city ) * 4
+	print( "personal=" .. City_CalcPersonalTax( city ), "comm=" .. City_CalcCommerceTax( city ), "trade=" .. City_CalcTradeTax( city ) )
 	return income
 end
 
@@ -774,8 +806,35 @@ function City_PaySalary( city )
 	local salary = city:GetSalary( city )
 	local corpsSalary = city:GetCorpsSalary()
 	salary = salary + corpsSalary
-	city:UseMoney( salary )	
-	Stat_Add( "PaySalary@City_" .. city.name, salary, StatType.ACCUMULATION )
+	local money = Asset_Get( city, CityAssetID.MONEY )
+	if money >= salary then
+		city:UseMoney( salary )
+		Stat_Add( "PaySalary@City_" .. city.name, salary, StatType.ACCUMULATION )
+
+		Asset_Foreach( city, CityAssetID.CORPS_LIST, function ( corps )
+			Asset_Foreach( corps, CorpsAssetID.TROOP_LIST, function ( troop )
+				local value = troop:GetStatus( TroopStatus.DOWNCAST )
+				if value then
+					if value < 10 then
+						value = 0
+					else
+						value = value * 0.5
+					end
+					troop:SetStatus( TroopStatus.DOWNCAST, value )
+				end
+			end )
+		end)
+	else
+		city:UseMoney( money )		
+		Stat_Add( "PaySalary@City_" .. city.name, money, StatType.ACCUMULATION )
+
+		Asset_Foreach( city, CityAssetID.CORPS_LIST, function ( corps )
+			Asset_Foreach( corps, CorpsAssetID.TROOP_LIST, function ( troop )
+				local value = ( troop:GetStatus( TroopStatus.DOWNCAST ) or 10 ) * 2
+				troop:SetStatus( TroopStatus.DOWNCAST, value )
+			end )
+		end)
+	end
 end
 
 --levy money

@@ -51,6 +51,7 @@ CityPopu =
 	MERCHANT = 22,
 	CORVEE   = 23,
 
+	--defensive
 	RESERVES = 24,
 	SOLDIER  = 25,	
 

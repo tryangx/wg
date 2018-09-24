@@ -1237,8 +1237,7 @@ end
 
 function Task_Do( task, actor )
 	local type = Asset_Get( task, TaskAssetID.TYPE )
-	if type == TaskType.HARASS_CITY
-		or type == TaskType.ATTACK_CITY then
+	if type == TaskType.HARASS_CITY or type == TaskType.ATTACK_CITY then
 		return
 	end
 
@@ -1354,6 +1353,27 @@ local function Task_OnArriveDestination( msg )
 	--to do
 end
 
+--occur like
+--1. city already occupied by the attack-city corps
+local function Task_OnCombatUntrigger( msg )
+	local corps = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "corps" )
+	if not corps then
+		DBG_Error( "why no corps" )
+		return
+	end
+	local task = _corpsTasks[corps]
+	if not task then
+		DBG_Error( "why no task" )
+		return
+	end	
+	local taskType = Asset_Get( task, TaskAssetID.TYPE )
+	if taskType == TaskType.INTERCEPT or taskType == TaskType.HARASS_CITY or taskType == TaskType.ATTACK_CITY then
+		Task_Failed( task )
+	else
+		DBG_Error( "why goto here" )
+	end
+end
+
 local function Task_OnCombatTriggered( msg )	
 	local combat = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "combat" )
 	if not combat then error( "invalid combat?" ) return end
@@ -1430,8 +1450,7 @@ local function Task_OnCombatEnded( msg )
 					end
 					isTaskSuccess = true
 
-				elseif taskType == TaskType.ATTACK_CITY
-					or taskType == TaskType.DISPATCH_CORPS then
+				elseif taskType == TaskType.ATTACK_CITY or taskType == TaskType.DISPATCH_CORPS then
 					--resume to attack city
 					Task_Resume( task )					
 					return
@@ -1474,6 +1493,7 @@ end
 function TaskSystem:Start()
 	Message_Handle( self.type, MessageType.ARRIVE_DESTINATION, Task_OnArriveDestination )
 	Message_Handle( self.type, MessageType.COMBAT_TRIGGERRED,  Task_OnCombatTriggered )
+	Message_Handle( self.type, MessageType.COMBAT_UNTRIGGER,   Task_OnCombatUntrigger )
 	Message_Handle( self.type, MessageType.COMBAT_ENDED,       Task_OnCombatEnded )
 	
 	_prepareTask = MathUtil_ConvertKeyToID( TaskType, _prepareTask )

@@ -181,10 +181,10 @@ function City:ToString( type )
 		local money   = Asset_Get( self, CityAssetID.MONEY )
 		local salary  = self:GetSalary()
 		content = content .. " money=" .. money
-		if false then
+		if true then
 			content = content .. "+" .. math.ceil( money / salary ) .. "M"
 		else
-			content = content .. "+" .. math.ceil( money ) .. "P"
+			content = content .. "+" .. math.ceil( money / salary * MONTH_IN_YEAR ) .. "P"
 		end
 		content = content .. " food=" .. food
 		--content = content .. "-" .. consume
@@ -208,7 +208,7 @@ function City:ToString( type )
 				end				
 			end
 		end
-		content = content .. " tot=" .. consume
+		content = content .. " consume=" .. consume * DAY_IN_YEAR
 
 	elseif type == "TAX" then
 		content = content .. " person=" .. City_CalcPersonalTax( self )
@@ -508,9 +508,10 @@ function City:GetSupplyFood()
 	return food
 end
 
-function City:GetReqProperty()
-	local req_money = self:GetSalary() * MONTH_IN_SEASON
-	local req_food  = ( self:GetConsumeFood() + self:GetSupplyFood() ) * MONTH_IN_YEAR
+function City:GetReqProperty( month )
+	if not month then month = MONTH_IN_YEAR end
+	local req_money = self:GetSalary() * month
+	local req_food  = ( self:GetConsumeFood() + self:GetSupplyFood() ) * month
 	return req_food, req_money
 end
 

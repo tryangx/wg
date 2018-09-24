@@ -6,7 +6,9 @@
 --
 --------------------------------------------------------------
 
---calculate the food corps carried to dispatch 
+------------------------------------------------------
+-- Calculate the food corps carried to dispatch
+------------------------------------------------------
 function Supply_HasEnoughFoodForCorps( fromcity, destcity, corps )
 	if FeatureOption.DISABLE_FOOD_SUPPLY then return true end
 
@@ -18,6 +20,7 @@ function Supply_HasEnoughFoodForCorps( fromcity, destcity, corps )
 
 	return hasFood >= needFood
 end
+
 
 function Supply_CorpsCarryFood( corps, destcity )
 	local needFood = Corps_CalcNeedFood( corps, destcity )
@@ -64,12 +67,11 @@ function Supply_CorpsCarryMaterial( corps )
 end
 
 local function Supply_CityConsumeFood( city )
-	local consumeFood = city:GetConsumeFood() * DAY_IN_MONTH
+	local consumeFood = city:GetConsumeFood() * g_elapsed
 	city:ConsumeFood( consumeFood )
 end
 
 local function Supply_CorpsConsumeFood( corps )
-	if corps:IsAtHome() then return end
 	corps:ConsumeFood( corps:GetConsumeFood() )
 end
 
@@ -105,8 +107,12 @@ local function Supply_CorpsPaySalary( corps )
 end
 
 local function Supply_UpdateCorps( corps )
-	Supply_CorpsReplenish( corps )
-	Supply_CorpsConsumeFood( corps )
+	if corps:IsAtHome() then
+		return
+	else	
+		Supply_CorpsReplenish( corps )
+		Supply_CorpsConsumeFood( corps )
+	end
 end
 
 --------------------------------------------------------------

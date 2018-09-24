@@ -78,6 +78,14 @@ function Dipl_CanDeclareWar( relation, red )
 	return false
 end
 
+function Dipl_HasPact( red, blue, pactType )
+	local relation = System_Get( SystemType.DIPLOMACY_SYS ):GetRelation( red, blue )
+	if relation then
+		return relation:HasPact( pactType )
+	end
+	return false
+end
+
 function Dipl_GetPossiblePact( relation, pactList )
 	local datas = Scenario_GetData( "RELATION_PACT" )
 	local attitude = Asset_Get( relation, RelationAssetID.ATTITUDE )	
@@ -199,7 +207,7 @@ function DiplomacySystem:RemoveRelation( group )
 end
 
 function DiplomacySystem:GetRelation( red, blue )
-	if red == blue then return nil end
+	if red == blue or not red or not blue then return nil end
 
 	local list = _groupRelations[red]	
 	if list then

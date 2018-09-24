@@ -582,12 +582,10 @@ function Corps_Dispatch( corps, city )
 end
 
 function Corps_AttackCity( corps, city )
-	--return Warefare_SiegeCombatOccur( corps, city )
 	Message_Post( MessageType.SIEGE_COMBAT_TRIGGER, { city = city, atk = corps } )
 end
 
 function Corps_HarassCity( corps, city )
-	--return Warefare_HarassCombatOccur( corps, city )
 	Message_Post( MessageType.FIELD_COMBAT_TRIGGER, { city = city, atk = corps } )
 end
 

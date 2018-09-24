@@ -97,6 +97,10 @@ function Warefare_HarassCombatOccur( corps, city )
 end
 
 function Warefare_SiegeCombatOccur( corps, city )
+	if Asset_Get( corps, CorpsAssetID.GROUP ) == Asset_Get( city, CityAssetID.GROUP ) then
+		--print( city:ToString(), "is already occupied" )
+		return
+	end
 	local combatExist = false
 	local plot = Asset_Get( city, CityAssetID.CENTER_PLOT )
 	local combat = System_Get( SystemType.WARFARE_SYS ):GetCombatByPlot( plot )
@@ -171,17 +175,23 @@ function Warfare_UpdateCombat( combat )
 		--reset in-siege status
 		city:SetStatus( CityStatus.IN_SIEGE, nil )
 
-		--dismiss guard
-		local guard = 0
+		--dismiss guard & reserve
+		local guard, reserves = 0, 0
 		Asset_Foreach( combat, CombatAssetID.DEFENDER_LIST, function ( troop )
 			if troop:GetStatus( TroopStatus.GUARD ) then
 				guard = guard + Asset_Get( troop, TroopAssetID.SOLDIER )
 			end
+			if troop:GetStatus( TroopStatus.RESERVE ) then
+				reserves = reserves + Asset_Get( troop, TroopAssetID.SOLDIER )
+			end
 		end )
-		local old = city:GetPopu( CityPopu.GUARD )
+		local oldGuard = city:GetPopu( CityPopu.GUARD )
 		city:SetPopu( CityPopu.GUARD, guard )
-		--InputUtil_Pause( "set guard", city.name, guard, old )
-		Stat_Add( "Guard@Lose", old - guard, StatType.ACCUMULATION )
+		local oldReserves = city:GetPopu( CityPopu.GUARD )
+		city:SetPopu( CityPopu.RESERVES, reserves )
+		if reserves > 0 then InputUtil_Pause( "set guard, reserves", city.name, guard, oldGuard, reserves, oldReserves ) end
+		Stat_Add( "Guard@Lose", oldGuard - guard, StatType.ACCUMULATION )
+		Stat_Add( "Reserve@Lose", oldReserves - reserves, StatType.ACCUMULATION )
 
 		city:SetStatus( CityStatus.IN_SIEGE )
 
@@ -269,6 +279,9 @@ function Warfare_UpdateCombat( combat )
 
 	Message_Post( MessageType.COMBAT_ENDED, { combat = combat } )
 
+	--sanity checker, whether release all guard & reserves
+
+
 	--InputUtil_Pause()
 
 	return true
@@ -320,19 +333,24 @@ local function Warfare_OnFieldCombatTrigger( msg )
 		end
 	end
 
-	Message_Post( MessageType.COMBAT_TRIGGERRED, { combat = combat, atk = atk, def = def } )
-
-	Stat_Add( "Combat@Field", 1, StatType.TIMES )
+	if combat then
+		Message_Post( MessageType.COMBAT_TRIGGERRED, { combat = combat, atk = atk, def = def } )
+		Stat_Add( "Combat@Field", 1, StatType.TIMES )
+	else
+		Message_Post( MessageType.COMBAT_UNTRIGGER, { corps = atk } )
+	end
 end
 
 local function Warfare_OnSiegeCombatTrigger( msg )
 	local atk   = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "atk" )
 	local city  = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "city" )
 	local combat = Warefare_SiegeCombatOccur( atk, city )
-
-	Message_Post( MessageType.COMBAT_TRIGGERRED, { combat = combat, atk = atk } )
-
-	Stat_Add( "Combat@Siege", 1, StatType.TIMES )
+	if combat then
+		Message_Post( MessageType.COMBAT_TRIGGERRED, { combat = combat, atk = atk } )
+		Stat_Add( "Combat@Siege", 1, StatType.TIMES )
+	else
+		Message_Post( MessageType.COMBAT_UNTRIGGER, { corps = atk } )
+	end
 end
 
 -------------------------------------

@@ -81,6 +81,9 @@ TroopStatus =
 
 	SURRENDER  = 11,
 
+	--No salary
+	DOWNCAST   = 12,
+
 	--attributes
 	ATTRIBUTE_STATUS = 100,
 	EXP        = 101,

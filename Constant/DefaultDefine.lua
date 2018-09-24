@@ -42,21 +42,21 @@ MessageType =
 	-- Combat Relative
 
 	COMBAT_TRIGGERRED     = 100,
+	COMBAT_UNTRIGGER      = 101,
 	--@param plot encounter when moving
 	--@param city harass city task
 	--@param atk  always valid
 	--@param def  defender corps, only valid in encouter
 	--@param task param
-	FIELD_COMBAT_TRIGGER  = 101,
-	SIEGE_COMBAT_TRIGGER  = 102,	
+	FIELD_COMBAT_TRIGGER  = 110,
+	SIEGE_COMBAT_TRIGGER  = 111,	
 
-	COMBAT_OCCURED        = 110,
-	FIELD_COMBAT_OCCURED  = 111,
-	SIEGE_COMBAT_OCCURED  = 112,
+	COMBAT_OCCURED        = 120,
+	FIELD_COMBAT_OCCURED  = 121,
+	SIEGE_COMBAT_OCCURED  = 122,
 
-	COMBAT_ENDED          = 120,
-
-	COMBAT_REMOVE         = 140,	
+	COMBAT_ENDED          = 130,
+	COMBAT_REMOVE         = 131,	
 	----------------------------------
 
 	----------------------------------

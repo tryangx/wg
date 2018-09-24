@@ -188,6 +188,7 @@ function Game_Init()
 		--Entity_Dump( data )
 		--harvest at first
 		City_Harvest( data )
+		City_GetYearTax( data )
 	end )
 
 	-----------------------------------

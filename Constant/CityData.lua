@@ -1,4 +1,3 @@
-
 ----------------------------------------------
 -- City population structure
 --
@@ -20,37 +19,29 @@ DefaultCitySupply =
 	AGRI_SUPPLY_POPU = 100,
 }
 
+----------------------------------------------
 --Concept: 
---  1. Food Harvest/Consume Unit : 1 means 100 grams( per day )
+--  1. Food Harvest/Consume Unit : 1 means 500 grams( per day )
 --  2. One farmer can supply 2 population normally
 DefaultCityPopuHarvest = 
 {
-	FARMER   = 500,
+	FARMER   = 360,
 }
 
 DefaultCityPopuConsumeFood = 
 {
 	RESERVES = 1,
-	SOLDIER  = 2,
-	GUARD    = 1,
-	--CORVEE   = 1,
-	--[[
-	OFFICER  = 1,
-	BACHELOR = 1,
 	GUARD    = 1,	
-
-	NOBEL    = 100,
-	]]
+	SOLDIER  = 1,
 }
 
 DefaultCityPopuSalary = 
 {
-	SOLDIER  = 2,
-	RESERVES = 1,
+	RESERVES = 2,
 
-	OFFICER  = 1,
-	BACHELOR = 2,
-	GUARD    = 1,
+	OFFICER  = 2,
+	BACHELOR = 5,
+	GUARD    = 2,
 
 	NOBLE    = 100,
 }
@@ -62,15 +53,15 @@ DefaultCityPopuPersonalTax =
 	MERCHANT = 1,
 
 	MIDDLE   = 2,
-
-	RICH     = 20,
 }
+
 DefaultCityPopuCommerceTax = 
 {
 	FARMER   = 1,
 	WORKER   = 1,
 	MERCHANT = 1,
 }
+
 DefaultCityPopuTradeTax = 
 {
 	MERCHANT = 5,
@@ -175,6 +166,13 @@ DefaultCityPopuMentalMin =
 	HOBO     = -20,
 }
 
+
+--[[
+	need_popu
+	prob
+
+
+--]]
 DefaultCityPopuConv = 
 {
 	--guard 

@@ -1,3 +1,5 @@
+---------------------------------------------------------
+
 To Do List
 
 [ok] Finish Chara Contribution Progress & Level Up System
@@ -58,6 +60,39 @@ refactor combat
 *Eventful, just like surrender/fraud -> choose accept/decline/accpet-overwatch -> result
 
 ------------------------------------------------
+[Concept]
+
+Gameplay
+    Character
+        Hire
+        Education( full ap can gain exp? )
+        Bonus
+        Work
+    Develop
+        Build Construction( Hardware )
+        Policy & Development Index( Software )
+        Research( Further )
+    Diplomacy
+        Sign peace pact
+        Sign Ally pact
+        Sign Protect pact
+    Military
+        Train( get exp & training & lvup )
+        Warfare( get exp & trait )
+
+Playmethod
+    Exploit( Develop )
+    Expand( Diplomacy )
+    Exterminate( Military )
+
+Combat
+    Type:   Field / Siege
+    Object: 
+    		Attack -- To occupy the destination city, need corvee
+    		
+    Attack: 
+
+------------------------------------------------
 
 [Goal]
 
@@ -71,6 +106,7 @@ Short Goal
 
 	
 ------------------------------------------------
+
 [Bug]
 
 char died, but he charge multi task

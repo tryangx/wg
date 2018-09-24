@@ -774,7 +774,7 @@ end
 local function NeedMoreReserves()
 	if _city:GetStatus( CityStatus.BUDGET_DANGER ) then
 		--print( "budget danger, cann't conscript" )
-		Stat_Add( "BudgetDanger", 1, StatType.TIMES )
+		--Stat_Add( "BudgetDanger", 1, StatType.TIMES )
 		return false
 	end
 
@@ -786,9 +786,9 @@ local function NeedMoreReserves()
 	if _city:GetStatus( CityStatus.AGGRESSIVE_ADV ) then
 		return true
 	end
-	if reserves > _city:GetLimitPopu( CityPopu.RESERVES ) or reserves > ( _city:GetStatus( CityStatus.RESERVE_NEED ) or 0 ) then
+	if reserves > math.max( _city:GetLimitPopu( CityPopu.RESERVES ), _city:GetStatus( CityStatus.RESERVE_NEED ) or 0 ) then
 		--print( _city:ToString( "BRIEF") )
-		--InputUtil_Pause( _city.name, "too many reserves", _city:GetPopu( CityPopu.RESERVES ) .."/".. _city:GetLimitPopu( CityPopu.RESERVES ), _city:GetReqPopu( CityPopu.RESERVES ) )
+		--InputUtil_Pause( _city.name, "too many reserves", reserves .."/".. _city:GetLimitPopu( CityPopu.RESERVES ) .. "+" ..  _city:GetStatus( CityStatus.RESERVE_NEED ) )
 		return false
 	end
 
@@ -2532,7 +2532,6 @@ local _MeetingProposal =
 		--_PriorityProposals,
 
 		--test slot
-		--_BuildProposal,
 
 		--default
 		--[[]]

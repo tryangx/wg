@@ -103,7 +103,7 @@ function Troop:ToString( type )
 		content = content .. " n=" .. Asset_Get( self, TroopAssetID.SOLDIER )
 	elseif type == "ALL" then
 		content = content .. " n=" .. Asset_Get( self, TroopAssetID.SOLDIER )
-		content = content .. " exp=" .. ( Asset_GetDictItem( self, TroopAssetID.STATUSES, TroopStatus.EXP ) or 0 )
+		content = content .. " exp=" .. self:GetStatus( TroopStatus.EXP )
 		local corps = Asset_Get( self, TroopAssetID.CORPS )
 		if corps then
 			content = content .. " corp=" .. corps.name
@@ -137,6 +137,8 @@ function Troop:GetMaxMorale()
 	maxMorale = maxMorale + Asset_Get( self, TroopAssetID.LEVEL ) * 5
 	--officer effect
 	maxMorale = maxMorale + Chara_GetSkillEffectValue( Asset_Get( self, TroopAssetID.OFFICER ), CharaSkillEffect.MORALE_BONUS )
+	--status effect
+	maxMorale = MathUtil_Clamp( maxMorale - ( self:GetStatus( TroopStatus.DOWNCAST ) or 0 ) , 30, 999 )
 	return maxMorale
 end
 
