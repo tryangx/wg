@@ -28,15 +28,18 @@ CharaAssetID =
 	TASKS           = 131,
 
 	--action
-	POLITICS        = 200,
-	POLITICS_TALENT = 201,
-	POLITICS_LIMIT  = 202,
-	STRATEGY        = 203,
-	STRATEGY_TALENT = 204,
-	STRATEGY_LIMIT  = 205,	
-	TACTIC          = 206,
-	TACTIC_TALENT   = 207,
-	TACTIC_LIMIT    = 208,
+	ACTION_POINT    = 200,
+	--[[
+	POLITICS        = 201,
+	POLITICS_TALENT = 202,
+	POLITICS_LIMIT  = 203,
+	STRATEGY        = 204,
+	STRATEGY_TALENT = 205,
+	STRATEGY_LIMIT  = 206,	
+	TACTIC          = 207,
+	TACTIC_TALENT   = 208,
+	TACTIC_LIMIT    = 209,
+	]]
 
 	--GROWTH
 	--normal, good, excellent, best, perfect
@@ -49,8 +52,6 @@ CharaAssetID =
 	LOYALITY        = 310,
 	--determine what job can be assigned.
 	CONTRIBUTION    = 311,
-	--reserved, will combine into loyality list
-	SERVICE_DAY     = 312,
 
 	--affect what skills can learn
 	TRAITS          = 320,
@@ -86,6 +87,8 @@ CharaAssetAttrib =
 	statuses   = AssetAttrib_SetDict   ( { id = CharaAssetID.STATUSES,   type = CityAssetType.BASE_ATTRIB } ),
 
 	--action
+	aps          = AssetAttrib_SetDict( { id = CharaAssetID.ACTION_POINT,      type = CharaAssetType.ACTION_ATTRIB } ),
+	--[[
 	politics     = AssetAttrib_SetNumber( { id = CharaAssetID.POLITICS,        type = CharaAssetType.ACTION_ATTRIB, min = 0, max = 9999 } ),
 	politics_tal = AssetAttrib_SetNumber( { id = CharaAssetID.POLITICS_TALENT, type = CharaAssetType.ACTION_ATTRIB, min = 0, max = 100 } ),
 	politics_lim = AssetAttrib_SetNumber( { id = CharaAssetID.POLITICS_LIMIT,type = CharaAssetType.ACTION_ATTRIB, min = 0, max = 9999 } ),
@@ -95,13 +98,13 @@ CharaAssetAttrib =
 	tactic       = AssetAttrib_SetNumber( { id = CharaAssetID.TACTIC,          type = CharaAssetType.ACTION_ATTRIB, min = 0, max = 9999 } ),
 	tactic_tal   = AssetAttrib_SetNumber( { id = CharaAssetID.TACTIC_TALENT,   type = CharaAssetType.ACTION_ATTRIB, min = 0, max = 100 } ),
 	tactic_lim   = AssetAttrib_SetNumber( { id = CharaAssetID.TACTIC_LIMIT,  type = CharaAssetType.ACTION_ATTRIB, min = 0, max = 9999 } ),
+	]]
 
 	grade        = AssetAttrib_SetNumber     ( { id = CharaAssetID.GRADE,        type = CharaAssetType.GROWTH_ATTRIB, enum = CharaGrade, default = CharaGrade.NORMAL } ),
 	level        = AssetAttrib_SetNumber     ( { id = CharaAssetID.LEVEL,        type = CharaAssetType.GROWTH_ATTRIB, min = 1, max = 20 } ),
 	potential    = AssetAttrib_SetNumber     ( { id = CharaAssetID.POTENTIAL,    type = CharaAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),
-	loyality     = AssetAttrib_SetNumber     ( { id = CharaAssetID.LOYALITY,     type = CharaAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),
+	loyality     = AssetAttrib_SetDict       ( { id = CharaAssetID.LOYALITY,     type = CharaAssetType.GROWTH_ATTRIB } ),
 	contribution = AssetAttrib_SetNumber     ( { id = CharaAssetID.CONTRIBUTION, type = CharaAssetType.GROWTH_ATTRIB, min = 0 } ),
-	service_day  = AssetAttrib_SetNumber     ( { id = CharaAssetID.SERVICE_DAY,  type = CharaAssetType.GROWTH_ATTRIB } ),
 
 	traits       = AssetAttrib_SetDict       ( { id = CharaAssetID.TRAITS,       type = CharaAssetType.GROWTH_ATTRIB, setter = Chara_SetTrait } ),
 	skills       = AssetAttrib_SetPointerList( { id = CharaAssetID.SKILLS,       type = CharaAssetType.GROWTH_ATTRIB, setter = Entity_SetSkill } ),
@@ -137,6 +140,7 @@ function Chara:Load( data )
 	Asset_Set( self, CharaAssetID.TROOP,     data.troop )
 
 	--action
+	--[[
 	Asset_Set( self, CharaAssetID.POLITICS,        data.politics[0] )
 	Asset_Set( self, CharaAssetID.POLITICS_TALENT, data.politics[1] )
 	Asset_Set( self, CharaAssetID.POLITICS_LIMIT,  data.politics[2] )
@@ -146,11 +150,11 @@ function Chara:Load( data )
 	Asset_Set( self, CharaAssetID.TACTIC,          data.tactic[0] )
 	Asset_Set( self, CharaAssetID.TACTIC_TALENT,   data.tactic[1] )
 	Asset_Set( self, CharaAssetID.TACTIC_LIMIT,    data.tactic[2] )
+	]]
 
 	--growth
 	Asset_Set( self, CharaAssetID.GRADE, CharaGrade[data.grade] )
 	Asset_Set( self, CharaAssetID.POTENTIAL, data.potential )
-	Asset_Set( self, CharaAssetID.LOYALITY, data.loyality or 50 )
 	Asset_Set( self, CharaAssetID.CONTRIBUTION, data.contribution )
 	Asset_Set( self, CharaAssetID.LEVEL, data.level or 1 )
 	Asset_CopyList( self, CharaAssetID.SKILLS, data.skills )
@@ -193,6 +197,13 @@ function Chara:ToString( type )
 			content = content .. " task=" .. task:ToString()
 		end
 	end
+
+	if type == "AP" then
+		for _, type in pairs( CharaActionPoint ) do
+			content = content .. " "  .. MathUtil_FindName( CharaActionPoint, type ) .. "=" .. self:GetAP( type )
+		end
+	end
+
 	if type == "LOCATION" or type == "ALL" then
 		content = content .. " home=" .. String_ToStr( Asset_Get( self, CharaAssetID.HOME ), "name" )
 		content = content .. " @" .. String_ToStr( Asset_Get( self, CharaAssetID.LOCATION ), "name" )
@@ -237,7 +248,19 @@ end
 ------------------------------------------
 
 function Chara:GetLoyality()
-	return Asset_Get( self, CharaAssetID.LOYALITY )
+	if not self._loyality then		
+		Chara_UpdateLoyality( self )
+	end
+	--if self._loyality == 0 then print( self.name, self._loyality ) end
+	return self._loyality
+end
+
+function Chara:GetLoyalityValue( type )
+	return Asset_GetDictItem( self, CharaAssetID.LOYALITY, type ) or 0
+end
+
+function Chara:SetLoyalityValue( type, value )
+	return Asset_SetDictItem( self, CharaAssetID.LOYALITY, type, value )
 end
 
 ------------------------------------------
@@ -277,13 +300,15 @@ function Chara:GetEffectValue( effectType )
 	local loyality = self:GetLoyality()
 	Asset_Foreach( self, CharaAssetID.SKILLS, function ( skill )
 		if loyality < reqLoyality then
-			print( self.name, skill.name, "req loy=" .. reqLoyality )
+			--InputUtil_Pause( self.name, skill.name, "req loy=" .. loyality .. "/" .. reqLoyality )
+			--Debug_Log( "cann't trigger", self.name, skill.name, MathUtil_FindName( CharaSkillEffect, effectType ) )
 			return
 		end
 		--skill only enable when loyality matches
 		local ret = Chara_GetEffectValueBySkill( skill, effectType )		
 		if ret then
 			value = value + ret
+			--Debug_Log( "trigger", self.name, skill.name, MathUtil_FindName( CharaSkillEffect, effectType ) .."=" .. ret )
 		end
 		reqLoyality = reqLoyality + 10
 	end )
@@ -373,13 +398,24 @@ end
 -------------------------------------------
 
 function Chara:Update()	
+	--update statuses
 	Asset_Foreach( self, CharaAssetID.STATUSES, function( value, status )
 		if status > CharaStatus.CD_STATUS_BEG then
 			self:SetStatus( status, value > 1 and value - 1 or nil )
 		end
 	end )
 
-	Asset_Plus( self, CharaAssetID.SERVICE_DAY, g_elapsed )
+	--update loyality
+	Asset_Foreach( self, CharaAssetID.LOYALITY, function ( data, type )
+		if type == CharaLoyalityType.SENIORITY then
+			data = data + g_elapsed
+		elseif type == CharaLoyalityType.BONUS then
+			data = math.max( 0, data - 1 )
+		elseif type == CharaLoyalityType.BLAME then
+			data = math.max( 0, data - 1 )
+		end
+		self:SetLoyalityValue( type, data )
+	end )
 end
 
 -------------------------------------------
@@ -426,9 +462,6 @@ end
 function Chara:GainTrait( trait )
 	Asset_SetDictItem( self, CharaAssetID.TRAITS, trait, 100 )
 
-	--sanity checker
-	if MathUtil_FindName( CharaTraitType, trait ) == "" then error( "1") end
-
 	--InputUtil_Pause( self:ToString( "BRIEF" ), "gain trait=" .. MathUtil_FindName( CharaTraitType, trait ) .. "/" .. trait, "size=" .. Asset_GetDictSize( self, CharaAssetID.TRAITS ) )
 	Stat_Add( "Trait@Gain", self.name .. "+" .. MathUtil_FindName( CharaTraitType, trait ), StatType.LIST )
 	Stat_Add( "Trait@GainTimes", 1, StatType.TIMES )
@@ -440,4 +473,64 @@ function Chara:LearnSkill( skill )
 
 	Stat_Add( "Skill@Learn", g_Time:ToString() .. " " .. self.name .. "->" .. skill.name, StatType.LIST )
 	Stat_Add( "Skill@Times", 1, StatType.TIMES )
+end
+
+-------------------------------------------
+-- Action Point Relate
+
+function Chara:GetAPLimit( type )
+	--skill effect
+	local value = 1000
+	if type == CharaActionPoint.STAMINA then
+		value = value + self:GetEffectValue( CharaSkillEffect.STAMINA_LIMIT )
+	elseif type == CharaActionPoint.TACTIC then
+		value = value + self:GetEffectValue( CharaSkillEffect.TACTIC_LIMIT )		
+	elseif type == CharaActionPoint.STRATEGY then
+		value = value + self:GetEffectValue( CharaSkillEffect.STRATEGY_LIMIT )
+	elseif type == CharaActionPoint.POLITICS then
+		value = value + self:GetEffectValue( CharaSkillEffect.POLITICS_LIMIT )
+	end
+	return value
+end
+
+function Chara:GetAPBonus( type )
+	--skill effect
+	local value = 1
+	if type == CharaActionPoint.STAMINA then
+		value = value + self:GetEffectValue( CharaSkillEffect.STAMINA_BONUS )
+	elseif type == CharaActionPoint.TACTIC then
+		value = value + self:GetEffectValue( CharaSkillEffect.TACTIC_BONUS )		
+	elseif type == CharaActionPoint.STRATEGY then
+		value = value + self:GetEffectValue( CharaSkillEffect.STRATEGY_BONUS )
+	elseif type == CharaActionPoint.POLITICS then
+		value = value + self:GetEffectValue( CharaSkillEffect.POLITICS_BONUS )
+	end
+	return value
+end
+
+function Chara:GetAP( type )
+	return Asset_GetDictItem( self, CharaAssetID.ACTION_POINT, type ) or 0
+end
+
+function Chara:UseAP( type, value )
+	local cur = self:GetAP( type )
+	if cur < value then
+		DBG_Error( "why no enough ap?" )
+	else
+		cur = cur - value
+	end
+	Asset_SetDictItem( self, CharaAssetID.ACTION_POINT, type, cur )
+end
+
+function Chara:GainAP( type, value )
+	local cur = self:GetAP( type )
+	if not cur then cur = 0 end
+	cur = math.min( self:GetAPLimit( type ), cur + value )
+	Asset_SetDictItem( self, CharaAssetID.ACTION_POINT, type, cur )
+end
+
+function Chara:UpdateAP( elapsed )	
+	for _, type in pairs( CharaActionPoint ) do
+		self:GainAP( type, elapsed * self:GetAPBonus( type ) )
+	end
 end

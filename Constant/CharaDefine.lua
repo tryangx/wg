@@ -108,7 +108,7 @@ CharaStatus =
 
 CharaActionPoint = 
 {
-	--STAMINA = 1,
+	STAMINA  = 1,
 	TACTIC   = 1,
 	STRATEGY = 2,
 	POLITICS = 3,
@@ -129,11 +129,12 @@ CharaSkillEffect =
 {
 	HIRE_CHARA_BONUS   = 201,
 
+	--increase agriculture development
 	AGRICULTURE_BONUS  = 301,
 	COMMERCE_BONUS     = 302,
 	PRODUCTION_BONUS   = 303,
-	BUILD_BONUS        = 304,
-	LEVY_TAX_BONUS     = 305,
+	BUILD_BONUS        = 310,
+	LEVY_TAX_BONUS     = 311,
 
 	RECONNOITRE_BONUS  = 401,
 	SABOTAGE_BONUS     = 402,	
@@ -143,6 +144,15 @@ CharaSkillEffect =
 	SIGN_PACT_BONUS        = 502,
 	
 	RESEARCH_BONUS     = 601,
+
+	STAMINA_BONUS      = 700,
+	STAMINA_LIMIT      = 701,	
+	TACTIC_BONUS       = 702,
+	TACTIC_LIMIT       = 703,
+	STRATEGY_BONUS     = 704,
+	STRATEGY_LIMIT     = 705,
+	POLITICS_BONUS     = 706,
+	POLITICS_LIMIT     = 707,
 
 	------------------------------
 	-- Combat Relate
@@ -155,9 +165,6 @@ CharaSkillEffect =
 	ORG_DAMAGE_BONUS   = 1003,
 	--Affect the suffered damage to organization
 	ORG_DAMAGE_RESIST  = 1004,
-
-	ARMOR_BONUS        = 1005,--not test
-	ARMOR_BREAK        = 1006,--not test
 	
 	--increase the maximum of the troop morale	
 	MORALE_BONUS       = 1101,
@@ -169,15 +176,39 @@ CharaSkillEffect =
 	TRAINING_BONUS     = 1100,
 }
 
+
+CharaLoyalityType =
+{
+	------------------------
+	-- Permanent Loyality
+	NEUTRAL        = 10,
+	TRAIT_SUITED   = 11,	
+		
+	------------------------
+	-- Time Loyality
+	BONUS          = 20,
+	BLAME          = 21,	
+
+	------------------------
+	-- Tunable Loyality
+	--How long from service
+	TUNABLE_SEPERATOR = 100,
+
+	SENIORITY = 100,
+}
+
 --
 --
 CharaTraitType = 
 {
+	--Use to process
+	ALL          = 0,
+
 	------------------------------------------------
 	-- Atomic Trait
 	--   Initialized at first( Generated )
 	--   Only change in Event
-	------------------------------------------------
+	------------------------------------------------	
 	
 	ATOMIC_TRAIT = 0, --seperator, below is ATOMIC
 
@@ -229,7 +260,7 @@ CharaTraitType =
 	FRIENDSHIP    = 1204,
 	CONFIDENCE    = 1205,
 	INSIDIOUS     = 1206,
-	ENVY          = 1207,	
+	ENVY          = 1207,
 
 	--attitude to work
 	CAREFUL       = 1301,
@@ -242,6 +273,7 @@ CharaTraitType =
 	SMART         = 1402,
 	STRENGTH      = 1403,
 	AGILITY       = 1404,
+	WEAK          = 1405,  --can't learn any combat-skill
 	
 	----------------------------------------------
 	--Normally

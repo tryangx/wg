@@ -24,42 +24,45 @@ To Do List
 [ok] #bug_fixed: task will update to the next step and end without go back home
 
 [ok] add task=DESTORY_DEFENSIVE
+[ok] refactor chara loyality ( affect skill enabled )
+[ok] refactor combat( modify damage calculation )
+[ok] buy / sell food
+[ok] add task=ASSASSINATE_CHARA
+
+09/28/18
+[ok] refactor action point( strategy, tactic, )
+
+[delete] add solider limitation/requirement, reduce the complex of algorithm about Establish CROPS/TROOP
 
 ---------------------------------------------------------
 
+[inprog] add chara skills / troop tactics etc
 [inprog] troop medal: kill troop + honor --> medals
 [inprog] reputation system( 1. can inc/dec, 2. affect all things like san5 )
 [inprog] influence system( 1. only increase, 2. dec in event or special situ )
 
-[inprog] add solider limitation/requirement, reduce the complex of algorithm about Establish CROPS/TROOP
-
 *to solve the situation that A-group & B-group attack the neutral city at the same time
-
-
-add task=ASSASSINATE_CHARA
-refactor chara loyality 
-
-add chara skills / troop tactics etc
 
 redesign CITY.SECURITY, CITY.SATISFACTION -> CITY.DISS, CITY.SECURITY, leads to rebel
 
-intercept can cancel the corps task
+*intercept can cancel the corps task
 
 add new move_actor transport, refugee
-
-add new system & move_actor mobile merchant( khan3,4 )
-
-buy / sell food
 
 economic / current policy / deflation / inflation
 
 map generate update / saver / loader
 
-refactor combat
+refactor goal as a series task
+
+*add new system & move_actor mobile merchant( khan3,4 )
 
 *Eventful, just like surrender/fraud -> choose accept/decline/accpet-overwatch -> result
 
+proposer is mayor should find the fit actor for the task
+
 ------------------------------------------------
+
 [Concept]
 
 Gameplay
@@ -91,6 +94,11 @@ Combat
     		Attack -- To occupy the destination city, need corvee
     		
     Attack: 
+
+
+Trick:
+    A series of plans to finish a target, likes: train, dispatch, sabotage, attack
+
 
 ------------------------------------------------
 

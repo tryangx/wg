@@ -13,6 +13,8 @@ StatType =
 	LIST         = 5,
 	--ACCUMULATION will accumulate all data in call
 	ACCUMULATION = 6,
+	--
+	EFF          = 7,
 }
 
 ----------------------------------------------
@@ -50,7 +52,10 @@ function Stat_Add( name, data, type )
 		stats.value = data
 	elseif type == StatType.LIST then
 		table.insert( stats, data )
-	elseif type == StatType.ACCUMULATION then
+	elseif type == StatType.ACCUMULATION 
+		or type == StatType.EFF
+		then
+		stats.times = stats.times and stats.times + 1 or 1
 		stats.accumulation = stats.accumulation and stats.accumulation + data or data
 	end
 end
@@ -94,6 +99,8 @@ function Stat_Dump( type )
 					Log_Write( "stat",  name .. "=" .. data.value )
 				elseif t == StatType.ACCUMULATION then
 					Log_Write( "stat",  name .. "=" .. data.accumulation )
+				elseif t == StatType.EFF then
+					Log_Write( "stat",  name .. "=" .. math.floor( data.accumulation / data.times ) )
 				end
 			end
 		end

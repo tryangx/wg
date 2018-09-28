@@ -364,7 +364,11 @@ function Asset_FindItem( entity, id, fn )
 	local datas = Asset_GetRaw( entity, id )
 	if not datas then return nil end
 	--pairs should be ipairs
-	for k, item in pairs( datas ) do if fn( item, k ) == true then return item end end
+	for k, item in pairs( datas ) do
+		if fn( item, k ) == true then
+			return item
+		end
+	end
 	return nil
 end
 

@@ -183,6 +183,7 @@ function Game_Init()
 	--init fomula
 	Group_FormulaInit()
 
+
 	--init datas, prevent any "crashed" caused by init-data leak 
 	Entity_Foreach( EntityType.CITY, function( data )
 		--Entity_Dump( data )
@@ -192,8 +193,9 @@ function Game_Init()
 	end )
 
 	-----------------------------------
-	--init chara's atomic trait
+	--init chara's data
 	Entity_Foreach( EntityType.CHARA, function ( chara )		
+		--init atomic trait
 		CharaCreator_GenerateAtomicTrait( chara )
 
 		--in order to test, we add random trait for each players
@@ -201,32 +203,35 @@ function Game_Init()
 			Chara_GainTrait( chara )
 		end
 		print( chara:ToString( "TRAITS") )
+
+		for _, type in pairs( CharaActionPoint ) do
+			chara:GainAP( type, math.ceil( chara:GetAPLimit( type ) * 0.5 ) )
+		end
 	end)
+
+	Entity_Foreach( EntityType.CHARA, function ( chara )
+		Chara_ResetLoyality( chara )
+
+		--test
+		if false and chara.id == 200 then
+			for key, value in pairs( CharaSkillEffect ) do
+				local v = Chara_GetSkillEffectValue( chara, CharaSkillEffect[key] )
+				if v ~= 0 then
+					print( key .. "=" .. v )
+				end
+			end
+			InputUtil_Pause( "trace", chara.name )
+		end
+	end)	
 
 	--set debugger watcher( print on the console )
 	DBG_SetWatcher( "Debug_Meeting",  DBGLevel.NORMAL )
 	--DBG_SetWatcher( "Debug_Meeting",  DBGLevel.IMPORTANT )
 
+	g_init = true
 end
 
 function Game_Test()
-	--test chara sys
-	--local chara = CharaCreator_GenerateFictionalChara()
-	--Entity_Dump( chara )
-
-	--[[
-	--test establish corps
-	local city = Entity_New( EntityType.CITY )	
-	city:Test()
-	Entity_UpdateAttribPointer( city )
-	Entity_Dump( city )
-	Corps_EstablishInCity( city )
-	Entity_Dump( city )	
-	--]]
-
-	--[[]]
-	--]]
-
 	--[[]]
 	--test combat
 	return Game_Debug()
@@ -236,7 +241,7 @@ function Game_Test()
 	--Route_Verify()
 end
 
-local function Game_MainLoop()
+function Game_MainLoop()
 	System_Update( g_turnStep )
 	Game_NextTurn()
 end
@@ -245,15 +250,21 @@ function Game_Start()
 	Game_Init()
 	
 	--test
-	if Game_Test() then return end
+	if not Game_Test() then
+		while Game_IsRunning()  do
+			Game_MainLoop()
+		end
+	end
 	
 	--local city = Entity_Get( EntityType.CITY, 1 )
 	--if city then city:TrackData() end
 
-	while Game_IsRunning()  do
-		Game_MainLoop()
-	end	
+	
 
+	GameExit()
+end
+
+function GameExit()
 	--city:TrackData( true )
 	--city:DumpGrowthAttrs()
 	--city:DumpProperty()

@@ -66,6 +66,7 @@ function HelperUtil_ConcatListName( list, fn )
 	return content
 end
 
+--create number description by different digit
 function HelperUtil_CreateNumberDesc( number, digit, decimal )
 	if digit == 2 then
 		digit = 100

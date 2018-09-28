@@ -112,58 +112,79 @@ end
 -------------------------------------------------------
 -- City Statu
 
+function City_HasTroopBudget( city, troopTable, reserves )
+	local reqFood  = troopTable.consume.FOOD * reserves
+	local reqMoney = troopTable.consume.MONEY * reserves
+	return City_IsBudgetSafe( city, { consumeFood = reqFood, salary = reqMoney } )
+end
+
+function City_IsFoodBudgetSafe( city, params )
+	local foodDay    = ( params and params.check_day ) or DAY_IN_YEAR
+	local safetyMonth = ( params and params.safety_month ) or MONTH_IN_SEASON
+
+	local income = City_GetFoodIncome( city )
+
+	--check food harvest
+	local req_food = city:GetConsumeFood()
+	if params and params.consumeFood then req_food = req_food + params.consumeFood end
+	local has_food = Asset_Get( city, CityAssetID.FOOD )
+	if has_food + income < req_food * foodDay then
+		Debug_Log( "budgetdanger", city.name, "consume=" .. has_food + income .. "/" .. req_food * foodDay )
+		return false
+	end
+
+	req_food, req_money = city:GetReqProperty( safetyMonth )
+	if parmas and params.food then req_food = req_food + params.food end
+
+	--check food reserve
+	if has_food < req_food then
+		Debug_Log( "budgetdanger", city.name, "food=" .. Asset_Get( city, CityAssetID.MONEY ) .."/".. req_money, Asset_Get( city, CityAssetID.FOOD ) .."/".. req_food )
+		--InputUtil_Pause( city.name, "danger food reserve" )
+		return false
+	end
+
+	--print( "req=" .. req_food, "has=" .. has_food, "income=" .. income )
+
+	return true
+end
+
+function City_IsMoneyBudgetSafe( city, params )
+	local moneyMonth = ( params and params.check_month ) or MONTH_IN_YEAR
+	local safetyMonth = ( params and params.safety_month ) or MONTH_IN_SEASON
+
+	local income = City_GetYearTax( city )
+
+	--check salary covered by commerce tax( monthly )
+	local req_money = city:GetSalary()
+	if params and params.salary then req_money = req_money + params.salary end
+	local has_money = Asset_Get( city, CityAssetID.MONEY )
+	if has_money + income < req_money * moneyMonth then
+		Debug_Log( "budgetdanger", city.name, "tax=" .. has_money + income .. "/" .. req_money * moneyMonth )
+		return false
+	end
+
+	req_food, req_money = city:GetReqProperty( safetyMonth )
+	if params and params.money then req_money = req_money + params.money end
+
+	--check salary reserve
+	if has_money < req_money then
+		Debug_Log( "budgetdanger", city.name, "money=" .. Asset_Get( city, CityAssetID.MONEY ) .."/".. req_money, Asset_Get( city, CityAssetID.FOOD ) .."/".. req_food )
+		--InputUtil_Pause( city.name, "danger money reserve" )
+		return false
+	end
+
+	--print( "req=" .. req_money, "has=" .. has_money, "income=" .. income )
+
+	return true
+end
+
 --
 -- Budget Safty Conditions
 -- 1. Monthly income > Salary( High )
 -- 2. Current Property > Req Property( One Year )
-function City_IsBudgetSafe( city )
-	local req = city:GetSalary()
-	--check salary covered by commerce tax( monthly )
-	if City_CalcCommerceTax( city ) < req then
-		return false
-	end
-	--print( city:ToString( "POPULATION" ) )
-	--print( "budget" .. city:ToString( "BUDGET_MONTH" ) )
-
-	local req_food, req_money = city:GetReqProperty( MONTH_PER_YEAR )
-
-	--check salary reserve
-	if Asset_Get( city, CityAssetID.MONEY ) < req_money then
-		--InputUtil_Pause( city.name, "danger money reserve" )
-		return false
-	end
-
-	--check food reserve
-	if Asset_Get( city, CityAssetID.FOOD ) < req_food then
-		--InputUtil_Pause( city.name, "danger food reserve" )
-		return false
-	end
-	--InputUtil_Pause( "budget safe")
-	return true
+function City_IsBudgetSafe( city, params )
+	return City_IsFoodBudgetSafe( city, params ) and City_IsMoneyBudgetSafe( city, parmas )
 end
-
--- Budget Danger Conditions
--- 1. Curernt Property < Req Property ( One month )
-function City_IsBudgetDanger( city )
-	local req_food, req_money = city:GetReqProperty( 1 )
-	
-	--check salary reserve
-	if Asset_Get( city, CityAssetID.MONEY ) < req_money then
-		--print( "budgetdanger", city.name, Asset_Get( city, CityAssetID.MONEY ) .."/".. req_money, Asset_Get( city, CityAssetID.FOOD ) .."/".. req_food )
-		--InputUtil_Pause( city.name, "danger money reserve" )
-		return true
-	end
-
-	--check food reserve
-	if Asset_Get( city, CityAssetID.FOOD ) < req_food * 4 then
-		--print( "budgetdanger", city.name, Asset_Get( city, CityAssetID.MONEY ) .."/".. req_money, Asset_Get( city, CityAssetID.FOOD ) .."/".. req_food )
-		--InputUtil_Pause( city.name, "danger food reserve" )
-		return true
-	end
-	--InputUtil_Pause( "budget safe")
-	return false
-end
-
 
 -------------------------------------------------------
 
@@ -197,7 +218,7 @@ function City_GetFoodIncome( city )
 	end
 	--simply random from 40~80
 	--we should seperate the modifier into Water, Plough, Disease etc
-	local modifier = Random_GetInt_Sync( 20, 100 ) * 0.01
+	local modifier = Random_GetInt_Sync( 20, 60 ) * 0.01
 	income = math.ceil( income * modifier )
 	return income
 end
@@ -486,7 +507,7 @@ function City_CheckFlag( city )
 	city:SetStatus( CityStatus.SAFETY )
 	city:SetStatus( CityStatus.BATTLEFRONT )
 	city:SetStatus( CityStatus.FRONTIER )
-	city:SetStatus( CityStatus.BUDGET_DANGER, City_IsBudgetDanger( city ) )
+	city:SetStatus( CityStatus.BUDGET_DANGER, not City_IsBudgetSafe( city ) )
 
 	city:SetStatus( CityStatus.DEFENSIVE_WEAK )
 	city:SetStatus( CityStatus.DEFENSIVE_DANGER )
@@ -598,21 +619,21 @@ function City_IncreaseDevelopment( city, params )
 		local cur = Asset_Get( city, CityAssetID.AGRICULTURE )
 		local max = Asset_Get( city, CityAssetID.MAX_AGRICULTURE )
 		Asset_Set( city, CityAssetID.AGRICULTURE, math.min( max, cur + params.agri ) )
-		Stat_Add( "Dev@Agr", params.agri, StatType.ACCUMULATION )
+		Stat_Add( "DevAgri@" .. city:ToString(), params.agri, StatType.ACCUMULATION )
 		Stat_Add( "Agr@" .. ( params.agri > 0 and "INC_TIMES" or "DEC_TIMES" ), 1, StatType.TIMES )
 	end
 	if params.comm then
 		local cur = Asset_Get( city, CityAssetID.COMMERCE )
 		local max = Asset_Get( city, CityAssetID.MAX_COMMERCE )
 		Asset_Set( city, CityAssetID.COMMERCE, math.min( max, cur + params.comm ) )
-		Stat_Add( "Dev@Comm", params.comm, StatType.ACCUMULATION )
+		Stat_Add( "DevComm@" .. city:ToString(), params.comm, StatType.ACCUMULATION )
 		Stat_Add( "Comm@" .. ( params.comm > 0 and "INC_TIMES" or "DEC_TIMES" ), 1, StatType.TIMES )
 	end
 	if params.prod then
 		local cur = Asset_Get( city, CityAssetID.PRODUCTION )
 		local max = Asset_Get( city, CityAssetID.MAX_PRODUCTION )
 		Asset_Set( city, CityAssetID.PRODUCTION, math.min( max, cur + params.prod ) )		
-		Stat_Add( "Dev@Comm", params.prod, StatType.ACCUMULATION )
+		Stat_Add( "DevComm@" .. city:ToString(), params.prod, StatType.ACCUMULATION )
 		Stat_Add( "Prod@" .. ( params.prod > 0 and "INC_TIMES" or "DEC_TIMES" ), 1, StatType.TIMES )
 	end
 	--InputUtil_Pause( "dev", params.agri, params.comm, params.prod )
@@ -659,7 +680,7 @@ end
 incagri = 0
 
 --development changed by task
-function City_Develop( city, progress, id )
+function City_Develop( city, progress, id, chara )
 	local methods
 	for _, item in pairs( Scenario_GetData( "CITY_DEVELOP_RESULT" ) ) do
 		local match = true
@@ -686,17 +707,23 @@ function City_Develop( city, progress, id )
 	end
 	if not selectMethod then return end
 
+	--MathUtil_Dump( selectMethod )
+
 	local agri = selectMethod.agri or 0
 	local comm = selectMethod.comm or 0
 	local prod = selectMethod.prod or 0
-	if id == CityAssetID.AGRICULTURE then agri = agri + selectMethod.main or 0 end
-	if id == CityAssetID.COMMERCE    then comm = comm + selectMethod.main or 0 end
-	if id == CityAssetID.PRODUCTION  then prod = prod + selectMethod.main or 0 end	
+	if id == CityAssetID.AGRICULTURE then
+		agri = agri + math.ceil( selectMethod.main * ( chara:GetEffectValue( AGRICULTURE_BONUS ) + 100 ) * 0.01 )
+	end
+	if id == CityAssetID.COMMERCE then
+		comm = comm + math.ceil( selectMethod.main * ( chara:GetEffectValue( COMMERCE_BONUS ) + 100 ) * 0.01 )
+	end
+	if id == CityAssetID.PRODUCTION  then
+		prod = prod + math.ceil( selectMethod.main * ( chara:GetEffectValue( PRODUCTION_BONUS ) + 100 ) * 0.01 )
+	end
 	City_IncreaseDevelopment( city, { agri = agri, comm = comm, prod = prod } )
 
-	--InputUtil_Pause( "city dev", agri, comm, prod )
-	incagri = incagri + agri
-	--print( "city dev", incagri, agri )
+	--InputUtil_Pause( "city dev", agri, comm, prod )	
 end
 
 --Income
@@ -733,8 +760,7 @@ function City_CalcCommerceTax( city )
 			end
 		end
 	end
-	local modifier = Random_GetInt_Sync( 40, 80 ) * 0.01
-	return math.ceil( tax * modifier )
+	return math.ceil( tax )
 end
 
 function City_CalcTradeTax( city )
@@ -772,14 +798,19 @@ function City_GetMonthTax( city, month )
 	if not month then
 		month = g_Time:GetMonth()
 	end
-	if month == 3 or month == 6 or month == 9 or month == 12 then		
+	--every season	
+	--print( "mon=" .. month )
+	if ( month % MONTH_IN_SEASON ) == 0 then
+		--print( "season", month, g_Time:ToString() )
 		tradeTax = City_CalcTradeTax( city )
 		income = income + tradeTax
 	end
+	--every year
 	if month == 1 then
 		personalTax = City_CalcPersonalTax( city )	
 		income = income + personalTax
 	end
+	--every month
 	commerceTax = City_CalcCommerceTax( city )
 	income = income + commerceTax
 	return income
@@ -788,9 +819,8 @@ end
 function City_GetYearTax( city )
 	local income = 0
 	income = income + City_CalcPersonalTax( city )
-	income = income + City_CalcCommerceTax( city ) * 12
-	income = income + City_CalcTradeTax( city ) * 4
-	print( "personal=" .. City_CalcPersonalTax( city ), "comm=" .. City_CalcCommerceTax( city ), "trade=" .. City_CalcTradeTax( city ) )
+	income = income + City_CalcCommerceTax( city ) * MONTH_IN_YEAR
+	income = income + City_CalcTradeTax( city ) * MONTH_IN_SEASON	
 	return income
 end
 
@@ -804,37 +834,22 @@ end
 
 function City_PaySalary( city )
 	local salary = city:GetSalary( city )
-	local corpsSalary = city:GetCorpsSalary()
-	salary = salary + corpsSalary
+
 	local money = Asset_Get( city, CityAssetID.MONEY )
-	if money >= salary then
-		city:UseMoney( salary )
+	local enough = money >= salary
+	if enough then
+		city:UseMoney( salary, "paysalary" )
 		Stat_Add( "PaySalary@City_" .. city.name, salary, StatType.ACCUMULATION )
-
-		Asset_Foreach( city, CityAssetID.CORPS_LIST, function ( corps )
-			Asset_Foreach( corps, CorpsAssetID.TROOP_LIST, function ( troop )
-				local value = troop:GetStatus( TroopStatus.DOWNCAST )
-				if value then
-					if value < 10 then
-						value = 0
-					else
-						value = value * 0.5
-					end
-					troop:SetStatus( TroopStatus.DOWNCAST, value )
-				end
-			end )
-		end)
 	else
-		city:UseMoney( money )		
+		city:UseMoney( money, "paysalary" )		
 		Stat_Add( "PaySalary@City_" .. city.name, money, StatType.ACCUMULATION )
-
-		Asset_Foreach( city, CityAssetID.CORPS_LIST, function ( corps )
-			Asset_Foreach( corps, CorpsAssetID.TROOP_LIST, function ( troop )
-				local value = ( troop:GetStatus( TroopStatus.DOWNCAST ) or 10 ) * 2
-				troop:SetStatus( TroopStatus.DOWNCAST, value )
-			end )
-		end)
 	end
+
+	Debug_Log( city:ToString("ASSET") )
+
+	Asset_Foreach( city, CityAssetID.CORPS_LIST, function ( corps )
+		corps:PaySalary( enough )
+	end )
 end
 
 --levy money
@@ -850,6 +865,70 @@ function City_LevyTax( city, progress )
 	Stat_Add( city.name .. "@LevyTax", income, StatType.ACCUMULATION )
 	--Debug_Log( "City=" .. city.name .. " Levy tax=" .. income .. " Money=" .. Asset_Get( city, CityAssetID.MONEY ) )	
 	return income
+end
+
+function City_BuyFood( city, progress )
+	--calculate the price
+	local price = ( city:GetStatus( CityStatus.PRICE ) or 0 ) + 100
+	local params = City_GetPopuParams( city ).POPU_SUPPLY
+	price = price * params.FOOD_PER_MONEY * 0.01
+
+	--calculate the food gap
+	local req_food, req_money = city:GetReqProperty( MONTH_IN_SEASON )	
+	local has_food = Asset_Get( city, CityAssetID.FOOD )
+	local gap_food = req_food - has_food
+	if gap_food < 0 then
+		DBG_Error( "why enough food? req=" .. req_food .. " has=" .. has_food )
+		return
+	end
+
+	local need_money = math.ceil( gap_food * price )
+	local has_money = Asset_Get( city, CityAssetID.MONEY )
+	if need_money + req_money > has_money then
+		need_money = has_money - req_money
+	end
+	if need_money < 0 then
+		DBG_Warning( "Budget", "money not enough to buy food" )
+		return
+	end
+	local buy_food = math.ceil( need_money * price )
+
+	--print( city:ToString("BUDGET_YEAR") )
+	Asset_Reduce( city, CityAssetID.MONEY, need_money )
+	Asset_Plus( city, CityAssetID.FOOD, buy_food )
+	--InputUtil_Pause( "buyfood", city:ToString( "ASSET" ) )
+end
+
+function City_SellFood( city, progress )
+	--calculate the price
+	local price = ( city:GetStatus( CityStatus.PRICE ) or 0 ) + 100
+	local params = City_GetPopuParams( city ).POPU_SUPPLY
+	price = price * params.FOOD_PER_MONEY * 0.01
+
+	--calculate the money gap
+	local req_food, req_money = city:GetReqProperty( MONTH_IN_SEASON )
+	local has_money = Asset_Get( city, CityAssetID.MONEY )
+	local gap_money = req_money - has_money
+	if gap_money < 0 then
+		DBG_Error( "why enough money? req=" .. req_money .. " has=" .. has_money )
+		return
+	end
+
+	local need_food = math.ceil( gap_money / price )
+	local has_food  = Asset_Get( city, CityAssetID.FOOD )
+	if need_food + req_food > has_food then
+		need_food = has_food - req_food
+	end
+	if need_food < 0 then
+		DBG_Warning( "Budget", "food not enough to sell" )
+		return
+	end
+	local sell_money = math.ceil( need_food / price )
+
+	--print( city:ToString("BUDGET_YEAR") )
+	Asset_Reduce( city, CityAssetID.FOOD, need_food )
+	Asset_Plus( city, CityAssetID.MONEY, sell_money )
+	--InputUtil_Pause( "buyfood", city:ToString( "ASSET" ) )
 end
 
 function City_Build( city, construction )
@@ -978,6 +1057,7 @@ function CitySystem:Update()
 
 		city:Update()
 
+		City_IsBudgetSafe( city )
 	end )	
 	if month == 1 and day == 1 then
 		--InputUtil_Pause( g_Time:ToString() )

@@ -17,6 +17,8 @@ ProposalType =
 	SET_GOAL        = 10,
 	INSTRUCT_CITY   = 11,
 
+	-----------------------
+
 	HARASS_CITY     = 110,
 	ATTACK_CITY     = 111,
 	INTERCEPT       = 112,

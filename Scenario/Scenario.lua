@@ -40,6 +40,7 @@ ScenarioData =
 	CHARA_PROMOTE_DATA    = DefaultJobPromoteData,
 	CHARA_PROMOTE_METHOD  = DefaultCharaPromoteMethod,
 	CHARA_TRAIT_DATA      = DefaultCharaTrait,
+	CHARA_TRAIT_CONGENIALITY = DefaultCharaTraitCongeniality,
 
 	RELATION_OPINION      = DefaultRelationOpinion,
 	RELATION_PACT         = DefaultPactCond,	
@@ -60,7 +61,8 @@ ScenarioData =
 	CITY_CONSTR_DATA             = Default_CityBuildingData,
 
 	TASK_STEP_DATA   = DefaultTaskSteps,
-	TASK_BONUS_DATA  = DefaultTaskBonus,	
+	TASK_BONUS_DATA  = DefaultTaskBonus,
+	TASK_ACTION_DATA = DefaultTaskAP,
 
 	TACTIC_DATA      = DefaultTacticData,
 	BATTLEFIELD_DATA = DefaultBattlefieldData,
@@ -126,7 +128,8 @@ function Scenario_InitData()
 	end
 
 	--trait key2id
-	_Scenario.CHARA_TRAIT_DATA = MathUtil_ConvertKeyToID( CharaTraitType, _Scenario.CHARA_TRAIT_DATA )	
+	_Scenario.CHARA_TRAIT_DATA = MathUtil_ConvertKeyToID( CharaTraitType, _Scenario.CHARA_TRAIT_DATA )
+	_Scenario.CHARA_TRAIT_CONGENIALITY = MathUtil_ConvertKeyToID( CharaTraitType, _Scenario.CHARA_TRAIT_CONGENIALITY )
 
 	--skill key2id
 	for id, skill in pairs( _Scenario.CHARA_SKILL_DATA ) do
@@ -140,6 +143,8 @@ function Scenario_InitData()
 	end
 
 	_Scenario.TASK_BONUS_DATA = MathUtil_ConvertKeyToID( TaskType, _Scenario.TASK_BONUS_DATA )
+
+	--_Scenario.TASK_AP_DATA = MathUtil_ConvertKeyToID( TaskType, _Scenario.TASK_AP_DATA )
 
 	_Scenario.RELATION_OPINION = MathUtil_ConvertKeyToID( RelationOpinion, _Scenario.RELATION_OPINION )
 

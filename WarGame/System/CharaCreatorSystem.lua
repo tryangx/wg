@@ -65,10 +65,6 @@ CharaAtomicTraitProb =
 CharaCreatorParams = 
 {
 	MAX_LIFE_LIMITED = 90,
-
-	MIN_ACTION_TALENT = 5,
-	MIN_ACTION_LIMIT  = 100,
-	LIMIT_MODULUS     = 100,
 }
 
 -----------------------------------------------------------
@@ -107,6 +103,7 @@ function CharaCreator_GenerateCharaActionData( chara, grade )
 		--print( "over lim", sum_lim, total_lim, avg )
 	end
 
+	--[[
 	Asset_Set( chara, CharaAssetID.POLITICS,        0 )
 	Asset_Set( chara, CharaAssetID.POLITICS_TALENT, politics_tal )
 	Asset_Set( chara, CharaAssetID.POLITICS_LIMIT,  politics_lim * CharaCreatorParams.LIMIT_MODULUS )
@@ -116,12 +113,13 @@ function CharaCreator_GenerateCharaActionData( chara, grade )
 	Asset_Set( chara, CharaAssetID.TACTIC,          0 )
 	Asset_Set( chara, CharaAssetID.TACTIC_TALENT,   tactic_tal )
 	Asset_Set( chara, CharaAssetID.TACTIC_LIMIT,    tactic_lim * CharaCreatorParams.LIMIT_MODULUS )
+	]]
 end
 
 function CharaCreator_GenerateAtomicTrait( chara, num )
 	--determine how many atomic trait
 	local reqNumOfTrait = num or Random_GetInt_Sync( 1, 3 )
-	--print( "Try to trait", reqNumOfTrait )
+	--print( "Try to generate atomic trait", reqNumOfTrait, chara.name )
 	while reqNumOfTrait > 0 do
 		for _, item in ipairs( CharaAtomicTraitProb ) do
 			if Random_GetInt_Sync( 1, 100 ) < item.prob then
@@ -129,7 +127,7 @@ function CharaCreator_GenerateAtomicTrait( chara, num )
 				if not item.totalProb then item.totalProb = MathUtil_Sum( item[1] ) end
 				local rand = Random_GetInt_Sync( 1, item.totalProb )
 				for traitName, prob in pairs( item[1] ) do
-					--print( traitName, prob )
+					--InputUtil_Pause( traitName, prob, rand )
 					if rand < prob then
 						local trait = CharaTraitType[traitName]
 						--print( "add atomic", traitName, chara.name, trait )						
@@ -137,6 +135,7 @@ function CharaCreator_GenerateAtomicTrait( chara, num )
 						reqNumOfTrait = reqNumOfTrait - 1
 						break
 					end
+					rand = rand - prob
 				end
 			end
 			if reqNumOfTrait <= 0 then break end
@@ -161,7 +160,6 @@ function CharaCreator_GenerateTrait( chara, reqTrait )
 	local essentialTraits = {}
 	local traitDict = Asset_GetDict( chara, CharaAssetID.TRAITS )
 	for trait, value in pairs( traitDict ) do
-		--if trait >= CharaTraitType.ATOMIC_TRAIT and trait < CharaTraitType.TEMPLATE_TRAIT then
 		--print( "cp", trait, value )
 		if trait <= CharaTraitType.EXTENSION_TRAIT then
 			--check catalog by atomic trait 
@@ -274,7 +272,6 @@ function CharaCreator_GenerateFictionalChara( city )
 	CharaCreator_GenerateAtomicTrait( chara )
 	
 	--generate chara growth attribs
-	Asset_Set( chara, CharaAssetID.LOYALITY,     0 )
 	local potential = Random_GetInt_Sync( gradeData.min_potential, gradeData.max_potential )
 	Asset_Set( chara, CharaAssetID.POTENTIAL,    potential )
 	Asset_Set( chara, CharaAssetID.CONTRIBUTION, 0 )

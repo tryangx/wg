@@ -10,7 +10,6 @@ function SkillTable:Load( data )
 	self.effects      = MathUtil_Copy( data.effects )
 	self.prerequisite = MathUtil_Copy( data.prerequisite )
 	self.conditions   = MathUtil_Copy( data.conditions )
-	--self.traits       = MathUtil_Copy( data.traits )
 end
 
 function SkillTable:ToString( type )

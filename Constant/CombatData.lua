@@ -69,7 +69,7 @@ DefaultTroopTable =
 		skills    = {},
 		potential = 20,
 		capacity = { FOOD = 100, MATERIAL = 100 },
-		consume = { FOOD = 2, MONEY = 2, },		
+		consume = { FOOD = 1, MONEY = 1, },		
 		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 10 },
 	},
@@ -81,7 +81,7 @@ DefaultTroopTable =
 		skills    = {},
 		potential = 20,
 		capacity = { FOOD = 100, MATERIAL = 100 },
-		consume = { FOOD = 2, MONEY = 5, },
+		consume = { FOOD = 1, MONEY = 1, },
 		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 30 },
 	},
@@ -93,7 +93,7 @@ DefaultTroopTable =
 		skills    = {},
 		potential = 20,
 		capacity = { FOOD = 100, MATERIAL = 100 },
-		consume = { FOOD = 2, MONEY = 5, },		
+		consume = { FOOD = 1, MONEY = 1, },		
 		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 10 },
 	},
@@ -105,7 +105,7 @@ DefaultTroopTable =
 		skills    = {},
 		potential = 20,
 		capacity = { FOOD = 3000, MATERIAL = 1000, MONEY = 1000 },
-		consume = { FOOD = 2, MONEY = 5, },
+		consume = { FOOD = 1, MONEY = 1, },
 		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 30 },	
 	},
@@ -117,7 +117,7 @@ DefaultTroopTable =
 		skills    = {},
 		potential = 25,
 		capacity = { FOOD = 100, MATERIAL = 100 },
-		consume = { FOOD = 3, MONEY = 10, },		
+		consume = { FOOD = 2, MONEY = 2, },		
 		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 20 },
 	},
@@ -128,7 +128,7 @@ DefaultTroopTable =
 		skills    = {},
 		potential = 30,
 		capacity = { FOOD = 100, MATERIAL = 100 },
-		consume = { FOOD = 4, MONEY = 15, },
+		consume = { FOOD = 2, MONEY = 2, },
 		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 30 },
 	},	
@@ -141,7 +141,7 @@ DefaultTroopTable =
 		skills    = {},
 		potential = 25,
 		capacity = { FOOD = 100, MATERIAL = 100 },
-		consume = { FOOD = 4, MONEY = 12, },
+		consume = { FOOD = 2, MONEY = 2, },
 		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 20, 40 },
 	},
@@ -153,7 +153,7 @@ DefaultTroopTable =
 		skills    = {},
 		potential = 25,
 		capacity = { FOOD = 200, MATERIAL = 100 },
-		consume = { FOOD = 6, MONEY = 20, },		
+		consume = { FOOD = 4, MONEY = 3, },		
 		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 20, 41 },
 	},
@@ -164,7 +164,7 @@ DefaultTroopTable =
 		skills    = {},
 		potential = 40,
 		capacity = { FOOD = 200, MATERIAL = 100 },
-		consume = { FOOD = 8, MONEY = 30, },		
+		consume = { FOOD = 6, MONEY = 5, },		
 		requirement = { MONEY = 1, MATERIAL = 1, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 31 },
 	},	
@@ -185,7 +185,7 @@ DefaultTroopTable =
 		melee = 35, shoot = 0, charge = 0, siege = 85, armor = 85, toughness = 60, movement  = 20,
 		skills    = {},
 		potential = 40,
-		consume = { FOOD = 2, MONEY = 15, },		
+		consume = { FOOD = 2, MONEY = 4, },		
 		requirement = { MONEY = 1, MATERIAL = 1, TECH = 999, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 51 },
 	},
@@ -195,9 +195,25 @@ DefaultTroopTable =
 		melee = 35, shoot = 80, charge = 0, siege = 80, armor = 85, toughness = 60, movement  = 15,
 		skills    = {},
 		potential = 40,
-		consume = { FOOD = 2, MONEY = 15, },		
+		consume = { FOOD = 2, MONEY = 4, },		
 		requirement = { MONEY = 1, MATERIAL = 1, TECH = 999, SOLDIER = 1, MIN_SOLDIER = 100 },
 		weapons = { 50 },
+	},
+}
+
+DefaultTroopSkill = 
+{
+	[1000] =
+	{
+		name="", desc = "",
+		effects =
+		{
+			{ type = "DAMAGE_BONUS", value = 50 },
+		},		
+		conditions = 
+		{
+			{ },
+		},
 	},
 }
 
@@ -255,15 +271,15 @@ DefaultCorpsTemplate =
 --sharpness: affect PIERCE damage, against ARMOR
 DefaultWeaponTable = 
 {
-	[10] = { name = "fork",      level = 1, weight = 15,  sharpness = 15,  range = "CLOSE",   ballistic = "NONE", attributes = {} },
-	[20] = { name = "sword",     level = 1, weight = 10,  sharpness = 40,  range = "CLOSE",   ballistic = "NONE", attributes = {} },
-	[30] = { name = "spear",     level = 1, weight = 30,  sharpness = 30,  range = "LONG",    ballistic = "NONE", attributes = {} },
-	[31] = { name = "lance",     level = 1, weight = 50,  sharpness = 50,  range = "LONG",    ballistic = "NONE", attributes = {} },
-	[40] = { name = "bow",       level = 1, weight = 15,  sharpness = 15,  range = "MISSILE", ballistic = "PROJECTTILE", attributes = {} },	
-	[41] = { name = "slingshot", level = 1, weight = 15,  sharpness = 5,   range = "MISSILE", ballistic = "FLAT_FIRE", attributes = {} },
-	[42] = { name = "crossbow",  level = 1, weight = 15,  sharpness = 30,  range = "MISSILE", ballistic = "FLAT_FIRE", attributes = {} },
-	[50] = { name = "stone",     level = 1, weight = 500, sharpness = 100, range = "MISSILE", ballistic = "PROJECTTILE", attributes = {} },
-	[51] = { name = "ram",       level = 1, weight = 300, sharpness = 50,  range = "CLOSE",   ballistic = "NONE", attributes = {} },
+	[10] = { name = "fork",      level = 1, weight = 60,  sharpness = 60,  range = "CLOSE",   ballistic = "NONE", attributes = {} },
+	[20] = { name = "sword",     level = 1, weight = 100, sharpness = 100, range = "CLOSE",   ballistic = "NONE", attributes = {} },
+	[30] = { name = "spear",     level = 1, weight = 150, sharpness = 120, range = "LONG",    ballistic = "NONE", attributes = {} },
+	[31] = { name = "lance",     level = 1, weight = 250, sharpness = 150, range = "LONG",    ballistic = "NONE", attributes = {} },
+	[40] = { name = "bow",       level = 1, weight = 50,  sharpness = 80,  range = "MISSILE", ballistic = "PROJECTTILE", attributes = {} },	
+	[41] = { name = "slingshot", level = 1, weight = 120, sharpness = 40,  range = "MISSILE", ballistic = "FLAT_FIRE", attributes = {} },
+	[42] = { name = "crossbow",  level = 1, weight = 80,  sharpness = 150, range = "MISSILE", ballistic = "FLAT_FIRE", attributes = {} },
+	[50] = { name = "stone",     level = 1, weight = 1000, sharpness = 100, range = "MISSILE", ballistic = "PROJECTTILE", attributes = {} },
+	[51] = { name = "ram",       level = 1, weight = 1000, sharpness = 100, range = "CLOSE",   ballistic = "NONE", attributes = {} },
 }
 
 --[[
@@ -523,11 +539,15 @@ CombatPurposeParam =
 		},
 		WITHDRAW = 
 		{
-			{ reason = "wd_casualty1", casualty_above = 10, score = 10 },
+			{ reason = "wd_hascombat", ctimes_above = 1, prerequsite = 1 },
+			{ reason = "wd_combatday", days_above = 30, prerequsite = 1 },
+			{ reason = "wd_casualty1", casualty_above = 10, score = 15 },
 			{ reason = "wd_casualty2", casualty_above = 20, score = 20 },
 			{ reason = "wd_casualty3", casualty_above = 35, score = 30 },
-			{ reason = "wd_chaos1",    org_below = 50, score = 15 },
-			{ reason = "wd_chaos2",    org_below = 20, score = 15 },
+			{ reason = "wd_casualty3", casualty_above = 50, score = 50 },
+			{ reason = "wd_casualty3", casualty_above = 80, score = 70 },
+			{ reason = "wd_chaos1",    org_below = 50, score = 10 },
+			{ reason = "wd_chaos2",    org_below = 20, score = 10 },
 			{ reason = "wd_downcast1", mor_below = 60, score = 15 },
 			{ reason = "wd_downcast2", mor_below = 40, score = 15 },
 			{ reason = "wd_nofood1",  food_below = 20, is_atk = 1,   score = 80 },
@@ -564,11 +584,15 @@ CombatPurposeParam =
 		},
 		WITHDRAW = 
 		{
+			{ reason = "wd_hascombat", ctimes_above = 2, prerequsite = 1 },
+			{ reason = "wd_combatday", days_above = 45, prerequsite = 1 },
 			{ reason = "wd_casualty1", casualty_above = 10, score = 10 },
 			{ reason = "wd_casualty2", casualty_above = 20, score = 20 },
 			{ reason = "wd_casualty3", casualty_above = 35, score = 30 },
-			{ reason = "wd_chaos1",    org_below = 50, score = 15 },
-			{ reason = "wd_chaos2",    org_below = 20, score = 15 },
+			{ reason = "wd_casualty3", casualty_above = 50, score = 50 },
+			{ reason = "wd_casualty3", casualty_above = 80, score = 70 },
+			{ reason = "wd_chaos1",    org_below = 50, score = 10 },
+			{ reason = "wd_chaos2",    org_below = 20, score = 10 },
 			{ reason = "wd_downcast1", mor_below = 60, score = 15 },
 			{ reason = "wd_downcast2", mor_below = 40, score = 15 },
 			{ reason = "wd_nofood1",   food_below = 20, is_atk = 1,   score = 80 },
@@ -605,11 +629,15 @@ CombatPurposeParam =
 		},
 		WITHDRAW = 
 		{
+			{ reason = "wd_hascombat", ctimes_above = 3, prerequsite = 1 },
+			{ reason = "wd_combatday", days_above = 90, prerequsite = 1 },
 			{ reason = "wd_casualty1", casualty_above = 10, score = 10 },
 			{ reason = "wd_casualty2", casualty_above = 20, score = 20 },
 			{ reason = "wd_casualty3", casualty_above = 35, score = 30 },
-			{ reason = "wd_chaos1",    org_below = 50, score = 15 },
-			{ reason = "wd_chaos2",    org_below = 20, score = 15 },
+			{ reason = "wd_casualty3", casualty_above = 50, score = 50 },
+			{ reason = "wd_casualty3", casualty_above = 80, score = 70 },
+			{ reason = "wd_chaos1",    org_below = 50, score = 10 },
+			{ reason = "wd_chaos2",    org_below = 20, score = 10 },
 			{ reason = "wd_downcast1", mor_below = 60, score = 15 },
 			{ reason = "wd_downcast2", mor_below = 40, score = 15 },
 			{ reason = "wd_nofood1",  food_below = 20, is_atk = 1,   score = 80 },

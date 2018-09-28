@@ -45,6 +45,43 @@ end
 local function PassProposal()
 end
 
+local function CheckProposer( params )
+	local actor = _proposer--_registers["ACTOR"] or _actor
+
+	--check the action point
+	local datas = Scenario_GetData( "TASK_ACTION_DATA" )
+	local data = datas[params.type]
+	if not data then
+		return true
+	end
+	for name, ap in pairs( CharaActionPoint ) do
+		--print( name, ap, data[name], actor:GetAP( ap ) )
+		if data[name] and actor:GetAP( ap ) < data[name] then
+			--InputUtil_Pause( actor:ToString( "AP" ))
+			return false
+		end
+	end
+
+	--check the skill
+	--no skill maybe give up the current proposal method
+	local type = TaskType[params.type]
+
+	return true
+end
+
+local function CostActorAP( actor, type )	
+	local datas = Scenario_GetData( "TASK_ACTION_DATA" )
+	local data = datas[type]	
+	if not data then return end
+	--print( actor:ToString( "AP" ) )
+	for name, ap in pairs( CharaActionPoint ) do
+		if data[name] then
+			actor:UseAP( ap, data[name] )
+		end
+	end
+	--InputUtil_Pause( actor:ToString( "AP" ) )
+end
+
 local function SubmitProposal( params )
 	--check actor
 	if _registers["ACTOR"] then
@@ -60,7 +97,7 @@ local function SubmitProposal( params )
 	Asset_Set( proposal, ProposalAssetID.ACTOR,       _actor )
 
 	if _actor:IsBusy() then
-		error( _actor:ToString(), "already has task" )
+		DBG_Error( _actor:ToString(), "already has task" )
 	end
 	
 	if params.type == "ATTACK_CITY" then		
@@ -124,6 +161,8 @@ local function SubmitProposal( params )
 	
 	elseif params.type == "DEV_AGRICULTURE" or params.type == "DEV_COMMERCE" or params.type == "DEV_PRODUCTION" 
 		or params.type == "LEVY_TAX"
+		or params.type == "BUY_FOOD"
+		or params.type == "SELL_FOOD"
 		then
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.AFFAIRS_TASK )
 	
@@ -184,8 +223,11 @@ local function SubmitProposal( params )
 	elseif params.type == "" then
 	end
 
+	CostActorAP( _proposer, params.type )
+
 	DBG_Watch( "Debug_Meeting", "submit proposal=" .. proposal:ToString() )
 
+	Stat_Add( "SubmitProposal@" .. _proposer:ToString(), proposal:ToString(), StatType.LIST )
 	Stat_Add( "Proposal@Submit_Times", 1, StatType.TIMES )
 
 	Log_Write( "meeting", "    topic=" .. MathUtil_FindName( MeetingTopic, _topic ) ..  " proposal=" .. proposal:ToString() )
@@ -290,15 +332,23 @@ local function CanSubmitPlan( params )
 
 	if _city:IsCharaOfficer( CityJob.EXECUTIVE, _proposer ) == true then
 		--find the one who do the job
-		local actor = Asset_FindItem( _city, CityAssetID.CHARA_LIST, function ( chara )
+		local list = {}
+		Asset_Foreach( _city, CityAssetID.CHARA_LIST, function ( chara )
 			if not chara:IsAtHome() then return false end
 			if chara:IsBusy() then return false end
 			if not _city:IsCharaOfficer( job, chara ) then return false end
+
+			--should find the fit chara who has skill relat to the topic
+
+			table.insert( list, chara )
 			return true
 		end )
-		if actor then
-			_actor = actor
-			--Log_Write( "meeting", "      " .. _proposer.name .. " find a actor=" .. _actor.name )
+		if #list > 0 then
+			local actor = Random_GetListItem( list )
+			if actor then
+				_actor = actor
+				--Log_Write( "meeting", "      " .. _proposer.name .. " find a actor=" .. _actor.name )
+			end
 		end
 	end
 
@@ -409,7 +459,9 @@ local function CanEstablishCorps()
 
 		return false
 	end
-	if Corps_CanEstablishCorps( _city, reserves ) == false then
+
+	--check
+	if Corps_CanEstablishCorps( _city, reserves, City_HasTroopBudget ) == false then
 		Debug_Log( _city.name, "EstCorpsFailed! cann't est" )
 		return false
 	end
@@ -422,6 +474,7 @@ local function CanEstablishCorps()
 	return true
 end
 
+--Check whether we can reinforce any understaffered troop in the corps
 local function CanReinforceCorps()
 	local reserves = _city:GetPopu( CityPopu.RESERVES )
 	if reserves < Scenario_GetData( "TROOP_PARAMS" ).MIN_TROOP_SOLDIER then
@@ -450,6 +503,7 @@ local function CanReinforceCorps()
 	return true
 end
 
+--Check whether we can enroll new troop into the established corps
 local function CanEnrollCorps()
 	local reserves = _city:GetPopu( CityPopu.RESERVES )
 	if reserves < Scenario_GetData( "TROOP_PARAMS" ).MIN_TROOP_SOLDIER then
@@ -457,6 +511,7 @@ local function CanEnrollCorps()
 		return false
 	end
 
+	--find corps that has vacancy for troop 
 	local findCorps = nil
 	Asset_FindItem( _city, CityAssetID.CORPS_LIST, function ( corps )		
 		if corps:IsAtHome() == false then return false end
@@ -473,7 +528,7 @@ local function CanEnrollCorps()
 		return false
 	end
 
-	if Corps_CanEstablishCorps( _city, reserves ) == false then
+	if Corps_CanEstablishCorps( _city, reserves, City_HasTroopBudget ) == false then
 		--print( "cann't enroll corps" )
 		return false
 	end
@@ -1121,8 +1176,41 @@ function NeedLevyTax( score )
 	--if money < then 	end
 	return Random_GetInt_Sync( 1, 100 ) < score
 end
-local function CanLevyTax()
-	return false
+
+local function ShouldLevyTax()
+	if City_IsBudgetSafe( _city, { safetyMonth = MONTH_IN_SEASON } ) then
+		return false
+	end
+	return true
+end
+
+local function ShouldSellFood()
+	--check	
+	if not _city:GetStatus( CityStatus.MOBILE_MERCHANT ) and not _city:GetConstructionByEffect( CityConstrEffect.TRADE ) then
+		return false
+	end
+
+	local month = MONTH_IN_HALFYEAR
+	if not City_IsFoodBudgetSafe( _city, { safetyMonth = month } ) or City_IsMoneyBudgetSafe( _city, { safetyMonth = month } ) then
+		return false
+	end
+
+	--InputUtil_Pause( "SELLFOOD", _city:ToString( "ASSET" ) )
+	return true
+end
+
+local function ShouldBuyFood()
+	if not _city:GetStatus( CityStatus.MOBILE_MERCHANT ) and not _city:GetConstructionByEffect( CityConstrEffect.TRADE ) then
+		return false
+	end
+
+	local month = MONTH_IN_HALFYEAR
+	if City_IsFoodBudgetSafe( _city, { safetyMonth = month } ) or not City_IsMoneyBudgetSafe( _city, { safetyMonth = month } ) then
+		return false
+	end
+
+	--InputUtil_Pause( "BUYFOOD", _city:ToString( "CONSTRUCTION" ) )
+	return true
 end
 
 local function CanTransport()
@@ -1339,7 +1427,7 @@ local function CanDevelop( params )
 	local score = 0
 	local ratio
 
-	local tax      = City_GetMonthTax( _city, g_Time:GetMonth( g_Time:GetMonth() + 1 ) )
+	local tax      = City_GetMonthTax( _city, g_Time:GetMonth( 1 ) )
 	local salary   = _city:GetSalary()
 	local cost     = _city:GetDevelopCost()
 	local hasMoney = Asset_Get( _city, CityAssetID.MONEY )
@@ -1535,8 +1623,6 @@ local function CanAssassinate()
 	local index = Random_GetInt_Sync( 1, #list )
 	_registers["TARGET_CITY"] = list[index].city
 	_registers["TARGET_CHARA"] = list[index].target
-
-
 
 	 return true
 end
@@ -1948,7 +2034,8 @@ local LeadCorpsProposal =
 {
 	type = "SEQUENCE", children = 
 	{
-		{ type = "FILTER", condition = CanLeadCorps },
+		{ type = "FILTER", condition = CheckProposer, params = { type = "LEAD_CORPS" } },
+		{ type = "FILTER", condition = CanLeadCorps },		
 		{ type = "ACTION", action = SubmitProposal, params = { type = "LEAD_CORPS" } },
 	},
 }
@@ -1957,7 +2044,8 @@ local EstablishCorpsProposal =
 {
 	type = "SEQUENCE", children = 
 	{
-		{ type = "FILTER", condition = CanEstablishCorps },
+		{ type = "FILTER", condition = CheckProposer, params = { type = "ESTABLISH_CORPS" } },
+		{ type = "FILTER", condition = CanEstablishCorps },		
 		{ type = "ACTION", action = SubmitProposal, params = { type = "ESTABLISH_CORPS" } },
 	},
 }
@@ -1966,7 +2054,8 @@ local ReinforceProposal =
 {
 	type = "SEQUENCE", children = 
 	{
-		{ type = "FILTER", condition = CanReinforceCorps },
+		{ type = "FILTER", condition = CheckProposer, params = { type = "REINFORCE_CORPS" } },
+		{ type = "FILTER", condition = CanReinforceCorps },		
 		{ type = "ACTION", action = SubmitProposal, params = { type = "REINFORCE_CORPS" } },
 	},
 }
@@ -1975,6 +2064,7 @@ local EnrollProposal =
 {
 	type = "SEQUENCE", children = 
 	{
+		{ type = "FILTER", condition = CheckProposer, params = { type = "ENROLL_CORPS" } },
 		{ type = "FILTER", condition = CanEnrollCorps },
 		{ type = "ACTION", action = SubmitProposal, params = { type = "ENROLL_CORPS" } },
 	},
@@ -1984,6 +2074,7 @@ local TrainProposal =
 {
 	type = "SEQUENCE", children = 
 	{
+		{ type = "FILTER", condition = CheckProposer, params = { type = "TRAIN_CORPS" } },
 		{ type = "FILTER", condition = CanTrainCorps },
 		{ type = "ACTION", action = SubmitProposal, params = { type = "TRAIN_CORPS" } },
 	},
@@ -1993,6 +2084,7 @@ local RegroupProposal =
 {
 	type = "SEQUENCE", children = 
 	{
+		{ type = "FILTER", condition = CheckProposer, params = { type = "REGROUP_CORPS" } },
 		{ type = "FILTER", condition = CanRegroupCorps },
 		{ type = "ACTION", action = SubmitProposal, params = { type = "REGROUP_CORPS" } },
 	},	
@@ -2002,6 +2094,7 @@ local EnhanceMilitaryBaseProposal =
 {
 	type = "SEQUENCE", children = 
 	{
+		{ type = "FILTER", condition = CheckProposer, params = { type = "DISPATCH_CORPS" } },
 		{ type = "FILTER", condition = CanEnhanceAdavanceBase },
 		{ type = "ACTION", action = SubmitProposal, params = { type = "DISPATCH_CORPS" } },
 	},
@@ -2011,13 +2104,14 @@ local DispatchCorpsProposal =
 {
 	type = "SEQUENCE", children = 
 	{
+		{ type = "FILTER", condition = CheckProposer, params = { type = "DISPATCH_CORPS" } },
 		{ type = "SELECTOR", children = 
 			{
 				{ type = "SEQUENCE", children = 
 					{
 						{ type = "FILTER", condition = HasCityStatus, params = { status = "MILITARY_BASE" } },
 						{ type = "FILTER", condition = HasGroupGoal, params = { goal = "DEFEND_CITY", excludeCity = true } },						
-						{ type = "FILTER", condition = CanReinforceAdvancedBase },
+						{ type = "FILTER", condition = CanReinforceAdvancedBase },						
 						{ type = "ACTION", action = SubmitProposal, params = { type = "DISPATCH_CORPS" } },
 					}
 				},
@@ -2043,6 +2137,7 @@ local ConscriptProposal =
 {
 	type = "SEQUENCE", children = 
 	{
+		{ type = "FILTER", condition = CheckProposer, params = { type = "CONSCRIPT" } },
 		{ type = "FILTER", condition = CanConscript },
 		{ type = "ACTION", action = SubmitProposal, params = { type = "CONSCRIPT" } },
 	},
@@ -2052,6 +2147,7 @@ local RecruitProposal =
 {
 	type = "SEQUENCE", children = 
 	{
+		{ type = "FILTER", condition = CheckProposer, params = { type = "RECRUIT" } },
 		{ type = "FILTER", condition = CanRecruit },
 		{ type = "ACTION", action = SubmitProposal, params = { type = "RECRUIT" } },
 	},
@@ -2061,6 +2157,7 @@ local HireGuardProposal =
 {
 	type = "SEQUENCE", children = 
 	{
+		{ type = "FILTER", condition = CheckProposer, params = { type = "HIRE_GUARD" } },
 		{ type = "FILTER", condition = CanHireGuard },
 		{ type = "ACTION", action = SubmitProposal, params = { type = "HIRE_GUARD" } },
 	},
@@ -2070,6 +2167,7 @@ local _BuildProposal =
 {
 	type = "SEQUENCE", children = 
 	{
+		{ type = "FILTER", condition = CheckProposer, params = { type = "BUILD_CITY" } },
 		{ type = "FILTER", condition = CanBuildCity },
 		{ type = "ACTION", action = SubmitProposal, params = { type = "BUILD_CITY" } },
 	},
@@ -2079,6 +2177,7 @@ local _BuildDefensiveProposal =
 {
 	type = "SEQUENCE", children = 
 	{
+		{ type = "FILTER", condition = CheckProposer, params = { type = "BUILD_CITY" } },
 		{ type = "FILTER", condition = CanBuildDefensive },
 		{ type = "ACTION", action = SubmitProposal, params = { type = "BUILD_CITY" } },
 	},	
@@ -2088,6 +2187,7 @@ local _TransportProposal =
 {
 	type = "SEQUENCE", children = 
 	{
+		{ type = "FILTER", condition = CheckProposer, params = { type = "TRANSPORT" } },
 		{ type = "FILTER", condition = HasCityStatus, params = { status = "PRODUCTION_BASE" } },
 		{ type = "FILTER", condition = CanTransport },
 		{ type = "ACTION", action = SubmitProposal, params = { type = "TRANSPORT" } },
@@ -2098,9 +2198,31 @@ local _TaxProposal =
 {
 	type = "SEQUENCE", children = 
 	{
-		{ type = "FILTER", condition = CanLevyTax },
+		{ type = "FILTER", condition = CheckProposer, params = { type = "LEVY_TAX" } },
+		{ type = "FILTER", condition = ShouldLevyTax },
 		{ type = "ACTION", action = SubmitProposal, params = { type = "LEVY_TAX" } },
 	},
+}
+
+local _FoodProposal = 
+{
+	type = "SELECTOR", children =
+	{
+		{ type = "SEQUENCE", children = 
+			{
+				{ type = "FILTER", condition = CheckProposer, params = { type = "SELL_FOOD" } },
+				{ type = "FILTER", condition = ShouldSellFood },
+				{ type = "ACTION", action = SubmitProposal, params = { type = "SELL_FOOD" } },
+			},
+		},
+		{ type = "SEQUENCE", children = 
+			{
+				{ type = "FILTER", condition = CheckProposer, params = { type = "BUY_FOOD" } },
+				{ type = "FILTER", condition = ShouldBuyFood },
+				{ type = "ACTION", action = SubmitProposal, params = { type = "BUY_FOOD" } },
+			},
+		},
+	}
 }
 
 local _DevelopProposal = 
@@ -2109,18 +2231,21 @@ local _DevelopProposal =
 	{
 		{ type = "SEQUENCE", children = 
 			{
+				{ type = "FILTER", condition = CheckProposer, params = { type = "DEV_AGRICULTURE" } },
 				{ type = "FILTER", condition = CanDevelop, params = { assetId = CityAssetID.AGRICULTURE } },
 				{ type = "ACTION", action = SubmitProposal, params = { type = "DEV_AGRICULTURE" } },
 			},
 		},
 		{ type = "SEQUENCE", children = 
 			{
+				{ type = "FILTER", condition = CheckProposer, params = { type = "DEV_COMMERCE" } },
 				{ type = "FILTER", condition = CanDevelop, params = { assetId = CityAssetID.COMMERCE } },
 				{ type = "ACTION", action = SubmitProposal, params = { type = "DEV_COMMERCE" } },
 			},
 		},
 		{ type = "SEQUENCE", children = 
 			{
+				{ type = "FILTER", condition = CheckProposer, params = { type = "DEV_PRODUCTION" } },
 				{ type = "FILTER", condition = CanDevelop, params = { assetId = CityAssetID.PRODUCTION } },
 				{ type = "ACTION", action = SubmitProposal, params = { type = "DEV_PRODUCTION" } },
 			},
@@ -2139,30 +2264,35 @@ local _SubmitHRProposal =
 			{
 				{ type = "SEQUENCE", children = 
 					{
+						{ type = "FILTER", condition = CheckProposer, params = { type = "MOVE_CAPITAL" } },
 						{ type = "FILTER", condition = CanMoveCapital },
 						{ type = "ACTION", action = SubmitProposal, params = { type = "MOVE_CAPITAL" } },
 					},
 				},
 				{ type = "SEQUENCE", children = 
 					{
+						{ type = "FILTER", condition = CheckProposer, params = { type = "DISPATCH_CHARA" } },
 						{ type = "FILTER", condition = CanCharaBack2Capital },
 						{ type = "ACTION", action = SubmitProposal, params = { type = "DISPATCH_CHARA" } },
 					},
 				},
 				{ type = "SEQUENCE", children = 
 					{
+						{ type = "FILTER", condition = CheckProposer, params = { type = "CALL_CHARA" } },
 						{ type = "FILTER", condition = CanCallChara },
 						{ type = "ACTION", action = SubmitProposal, params = { type = "CALL_CHARA" } },
 					},
 				},	
 				{ type = "SEQUENCE", children = 
 					{
+						{ type = "FILTER", condition = CheckProposer, params = { type = "DISPATCH_CHARA" } },
 						{ type = "FILTER", condition = CanDispatchChara },
 						{ type = "ACTION", action = SubmitProposal, params = { type = "DISPATCH_CHARA" } },
 					},
 				},
 				{ type = "SEQUENCE", children = 
 					{
+						{ type = "FILTER", condition = CheckProposer, params = { type = "HIRE_CHARA" } },
 						{ type = "FILTER", condition = CanHireChara },
 						{ type = "ACTION", action = SubmitProposal, params = { type = "HIRE_CHARA" } },
 					},
@@ -2191,21 +2321,24 @@ local _SubmitStaffProposal =
 			{
 				--COLLECT INTELS
 				--EXECUTE OP
-				--[[
+				--[[]]
 				{ type = "SEQUENCE", children = 
-					{		
+					{
+						{ type = "FILTER", condition = CheckProposer, params = { type = "RECONNOITRE" } },
 						{ type = "FILTER", condition = CanReconnoitre },
 						{ type = "ACTION", action = SubmitProposal, params = { type = "RECONNOITRE" } },
 					},
 				},
 				{ type = "SEQUENCE", children = 
 					{
+						{ type = "FILTER", condition = CheckProposer, params = { type = "SABOTAGE" } },
 						{ type = "FILTER", condition = CanSabotage },
 						{ type = "ACTION", action = SubmitProposal, params = { type = "SABOTAGE" } },
 					},
 				},
 				{ type = "SEQUENCE", children = 
 					{
+						{ type = "FILTER", condition = CheckProposer, params = { type = "DESTROY_DEF" } },
 						{ type = "FILTER", condition = CanDestoryDefensive },
 						{ type = "ACTION", action = SubmitProposal, params = { type = "DESTROY_DEF" } },
 					},
@@ -2213,6 +2346,7 @@ local _SubmitStaffProposal =
 				--]]
 				{ type = "SEQUENCE", children = 
 					{
+						{ type = "FILTER", condition = CheckProposer, params = { type = "ASSASSINATE" } },
 						{ type = "FILTER", condition = CanAssassinate },
 						{ type = "ACTION", action = SubmitProposal, params = { type = "ASSASSINATE" } },
 					},
@@ -2248,8 +2382,10 @@ local _SubmitAffairsProposal =
 						_TransportProposal,
 					}
 				},
+				_FoodProposal,			
 				{ type = "RANDOM_SELECTOR", children =
 					{
+						_FoodProposal,
 						_TransportProposal,
 						_DevelopProposal,
 						_BuildProposal,
@@ -2294,18 +2430,21 @@ local _SubmitDiplomaticProposal =
 			{
 				{ type = "SEQUENCE", children = 
 					{
+						{ type = "FILTER", condition = CheckProposer, params = { type = "IMPROVE_RELATION" } },
 						{ type = "FILTER", condition = CanImproveRelation },
 						{ type = "ACTION", action = SubmitProposal, params = { type = "IMPROVE_RELATION" } },
 					},
 				},
 				{ type = "SEQUENCE", children = 
 					{
+						{ type = "FILTER", condition = CheckProposer, params = { type = "DECLARE_WAR" } },
 						{ type = "FILTER", condition = CanDeclareWar },
 						{ type = "ACTION", action = SubmitProposal, params = { type = "DECLARE_WAR" } },
 					},
 				},
 				{ type = "SEQUENCE", children = 
 					{
+						{ type = "FILTER", condition = CheckProposer, params = { type = "SIGN_PACT" } },
 						{ type = "FILTER", condition = CanSignPact },
 						{ type = "ACTION", action = SubmitProposal, params = { type = "SIGN_PACT" } },
 					},
@@ -2324,6 +2463,7 @@ local _SubmitTechnicianProposal =
 			{
 				{ type = "SEQUENCE", children = 
 					{
+						{ type = "FILTER", condition = CheckProposer, params = { type = "RESEARCH" } },
 						{ type = "FILTER", condition = CanResearch },
 						{ type = "ACTION", action = SubmitProposal, params = { type = "RESEARCH" } },
 					},
@@ -2341,19 +2481,22 @@ local _SubmitStrategyProposal =
 		{ type = "SELECTOR", children = 
 			{
 				{ type = "SEQUENCE", children = 
-					{		
+					{
+						{ type = "FILTER", condition = CheckProposer, params = { type = "ATTACK_CITY" } },
 						{ type = "FILTER", condition = CanAttackCity },
 						{ type = "ACTION", action = SubmitProposal, params = { type = "ATTACK_CITY" } },
 					},
 				},
 				{ type = "SEQUENCE", children = 
-					{		
+					{
+						{ type = "FILTER", condition = CheckProposer, params = { type = "ATTACK_CITY" } },
 						{ type = "FILTER", condition = CanExpedition },
 						{ type = "ACTION", action = SubmitProposal, params = { type = "ATTACK_CITY" } },
 					},
 				},
 				{ type = "SEQUENCE", children = 
 					{
+						{ type = "FILTER", condition = CheckProposer, params = { type = "HARASS_CITY" } },
 						{ type = "FILTER", condition = CanHarassCity },
 						{ type = "ACTION", action = SubmitProposal, params = { type = "HARASS_CITY" } },
 					},
@@ -2385,6 +2528,7 @@ local _UnderAttackProposal =
 		--under attack
 		{ type = "SEQUENCE", children = 
 			{
+				{ type = "FILTER", condition = CheckProposer, params = { type = "INTERCEPT" } },
 				{ type = "FILTER", condition = IsTopic, params = { topic = "UNDER_HARASS" } },
 				{ type = "FILTER", condition = CanIntercept },
 				{ type = "ACTION", action = SubmitProposal, params = { type = "INTERCEPT" } },
@@ -2393,6 +2537,7 @@ local _UnderAttackProposal =
 
 		{ type = "SEQUENCE", children = 
 			{
+				{ type = "FILTER", condition = CheckProposer, params = { type = "INTERCEPT" } },
 				{ type = "FILTER", condition = IsTopic, params = { topic = "UNDER_ATTACK" } },				
 				{ type = "FILTER", condition = CanIntercept },
 				{ type = "ACTION", action = SubmitProposal, params = { type = "INTERCEPT" } },
@@ -2405,8 +2550,9 @@ local _GoalProposal =
 {
 	type = "SEQUENCE", children = 
 	{
+		{ type = "FILTER", condition = CheckProposer, params = { type = "SET_GOAL" } },
 		{ type = "FILTER", condition = IsCityCapital },
-		{ type = "FILTER", condition = IsTopic, params = { topic = "DETERMINE_GOAL" } },				
+		{ type = "FILTER", condition = IsTopic, params = { topic = "DETERMINE_GOAL" } },
 		{ type = "FILTER", condition = DetermineGoal },	
 		{ type = "ACTION", action = SubmitProposal, params = { type = "SET_GOAL" } },
 	},
@@ -2484,24 +2630,30 @@ local _InstructProposal =
 	{
 		{ type = "SEQUENCE", children = 
 			{
+				{ type = "FILTER", condition = CheckProposer, params = { type = "INSTRUCT_CITY" } },
 				{ type = "FILTER", condition = DetermineOccupyGoal },
 				{ type = "ACTION", action = SubmitProposal, params = { type = "INSTRUCT_CITY" } }
 			}
 		},
 		{ type = "SEQUENCE", children = 
 			{
+
+				{ type = "FILTER", condition = CheckProposer, params = { type = "INSTRUCT_CITY" } },
 				{ type = "FILTER", condition = DetermineDefendGoal },
 				{ type = "ACTION", action = SubmitProposal, params = { type = "INSTRUCT_CITY" } }
 			}
 		},
 		{ type = "SEQUENCE", children = 
 			{
+				{ type = "FILTER", condition = CheckProposer, params = { type = "INSTRUCT_CITY" } },
 				{ type = "FILTER", condition = DetermineEnhanceGoal },
 				{ type = "ACTION", action = SubmitProposal, params = { type = "INSTRUCT_CITY" } }
 			}
 		},
 		{ type = "SEQUENCE", children = 
 			{
+
+				{ type = "FILTER", condition = CheckProposer, params = { type = "INSTRUCT_CITY" } },
 				{ type = "FILTER", condition = DetermineDevelopGoal },
 				{ type = "ACTION", action = SubmitProposal, params = { type = "INSTRUCT_CITY" } }
 			}
@@ -2531,7 +2683,8 @@ local _MeetingProposal =
 
 		--_PriorityProposals,
 
-		--test slot
+		--Test
+		--_SubmitAffairsProposal,
 
 		--default
 		--[[]]

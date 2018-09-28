@@ -50,7 +50,6 @@ function Entity_SetTroop( entity, id, value )
 	return Entity_Get( EntityType.TROOP, value ) or value
 end
 
-
 function Entity_SetPlot( entity, id, value )
 	return Entity_Get( EntityType.PLOT, value ) or value
 end

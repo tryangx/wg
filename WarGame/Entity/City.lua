@@ -173,11 +173,16 @@ function City:ToString( type )
 		Asset_Foreach( self, CityAssetID.OFFICER_LIST, function ( data )
 			content = content .. " [" .. MathUtil_FindName( CityJob, data.job ) .. "]=" .. data.officer.name
 		end )
+
+	elseif type == "ASSET" then
+		content = content .. " food=" .. HelperUtil_CreateNumberDesc( Asset_Get( self, CityAssetID.FOOD ) )
+		content = content .. " money=" .. HelperUtil_CreateNumberDesc( Asset_Get( self, CityAssetID.MONEY ) )
+		content = content .. " consume=" .. HelperUtil_CreateNumberDesc( self:GetConsumeFood() )
+		content = content .. " salary=" .. HelperUtil_CreateNumberDesc( self:GetSalary() )
 	
 	elseif type == "SUPPLY" then
 		local food    = Asset_Get( self, CityAssetID.FOOD )
 		local consume = self:GetConsumeFood()
-		local supply  = self:GetSupplyFood()
 		local money   = Asset_Get( self, CityAssetID.MONEY )
 		local salary  = self:GetSalary()
 		content = content .. " money=" .. money
@@ -188,8 +193,8 @@ function City:ToString( type )
 		end
 		content = content .. " food=" .. food
 		--content = content .. "-" .. consume
-		if false and consume + supply > 0 then
-			content = content .. "+" .. math.ceil( food / ( DAY_IN_MONTH * ( consume + supply ) ) ) .."M" .. "(" .. consume .. "+" .. supply .. ")"
+		if false and consume > 0 then
+			content = content .. "+" .. math.ceil( food / ( DAY_IN_MONTH * ( consume ) ) ) .."M" .. "(" .. consume .. ")"
 		else
 			content = content .. "+" .. math.ceil( food / DAY_IN_YEAR ) .."P"
 		end
@@ -217,18 +222,18 @@ function City:ToString( type )
 		content = content .. " salary=" .. self:GetSalary()
 
 	elseif type == "BUDGET_YEAR" then
-		local m_income_year = City_GetYearTax( self )
-		local m_pay_year = self:GetSalary() * 12
+		local m_income_year = City_GetYearTax( self )		
 		local f_income_year = City_GetFoodIncome( self )
+		local m_pay_year = self:GetSalary() * 12
 		local f_pay_year = self:GetConsumeFood() * DAY_IN_YEAR
 		local m_surplus = m_income_year - m_pay_year
 		local f_surplus = f_income_year - f_pay_year
-		content = content .. " money_budget=" .. m_surplus .. "+" .. math.ceil( m_surplus / self:GetSalary() ) .. "M"
-		content = content .. " food_budget=" .. f_surplus .. "+" .. math.ceil( f_surplus / self:GetConsumeFood() ) .. "D"
-		content = content .. " money_in_yr="  .. m_income_year
-		content = content .. " money_out_yr=" .. m_pay_year
-		content = content .. " food_in_yr="   .. f_income_year
-		content = content .. " food_out_yr="  .. f_pay_year
+		--content = content .. " money_budget=" .. m_surplus .. "+" .. math.ceil( m_surplus / self:GetSalary() ) .. "M"
+		--content = content .. " food_budget=" .. f_surplus .. "+" .. math.ceil( f_surplus / self:GetConsumeFood() ) .. "D"
+		content = content .. " money_in_yr="  .. HelperUtil_CreateNumberDesc( m_income_year )
+		content = content .. " money_out_yr=" .. HelperUtil_CreateNumberDesc( m_pay_year )
+		content = content .. " food_in_yr="   .. HelperUtil_CreateNumberDesc( f_income_year )
+		content = content .. " food_out_yr="  .. HelperUtil_CreateNumberDesc( f_pay_year )
 
 	elseif type == "BUDGET_MONTH" then
 		content = content .. " money_in="  .. City_GetMonthTax( self )
@@ -389,7 +394,7 @@ function City:Init()
 	self:InitPopu()
 
 	--keep minimum food
-	Asset_Set( self, CityAssetID.FOOD, ( self:GetConsumeFood() + self:GetSupplyFood() ) * 360 )
+	Asset_Set( self, CityAssetID.FOOD, self:GetConsumeFood() * 360 )
 
 	--!!!we can check the city data here
 	--InputUtil_Pause( self:ToString( 'CONSTRUCTION'), Asset_GetListSize( self, CityAssetID.CONSTR_LIST ) )
@@ -451,8 +456,29 @@ end
 
 function City:GetConstruction( id )
 	return Asset_FindItem( self, CityAssetID.CONSTR_LIST, function ( constr )
-		if constr.id == id then return constr end
+		if constr.id == id then
+			return true
+		end
 	end)
+end
+
+function City:GetConstructionByEffect( effType )
+	local ret = Asset_FindItem( self, CityAssetID.CONSTR_LIST, function ( constr )
+		for type, value in pairs( constr.effects ) do
+			if CityConstrEffect[type] == effType then
+				return true
+			end
+		end
+	end)
+	return ret
+end
+
+function City:GetNumberOfConstruction( id )
+	local number = 0
+	Asset_Foreach( self, CityAssetID.CONSTR_LIST, function ( constr )
+		if constr.id == id then number = number + 1 end
+	end)
+	return number
 end
 
 function City:GetStatus( status )
@@ -480,21 +506,18 @@ function City:GetDevelopCost()
 	return self:GetPopuValue( "POPU_DEVELOP_COST" )
 end
 
-function City:GetSalary()
-	return self:GetPopuValue( "POPU_SALARY" )
-end
-
 function City:GetCorpsSalary()
 	local salary = 0
 	Asset_Foreach( self, CityAssetID.CORPS_LIST, function( corps )
-		salary = salary + corps:GetSalary()
+		local corpsSalary = corps:GetSalary()
+		salary = salary + corpsSalary
+		--print( corps:ToString("MILITARY"), "salary=" .. corpsSalary )
 	end )
 	return salary
 end
 
---supply food for population in city
-function City:GetConsumeFood()
-	return self:GetPopuValue( "POPU_CONSUME_FOOD" )
+function City:GetSalary()	
+	return self:GetPopuValue( "POPU_SALARY" ) + self:GetCorpsSalary()
 end
 
 --supply food for outside corps
@@ -508,10 +531,14 @@ function City:GetSupplyFood()
 	return food
 end
 
+function City:GetConsumeFood()
+	return self:GetPopuValue( "POPU_CONSUME_FOOD" ) + self:GetSupplyFood()
+end
+
 function City:GetReqProperty( month )
 	if not month then month = MONTH_IN_YEAR end
 	local req_money = self:GetSalary() * month
-	local req_food  = ( self:GetConsumeFood() + self:GetSupplyFood() ) * month
+	local req_food  = self:GetConsumeFood() * month
 	return req_food, req_money
 end
 
@@ -1094,12 +1121,12 @@ function City:UpdateConstrList()
 	local constrDatas = Scenario_GetData( "CITY_CONSTR_DATA" )
 	for id, constr in pairs( constrDatas ) do
 		local match = true
-		if constr.prerequsite then
-			for cond, value in pairs( constr.prerequsite ) do
-				if cond.city_lv and cond.city_lv > Asset_Get( self, CityAssetID.LEVEL ) then match = false end
-				if cond.has_constr and self:GetConstruction( cond.constr ) == nil then match = false end
-				if cond.singleton and self:GetConstruction( id ) then match = false end
-			end
+		local cond = constr.prerequsite
+		if cond then
+			if cond.city_lv and cond.city_lv > Asset_Get( self, CityAssetID.LEVEL ) then match = false end
+			if cond.has_constr and self:GetConstruction( cond.has_constr ) == nil then match = false end
+			if cond.singleton and self:GetConstruction( id ) then match = false end
+			if cond.number and self:GetNumberOfConstruction( id ) >= cond.number then match = false end
 		end
 		if match then
 			table.insert( constrList, constr )
@@ -1227,7 +1254,7 @@ end
 
 function City:UseMoney( money, comment )
 	Asset_Reduce( self, CityAssetID.MONEY, money )
-	--print( self.name .. " use money for=", comment )
+	Debug_Log( self.name .. " use money=" .. money .. "/" .. Asset_Get( self, CityAssetID.MONEY ) .. " for=", comment )
 end
 
 function City:ReceiveMoney( money )
@@ -1293,4 +1320,22 @@ end
 
 function City:SetStatus( status, value )
 	Asset_SetDictItem( self, CityAssetID.STATUSES, status, value )
+end
+
+function City:WatchBudget( reason )
+	if reason then Debug_Log( "watchbudget=" .. self.name .."->" .. reason ) end
+	Debug_Log( self:ToString("POPULATION") )		
+	Debug_Log( self:ToString( "ASSET" ) )
+	Debug_Log( self.name .. " personal=" .. City_CalcPersonalTax( self ), "comm=" .. City_CalcCommerceTax( self ), "trade=" .. City_CalcTradeTax( self ) )
+	Debug_Log( "year tax=" .. City_GetYearTax( self ),  "salary=" .. self:GetSalary() * 12 )
+	--[[
+	local req_food, req_money = self:GetReqProperty( 1 )
+	local salary = self:GetSalary()
+	local food   = self:GetConsumeFood()
+	if salary ~= req_money or food ~= req_food then
+		print( salary, req_money, food, req_food )
+		k.p = 1
+	end
+]]
+	--if City_IsBudgetSafe( self ) == false then InputUtil_Pause("budget danger") end	
 end

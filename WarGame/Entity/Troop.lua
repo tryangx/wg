@@ -19,8 +19,8 @@ TroopAssetID =
 	-------------------------------
 	--growth
 	POTENTIAL    = 200,
-	CONVEYANCE   = 201,
-	MAX_SOLDIER  = 202,	
+	MAX_SOLDIER  = 201,	
+	CONVEYANCE   = 202,	
 
 	SKILLS       = 220,
 	STATUSES     = 221,
@@ -76,9 +76,7 @@ function Troop:ToString( type )
 
 	if type == "COMBAT" or type == "COMBAT_ALL" or type == "ALL" then
 		local officer = Asset_Get( self, TroopAssetID.OFFICER )
-		if officer then
-			content = content .. " o=" .. officer:ToString()
-		end
+		if officer then content = content .. " o=" .. officer:ToString() end
 		content = content .. " org=" .. Asset_Get( self, TroopAssetID.ORGANIZATION )
 		content = content .. " mor=" .. Asset_Get( self, TroopAssetID.MORALE )
 		content = content .. " n=" .. Asset_Get( self, TroopAssetID.SOLDIER ) .. "/" .. Asset_Get( self, TroopAssetID.MAX_SOLDIER )
@@ -104,6 +102,9 @@ function Troop:ToString( type )
 	elseif type == "ALL" then
 		content = content .. " n=" .. Asset_Get( self, TroopAssetID.SOLDIER )
 		content = content .. " exp=" .. self:GetStatus( TroopStatus.EXP )
+		content = content .. " cid=" .. ( self:GetStatus( TroopStatus.COMBATID ) or "" )
+		content = content .. " isg=" .. ( self:GetStatus( TroopStatus.GUARD ) and "true" or "" )
+		content = content .. " isr=" .. ( self:GetStatus( TroopStatus.RESERVE ) and "true" or "" )
 		local corps = Asset_Get( self, TroopAssetID.CORPS )
 		if corps then
 			content = content .. " corp=" .. corps.name
@@ -272,13 +273,19 @@ end
 
 function Troop:KillSoldier( number )
 	local exp = self:GetStatus( TroopStatus.EXP )
-	exp = exp + number
-	self:SetStatus( TroopStatus.EXP, exp * 5 )
+	self:SetStatus( TroopStatus.EXP, exp + number )
 	--print( self:ToString(), "exp=" .. exp, number )
 end
 
-function Troop:KillTroop( target )
-	local bonus = Asset_Get( target, TroopAssetID.LEVEL ) + 5
+function Troop:NeutralizeTroop( target )
+	local targetLevel = Asset_Get( target, TroopAssetID.LEVEL )
+	local selfLevel   = Asset_Get( self, TroopAssetID.LEVEL )
+	local bonus = 0
+	if targetLevel + 5 >= selfLevel then
+		bonus = targetLevel
+	else
+		bonus = math.ceil( targetLevel * 0.5 )
+	end
 	local honor = self:GetStatus( TroopStatus.HONOR )
 	if not honor then honor = 0 end
 	honor = honor + bonus
@@ -311,4 +318,12 @@ function Troop:UpdateAtHome()
 	local lv = Asset_Get( self, TroopAssetID.LEVEL )
 	local delta = lv + 5
 	self:AffectMorale( delta )
+
+	--check honor
+	local honor = self:GetStatus( TroopStatus.HONOR )
+	if not honor then return end
+	local numOfSkills = Asset_GetListSize( self, TroopAssetID.SKILLS )
+	local maxHonor = ( lv - 1 ) * 50 + numOfSkills * 100 + 50
+	if honor < maxHonor then return end
+	--learn troop skill
 end

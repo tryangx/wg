@@ -1,6 +1,39 @@
 --------------------------------------------------
+-- For City test
+--------------------------------------------------
+function Test_CityMoney()	
+	local city = Entity_Get( EntityType.CITY, 3 )
+	--print( "==", city:ToString("DEVELOP") )
+	while Game_IsRunning()  do
+		Game_MainLoop()
+	end	
+	--InputUtil_Pause( city:ToString("DEVELOP") )
+	if city then
+		city:WatchBudget()
+	end
+end
+
+--------------------------------------------------
+-- For Corps
+--------------------------------------------------
+function Test_EstablishCorps()
+	--test establish corps
+	local city = Entity_New( EntityType.CITY )	
+	city:Test()
+	Entity_UpdateAttribPointer( city )
+	Entity_Dump( city )
+	Corps_EstablishInCity( city )
+	Entity_Dump( city )	
+end
+
+--------------------------------------------------
 -- For Chara testing
 --------------------------------------------------
+function Test_GenereateChara()
+	local chara = CharaCreator_GenerateFictionalChara()
+	Entity_Dump( chara )
+end
+
 function Test_CharaLevelUp()
 	for i = 1, 19 do
 		--print( "i=" .. i )
@@ -53,6 +86,8 @@ function Test_Establish( params )
 		if id then
 			local officer = Entity_Get( EntityType.CHARA, id )
 			Asset_Set( troop, TroopAssetID.OFFICER, officer )
+			Asset_Set( officer, CharaAssetID.CORPS, corps )
+			Asset_Set( officer, CharaAssetID.TROOP, troop )
 			charaIndex = charaIndex + 1
 		end
 		troop:LoadFromTable( troopTable )
@@ -89,9 +124,12 @@ function Test_Combat()
 	Combat_EnableTest()
 	local city = Entity_Get( EntityType.CITY, 3 )
 	local from = Entity_Get( EntityType.CITY, 4 )
-	local fieldtroops = { 301, 300, 200, 101, 101, 100, 100 }
-	local atkcorps = Test_Establish( { numoftroop = 1, siege = true, encampment = from, troopids = fieldtroops, charas = { 200 } } )
-	local defcorps = Test_Establish( { numoftroop = 1, encampment = city, troopids = fieldtroops, charas = { 102 } } )
+	local trooops1 = { 301, 300, 200, 100, 101, 200, 200 }
+	local trooops2 = { 100, 100, 101, 101, 200, 200, 300 }
+	local charas1 = { 200, 201, 202 }
+	local charas2 = { 100, 101 }
+	local atkcorps = Test_Establish( { numoftroop = 1, siege = true, encampment = from, troopids = trooops1, charas = charas1 } )
+	local defcorps = Test_Establish( { numoftroop = 6, encampment = city, troopids = trooops2, charas = charas2 } )
 	Asset_Set( atkcorps, CorpsAssetID.LOCATION, 3 )
 	Asset_Set( defcorps, CorpsAssetID.LOCATION, 4 )
 	Asset_AppendList( city, CityAssetID.CORPS_LIST, defcorps )
@@ -137,8 +175,9 @@ function Test_Combat()
 end
 
 function Game_Debug()
-	if true then return false end
-	Test_CharaLevelUp()
-	Test_Combat()
+	--if true then return false end
+	Test_CityMoney()
+	--Test_CharaLevelUp()
+	--Test_Combat()
 	return true
 end

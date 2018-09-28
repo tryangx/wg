@@ -427,6 +427,11 @@ function Group:ElectLeader()
 	else
 		Group_Vanish( self )
 	end
+
+	--refresh loyality
+	Asset_Foreach( group, GroupAssetID.CHARA_LIST, function ( chara )
+		Chara_ResetLoyality( chara )
+	end )
 end
 
 function Group:MoveCapital( capital )

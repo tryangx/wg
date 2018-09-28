@@ -434,8 +434,16 @@ function Corps:ConsumeFood( food )
 	return food
 end
 
-function Corps:PaySalary( salary )
-	
+function Corps:PaySalary( isEnough )
+	Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function ( troop )
+		local value = troop:GetStatus( TroopStatus.DOWNCAST )
+		if isEnough then
+			value = value < 10 and 0 or value * 0.5
+		else
+			value = value and value * 2 or 10
+		end
+		troop:SetStatus( TroopStatus.DOWNCAST, value )
+	end )
 end
 
 -------------------------------------------

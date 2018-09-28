@@ -86,21 +86,35 @@ local function Move_AddToPlot( move )
 end
 
 local function Move_CheckEncounter( move )
-	--check the CUR_PLOT whthere there is an enemy in the plot
-	--local plot = Asset_Get( move, MoveAssetID.CUR_PLOT )
-	local plot = Asset_Get( move, MoveAssetID.NEXT_PLOT )
-	local list = _plotActors[plot]
-	if not list then return false end
-
 	if Asset_Get( move, MoveAssetID.ROLE ) ~= MoveRole.CORPS then
 		--pass chara encouter checker now
 		return
 	end
 
-	local actor = Asset_Get( move, MoveAssetID.ACTOR )		
+	--check the CUR_PLOT whthere there is an enemy in the plot
+	--local plot = Asset_Get( move, MoveAssetID.CUR_PLOT )
+	local plot = Asset_Get( move, MoveAssetID.NEXT_PLOT )
+	local actor = Asset_Get( move, MoveAssetID.ACTOR )
+
+	--check exist combat
+	local combat = Warfare_HasComat( plot )
+	if combat then
+		if not actor then
+			DBG_Error("why")
+		end
+		local curplot  = Asset_Get( move, MoveAssetID.CUR_PLOT )
+		Debug_Log( "combat exist in", combat.id, actor:ToString(), plot:ToString(), ( curplot and curplot:ToString() or "" ) )
+		Message_Post( MessageType.FIELD_COMBAT_TRIGGER, { plot = plot, atk = actor } )
+		return true
+	end
+
+	local list = _plotActors[plot]
+	if not list then return false end
+
 	local task = actor:GetTask()
 	if Asset_Get( task, TaskAssetID.RESULT ) ~= TaskResult.UNKNOWN then
-		return
+		--task failed, in retreat status
+		return false
 	end
 
 	local isEncounter = false
@@ -138,6 +152,7 @@ local function Move_CheckEncounter( move )
 			break
 		end
 	end
+
 	return isEncounter
 end
 

@@ -1,3 +1,9 @@
+function Warfare_HasComat( plot )
+	return System_Get( SystemType.WARFARE_SYS ):GetCombatByPlot( plot )
+end
+
+--atk can be invalid
+--def can be invalid
 function Warefare_FieldCombatOccur( plot, atk, def )
 	--first, we should find exist combat in this plot
 	local combatExist = false
@@ -27,6 +33,10 @@ function Warefare_FieldCombatOccur( plot, atk, def )
 
 	if def then
 		combat:AddCorps( def, CombatSide.DEFENDER )	
+	end
+
+	if not combatExist then
+		Stat_Add( "Combat@Occur", combat:ToString( "ALL" ), StatType.LIST )
 	end
 
 	--set purpose
@@ -72,13 +82,17 @@ function Warefare_HarassCombatOccur( corps, city )
 			if def:IsAtHome() then
 				combat:AddCorps( def, CombatSide.DEFENDER )
 			end
-		end
+		end		
 	else
 		combatExist = true
 	end
 
 	--add attacker
 	combat:AddCorps( corps, CombatSide.ATTACKER )
+
+	if not combatExist then
+		Stat_Add( "Combat@Occur", combat:ToString( "ALL" ), StatType.LIST )
+	end
 
 	--set purpose
 	Asset_Set( combat, CombatAssetID.ATK_PURPOSE, CombatPurpose.MODERATE )
@@ -124,13 +138,17 @@ function Warefare_SiegeCombatOccur( corps, city )
 			if def:IsAtHome() then
 				combat:AddCorps( def, CombatSide.DEFENDER )	
 			end
-		end )	
+		end )
 	else
 		combatExist = true
 	end
 
 	--add attacker
 	combat:AddCorps( corps, CombatSide.ATTACKER )
+
+	if not combatExist then
+		Stat_Add( "Combat@Occur", combat:ToString( "ALL" ), StatType.LIST )
+	end
 	
 	--set purpose
 	Asset_Set( combat, CombatAssetID.ATK_PURPOSE, CombatPurpose.AGGRESSIVE )
@@ -171,6 +189,8 @@ function Warfare_UpdateCombat( combat )
 
 	local IsAffectReputation = false
 
+	local removeTroopList = {}
+
 	if type == CombatType.SIEGE_COMBAT then
 		--reset in-siege status
 		city:SetStatus( CityStatus.IN_SIEGE, nil )
@@ -180,16 +200,18 @@ function Warfare_UpdateCombat( combat )
 		Asset_Foreach( combat, CombatAssetID.DEFENDER_LIST, function ( troop )
 			if troop:GetStatus( TroopStatus.GUARD ) then
 				guard = guard + Asset_Get( troop, TroopAssetID.SOLDIER )
+				table.insert( removeTroopList, troop )
 			end
 			if troop:GetStatus( TroopStatus.RESERVE ) then
 				reserves = reserves + Asset_Get( troop, TroopAssetID.SOLDIER )
+				table.insert( removeTroopList, troop )
 			end
 		end )
 		local oldGuard = city:GetPopu( CityPopu.GUARD )
 		city:SetPopu( CityPopu.GUARD, guard )
 		local oldReserves = city:GetPopu( CityPopu.GUARD )
 		city:SetPopu( CityPopu.RESERVES, reserves )
-		if reserves > 0 then InputUtil_Pause( "set guard, reserves", city.name, guard, oldGuard, reserves, oldReserves ) end
+		--if reserves > 0 then InputUtil_Pause( "set guard, reserves", city.name, guard, oldGuard, reserves, oldReserves ) end
 		Stat_Add( "Guard@Lose", oldGuard - guard, StatType.ACCUMULATION )
 		Stat_Add( "Reserve@Lose", oldReserves - reserves, StatType.ACCUMULATION )
 
@@ -266,7 +288,7 @@ function Warfare_UpdateCombat( combat )
 	Debug_Log( combat:ToString( "DEBUG_CORPS" ) )
 	Debug_Log( combat:ToString( "RESULT" ), "combat end!!!" )
 
-	Asset_Foreach( combat, CombatAssetID.CORPS_LIST, function  ( corps )
+	Asset_Foreach( combat, CombatAssetID.CORPS_LIST, function ( corps )
 		if corps:GetSoldier() == 0 then
 			Corps_Dismiss( corps, true )
 			Stat_Add( "Corps@Vanished", corps:ToString( "SIMPLE"), StatType.LIST )
@@ -280,7 +302,24 @@ function Warfare_UpdateCombat( combat )
 	Message_Post( MessageType.COMBAT_ENDED, { combat = combat } )
 
 	--sanity checker, whether release all guard & reserves
-
+	for _, troop in ipairs( removeTroopList ) do
+		Debug_Log( "remove troop=" .. troop.id .. " CID=" .. combat.id )
+		Entity_Remove( troop )
+	end
+	--[[
+	Entity_Foreach( EntityType.TROOP, function ( troop )		
+		if troop:GetStatus( TroopStatus.RESERVE ) then
+			--InputUtil_Pause( "1")
+		 	--DBG_Error( troop:ToString( "ALL" ) )
+		 	Debug_Log( troop:ToString( "ALL" ) )
+		end
+		if troop:GetStatus( TroopStatus.GUARD ) then
+			--InputUtil_Pause( "2")
+			--DBG_Error( troop:ToString( "ALL" ) )
+			Debug_Log( troop:ToString( "ALL" ) )
+		end
+	end)
+	]]
 
 	--InputUtil_Pause()
 

@@ -262,6 +262,48 @@ DefaultCharaTrait =
 	},
 }
 
+DefaultCharaTraitCongeniality = 
+{
+	IDEAL        = { REALISM = -10 },
+	REALISM      = { IDEAL   = -10 },
+
+	ACTIVELY     = { PASSIVE  = -10 },
+	PASSIVE      = { ACTIVELY = -10 },
+
+	INTROVERT    = { EXTROVERT = -10 },
+	EXTROVERT    = { INTROVERT = -10 },
+
+	BRAVE         = { COWARD = -10 },
+	COWARD        = { BRAVE = -10 },
+
+	AGGRESSIVE    = { CONSERVATIVE = -10 },
+	CONSERVATIVE  = { AGGRESSIVE = -10 },
+
+	IRRITABLE     = { DISPASSIONATE = -10 },
+	DISPASSIONATE = { IRRITABLE = -10 },
+
+	OPEN          = { CLOSE = -10 },
+	CLOSE         = { OPEN = -10 },
+
+	SELFISH       = { ALL = -5 },	
+	GENEROUS      = { ALL = 10 },
+	FRIENDSHIP    = { ALL = 10 },	
+	CONFIDENCE    = { ALL = 5 },	
+	INSIDIOUS     = { ALL = -5 },
+	ENVY          = { ALL = -10 },
+
+	CAREFUL       = { CARELESS = -5 },
+	CARELESS      = { CAREFUL  = -5 },
+	HARDWORK      = { SLOTH    = -5 },
+	SLOTH         = { HARDWORK = -5 },
+
+	FOOLISH       = { SMART = -5 },
+	SMART         = { FOOLISH = -5 },
+
+	STRENGTH      = { WEAK = -5 },
+	WEAK          = { STRENGTH = -5 },
+}
+
 --"conditions"   means to learn the skill should match these conditions
 --"prerequisite" means these condition should always be satisfied
 --"traits"       means one of every subset conditions should be satisfied
@@ -411,7 +453,7 @@ DefaultCharaSkill =
 	},
 
 	{
-		id=7010, name="atk expert",
+		id=7000, name="atk expert",
 		effects = 
 		{
 			{ type = "ORG_DAMAGE_BONUS", value = 20 },
@@ -560,7 +602,7 @@ DefaultCharaSkill =
 		},
 		conditions = 
 		{
-			{ pot_above = 90, prob = 20, traits = { "HARDWORK", "VOLUBLE", "OBSERVANT", "CAREFUL" }, },
+			{ pot_above = 90, prob = 20, traits = { "AGGRESSIVE", "AMBITION", "STRENGTH", "AGILITY", "BRAVE" }, },
 		},
 	},
 	{

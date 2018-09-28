@@ -54,6 +54,7 @@ function Proposal:ToString()
 	content = content .. " p=[" .. String_ToStr( Asset_Get( self, ProposalAssetID.PROPOSER ), "name" ) .. "]"
 	content = content .. " a=[" .. String_ToStr( Asset_Get( self, ProposalAssetID.ACTOR ), "name" ) .. "]"
 	content = content .. " @" .. String_ToStr( Asset_Get( self, ProposalAssetID.DESTINATION ), "name" )
+	content = content .. " t=" .. g_Time:CreateDateDescByValue( Asset_Get( self, ProposalAssetID.TIME ) )
 	if type == ProposalType.HARASS_CITY or type == ProposalType.ATTACK_CITY then
 	end
 	return content

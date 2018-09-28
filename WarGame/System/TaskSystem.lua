@@ -384,6 +384,14 @@ local _executeTask =
 		Asset_Set( task, TaskAssetID.DURATION, DEFAULT_TASK_DURATION )
 		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WORKING )
 	end,
+	BUY_FOOD      = function ( task )
+		Asset_Set( task, TaskAssetID.DURATION, DEFAULT_TASK_DURATION )
+		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WORKING )
+	end,
+	SELL_FOOD     = function ( task )
+		Asset_Set( task, TaskAssetID.DURATION, DEFAULT_TASK_DURATION )
+		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WORKING )
+	end,
 	TRANSPORT     = function ( task )
 	end,
 
@@ -547,6 +555,8 @@ local _workOnTask =
 	DEV_PRODUCTION  = Task_DoDefault,	
 	BUILD_CITY      = Task_DoDefault,
 	LEVY_TAX        = Task_DoDefault,
+	BUY_FOOD        = Task_DoDefault,
+	SELL_FOOD       = Task_DoDefault,
 
 	HIRE_CHARA      = Task_DoDefault,
 
@@ -672,17 +682,17 @@ local _finishTask =
 
 	DEV_AGRICULTURE = function( task )
 		--InputUtil_Pause( "dev agri", Asset_Get( task, TaskAssetID.PROGRESS ))
-		City_Develop( Asset_Get( task, TaskAssetID.DESTINATION ), Asset_Get( task, TaskAssetID.PROGRESS ), CityAssetID.AGRICULTURE )
+		City_Develop( Asset_Get( task, TaskAssetID.DESTINATION ), Asset_Get( task, TaskAssetID.PROGRESS ), CityAssetID.AGRICULTURE, Asset_Get( task, TaskAssetID.ACTOR ) )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
 		return Task_GetBonus( task, "success" )
 	end,
 	DEV_COMMERCE = function( task )
-		City_Develop( Asset_Get( task, TaskAssetID.DESTINATION ), Asset_Get( task, TaskAssetID.PROGRESS ), CityAssetID.COMMERCE )
+		City_Develop( Asset_Get( task, TaskAssetID.DESTINATION ), Asset_Get( task, TaskAssetID.PROGRESS ), CityAssetID.COMMERCE, Asset_Get( task, TaskAssetID.ACTOR ) )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
 		return Task_GetBonus( task, "success" )
 	end,
 	DEV_PRODUCTION = function( task )
-		City_Develop( Asset_Get( task, TaskAssetID.DESTINATION ), Asset_Get( task, TaskAssetID.PROGRESS ), CityAssetID.PRODUCTION )
+		City_Develop( Asset_Get( task, TaskAssetID.DESTINATION ), Asset_Get( task, TaskAssetID.PROGRESS ), CityAssetID.PRODUCTION, Asset_Get( task, TaskAssetID.ACTOR ) )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
 		return Task_GetBonus( task, "success" )
 	end,
@@ -693,6 +703,16 @@ local _finishTask =
 	end,
 	LEVY_TAX      = function ( task )
 		City_LevyTax( Asset_Get( task, TaskAssetID.DESTINATION ), Asset_Get( task, TaskAssetID.PROGRESS ) )
+		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
+		return Task_GetBonus( task, "success" )
+	end,
+	BUY_FOOD      = function ( task )
+		City_BuyFood( Asset_Get( task, TaskAssetID.DESTINATION ), Asset_Get( task, TaskAssetID.PROGRESS ) )
+		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
+		return Task_GetBonus( task, "success" )
+	end,
+	SELL_FOOD     = function ( task )
+		City_SellFood( Asset_Get( task, TaskAssetID.DESTINATION ), Asset_Get( task, TaskAssetID.PROGRESS ) )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
 		return Task_GetBonus( task, "success" )
 	end,
@@ -1115,6 +1135,8 @@ function Task_Create( taskType, actor, location, destination, params )
 		or type == TaskType.DEV_PRODUCTION
 		or type == TaskType.BUILD_CITY
 		or type == TaskType.LEVY_TAX
+		or type == TaskType.BUY_FOOD
+		or type == TaskType.SELL_FOOD
 		or type == TaskType.TRANSPORT
 
 		or type == TaskType.CONSCRIPT

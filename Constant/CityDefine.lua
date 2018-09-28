@@ -70,6 +70,9 @@ CityPopu =
 --Default Value: true / false / nil
 CityStatus = 
 {
+	---------------------------------
+	-- Flag
+	---------------------------------
 	IN_SIEGE           = 20,
 	STARVATION         = 21,
 
@@ -103,6 +106,9 @@ CityStatus =
 	PLAGUE             = 114,
 	TYPHOON            = 112,
 	BLIZZARD           = 113,
+
+	--Measure the price to buy/sell food
+	PRICE              = 120,
 
 	-----------------------------------
 	--not enough aggressive military power
@@ -161,7 +167,19 @@ CityConstructionType =
 
 
 CityConstrEffect = 
-{	
-	FORT = 400,
+{
+	--function 
+	TRADE          = 100,
+
+	--attributes
+	FORT           = 200,
+
+	--Attributes
+	--Measure the soldier can support in SING city, out of range will gain debuff
+	SUPPLY_SOLDIER = 300,
 }
 
+CitySatisfactionType = 
+{
+	
+}

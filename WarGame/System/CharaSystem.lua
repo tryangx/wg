@@ -40,7 +40,7 @@ function Chara_GetEffectValueBySkill( skill, effectType, default )
 	end
 	for _, effect in ipairs( skill.effects ) do		
 		if CharaSkillEffect[effect.type] == effectType and CheckConditions( effect ) == true then
-			--InputUtil_Pause( "get skill effect", effect.type, effect.value, skill.name )
+			--InputUtil_Pause( "get skill effect", effect.type, effect.value, skill.name )			
 			return effect.value
 		end
 	end
@@ -369,6 +369,85 @@ end
 
 -----------------------------------------------------
 
+function Chara_UpdateLoyality( chara )
+	local loyality = 0
+	Asset_Foreach( chara, CharaAssetID.LOYALITY, function ( data, type )
+		if type == CharaLoyalityType.SENIORITY then
+			if data < DAY_IN_YEAR then loyality = loyality + 20
+			elseif data < DAY_IN_YEAR * 2 then loyality = loyality + 25
+			elseif data < DAY_IN_YEAR * 3 then loyality = loyality + 30
+			elseif data < DAY_IN_YEAR * 5 then loyality = loyality + 40
+			elseif data < DAY_IN_YEAR * 10 then loyality = loyality + 50
+			else loyality = loyality + 60
+			end
+		else
+			--print( chara.name, MathUtil_FindName( CharaLoyalityType, type ), data, type )
+			loyality = loyality + data
+		end
+	end )
+	chara._loyality = loyality
+	--print( chara.name, "loy=" .. chara._loyality )
+	--if g_init == true and chara._loyality == 0 then InputUtil_Pause( chara.name, chara._loyality, loyality ) k.p = 1 end
+end
+
+--Call this function when
+--  1.change group
+--  2.new scenario
+function Chara_ResetLoyality( chara )
+	--reset all untunable loyality
+	for type, id in pairs( CharaLoyalityType ) do
+		if id < CharaLoyalityType.TUNABLE_SEPERATOR then
+			chara:SetLoyalityValue( id )
+		end
+	end
+
+	local leader
+	local group = Asset_Get( chara, CharaAssetID.GROUP )
+	if group then
+		leader = Asset_Get( group, GroupAssetID.LEADER )
+	end
+	if not leader then
+		if group then DBG_Error( "why group no leader?", group:ToString() ) end
+		chara:SetLoyalityValue( CharaLoyalityType.NEUTRAL, 30 )
+	elseif leader == chara then
+		chara:SetLoyalityValue( CharaLoyalityType.NEUTRAL, 100 )
+	else
+		local datas = Scenario_GetData( "CHARA_TRAIT_CONGENIALITY" )		
+		local loyality = Asset_Get( leader, CharaAssetID.LEVEL ) * 2 + 20
+		local traitDict1 = Asset_GetDict( leader, CharaAssetID.TRAITS )
+		local traitDict2 = Asset_GetDict( chara, CharaAssetID.TRAITS )
+		--print( chara:ToString( "TRAITS"), leader:ToString( "TRAITS" ) )
+		for traitType, value in pairs( traitDict1 ) do
+			if datas[traitType] then
+				--has relative congeniality datas
+				for typeName, value in pairs( datas[traitType] ) do				
+					local traitType2 = CharaTraitType[typeName]
+					if traitType2 == CharaTraitType.ALL then
+						loyality = loyality + value
+					else
+						if traitDict2[traitType2] then
+							--InputUtil_Pause( "check", MathUtil_FindName( CharaTraitType, traitType ), MathUtil_FindName( CharaTraitType, traitType2 ),  ldTraitDict[traitType2] )	
+							loyality = loyality + value
+						end
+					end
+				end
+			end
+		end
+		chara:SetLoyalityValue( CharaLoyalityType.TRAIT_SUITED, loyality )
+
+		--seniority
+		local seniority = chara:GetLoyalityValue( CharaLoyalityType.SENIORITY )
+		if seniority == 0 then
+			chara:SetLoyalityValue( CharaLoyalityType.SENIORITY, 1 )
+		end
+	end
+
+	--update tunable loyality
+	Chara_UpdateLoyality( chara )
+end
+
+-----------------------------------------------------
+
 CharaSystem = class()
 
 function CharaSystem:__init()
@@ -393,6 +472,15 @@ function CharaSystem:Update()
 			if Chara_LearnSkill( chara ) == false then
 				Chara_GainTrait( chara )
 			end
+		end
+
+		if day == 1 then
+			Chara_UpdateLoyality( chara )
+		end
+
+		--reudce the pressure
+		if day == 1 then
+			chara:UpdateAP( DAY_IN_MONTH )
 		end
 		
 		Chara_WorkForJob( chara )

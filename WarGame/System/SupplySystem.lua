@@ -75,44 +75,45 @@ local function Supply_CorpsConsumeFood( corps )
 	corps:ConsumeFood( corps:GetConsumeFood() )
 end
 
+--replenish the food from city
 local function Supply_CorpsReplenish( corps )
 	local encampment = Asset_Get( corps, CorpsAssetID.ENCAMPMENT )
-	if not encampment then
-		return
-	end
-	local depatureTime = Asset_SetDictItem( corps, CorpsAssetID.STATUSES, CorpsStatus.DEPATURE_TIME )
-	local diffDays = g_Time:CalcDiffDayByDate( depatureTime )
-	if diffDays % 10 == 1 then
-		
-		local corpsFood = Asset_Get( corps, CorpsAssetID.FOOD )		
-		local corpsMat  = Asset_Get( corps, CorpsAssetID.MATERIAL )
-		local hasFood   = Asset_Get( encampment, CityAssetID.FOOD )
-		local hasMat    = Asset_Get( encampment, CityAssetID.MATERIAL )		
-		local transFood, transMoney, transMat = encampment:GetTransCapacity()
-		local transEff  = 0.8
-		local needFood  = math.min( transFood, corps:GetFoodCapacity() - corpsFood )
-		local needMat   = math.min( transMat, corps:GetMaterialCapacity() - corpsMat )
-		Asset_Set( corps, CorpsAssetID.FOOD, corpsFood + math.ceil( needFood * transEff ) )
-		Asset_Set( corps, CorpsAssetID.MATERIAL, corpsMat + needMat )
-		Asset_Set( encampment, CityAssetID.FOOD, hasFood - needFood )
-		Asset_Set( encampment, CityAssetID.MATERIAL, hasMat - needMat )
+	if not encampment then return end
 
-		InputUtil_Pause( "replenish" )
+	local corpsFood = Asset_Get( corps, CorpsAssetID.FOOD )
+	local corpsMat  = Asset_Get( corps, CorpsAssetID.MATERIAL )
+	local hasFood   = Asset_Get( encampment, CityAssetID.FOOD )
+	local hasMat    = Asset_Get( encampment, CityAssetID.MATERIAL )	
+	local needFood  = math.min( hasFood, corps:GetFoodCapacity() - corpsFood )
+	local needMat   = math.min( hasMat, corps:GetMaterialCapacity() - corpsMat )
+	if not corps:IsAtHome() then
+		local depatureTime = Asset_SetDictItem( corps, CorpsAssetID.STATUSES, CorpsStatus.DEPATURE_TIME )
+		local diffDays = g_Time:CalcDiffDayByDate( depatureTime )
+		if diffDays % 10 == 1 then
+			local transFood, transMoney, transMat = encampment:GetTransCapacity()
+			local transEff  = 0.8
+			needMat   = math.ceil( math.min( transMat, needMat ) * transEff )
+			needFood  = math.ceil( math.min( transFood, needFood ) * transEff )
+		else
+			--in delivery
+			return
+		end
+	else
+		needMat = 0		
 	end
+
+	Asset_Set( corps, CorpsAssetID.FOOD, corpsFood + needFood )
+	Asset_Set( corps, CorpsAssetID.MATERIAL, corpsMat + needMat )
+	Asset_Set( encampment, CityAssetID.FOOD, hasFood - needFood )
+	Asset_Set( encampment, CityAssetID.MATERIAL, hasMat - needMat )
 end
 
-local function Supply_CorpsPaySalary( corps )
-	--if corps:IsAtHome() then return end
-	--corps:PaySalary()
-end
 
 local function Supply_UpdateCorps( corps )
-	if corps:IsAtHome() then
-		return
-	else	
-		Supply_CorpsReplenish( corps )
-		Supply_CorpsConsumeFood( corps )
-	end
+	corps:PaySalary()
+
+	Supply_CorpsReplenish( corps )
+	Supply_CorpsConsumeFood( corps )
 end
 
 --------------------------------------------------------------

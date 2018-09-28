@@ -17,6 +17,9 @@ DefaultCitySupply =
 
 	--measure 1 argiculture can supply how many population
 	AGRI_SUPPLY_POPU = 100,
+
+	--measure how many food we can buy by 1 unit money
+	FOOD_PER_MONEY   = 30,
 }
 
 ----------------------------------------------
@@ -28,20 +31,21 @@ DefaultCityPopuHarvest =
 	FARMER   = 360,
 }
 
+--should without SOLDIER
 DefaultCityPopuConsumeFood = 
 {
 	RESERVES = 1,
-	GUARD    = 1,	
-	SOLDIER  = 1,
+	GUARD    = 1,
 }
 
+--should without SOLDIER
 DefaultCityPopuSalary = 
 {
-	RESERVES = 2,
+	RESERVES = 1,
+	GUARD    = 1,
 
-	OFFICER  = 2,
-	BACHELOR = 5,
-	GUARD    = 2,
+	OFFICER  = 1,
+	BACHELOR = 2,
 
 	NOBLE    = 100,
 }
@@ -57,14 +61,14 @@ DefaultCityPopuPersonalTax =
 
 DefaultCityPopuCommerceTax = 
 {
-	FARMER   = 1,
-	WORKER   = 1,
+	FARMER   = 0.2,
+	WORKER   = 0.5,
 	MERCHANT = 1,
 }
 
 DefaultCityPopuTradeTax = 
 {
-	MERCHANT = 5,
+	MERCHANT = 10,
 }
 
 DefaultCityPopuProduce = 
@@ -181,9 +185,9 @@ DefaultCityPopuConv =
 	{ from = "CHILDREN", to = "HOBO",     ratio = 0.018, force_conv = true },
 
 	--low to high
-	{ from = "HOBO",     to = "FARMER",   sec_more_than = 40, prob = 90, sec = -1, debug = 1 },
-	{ from = "HOBO",     to = "WORKER",   sec_more_than = 40, prob = 80, sec = -1, debug = 1  },
-	{ from = "HOBO",     to = "MERCHANT", sec_more_than = 40, prob = 70, sec = -1, debug = 1  },
+	{ from = "HOBO",     to = "FARMER",   need_popu = "FARMER", sec_more_than = 40, prob = 90, sec = -1, debug = 1 },
+	{ from = "HOBO",     to = "WORKER",   need_popu = "WORKER", sec_more_than = 40, prob = 80, sec = -1, debug = 1  },
+	{ from = "HOBO",     to = "MERCHANT", need_popu = "MERCHANT", sec_more_than = 40, prob = 70, sec = -1, debug = 1  },
 	{ from = "HOBO",     to = "CORVEE",   sec_more_than = 40, prob = 60, sec = -1, debug = 1 },
 
 	{ from = "FARMER",   to = "MIDDLE",   sat_more_than = 60, prob = 30, sec = -1  },
@@ -454,30 +458,39 @@ Default_CityBuildingData =
 		type = "DEVELOPMENT",
 		duration = 60,
 		effects = {},
-		prerequsite = { city_lv = 1 },
+		prerequsite = { city_lv = 1, number = 5 },
 	},
-	[1000] = 
+	[1001] = 
 	{
 		name = "Farm Lv2",
 		type = "DEVELOPMENT",
 		duration = 120,
-		effects = {},		
-		prerequsite = { has_constr = 1000, },
+		effects = { TRADE = 5, },
+		prerequsite = { city_lv = 5, has_constr = 1000, },
 	},
 	[1010] = 
 	{
 		name = "Market Lv1",
 		type = "DEVELOPMENT",
 		duration = 120,
-		effects = {},
+		effects = { TRADE = 5, },
+		prerequsite = { number = 3, },
 	},
 	[1011] = 
 	{
 		name = "Market Lv2",
 		type = "DEVELOPMENT",
 		duration = 180,
+		effects = { TRADE = 5, },
+		prerequsite = { has_constr = 1010, number = 2 },
+	},
+	[1012] = 
+	{
+		name = "Market Lv3",
+		type = "DEVELOPMENT",
+		duration = 180,
 		effects = {},
-		prerequsite = { has_constr = 1010, },
+		prerequsite = { has_constr = 1011, singleton = 1 },
 	},
 	[1020] = 
 	{
@@ -485,6 +498,7 @@ Default_CityBuildingData =
 		type = "DEVELOPMENT",
 		duration = 90,
 		effects = {},
+		prerequsite = { number = 1 },
 	},
 	[1021] = 
 	{

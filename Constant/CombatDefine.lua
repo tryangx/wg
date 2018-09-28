@@ -73,6 +73,8 @@ TroopStatus =
 	GUARD      = 1,
 	--is from reserves
 	RESERVE    = 2,
+	--for debug
+	COMBATID   = 3,
 
 	HONOR      = 4,
 
@@ -112,6 +114,27 @@ TroopCombatData =
 	RETREAT    = 40,
 	FLEE       = 41,
 	SURROUNDED = 42,
+}
+
+TroopSkillEffect = 
+{
+	--Affect the damage made
+	DAMAGE_BONUS       = 1001,
+	--Affect the surffered damage
+	DAMAGE_RESIST      = 1002,
+	--Affect the damage to organization
+	ORG_DAMAGE_BONUS   = 1003,
+	--Affect the suffered damage to organization
+	ORG_DAMAGE_RESIST  = 1004,
+	
+	--increase the maximum of the troop morale	
+	MORALE_BONUS       = 1101,
+	--increase the maximum of the troop organization, ratio not exactly number
+	ORGANIZATION_BONUS = 1102,
+	--affect the movement
+	MOVEMENT_BONUS     = 1104,
+	--speed up the troop training
+	TRAINING_BONUS     = 1100,
 }
 
 CorpsStatus = 
@@ -238,13 +261,14 @@ CombatOrder =
 
 CombatAction = 
 {
-	MOVE     = 1,
-	ATTACK   = 2,
-	DEFEND   = 3,	
-	KILL     = 5,
-	BEAT     = 6,
-	RETREAT  = 7,
-	FLEE     = 8,
+	MOVE       = 1,
+	ATTACK     = 2,
+	DEFEND     = 3,	
+	KILL       = 5,
+	BEAT       = 6,
+	RETREAT    = 7,
+	NEUTRALIZE = 8,
+	FLEE       = 9,
 
 	BEEN_CRT_HIT     = 10,
 	BEEN_KILLED      = 11,

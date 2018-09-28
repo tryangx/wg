@@ -66,7 +66,7 @@ CHUHAN_CharaData =
 		politics    = { 0, 10, 1000 },
 		strategy    = { 0, 10, 1000 },
 		tactic      = { 0, 10, 1000 },
-		traits      = { OPEN = 80, VOLUBLE = 80, CONFIDENCE = 80, CAREFUL = 60, GREED = 80 },
+		traits      = { OPEN = 80, GENEROUS = 80, FRIENDSHIP = 80, CONFIDENCE = 80, CAREFUL = 60, GREED = 80, VOLUBLE = 80, },
 	},
 	[101] = 
 	{
@@ -105,10 +105,11 @@ CHUHAN_CharaData =
 		grade       = "BEST",
 		purpose     = 0,
 		job         = "",
-		skills      = { 1000, 1030 },
+		skills      = {  },
 		politics    = { 0, 10, 1000 },
 		strategy    = { 0, 10, 1000 },
 		tactic      = { 0, 10, 1000 },
+		traits      = { SELFISH = 100 },
 	},
 	[104] = 
 	{
@@ -119,10 +120,10 @@ CHUHAN_CharaData =
 		grade       = "BEST",
 		purpose     = 0,
 		job         = "",
-		skills      = { 1000, 1030 },
+		skills      = {  },
 		politics    = { 0, 10, 1000 },
 		strategy    = { 0, 10, 1000 },
-		tactic      = { 0, 10, 1000 },
+		tactic      = { 0, 10, 1000 },		
 	},
 
 	[200] = 
@@ -135,10 +136,11 @@ CHUHAN_CharaData =
 		grade       = "PERFECT",	
 		purpose     = 0,		
 		job         = "LEADER",
-		skills      = { 1001, 1010, 1040, 10000 },
+		skills      = { 7000, 7020, 7200, 7400, 7410, 7500, 10000 },
 		politics    = { 0, 10, 1000 },
 		strategy    = { 0, 10, 1000 },
 		tactic      = { 0, 10, 1000 },
+		traits      = { AGGRESSIVE = 80, AMBITION = 80, STRENGTH = 80, AGILITY = 60, BRAVE = 80 },
 	},
 	[201] = 
 	{
@@ -148,7 +150,7 @@ CHUHAN_CharaData =
 		potential   = 90,
 		grade       = "BEST",
 		purpose     = 0,	
-		skills      = { 1001, 1010, 1040 },
+		skills      = {  },
 		politics    = { 0, 10, 1000 },
 		strategy    = { 0, 10, 1000 },
 		tactic      = { 0, 10, 1000 },
@@ -161,7 +163,7 @@ CHUHAN_CharaData =
 		potential   = 85,
 		grade       = "BEST",
 		purpose     = 0,	
-		skills      = { 1001, 1010, 1040 },
+		skills      = {  },
 		politics    = { 0, 10, 1000 },
 		strategy    = { 0, 10, 1000 },
 		tactic      = { 0, 10, 1000 },
@@ -174,7 +176,7 @@ CHUHAN_CharaData =
 		potential   = 85,
 		grade       = "BEST",
 		purpose     = 0,	
-		skills      = { 1001, 1010, 1040 },
+		skills      = { },
 		politics    = { 0, 10, 1000 },
 		strategy    = { 0, 10, 1000 },
 		tactic      = { 0, 10, 1000 },
@@ -187,7 +189,7 @@ CHUHAN_CharaData =
 		potential   = 90,
 		grade       = "BEST",
 		purpose     = 0,	
-		skills      = { 1001, 1010, 1040, 4030 },
+		skills      = {  },
 		politics    = { 0, 10, 1000 },
 		strategy    = { 0, 10, 1000 },
 		tactic      = { 0, 10, 1000 },

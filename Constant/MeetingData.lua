@@ -1,6 +1,101 @@
 --------------------------------------------------------
 -- Task
 
+DefaultTaskAP = 
+{
+
+	HARASS_CITY     = { STRATEGY = 100, TACTIC = 100 },
+	ATTACK_CITY     = { STRATEGY = 200, TACTIC = 100 },	
+	INTERCEPT       = { STRATEGY = 100, TACTIC = 100 },
+	DISPATCH_CORPS  = { STRATEGY = 100, POLITICS = 100 },
+	
+	ESTABLISH_CORPS = { STRATEGY = 100, POLITICS = 100 },
+	REINFORCE_CORPS = { STRATEGY = 100, POLITICS = 100 },
+	DISMISS_CORPS   = { STRATEGY = 100, POLITICS = 100 },
+
+	TRAIN_CORPS     = { POLITICS = 100, },
+	UPGRADE_CORPS   = { STRATEGY = 100, POLITICS = 100 },
+	ENROLL_CORPS    = { STRATEGY = 100, POLITICS = 100 },
+	LEAD_CORPS      = { POLITICS = 100, },	
+	REGROUP_CORPS   = { STRATEGY = 100, POLITICS = 100 },
+	CONSCRIPT       = { STRATEGY = 100, POLITICS = 100 },
+	RECRUIT         = { STRATEGY = 100, POLITICS = 100 },
+	HIRE_GUARD      = { STRATEGY = 100, POLITICS = 100 },
+
+	DEV_AGRICULTURE = { POLITICS = 100, },
+	DEV_COMMERCE    = { POLITICS = 100, },
+	DEV_PRODUCTION  = { POLITICS = 100, },
+	BUILD_CITY      = { POLITICS = 100, },
+	LEVY_TAX        = { POLITICS = 100, },
+	TRANSPORT       = { POLITICS = 100, },
+	BUY_FOOD        = { POLITICS = 100, },
+	SELL_FOOD       = { POLITICS = 100, },
+
+	HIRE_CHARA      = { POLITICS = 100, },
+	PROMOTE_CHARA   = { POLITICS = 100, },
+	DISPATCH_CHARA  = { POLITICS = 100, },
+	CALL_CHARA      = { POLITICS = 100, },
+	MOVE_CAPITAL    = { POLITICS = 200, },
+
+	RECONNOITRE     = { TACTIC = 100, },
+	SABOTAGE        = { TACTIC = 300, },
+	DESTROY_DEF     = { TACTIC = 350, },
+	ASSASSINATE     = { TACTIC = 1000, },
+
+	RESEARCH        = { POLITICS = 300, },
+
+	IMPROVE_RELATION = { STRATEGY = 100, POLITICS = 100 },
+	DECLARE_WAR      = { POLITICS = 200 },
+	SIGN_PACT        = { STRATEGY = 100, POLITICS = 200 },	
+}
+
+DefaultTaskSkill = 
+{
+	HARASS_CITY     = {},
+	ATTACK_CITY     = {},
+	INTERCEPT       = {},
+	DISPATCH_CORPS  = {},
+
+	ESTABLISH_CORPS = {},
+	REINFORCE_CORPS = {},
+	DISMISS_CORPS   = {},
+	TRAIN_CORPS     = {},
+	UPGRADE_CORPS   = {},
+	ENROLL_CORPS    = {},
+	REGROUP_CORPS   = {},
+	LEAD_CORPS      = {},
+	CONSCRIPT       = {},
+	RECRUIT         = {},
+	HIRE_GUARD      = {},
+	
+	DEV_AGRICULTURE = {},
+	DEV_COMMERCE    = {},
+	DEV_PRODUCTION  = {},
+	BUILD_CITY      = {},
+	LEVY_TAX        = {},
+	TRANSPORT       = {},
+	BUY_FOOD        = {},
+	SELL_FOOD       = {},
+
+	HIRE_CHARA      = {},
+	PROMOTE_CHARA   = {},
+	DISPATCH_CHARA  = {},
+	CALL_CHARA      = {},
+	MOVE_CAPITAL    = {},
+
+	RECONNOITRE     = {},
+	SABOTAGE        = {},
+	DESTROY_DEF     = {},
+	ASSASSINATE     = {},
+
+	TECH_TASK       = {},	
+	RESEARCH        = {},
+
+	IMPROVE_RELATION = {},
+	DECLARE_WAR      = {},
+	SIGN_PACT        = {},
+}
+
 DefaultTaskSteps = 
 {
 	HARASS_CITY     = { "PREPARE", "EXECUTE", "FINISH", "REPLY" },
@@ -25,6 +120,8 @@ DefaultTaskSteps =
 	DEV_PRODUCTION  = { "EXECUTE", "FINISH", "REPLY" },
 	BUILD_CITY      = { "EXECUTE", "FINISH", "REPLY" },
 	LEVY_TAX        = { "EXECUTE", "FINISH", "REPLY" },
+	BUY_FOOD        = { "EXECUTE", "FINISH", "REPLY" },
+	SELL_FOOD        = { "EXECUTE", "FINISH", "REPLY" },
 	TRANSPORT       = { "PREPARE", "EXECUTE", "FINISH", "REPLY" },
 
 	HIRE_CHARA      = { "EXECUTE", "FINISH", "REPLY" },
@@ -75,6 +172,8 @@ DefaultTaskBonus =
 	DEV_PRODUCTION   = { success = 30, failed = 0, work = 1, off_exp = 20 },
 	BUILD_CITY       = { success = 50, failed = 0, work = 1, off_exp = 20 },
 	LEVY_TAX         = { success = 40, failed = 0, work = 1, off_exp = 20 },
+	BUY_FOOD         = { success = 40, failed = 0, work = 1, off_exp = 20 },
+	SELL_FOOD        = { success = 40, failed = 0, work = 1, off_exp = 20 },
 	TRANSPORT        = { success = 40, failed = 0, off_exp = 20 },
 
 	HIRE_CHARA       = { success = 40, failed = 0, off_exp = 50 },

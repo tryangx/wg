@@ -40,8 +40,7 @@ function GroupSystem:Update()
 
 		if day == DAY_IN_MONTH then
 			group:UpdateSpy()
-
-			Stat_Add( "GroupStatus@" .. group.name, g_Time:ToString() .. " " .. group:ToString( "POWER" ), StatType.LIST )
+			--Stat_Add( "GroupStatus@" .. group.name, g_Time:ToString() .. " " .. group:ToString( "POWER" ), StatType.LIST )
 		end
 
 		if day == DAY_IN_MONTH then

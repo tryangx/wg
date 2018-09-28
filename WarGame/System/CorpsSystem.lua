@@ -232,7 +232,7 @@ local function Corps_ChooseCorpsTemplate( city, purpose )
 	return template
 end
 
-local function Corps_CanEstablishTroop( city, table, soldier, resources )
+local function Corps_CanEstablishTroop( city, table, soldier, resources, shouldUseResources )
 	--print( "Establish Troop=" .. table.name .. "*" .. number )
 	if table.requirement.MIN_SOLDIER then
 		if soldier < table.requirement.MIN_SOLDIER then
@@ -260,13 +260,16 @@ local function Corps_CanEstablishTroop( city, table, soldier, resources )
 	if table.requirement.MATERIAL then
 		local need = soldier * table.requirement.MATERIAL
 		if resources[TroopRequirement.MATERIAL] < need then
-			DBG_Watch( "est troop", "no material " .. resources[TroopRequirement.MATERIAL] .. "/" .. need )
+			--DBG_Watch( "est troop", "no material " .. resources[TroopRequirement.MATERIAL] .. "/" .. need )
 			return false
 		end		
 		needs[TroopRequirement.MATERIAL] = need
 	end
-	for k, v in pairs( needs ) do
-		resources[k] = resources[k] - v
+
+	if shouldUseResources == true then
+		for k, v in pairs( needs ) do
+			resources[k] = resources[k] - v
+		end
 	end
 	return true
 end
@@ -289,13 +292,17 @@ end
 
 ------------------------------------------------------
 
-function Corps_CanEstablishCorps( city, soldier )
+function Corps_CanEstablishCorps( city, reserves )
 	--query resource for requirements
 	local resources = Corps_QueryRequirementResource( city )
-	local troopTable = TroopTable_Find( function( troopTable )
-		if Corps_CanEstablishTroop( city, troopTable, soldier, resources ) == true then
-			return true
+	local troopTable = TroopTable_Find( function( troopTable )		
+		if City_HasTroopBudget( city, troopTable, reserves ) ~= true then
+			return false
 		end
+		if Corps_CanEstablishTroop( city, troopTable, reserves, resources ) == false then
+			return false
+		end
+		return true
 	end )
 	return troopTable ~= nil
 end
@@ -312,6 +319,7 @@ local function Corps_EstablishTroop( city, corps, numberOfReqTroop, soldierPerTr
 	--query resource for requirements
 	local resources = Corps_QueryRequirementResource( city )
 
+	--calculate the category of troops( infantry / archer / cavalry / etc )
 	local numberOfCategory = {}
 	local numberOfTroop = Asset_GetListSize( corps, CorpsAssetID.TROOP_LIST )
 	if numberOfTroop > 0 then
@@ -332,7 +340,12 @@ local function Corps_EstablishTroop( city, corps, numberOfReqTroop, soldierPerTr
 			Debug_Log( "failed to find ", MathUtil_FindName( TroopCategory, category ), #troopTables )
 			return false
 		end
-		if Corps_CanEstablishTroop( city, troopTable, soldierPerTroop, resources ) ~= true then
+		if City_HasTroopBudget( city, troopTable, soldierPerTroop ) ~= true then
+			InputUtil_Pause( "budget checker failed" )
+			return false
+		end
+
+		if Corps_CanEstablishTroop( city, troopTable, soldierPerTroop, resources, true ) ~= true then
 			--Debug_Log( "establish troop failed")
 			return false
 		end
@@ -380,6 +393,7 @@ local function Corps_EstablishTroop( city, corps, numberOfReqTroop, soldierPerTr
 		if numberOfReqTroop <= 0 then break end		
 	end
 
+	--try to fill up the vacancies
 	if numberOfReqTroop > 0 then
 		--use tendency
 		for num = 1, numberOfReqTroop do
@@ -501,13 +515,14 @@ function Corps_EstablishInCity( city, leader, purpose, troopNumber )
 
 	--put corps into group
 
-
 	--sanity checker
 	if corps:GetSoldier() == 0 then
 		DBG_TrackBug( "failed=" .. corps:ToString() .. " in=" .. city.name .. " reserves=" .. reserves )
 	end
 
 	--InputUtil_Pause( "est corps food=" .. reservedfood, food, Asset_GetListSize( corps, CorpsAssetID.TROOP_LIST ) )
+
+	city:WatchBudget( "establish=" .. reserves )
 	
 	return corps
 end
@@ -530,6 +545,7 @@ function Corps_ReinforceTroop( corps, soldier )
 end
 
 function Corps_EnrollInCity( corps, city )
+	--debug check
 	local troopTables = Asset_GetList( city, CityAssetID.TROOPTABLE_LIST )
 	if not troopTables or #troopTables == 0 then
 		print( "too bad, no troop table valid~" )
@@ -539,12 +555,12 @@ function Corps_EnrollInCity( corps, city )
 	local numberOfTroop = 1
 	local reserves = city:GetPopu( CityPopu.RESERVES )
 	local soldierPerTroop = Corps_GetTroopMaxNumber( city, nil )
-	if reserves < soldierPerTroop then
-		soldierPerTroop = reserves
-	end
+	if reserves < soldierPerTroop then soldierPerTroop = reserves end
 	Corps_EstablishTroop( city, corps, numberOfTroop, soldierPerTroop )
 
 	Stat_Add( "Enroll@" .. corps.id, 1, StatType.TIMES )
+
+	city:WatchBudget( "enroll=" .. reserves )
 end
 
 function Corps_Train( corps, progress )
