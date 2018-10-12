@@ -225,8 +225,12 @@ end
 
 --collect food
 function City_Harvest( city )
-	local income = City_GetFoodIncome( city )
+	if city:GetStatus( CityStatus.IN_SIEGE ) then
+		--no food, should food will reserved by the farmer?
+		return
+	end
 
+	local income = City_GetFoodIncome( city )
 	city:ReceiveFood( income )
 	Stat_Add( "FoodHarvest@" .. city.name, income, StatType.ACCUMULATION )
 end
@@ -614,7 +618,7 @@ end
 
 --------------------------------------
 
-function City_IncreaseDevelopment( city, params )
+local function IncreaseDevelopment( city, params )
 	if params.agri then
 		local cur = Asset_Get( city, CityAssetID.AGRICULTURE )
 		local max = Asset_Get( city, CityAssetID.MAX_AGRICULTURE )
@@ -674,7 +678,7 @@ function City_DevelopmentVary( city )
 	end
 	if not selectMethod then error( "invalid development vary" ) end
 
-	City_IncreaseDevelopment( city, { agri = selectMethod.agri, comm = selectMethod.comm, prod = selectMethod.prod } )
+	IncreaseDevelopment( city, { agri = selectMethod.agri, comm = selectMethod.comm, prod = selectMethod.prod } )
 end
 
 incagri = 0
@@ -721,9 +725,9 @@ function City_Develop( city, progress, id, chara )
 	if id == CityAssetID.PRODUCTION  then
 		prod = prod + math.ceil( selectMethod.main * ( chara:GetEffectValue( PRODUCTION_BONUS ) + 100 ) * 0.01 )
 	end
-	City_IncreaseDevelopment( city, { agri = agri, comm = comm, prod = prod } )
+	IncreaseDevelopment( city, { agri = agri, comm = comm, prod = prod } )
 
-	--InputUtil_Pause( "city dev", agri, comm, prod )	
+	--InputUtil_Pause( "city dev", agri, comm, prod )
 end
 
 --Income
@@ -825,9 +829,11 @@ function City_GetYearTax( city )
 end
 
 --collect money
-function City_CollectTax( city )	
+function City_CollectTax( city )
+	if city:GetStatus( CityStatus.IN_SIEGE ) then
+		return
+	end
 	local income = City_GetMonthTax( city )
-
 	city:ReceiveMoney( income )
 	Stat_Add( "CollectTax@City_" .. city.name, income, StatType.ACCUMULATION )
 end
@@ -940,7 +946,7 @@ function City_Pillage( city )
 	local agri = math.ceil( Asset_Get( city, CityAssetID.AGRICULTURE ) * -0.01 )
 	local comm = math.ceil( Asset_Get( city, CityAssetID.COMMERCE ) * -0.01 )
 	local prod = math.ceil( Asset_Get( city, CityAssetID.PRODUCTION ) * -0.01 )
-	City_IncreaseDevelopment( city, { agri = agri, comm = comm, prod = prod } )	
+	IncreaseDevelopment( city, { agri = agri, comm = comm, prod = prod } )	
 	Stat_Add( "Pillage@" .. city.name, 1, StatType.TIMES )
 	Debug_Log( "pillage in=" .. city:ToString() )
 end

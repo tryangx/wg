@@ -100,7 +100,7 @@ CityAssetAttrib =
 	money      = AssetAttrib_SetNumber( { id = CityAssetID.MONEY,           type = CityAssetType.GROWTH_ATTRIB, min = 0 } ),
 	material   = AssetAttrib_SetNumber( { id = CityAssetID.MATERIAL,        type = CityAssetType.GROWTH_ATTRIB } ),
 	security   = AssetAttrib_SetNumber( { id = CityAssetID.SECURITY,        type = CityAssetType.GROWTH_ATTRIB,  min = 0, max = 100, default = 50 } ),	
-	DISS = AssetAttrib_SetNumber( { id = CityAssetID.DISS,  type = CityAssetType.GROWTH_ATTRIB,  min = 0, max = 100, default = 50 } ),
+	diss       = AssetAttrib_SetNumber( { id = CityAssetID.DISS,  type = CityAssetType.GROWTH_ATTRIB,  min = 0, max = 100, default = 50 } ),
 
 	charas     = AssetAttrib_SetPointerList( { id = CityAssetID.CHARA_LIST,   type = CityAssetType.PROPERTY_ATTRIB, setter = Entity_SetChara } ),	
 	officers   = AssetAttrib_SetPointerList( { id = CityAssetID.OFFICER_LIST, type = CityAssetType.PROPERTY_ATTRIB } ),

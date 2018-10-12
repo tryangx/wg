@@ -305,6 +305,7 @@ end
 ----------------------------------------------------------
 
 function Group:LoseCity( city, toCity )
+	print( self.name, "lose city=" .. city.name )	
 	--remove city from list
 	Asset_RemoveListItem( self, GroupAssetID.CITY_LIST, city )
 
@@ -324,6 +325,7 @@ function Group:LoseCity( city, toCity )
 		end )
 		Asset_Set( self, GroupAssetID.CAPITAL, newCapital )
 		toCity = Random_GetListItem( city:FindNearbyFriendCities() )
+		print( "find new capital", self.name, toCity:ToString() )
 	end
 
 	--for all chara list
@@ -352,10 +354,11 @@ function Group:LoseCity( city, toCity )
 			--retreat to nearby city
 			--print( Move_Track( corps ) )
 			InputUtil_Pause( corps:ToString( "POSITION" ), "retreat to", toCity:ToString() )
-			Corps_Join( toCity, corps )
+			Corps_Join( corps, toCity )
 		end
 	end )
 	Asset_Clear( city, CityAssetID.CORPS_LIST )
+	
 	city:SetPopu( CityPopu.RESERVES, reserves )
 end
 

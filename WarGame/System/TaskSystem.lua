@@ -35,8 +35,9 @@ local function Task_Breakpoint( task, fn )
 end
 
 local function Task_Debug( task, content )
-	if task.id == -1 then
+	if task.id == 0 then
 		DBG_TrackBug( task:ToString( "DEBUG" ) .. content )
+		print( task:ToString( "DEBUG" ) .. content )
 	end	
 end
 
@@ -980,6 +981,12 @@ local function Task_IsBackHome( task )
 	if Task_IsAtHome( task ) == false then
 		if Asset_Get( task, TaskAssetID.STATUS ) ~= TaskStatus.MOVING then
 			Task_BackHome( task )
+		else
+			--sanity checker			
+			if not Move_HasMoving( Asset_Get( task, TaskAssetID.ACTOR ) ) then
+				Entity_ToString( EntityType.MOVE )
+				DBG_Error( "why here", task:ToString() )
+			end
 		end
 		return false
 	else
@@ -1207,7 +1214,7 @@ local function Task_Reply( task )
 	if not Task_IsBackHome( task ) then		
 		return
 	end
-
+	
 	--Task_Breakpoint( task, function() print( "reply", task:ToString("DEBUG") ) end )
 
 	--bonus to contributor
@@ -1289,7 +1296,7 @@ local function Task_Execute( task )
 	local taskType = Asset_Get( task, TaskAssetID.TYPE )
 
 	--not arrive the destination
-	if Task_IsArriveDestination( task ) == false then		
+	if Task_IsArriveDestination( task ) == false then
 		if Asset_Get( task, TaskAssetID.STATUS ) ~= TaskStatus.MOVING then
 			Task_Move2Destination( task )
 		else
@@ -1339,7 +1346,11 @@ local function Task_Prepare( task )
 	Stat_Add( "Task@Prepare", 1, StatType.TIMES )
 end
 
-local function Task_Update( task )
+local function Task_Update( task )	
+	if task:IsWaitCombat() then
+		return
+	end
+
 	local taskStep = task:GetStepType()
 	if not taskStep then
 		Task_End( task )
@@ -1371,8 +1382,20 @@ end
 -------------------------------------------
 
 local function Task_OnArriveDestination( msg )
-	local actor = Asset_SetDictItem( msg, MessageAssetID.PARAMS, "actor" )
+	local actor = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "actor" )
 	--to do
+end
+
+local function Task_OnMoveBlocked( msg )
+	--cancel task
+	local actor = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "actor" )
+	local task = _corpsTasks[actor]
+	if not task then
+		DBG_Error( "why here?", actor:ToString() )
+		return		
+	end
+	InputUtil_Pause( actor:ToString(), "task moving blocked by", task:ToString() )
+	Task_Failed( task )
 end
 
 --occur like
@@ -1401,15 +1424,14 @@ local function Task_OnCombatTriggered( msg )
 	if not combat then error( "invalid combat?" ) return end
 
 	local id = combat.id
-
 	if not _combatTasks[id] then _combatTasks[id] = {} end
 
-	function CheckInterceptTask( actor )
+	function CheckTask( actor )
 		if not actor then return end
 
 		local task = _corpsTasks[actor]		
 		if not task then
-			print( "why corps no task?" )
+			print( "why corps no task?", actor:ToString() )
 			return
 		end
 
@@ -1424,11 +1446,37 @@ local function Task_OnCombatTriggered( msg )
 		Task_Debug( task, "!!!!trigger combat=" .. combat:ToString("DEBUG_CORPS") )
 		Log_Write( "task", "trigger combat? actor=" .. actor:ToString("STATUS") .. " " .. combat:ToString("DEBUG_CORPS") .. " " .. task:ToString() )
 	end
+
+	function CheckCorps( target )
+		if typeof( target ) == "table" then
+			for _, single in ipairs( target ) do
+				CheckTask( single )
+			end
+		else
+			CheckTask( target )
+		end
+	end
 	
-	local atk = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "atk" )
-	local def = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "def" )
-	CheckInterceptTask( atk )
-	CheckInterceptTask( def )
+	CheckCorps( Asset_GetDictItem( msg, MessageAssetID.PARAMS, "atk" ) )
+	CheckCorps( Asset_GetDictItem( msg, MessageAssetID.PARAMS, "def" ) )
+end
+
+local function Task_OnCombatInterrupted( msg )
+	local combat = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "combat" )
+	if not combat then error( "invalid combat?" ) return end
+
+	local id = combat.id
+		local taskList = _combatTasks[id]
+	if not taskList or #taskList == 0 then
+		DBG_Error( "why here")
+		return
+	end
+	
+	InputUtil_Pause( "inte task" )
+
+	for _, task in ipairs( taskList ) do
+		
+	end
 end
 
 local function Task_OnCombatEnded( msg )
@@ -1448,6 +1496,8 @@ local function Task_OnCombatEnded( msg )
 
 		Task_Debug( task, "combat end=" .. combat:ToString() )
 
+		--print( "combat end task", task:ToString() )
+
 		if Asset_Get( task, TaskAssetID.RESULT ) ~= TaskResult.UNKNOWN then
 			--DBG_TrackBug( task:ToString("SIMPLE") .. " has result" )
 			return
@@ -1461,8 +1511,9 @@ local function Task_OnCombatEnded( msg )
 		local combatType = Asset_Get( combat, CombatAssetID.TYPE )
 		if combatType == CombatType.SIEGE_COMBAT then
 			if Asset_Get( combat, CombatAssetID.WINNER ) == CombatSide.ATTACKER then
-				isTaskSuccess = true				
+				isTaskSuccess = true
 			end
+
 		elseif combatType == CombatType.FIELD_COMBAT then
 			if combat:GetGroup( Asset_Get( combat, CombatAssetID.WINNER ) ) == Asset_Get( task, TaskAssetID.GROUP ) then
 				if taskType == TaskType.INTERCEPT or taskType == TaskType.HARASS_CITY then
@@ -1513,10 +1564,11 @@ function TaskSystem:__init()
 end
 
 function TaskSystem:Start()
-	Message_Handle( self.type, MessageType.ARRIVE_DESTINATION, Task_OnArriveDestination )
-	Message_Handle( self.type, MessageType.COMBAT_TRIGGERRED,  Task_OnCombatTriggered )
-	Message_Handle( self.type, MessageType.COMBAT_UNTRIGGER,   Task_OnCombatUntrigger )
-	Message_Handle( self.type, MessageType.COMBAT_ENDED,       Task_OnCombatEnded )
+	Message_Handle( self.type, MessageType.ARRIVE_DESTINATION,        Task_OnArriveDestination )
+	Message_Handle( self.type, MessageType.MOVE_IS_BLOCKED,           Task_OnMoveBlocked )	
+	Message_Handle( self.type, MessageType.COMBAT_TRIGGERRED_NOTIFY,  Task_OnCombatTriggered )
+	Message_Handle( self.type, MessageType.COMBAT_UNTRIGGER_NOTIFY,   Task_OnCombatUntrigger )
+	Message_Handle( self.type, MessageType.COMBAT_ENDED,              Task_OnCombatEnded )
 	
 	_prepareTask = MathUtil_ConvertKeyToID( TaskType, _prepareTask )
 	_executeTask = MathUtil_ConvertKeyToID( TaskType, _executeTask )
@@ -1538,8 +1590,12 @@ function TaskSystem:Update()
 		--sanity checker
 		if Asset_Get( task, TaskAssetID.ELPASED_DAYS ) - Asset_Get( task, TaskAssetID.COMBAT_DAYS ) > 400 then
 			print( "turn=" .. g_Time:ToString() )
-			print( Asset_Get( task, TaskAssetID.ELPASED_DAYS ), Asset_Get( task, TaskAssetID.COMBAT_DAYS ) )
-			if Asset_Get( task, TaskAssetID.INCOMBAT ) == 0 then
+			--print( Asset_Get( task, TaskAssetID.ELPASED_DAYS ), Asset_Get( task, TaskAssetID.COMBAT_DAYS ) )
+			--print( task:GetStepType() )
+			if not task:IsWaitCombat() then
+				local actor = Asset_Get( task, TaskAssetID.ACTOR )
+				print( actor:ToString("STATUS") )
+				Entity_ToString( EntityType.MOVE )
 				DBG_Error( task:ToString("DEBUG") .. " is bug" )
 			end
 		end

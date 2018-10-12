@@ -35,6 +35,14 @@ function Move_IsMoving( actor )
 	return System_Get( SystemType.MOVE_SYS ):IsMoving( actor )
 end
 
+function Move_HasMoving( actor )
+	return System_Get( SystemType.MOVE_SYS ):HasMoving( actor )
+end
+
+function Move_Suspend( actor )
+	return System_Get( SystemType.MOVE_SYS ):SuspendMove( actor )
+end
+
 function Move_Chara( chara, dest )
 	System_Get( SystemType.MOVE_SYS ):CharaMove( chara, dest )
 end
@@ -96,15 +104,63 @@ local function Move_CheckEncounter( move )
 	local plot = Asset_Get( move, MoveAssetID.NEXT_PLOT )
 	local actor = Asset_Get( move, MoveAssetID.ACTOR )
 
-	--check exist combat
-	local combat = Warfare_HasComat( plot )
+	--check exist combat in the next plot
+	local combat = Warfare_GetComat( plot )
 	if combat then
 		if not actor then
 			DBG_Error("why")
 		end
+
 		local curplot  = Asset_Get( move, MoveAssetID.CUR_PLOT )
-		Debug_Log( "combat exist in", combat.id, actor:ToString(), plot:ToString(), ( curplot and curplot:ToString() or "" ) )
-		Message_Post( MessageType.FIELD_COMBAT_TRIGGER, { plot = plot, atk = actor } )
+		local actGroup = Asset_Get( actor, CorpsAssetID.GROUP )
+
+		--print( "combat exist", actor:ToString("STATUS"), move:ToString())	
+
+		--determine back encampment or trigger/attend combat
+		if combat:HasGroupCorps( actGroup ) 
+			or ( Dipl_IsAlly( actGroup, Asset_Get( combat, CombatAssetID.ATK_GROUP ) ) or Dipl_IsAlly( actGroup, Asset_Get( combat, CombatAssetID.DEF_GROUP ) ) )
+			or ( Dipl_IsAtWar( actGroup, Asset_Get( combat, CombatAssetID.ATK_GROUP ) ) or Dipl_IsAtWar( actGroup, Asset_Get( combat, CombatAssetID.DEF_GROUP ) ) ) then
+
+			if Asset_Get( combat, CombatAssetID.TYPE ) == CombatType.SIEGE_COMBAT then
+				--determine to help the attacker or defender
+				if actGroup == Asset_Get( combat, CombatAssetID.DEF_GROUP )					
+					or Dipl_IsAlly( actGroup, Asset_Get( combat, CombatAssetID.DEF_GROUP ) )
+					or Dipl_IsAtWar( actGroup, Asset_Get( combat, CombatAssetID.ATK_GROUP ) ) then
+	
+					--help defender, will cancel the exist siege combat
+					local defList = MathUtil_ShallowCopy( Asset_GetList( combat, CombatAssetID.ATK_CORPS_LIST ) )
+					Message_Post( MessageType.COMBAT_INTERRUPTED, { combat = combat } )
+								
+					--trigger a new field combat
+					--  todo: should corps in siege city will attend the field combat?
+					--InputUtil_Pause( "trigger new combat" )
+					Message_Post( MessageType.FIELD_COMBAT_TRIGGER, { plot = plot, atk = actor, def = defList } )
+				else
+					--help attacker, just attend the combat					
+					Message_Post( MessageType.COMBAT_ATTEND, { combat = combat, atk = actor } )
+				end
+			else
+				--attend field combat
+				local atk, def
+				if actGroup == Asset_Get( combat, CombatAssetID.ATK_GROUP ) then atk = actor end
+				if actGroup == Asset_Get( combat, CombatAssetID.DEF_GROUP ) then def = actor end				
+				Message_Post( MessageType.COMBAT_ATTEND, { combat = combat, atk = atk, def = def } )
+				--print( "3", combat:ToString("DEBUG_CORPS"), "#", actor:ToString() )
+			end
+		else
+			--retreat
+			print( "act=" .. actGroup:ToString() )
+			print( "atk=", Asset_Get( combat, CombatAssetID.ATK_GROUP ), Dipl_IsAlly( actGroup, Asset_Get( combat, CombatAssetID.ATK_GROUP ) ), Dipl_IsAtWar( actGroup, Asset_Get( combat, CombatAssetID.ATK_GROUP ) ) )
+			print( "def=", Asset_Get( combat, CombatAssetID.DEF_GROUP ), Dipl_IsAlly( actGroup, Asset_Get( combat, CombatAssetID.DEF_GROUP ) ), Dipl_IsAtWar( actGroup, Asset_Get( combat, CombatAssetID.DEF_GROUP ) ) )
+
+			print( "act=", actGroup:ToString(), actor:ToString() )
+			print( combat:ToString() )
+			print( "blocked")
+			Message_Post( MessageType.MOVE_IS_BLOCKED, { plot = plot, actor = actor } )	
+		end
+
+		move:Suspend()
+
 		return true
 	end
 
@@ -146,8 +202,6 @@ local function Move_CheckEncounter( move )
 		if oppActor then
 			--encounter, actually we should send a message to other system, but now, we call Combat by myself
 			isEncounter = true
-			Asset_Set( move,  MoveAssetID.STATUS, MoveStatus.SUSPEND )
-			Asset_Set( otherMove, MoveAssetID.STATUS, MoveStatus.SUSPEND )
 			Message_Post( MessageType.FIELD_COMBAT_TRIGGER, { plot = plot, atk = actor, def = oppActor } )
 			break
 		end
@@ -377,7 +431,13 @@ function MoveSystem:Update()
 end
 
 function MoveSystem:IsMoving( actor )
-	return self._actors[actor] ~= nil
+	local move = self._actors[actor]
+	if not move then return false end
+	return move:IsMoving()
+end
+
+function MoveSystem:HasMoving( actor )
+	return self._actors[actor]
 end
 
 function MoveSystem:MoveP2P( actor, from, to , type )
@@ -418,6 +478,8 @@ function MoveSystem:MoveC2C( actor, fromCity, toCity, type )
 
 	Move_Debug( move, "moving" )
 
+	--if actor.id == 3 then print( "start", move:ToString() ) end	
+
 	--Debug_Log( actor:ToString( "LOCATION" ) .. " try to move from=" .. fromCity:ToString() .. " to " .. toCity:ToString() )
 	return move
 end
@@ -456,4 +518,12 @@ function MoveSystem:TrackMove( actor )
 	local move = self._actors[actor]
 	if not move then return end
 	Debug_Log( move:ToString() )
+end
+
+function MoveSystem:SuspendMove( actor )
+	local move = self._actors[actor]
+	if not move then
+		return
+	end
+	move:Suspend()	
 end

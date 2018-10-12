@@ -153,6 +153,7 @@ function Corps_Join( corps, city, isEnterCity )
 	if encampment then
 		encampment:RemoveCorps( corps )
 	end
+
 	city:CorpsJoin( corps, isEnterCity )
 
 	Debug_Log( corps.name .. " join " .. city.name )

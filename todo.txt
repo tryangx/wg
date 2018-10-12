@@ -32,6 +32,9 @@ To Do List
 09/28/18
 [ok] refactor action point( strategy, tactic, )
 
+10/12/18
+
+
 [delete] add solider limitation/requirement, reduce the complex of algorithm about Establish CROPS/TROOP
 
 ---------------------------------------------------------
@@ -41,7 +44,11 @@ To Do List
 [inprog] reputation system( 1. can inc/dec, 2. affect all things like san5 )
 [inprog] influence system( 1. only increase, 2. dec in event or special situ )
 
-*to solve the situation that A-group & B-group attack the neutral city at the same time
+[ok] to solve the situation that A encounter a exist combat with B and C
+           1. A is the same group with B or C, attend combat
+           2. A is the ally with B or C, attend combat
+           3. A is the enemy with B or C, attend combat
+           4. retreat
 
 redesign CITY.SECURITY, CITY.SATISFACTION -> CITY.DISS, CITY.SECURITY, leads to rebel
 
@@ -59,7 +66,9 @@ refactor goal as a series task
 
 *Eventful, just like surrender/fraud -> choose accept/decline/accpet-overwatch -> result
 
-proposer is mayor should find the fit actor for the task
+when proposer is mayor should find the fit actor for the task
+
+disaster
 
 ------------------------------------------------
 

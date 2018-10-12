@@ -100,6 +100,8 @@ CombatAssetID =
 	BATTLEFIELD    = 102,
 	ATKCAMPFIELD   = 103,
 	DEFCAMPFIELD   = 104,
+	ATK_GROUP      = 105,
+	DEF_GROUP      = 106,
 	CORPS_LIST     = 110,
 	ATK_CORPS_LIST = 111,
 	DEF_CORPS_LIST = 112,
@@ -135,6 +137,8 @@ CombatAssetAttrib =
 	battlefield = AssetAttrib_SetPointer    ( { id = CombatAssetID.BATTLEFIELD,     type = CombatAssetType.BASE_ATTRIB, setter = Table_SetBattlefield } ),
 	atkcampfield= AssetAttrib_SetPointer    ( { id = CombatAssetID.ATKCAMPFIELD,    type = CombatAssetType.BASE_ATTRIB, setter = Table_SetBattlefield } ),
 	defcampfield= AssetAttrib_SetPointer    ( { id = CombatAssetID.DEFCAMPFIELD,    type = CombatAssetType.BASE_ATTRIB, setter = Table_SetBattlefield } ),
+	atkgroup    = AssetAttrib_SetPointer    ( { id = CombatAssetID.ATK_GROUP,       type = CombatAssetType.BASE_ATTRIB, setter = Entity_SetGroup } ),
+	defgroup    = AssetAttrib_SetPointer    ( { id = CombatAssetID.DEF_GROUP,       type = CombatAssetType.BASE_ATTRIB, setter = Entity_SetGroup } ),
 	atkcorpses  = AssetAttrib_SetPointerList( { id = CombatAssetID.ATK_CORPS_LIST,  type = CombatAssetType.BASE_ATTRIB, setter = Entity_SetCorps } ),
 	defcorpses  = AssetAttrib_SetPointerList( { id = CombatAssetID.DEF_CORPS_LIST,  type = CombatAssetType.BASE_ATTRIB, setter = Entity_SetCorps } ),
 	corps       = AssetAttrib_SetPointerList( { id = CombatAssetID.CORPS_LIST,      type = CombatAssetType.BASE_ATTRIB, setter = Entity_SetCorps } ),
@@ -329,17 +333,22 @@ function Combat:AddTroop( troop, side )
 	end
 end
 
---Add single troop into Combat
-function Combat:AddCorps( corps, side )	
+function Combat:AddSingleCorps( corps, side )
 	if Asset_HasItem( self, CombatAssetID.CORPS_LIST, corps ) == true then
 		--InputUtil_Pause( corps:ToString(), "already" )
 		return
 	end
 
-	if side == CombatSide.ATTACKER then
+	--WriteCombatLog( "add single corps", corps:ToString("TASK"), "combat=" .. self.id )
+
+	local group = Asset_Get( corps, CorpsAssetID.GROUP )
+	if side == CombatSide.ATTACKER then		
 		Asset_AppendList( self, CombatAssetID.ATK_CORPS_LIST, corps )
+		Asset_Set( self, CombatAssetID.ATK_GROUP, group )
+	
 	elseif side == CombatSide.DEFENDER then
 		Asset_AppendList( self, CombatAssetID.DEF_CORPS_LIST, corps )
+		Asset_Set( self, CombatAssetID.DEF_GROUP, group )
 	end
 
 	Asset_AppendList( self, CombatAssetID.CORPS_LIST, corps )
@@ -349,6 +358,21 @@ function Combat:AddCorps( corps, side )
 	end )
 
 	corps:SetStatus( CorpsStatus.IN_COMBAT, true )
+end
+
+--Add single troop into Combat
+function Combat:AddCorps( corps, side )
+	--sanity checker
+	if not side then DBG_Error( "why here") end		
+	if self:GetGroup( side ) and self:GetGroup( side ) ~= Asset_Get( corps, CorpsAssetID.GROUP ) then DBG_Error( "why not the same group" ) end
+
+	if typeof( corps ) == "table" then
+		for _, single in ipairs( corps ) do
+			self:AddSingleCorps( single, side )
+		end
+	else
+		self:AddSingleCorps( corps, side )
+	end
 end
 
 function Combat:RemoveTroop( troop, isKilled )
@@ -456,17 +480,30 @@ function Combat:GetBackGrid( troop )
 	return self:GetGrid( troop:GetCombatData( TroopCombatData.X_POS ) + ox, troop:GetCombatData( TroopCombatData.Y_POS ) - oy )
 end
 
-function Combat:GetGroup( side )
-	local corps
-	if side == CombatSide.ATTACKER then
-		corps = Asset_GetListByIndex( self, CombatAssetID.ATK_CORPS_LIST, 1 )
-	elseif side == CombatSide.DEFENDER then
-		corps = Asset_GetListByIndex( self, CombatAssetID.DEF_CORPS_LIST, 1 )
-	end
-	--maybe unknown side
-	if not corps then return end
+----------------------------------------------
 
-	local group = Asset_Get( corps, CorpsAssetID.GROUP )
+function Combat:HasGroupCorps( group )
+	return Asset_Get( self, CombatAssetID.ATK_GROUP ) == group or Asset_Get( self, CombatAssetID.DEF_GROUP ) == group
+end
+
+function Combat:GetGroup( side )
+	if side == CombatSide.ATTACKER then	group = Asset_Get( self, CombatAssetID.ATK_GROUP )
+	elseif side == CombatSide.DEFENDER then group = Asset_Get( self, CombatAssetID.DEF_GROUP )
+	end
+
+	if not side then
+		DBG_Error( "why here")
+		local corps
+		if side == CombatSide.ATTACKER then			
+			corps = Asset_GetListByIndex( self, CombatAssetID.ATK_CORPS_LIST, 1 )
+		elseif side == CombatSide.DEFENDER then
+			corps = Asset_GetListByIndex( self, CombatAssetID.DEF_CORPS_LIST, 1 )
+		end
+		--maybe unknown side
+		if not corps then return end
+		local group = Asset_Get( corps, CorpsAssetID.GROUP )
+	end
+
 	return group
 end
 

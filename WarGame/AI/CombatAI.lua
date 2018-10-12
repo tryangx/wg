@@ -70,8 +70,7 @@ local function IsTargetInRange()
 end
 
 local function IsAdvantageous()
-	local intense = 0
-	intense = _combat:GetStat( _troop:GetCombatData( TroopCombatData.SIDE ), CombatStatistic.COMBAT_INTENSE )
+	local intense = _combat:GetStat( _troop:GetCombatData( TroopCombatData.SIDE ), CombatStatistic.COMBAT_INTENSE ) or 0
 	
 	local purpose
 	if _troop:GetCombatData( TroopCombatData.SIDE ) == CombatSide.ATTACKER then 
@@ -98,7 +97,7 @@ local function IsAdvantageous()
 	--small probability to attack
 	local rand = Random_GetInt_Sync( 1, 100 )
 	--print( "atck intense=" .. intense * 50, rand )
-	if rand < intense * 50 then		
+	if rand < intense * 50 then
 		return true
 	end
 	return false

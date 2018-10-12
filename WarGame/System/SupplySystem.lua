@@ -21,6 +21,21 @@ function Supply_HasEnoughFoodForCorps( fromcity, destcity, corps )
 	return hasFood >= needFood
 end
 
+function Supply_HasEnoughFoodForCorpsList( fromcity, destcity, list )
+	if FeatureOption.DISABLE_FOOD_SUPPLY then return true end
+
+	local hasFood = Asset_Get( fromcity, CityAssetID.FOOD )
+	--should carry more than 30 days food
+	local needFood = 0
+	for _, corps in ipairs( list ) do
+		hasFood  = hasFood + Asset_Get( corps, CorpsAssetID.FOOD )
+		needFood = needFood + Corps_CalcNeedFood( corps, destcity )
+	end
+
+	--print( fromcity:ToString(), "has=" .. hasFood, "need=" .. needFood, corps:ToString("MILITARY") )
+
+	return hasFood >= needFood
+end
 
 function Supply_CorpsCarryFood( corps, destcity )
 	local needFood = Corps_CalcNeedFood( corps, destcity )

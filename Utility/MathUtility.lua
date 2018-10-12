@@ -265,7 +265,7 @@ function MathUtil_Copy(source, destination)
 					MathUtil_Copy( value, destination[field] )
 				else
 					--print( "rawset", field, value )
-					rawset(destination, field, value)
+					rawset(destination, field, value )
 				end
 			end
 		end

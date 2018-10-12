@@ -596,100 +596,100 @@ local function CanRegroupCorps()
 	return true
 end
 
-local function CheckEnemyCity( targetCity, city, soldier, scores, fn )
-	if targetCity:GetStatus( CityStatus.STARVATION ) then
-		return true
+local function CheckEnemyCity( adjaCity, city, params )	
+	--check food
+	if params.corps and Supply_HasEnoughFoodForCorps( city, adjaCity, params.corps ) == false then
+		print( "no food for corps to attack" )
+		return false
+	end
+	if params.corpsList and Supply_HasEnoughFoodForCorpsList( city, adjaCity, params.corpsList ) == false then
+		print( "no food for corpslist to attack" )
 	end
 
-	local citySoldier = Intel_Get( targetCity, city, CityIntelType.DEFENDER )
-	--unknown
+	local adjaGroup = Asset_Get( adjaCity, CityAssetID.GROUP )
+	local score = params and params.score or 0
+	
+	--it's our city!!!
+	if adjaGroup == params.group then		
+		return false
+	end
+
+	if adjaGroup then
+		--we cann't attack without declared war
+		if Dipl_IsAtWar( params.group, adjaGroup ) == false then
+			return 
+		end			
+		if goal and adjaCity == goal.city then
+			score = score + 30
+		end
+	else
+		score = score + 30
+	end
+
+	if adjaCity:GetStatus( CityStatus.STARVATION ) then
+		score = score + 50
+	end
+
+	--check intel
+	local citySoldier = Intel_Get( adjaCity, city, CityIntelType.DEFENDER )		
 	if citySoldier == -1 then
-		Debug_Log( targetCity.name .. " info unknown" )
+		Debug_Log( adjaCity.name .. " info unknown" )
 		return false
 	end
 	
+	--check soldier
+	local ratio = params.soldier / citySoldier
 	--TODO: should consider about the officer ability
-	local score = 0
-
-	local ratio = soldier / citySoldier
-	local item = MathUtil_Approximate( ratio, scores, "ratio", true )
+	local score = 0	
+	local item = MathUtil_Approximate( ratio, params.scores, "ratio", true )
 	score = score + item.score
 	
-	if fn then
-		score = score + fn( targetCity )
+	if params.fn then
+		score = score + params.fn( adjaCity, city )
 	end
 
-	Debug_Log( targetCity.name .. " ratio=" .. ratio .. " score=" .. score )
+	--check chara skill
+	--to do
 
+	Debug_Log( "check_enemycity", adjaCity.name .. " score=" .. score )
 
-	if Random_GetInt_Sync( 1, 100 ) > score then
-		return false
-	end
-
-	Debug_Log( "compare_city score=" .. item.score, targetCity.name .."="..citySoldier, city.name .."=" .. soldier )
-	
-	--Debug_Log( "target="..targetCity.name )	
-	
-	return true
+	return Random_GetInt_Sync( 1, 100 ) > score
 end
 
-local function FindEnemyCityList( city, soldier, scores, fn )
+local function FindEnemyCityList( city, params )
 	local group = Asset_Get( city, CityAssetID.GROUP )
-	return city:FilterAdjaCities( function ( adja )
-		local adjaGroup = Asset_Get( adja, CityAssetID.GROUP )
-		if adjaGroup == group then
-			return false
-		end
-		if Dipl_IsAtWar( group, adjaGroup ) == false then
-			return false
-		end
-		return CheckEnemyCity( adja, city, soldier, scores, fn )
+	params.group = group
+	return city:FilterAdjaCities( function ( adjaCity )
+		return CheckEnemyCity( adjaCity, city, params )
 	end )
 end
 
-local function CheckTargetCity( targetCity )
-	if goal and targetCity == goal.city then
-		return 50
-	end
-	if not Asset_Get( targetCity, CityAssetID.GROUP ) then
-		return 30
-	end
-	return 0
-end
+local enemyCityScores = 
+{
+	{ ratio = 1.5, score = 0 },
+	{ ratio = 2,   score = 20 },
+	{ ratio = 3,   score = 50 },
+	{ ratio = 4,   score = 90 },
+}
 
 local function CanHarassCity()
 	--check free corps
 	local list, soldier, power = _city:GetMilitaryCorps( 30 )
 	if #list == 0 then
 		return false
-	end
+	end	
+	local corps = list[Random_GetInt_Sync( 1, #list )]
 
 	Debug_Log( "canharss", _city:ToString("MILITARY"), "SOL="..soldier, #list )
 
-	local canHarassScores = 
-	{
-		{ ratio = 0.35, score = 0 },
-		{ ratio = 0.5,  score = 20 },
-		{ ratio = 1,    score = 40 },
-		{ ratio = 1.5,  score = 70 },
-		{ ratio = 2,    score = 100 },
-	}
-
 	local group = Asset_Get( _city, CityAssetID.GROUP )
-	local goal = _group:GetGoal( GroupGoalType.OCCUPY_CITY )	
-
-	local cities = FindEnemyCityList( _city, soldier, canHarassScores, CheckTargetCity )
+	local goal = _group:GetGoal( GroupGoalType.OCCUPY_CITY )
+	local cities = FindEnemyCityList( _city, { soldier = soldier, goal = goal, scores = enemyCityScores, score = score, corps = corps } )
 
 	local number = #cities
 	if number == 0 then return false end
 
-	local corps = list[Random_GetInt_Sync( 1, #list )]
 	local destcity = cities[Random_GetInt_Sync( 1, number )]
-
-	--check food
-	if Supply_HasEnoughFoodForCorps( _city, destcity, corps ) == false then
-		return false
-	end
 
 	_registers["ACTOR"] = corps
 	_registers["TARGET_CITY"] = destcity
@@ -708,17 +708,10 @@ local function CanAttackCity()
 		return false
 	end
 
-	Debug_Log( "canattack self=", _city:ToString("MILITARY"), "SOL="..soldier, #list )
+	Debug_Log( "canattack self=", _city:ToString("MILITARY"), "SOL="..soldier, "corps_num=" .. #list )
 
-	local canAttackScores = 
-	{
-		{ ratio = 1.5, score = 0 },
-		{ ratio = 2,   score = 35 },
-		{ ratio = 3,   score = 70 },
-		{ ratio = 4,   score = 99 },
-	}
-
-	local cities = FindEnemyCityList( _city, soldier, canAttackScores, CheckTargetCity )
+	local goal = _group:GetGoal( GroupGoalType.OCCUPY_CITY )
+	local cities = FindEnemyCityList( _city, { soldier = soldier, goal = goal, scores = enemyCityScores, corpsList = list } )
 
 	local number = #cities
 	if number == 0 then
@@ -728,11 +721,6 @@ local function CanAttackCity()
 
 	local corps = list[Random_GetInt_Sync( 1, #list )]
 	local destcity = cities[Random_GetInt_Sync( 1, number )]
-
-	--check food
-	if Supply_HasEnoughFoodForCorps( _city, destcity, corps ) == false then
-		return false
-	end
 
 	Debug_Log( "check attack" .. corps:ToString( "STATUS" ) )
 	Debug_Log( "CombatCompare", corps:ToString( "MILITARY" ), destcity:ToString( "MILITARY" ) )
@@ -753,32 +741,22 @@ local function CanExpedition()
 		return false
 	end
 
-	local canAttackScores = 
-	{
-		{ ratio = 1.5, score = 0 },
-		{ ratio = 2,   score = 20 },
-		{ ratio = 3,   score = 50 },
-		{ ratio = 4,   score = 90 },
-	}
-
+	--expedition target should the target of goal
 	local goal = _group:GetGoal( GroupGoalType.OCCUPY_CITY )
 	if not goal then
 		return false
 	end
+
 	local destcity = goal.city
 	if not _city:IsEnemeyCity( destcity ) then
 		return false
 	end
-	if not CheckEnemyCity( destcity, _city, soldier, canAttackScores ) then
-		return false
-	end
-	
+
 	local corps = list[Random_GetInt_Sync( 1, #list )]
 
-	--check food
-	if Supply_HasEnoughFoodForCorps( _city, destcity, corps ) == false then
+	if not CheckEnemyCity( destcity, _city, { goal = goal, scores = canAttackScores, corps = corps } ) then
 		return false
-	end
+	end	
 
 	Debug_Log( "CombatCompare", corps:ToString( "MILITARY" ), destcity:ToString( "MILITARY" ) )--, "enemy=" .. Intel_Get( destcity, _city, CityIntelType.DEFENDER ) )
 

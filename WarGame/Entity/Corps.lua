@@ -116,6 +116,13 @@ function Corps:ToString( type )
 		local soldier, maxSoldier = self:GetSoldier()
 		content = content .. " soldier=" .. soldier .. "/" .. maxSoldier
 	end
+
+	if type == "TASK" then
+		local task = self:GetTask()
+		if task then
+			content = content .. " task=" .. task.id
+		end
+	end
 	
 	if type == "STATUS" or type == "ALL" then
 		local task = self:GetTask()

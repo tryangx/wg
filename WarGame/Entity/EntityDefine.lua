@@ -66,6 +66,15 @@ function Entity_SetConstruction( entity, id, value )
 	return ConstructionTable_Get( value )
 end
 
+-------------------------------------------
+
+function Entity_ToString( type )
+	print( "=========Travel " .. MathUtil_FindName( EntityType, type ) )
+	Entity_Foreach( type, function ( data )
+		print( data:ToString() )
+	end)
+	print( "===============================")
+end
 
 -------------------------------------------
 

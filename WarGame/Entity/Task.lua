@@ -90,16 +90,16 @@ end
 function Task:ToString( type )
 	local content = self.id .. " " .. MathUtil_FindName( TaskType, Asset_Get( self, TaskAssetID.TYPE ) )
 	content = content .. " " .. String_ToStr( Asset_Get( self, TaskAssetID.GROUP ), "name" )
-	if Asset_Get( self, TaskAssetID.INCOMBAT ) ~= 0 then
+	if self:IsWaitCombat() then
 		content = content .. " in-combat=" .. Asset_Get( self, TaskAssetID.INCOMBAT )
 	end
+	content = content .. " sts=" .. MathUtil_FindName( TaskStatus, Asset_Get( self, TaskAssetID.STATUS ) )
 	if type == "SIMPLE" then
 		content = content .. " beg=" .. g_Time:CreateDateDescByValue( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )
 	elseif type == "DEBUG" then
 		content = content .. " atr=" .. ( Asset_Get( self, TaskAssetID.ACTOR ):ToString() )
 		content = content .. " dur=" .. Asset_Get( self, TaskAssetID.DURATION )
 		content = content .. " stp=" .. MathUtil_FindName( TaskStep, self:GetStepType() )
-		content = content .. " sts=" .. MathUtil_FindName( TaskStatus, Asset_Get( self, TaskAssetID.STATUS ) )		
 		content = content .. " prg=" .. Asset_Get( self, TaskAssetID.PROGRESS )
 		content = content .. " wrk=" .. Asset_Get( self, TaskAssetID.WORKLOAD )
 		content = content .. " cmd=" .. Asset_Get( self, TaskAssetID.COMBAT_DAYS )
@@ -135,6 +135,15 @@ function Task:Load( data )
 	self.id = data.id
 end
 
+function Task:IsWaitCombat()
+	return Asset_Get( self, TaskAssetID.INCOMBAT ) ~= 0
+end
+
+--has result, not means end
+function Task:IsFinished()
+	return Asset_Get( self, TaskAssetID.RESULT ) ~= TaskResult.UNKNOWN
+end
+
 function Task:IsStepFinished()	
 	local status = Asset_Get( self, TaskAssetID.STATUS )
 
@@ -153,7 +162,7 @@ function Task:IsStepFinished()
 
 	if status == TaskStatus.WORKING then
 		if Asset_Get( self, TaskAssetID.PROGRESS ) >= Asset_Get( self, TaskAssetID.WORKLOAD ) then
-			return Asset_Get( self, TaskAssetID.INCOMBAT ) == 0
+			return not self:IsWaitCombat()
 		end
 		return Asset_Get( self, TaskAssetID.DURATION ) <= 0
 	end
@@ -180,12 +189,8 @@ function Task:ElpasedTime( time )
 
 	Asset_Plus( self, TaskAssetID.ELPASED_DAYS, time )	
 
-	if Asset_Get( self, TaskAssetID.INCOMBAT ) ~= 0 then
+	if self:IsWaitCombat() then
 		Asset_Plus( self, TaskAssetID.COMBAT_DAYS, 1 )
-	end
-
-	if id == 516 then
-		Log_Write( "tracebug", self:ToString("DEBUG") )
 	end
 end
 

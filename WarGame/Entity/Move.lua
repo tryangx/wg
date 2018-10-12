@@ -50,7 +50,9 @@ function Move:__init( ... )
 end
 
 function Move:ToString( type )
-	local content = Asset_Get( self, MoveAssetID.ACTOR ):ToString()
+	local content = ""
+	content = content .. self.id
+	content = content .. " " .. Asset_Get( self, MoveAssetID.ACTOR ):ToString()
 
 	local from = Asset_Get( self, MoveAssetID.FROM_CITY )
 	content = content .. " from=" .. from:ToString( "SIMPLE" )
@@ -85,8 +87,18 @@ function Move:IsArrived()
 	return Asset_Get( self, MoveAssetID.PROGRESS ) >= Asset_Get( self, MoveAssetID.DURATION )
 end
 
+function Move:IsMoving()
+	return Asset_Get( self, MoveAssetID.STATUS ) == MoveStatus.MOVING
+end
+
 function Move:GetPassDay()
 	return g_Time:CalcDiffDayByDate( Asset_Get( self, MoveAssetID.BEGIN_TIME ) )
+end
+
+function Move:Suspend()
+	--InputUtil_Pause( "suspend", move:ToString() )
+	--print( 'suspend', self:ToString() )
+	Asset_Set( self, MoveAssetID.STATUS, MoveStatus.SUSPEND )
 end
 
 --------------------------------------------

@@ -10,6 +10,19 @@ function Dipl_IsBelong( red, blue )
 	return false
 end
 
+function Dipl_IsAlly( red, blue )
+	if not red or red == blue then
+		return false
+	end
+
+	if blue then
+		local relation = System_Get( SystemType.DIPLOMACY_SYS ):GetRelation( red, blue )
+		return relation and relation:HasOpinion( RelationOpinion.ALLY )
+	end
+
+	return false
+end
+
 function Dipl_IsAtWar( red, blue )
 	if not red or red == blue then
 		return false
@@ -20,7 +33,8 @@ function Dipl_IsAtWar( red, blue )
 		return relation and relation:HasOpinion( RelationOpinion.AT_WAR )
 	end
 
-	return System_Get( SystemType.DIPLOMACY_SYS ):HasOpinion( red, RelationOpinion.AT_WAR )
+	return false
+	--return System_Get( SystemType.DIPLOMACY_SYS ):HasOpinion( red, RelationOpinion.AT_WAR )
 end
 
 function Dipl_CanDeclareWar( relation, red )
