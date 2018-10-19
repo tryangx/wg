@@ -15,15 +15,16 @@ TroopAssetID =
 	CORPS        = 101,
 	OFFICER      = 102,
 	TABLEDATA    = 106,
+	POTENTIAL    = 107,
 
 	-------------------------------
 	--growth
-	POTENTIAL    = 200,
 	MAX_SOLDIER  = 201,	
 	CONVEYANCE   = 202,	
 
 	SKILLS       = 220,
 	STATUSES     = 221,
+	MEDALS       = 222,
 
 	-------------------------------
 	--Combat	
@@ -35,7 +36,8 @@ TroopAssetID =
 	--Determine: CHAOS, FLEE
 	--DependsOn: LEVEL, OFFICER
 	MORALE       = 303,
-	TIRENESS     = 304,
+	TIRENESS     = 304,	
+	EQUIPMENT    = 305, -- 
 }
 
 TroopAssetAttrib =
@@ -51,12 +53,14 @@ TroopAssetAttrib =
 	
 	skills       = AssetAttrib_SetPointerList ( { id = TroopAssetID.SKILLS,   type = TroopAssetType.GROWTH_ATTRIB, setter = Entity_SetSkill } ),
 	statuses     = AssetAttrib_SetDict   ( { id = TroopAssetID.STATUSES,      type = TroopAssetType.GROWTH_ATTRIB } ),
+	medals       = AssetAttrib_SetDict   ( { id = TroopAssetID.MEDALS,        type = TroopAssetType.GROWTH_ATTRIB } ),	
 	
 	soldier      = AssetAttrib_SetNumber ( { id = TroopAssetID.SOLDIER,       type = TroopAssetType.COMBAT_ATTRIB, min = 0 } ),
 	level        = AssetAttrib_SetNumber ( { id = TroopAssetID.LEVEL,         type = TroopAssetType.GROWTH_ATTRIB, min = 0, max = 20 } ),
 	morale       = AssetAttrib_SetNumber ( { id = TroopAssetID.MORALE,        type = TroopAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),
 	organization = AssetAttrib_SetNumber ( { id = TroopAssetID.ORGANIZATION,  type = TroopAssetType.GROWTH_ATTRIB, min = 0 } ),	
 	tireness     = AssetAttrib_SetNumber ( { id = TroopAssetID.TIRENESS,      type = TroopAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),	
+	equipment    = AssetAttrib_SetNumber ( { id = TroopAssetID.EQUIPMENT,     type = TroopAssetType.GROWTH_ATTRIB, min = 0, max = 100 } ),	
 }
 
 
@@ -140,6 +144,7 @@ function Troop:GetMaxMorale()
 	maxMorale = maxMorale + Chara_GetSkillEffectValue( Asset_Get( self, TroopAssetID.OFFICER ), CharaSkillEffect.MORALE_BONUS )
 	--status effect
 	maxMorale = MathUtil_Clamp( maxMorale - ( self:GetStatus( TroopStatus.DOWNCAST ) or 0 ) , 30, 999 )
+	--medal effect	
 	return maxMorale
 end
 
@@ -314,7 +319,26 @@ function Troop:LevelUp()
 	return true
 end
 
+function Troop:Move( tireness )
+	if not tireness then tireness = 1 end
+	Asset_Plus( self, TroopAssetID.TIRENESS, tireness )
+	--DBG_Error( self.name, "move", tireness )
+end
+
+function Troop:Action( tireness )
+	if not tireness then tireness = 1 end
+	Asset_Plus( self, TroopAssetID.TIRENESS, tireness )
+	--DBG_Error( self.name, "action", tireness, Asset_Get( self, TroopAssetID.TIRENESS ) )
+
+	Asset_Reduce( self, TroopAssetID.EQUIPMENT, 1 )
+end
+
 function Troop:UpdateAtHome()
+	--restore tireness
+	Asset_Reduce( self, TroopAssetID.TIRENESS, g_elapsed )
+	--print( self.name, "restore tirenes=" .. g_elapsed, Asset_Get( self, TroopAssetID.TIRENESS ) )
+
+	--restore morale
 	local lv = Asset_Get( self, TroopAssetID.LEVEL )
 	local delta = lv + 5
 	self:AffectMorale( delta )
@@ -326,4 +350,9 @@ function Troop:UpdateAtHome()
 	local maxHonor = ( lv - 1 ) * 50 + numOfSkills * 100 + 50
 	if honor < maxHonor then return end
 	--learn troop skill
+end
+
+function Troop:GrantMedal( medal )
+	Asset_SetDictItem( self, TroopAssetID.MEDALS, medal.id, medal )
+	Stat_Add( "GrantMedal@" .. self.name, medal.name, StatType.LIST )
 end

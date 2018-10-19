@@ -1,7 +1,9 @@
 RelationOpinion = 
 {
 	--base
-	TRUST      = 1,
+	TRUST      = 1,	
+	REPUTATION = 2,
+	INFLUENCE  = 3,
 
 	--status
 	WAS_AT_WAR = 10,
@@ -17,11 +19,15 @@ RelationOpinion =
 
 RelationPact = 
 {
+	--
 	PEACE    = 10,
 	NO_WAR   = 11,
-	TRADE    = 12,
-	PROTECT  = 13,
-	ALLY     = 14,
+	TRADE    = 12,	
+	ALLY     = 13,
+
+	--Master-slave
+	PROTECT  = 20,	
+	BELONG   = 21,		
 }
 
 DiplomacyMethod = 

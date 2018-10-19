@@ -1,6 +1,7 @@
 local function Proposal_Execute( proposal )
 	--some proposal will execute immediately, no need to issue a task
 	local type = Asset_Get( proposal, ProposalAssetID.TYPE )
+
 	if type == ProposalType.SET_GOAL then
 		local loc   = Asset_Get( proposal, ProposalAssetID.LOCATION )
 		local group = Asset_Get( loc, CityAssetID.GROUP )
@@ -16,6 +17,9 @@ local function Proposal_Execute( proposal )
 		local group = Asset_Get( actor, CharaAssetID.GROUP )
 		group:MoveCapital( Asset_Get( proposal, ProposalAssetID.LOCATION ) )
 		return
+
+	elseif type == ProposalType.IMPROVE_GRADE then
+		group:ImproveGrade( Asset_GetDictItem( proposal, ProposalAssetID.PARAMS, "grade" ) )
 
 	elseif type == ProposalType.INSTRUCT_CITY then
 		local list = Asset_GetDictItem( proposal, ProposalAssetID.PARAMS, "instructCityList" )
@@ -224,13 +228,13 @@ function Meeting_Hold( city, topic, target )
 	if topic == MeetingTopic.UNDER_HARASS or topic == MeetingTopic.UNDER_ATTACK then		
 		--Debug_Log( "gain intel need to intercept" .. target:ToString() )
 		--find highest rank		
-		local highestRank = CharaJob.NONE
+		local highestTitle = CharaTitle.NONE
 		city:FilterOfficer( function ( chara, job )
 			if chara:IsAtHome() == false then return end
-			local rank = Asset_Get( chara, CharaAssetID.JOB )
-			if rank > highestRank then
+			local title = Asset_Get( chara, CharaAssetID.TITLE )
+			if title > highestTitle then
 				executive = chara
-				highestRank = rank
+				highestTitle = title
 			end
 		end )
 	end	

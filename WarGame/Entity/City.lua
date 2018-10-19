@@ -58,7 +58,7 @@ CityAssetID =
 	MATERIAL        = 212,
 
 	SECURITY        = 220,	--enough officer
-	DISS = 221,	--p
+	DISS            = 221,	--p
 	
 	CHARA_LIST      = 300,
 	OFFICER_LIST    = 301,	
@@ -99,8 +99,9 @@ CityAssetAttrib =
 	food       = AssetAttrib_SetNumber( { id = CityAssetID.FOOD,            type = CityAssetType.GROWTH_ATTRIB, min = 0 } ),
 	money      = AssetAttrib_SetNumber( { id = CityAssetID.MONEY,           type = CityAssetType.GROWTH_ATTRIB, min = 0 } ),
 	material   = AssetAttrib_SetNumber( { id = CityAssetID.MATERIAL,        type = CityAssetType.GROWTH_ATTRIB } ),
-	security   = AssetAttrib_SetNumber( { id = CityAssetID.SECURITY,        type = CityAssetType.GROWTH_ATTRIB,  min = 0, max = 100, default = 50 } ),	
-	diss       = AssetAttrib_SetNumber( { id = CityAssetID.DISS,  type = CityAssetType.GROWTH_ATTRIB,  min = 0, max = 100, default = 50 } ),
+
+	security   = AssetAttrib_SetDict  ( { id = CityAssetID.SECURITY,        type = CityAssetType.GROWTH_ATTRIB,  } ),	
+	diss       = AssetAttrib_SetDict  ( { id = CityAssetID.DISS,            type = CityAssetType.GROWTH_ATTRIB,  } ),
 
 	charas     = AssetAttrib_SetPointerList( { id = CityAssetID.CHARA_LIST,   type = CityAssetType.PROPERTY_ATTRIB, setter = Entity_SetChara } ),	
 	officers   = AssetAttrib_SetPointerList( { id = CityAssetID.OFFICER_LIST, type = CityAssetType.PROPERTY_ATTRIB } ),
@@ -142,8 +143,7 @@ function City:Load( data )
 	
 	Asset_Set( self, CityAssetID.MONEY,    data.money )
 	Asset_Set( self, CityAssetID.FOOD,     data.food )
-	Asset_Set( self, CityAssetID.MATERIAL, data.material )	
-	Asset_Set( self, CityAssetID.SECURITY, data.security )
+	Asset_Set( self, CityAssetID.MATERIAL, data.material )
 	Asset_CopyList( self, CityAssetID.GATES,  data.gates )
 
 	if not data.trooptables then
@@ -174,12 +174,16 @@ function City:ToString( type )
 			content = content .. " [" .. MathUtil_FindName( CityJob, data.job ) .. "]=" .. data.officer.name
 		end )
 
-	elseif type == "ASSET" then
+	elseif type == "ASSET" or type == "ALL" then
 		content = content .. " food=" .. HelperUtil_CreateNumberDesc( Asset_Get( self, CityAssetID.FOOD ) )
-		content = content .. " money=" .. HelperUtil_CreateNumberDesc( Asset_Get( self, CityAssetID.MONEY ) )
 		content = content .. " consume=" .. HelperUtil_CreateNumberDesc( self:GetConsumeFood() )
-		content = content .. " salary=" .. HelperUtil_CreateNumberDesc( self:GetSalary() )
+		content = content .. " harvest=" .. HelperUtil_CreateNumberDesc( City_GetFoodIncome( self ) )
+		content = content .. " money=" .. HelperUtil_CreateNumberDesc( Asset_Get( self, CityAssetID.MONEY ) )		
+		content = content .. " salary=" .. HelperUtil_CreateNumberDesc( self:GetSalary() * MONTH_IN_YEAR )
+		content = content .. " income=" .. HelperUtil_CreateNumberDesc( City_GetYearTax( self ) )
+		content = content .. " more_sol=" .. self:GetPotentialMilitary()
 	
+	--[[
 	elseif type == "SUPPLY" then
 		local food    = Asset_Get( self, CityAssetID.FOOD )
 		local consume = self:GetConsumeFood()
@@ -238,7 +242,7 @@ function City:ToString( type )
 	elseif type == "BUDGET_MONTH" then
 		content = content .. " money_in="  .. City_GetMonthTax( self )
 		content = content .. " money_out=" .. self:GetSalary()
-
+]]
 	elseif type == "DEVELOP" then
 		content = content .. " agri=" .. Asset_Get( self, CityAssetID.AGRICULTURE ) .. "/" .. Asset_Get( self, CityAssetID.MAX_AGRICULTURE )
 		content = content .. " comm=" .. Asset_Get( self, CityAssetID.COMMERCE ) .. "/" .. Asset_Get( self, CityAssetID.MAX_COMMERCE )
@@ -262,7 +266,6 @@ function City:ToString( type )
 			content = content .. " " .. corps:ToString( "STATUS" ) .. "/"
 		end )
 	end
-
 
 	if type == "CHARA" then-- or type == "ALL" then
 		content = content .. " chars=" .. Asset_GetListSize( self, CityAssetID.CHARA_LIST )
@@ -307,9 +310,9 @@ function City:ToString( type )
 
 	if type == "POPULATION" then-- or type == "ALL" then
 		local total = Asset_Get( self, CityAssetID.POPULATION )
-		content = content .. " POPU=" .. total
+		content = content .. " POPU=" .. HelperUtil_CreateNumberDesc( total )
 		Asset_Foreach( self, CityAssetID.POPU_STRUCTURE, function ( value, type )
-			content = content .. " " .. MathUtil_FindName( CityPopu, type ) .. "=" .. value .. "+" .. math.ceil( value * 100 / total ) .."%"
+			content = content .. " " .. MathUtil_FindName( CityPopu, type ) .. "=" .. HelperUtil_CreateNumberDesc( value ) .. "+" .. math.ceil( value * 100 / total ) .."%"
 		end )
 	end
 	return content
@@ -446,6 +449,30 @@ end
 -------------------------------------------
 --getter
 
+function City:GetSecurity()
+	local dict = Asset_GetDict( self, CityAssetID.SECURITY )
+	return MathUtil_Sum( dict )
+end
+
+function City:GetDiss()
+	return MathUtil_Sum( Asset_GetDict( self, CityAssetID.DISS ) )
+end
+
+--calculate how many guard/reserves/soldier can support in this city
+function City:GetPotentialMilitary()
+	local eat     = ( City_GetPopuParams( self ).POPU_CONSUME_FOOD.SOLDIER ) * DAY_IN_YEAR
+	local salary  = ( City_GetPopuParams( self ).POPU_SALARY.SOLDIER ) * MONTH_IN_YEAR
+	local money   = Asset_Get( self, CityAssetID.MONEY )
+	local food    = Asset_Get( self, CityAssetID.FOOD )
+	money = 0
+	food  = 0
+	local harvest = City_GetFoodIncome( self )
+	local income  = City_GetYearTax( self )
+	local num1 = math.floor( ( money + income ) / salary )
+	local num2 = math.floor( ( food + harvest ) / eat )
+	return math.min( num1, num2 )
+end
+
 function City:GetPlan( plan )
 	return Asset_GetDictItem( self, CityAssetID.PLANS, plan )
 end
@@ -509,9 +536,11 @@ end
 function City:GetCorpsSalary()
 	local salary = 0
 	Asset_Foreach( self, CityAssetID.CORPS_LIST, function( corps )
-		local corpsSalary = corps:GetSalary()
-		salary = salary + corpsSalary
-		--print( corps:ToString("MILITARY"), "salary=" .. corpsSalary )
+		if corps:IsAtHome() == false then
+			local corpsSalary = corps:GetSalary()
+			salary = salary + corpsSalary
+			--print( corps:ToString("MILITARY"), "salary=" .. corpsSalary )
+		end
 	end )
 	return salary
 end
@@ -1135,6 +1164,55 @@ function City:UpdateConstrList()
 	Asset_SetList( self, CityAssetID.CONSTRTABLE_LIST, constrList )
 end
 
+function City:UpdateSecurity()
+	for typename, param in pairs( CitySecurityData ) do		
+		local type = CitySecurity[typename]
+		local value = Asset_GetDictItem( self, CityAssetID.SECURITY, type )
+		if not value then value = param.def end		
+		if value then			
+			if param.normal then
+				if value > param.normal then value = value - 1 end
+				if value < param.normal then value = value + 1 end
+			end
+			if param.popu_bonus then
+				local popuType = CityPopu[param.popu_bonus.popu]
+				local has = self:GetPopu( popuType )
+				value = math.ceil( has * param.popu_bonus.value )
+				--if value ~= 0 then print( "hel", param.popu_bonus.popu, has, value ) end
+			end
+			if param.popu_need then
+				local popuType = CityPopu[param.popu_need]
+				local req = self:GetReqPopu( popuType )
+				local has = self:GetPopu( popuType )
+				if has < req then value = value - 1 end
+				if has > req then value = value + 1 end
+				--print( param.popu_need, has, req, value )
+			end
+
+			if param.min and param.max then value = MathUtil_Clamp( value, param.min, param.max ) end
+			--if value ~= 0 then InputUtil_Pause( MathUtil_FindName( CitySecurity, type ), value ) end
+			Asset_SetDictItem( self, CityAssetID.SECURITY, type, value )
+		end
+	end
+end
+
+function City:UpdateDiss()
+	for typename, param in pairs( CityDissData ) do
+		local type = CityDiss[typename]
+		local value = Asset_GetDictItem( self, CityAssetID.DISS, type )
+		if not value then value = param.def end
+		if value then
+			if param.normal then
+				if value > param.normal then value = value - 1 end
+				if value < param.normal then value = value + 1 end
+			end
+
+			if param.min and param.max then value = MathUtil_Clamp( value, param.min, param.max ) end
+			Asset_SetDictItem( self, CityAssetID.DISS, type, value )
+		end
+	end
+end
+
 function City:Update()
 	local month = g_Time:GetMonth()
 	local day = g_Time:GetDay()
@@ -1339,3 +1417,5 @@ function City:WatchBudget( reason )
 ]]
 	--if City_IsBudgetSafe( self ) == false then InputUtil_Pause("budget danger") end	
 end
+
+---------------------------------

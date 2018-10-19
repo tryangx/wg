@@ -66,6 +66,10 @@ function Entity_SetConstruction( entity, id, value )
 	return ConstructionTable_Get( value )
 end
 
+function Entity_GetCharaTitle( entity, id, value )
+	return CharaTitleTable_Get( value )
+end
+
 -------------------------------------------
 
 function Entity_ToString( type )

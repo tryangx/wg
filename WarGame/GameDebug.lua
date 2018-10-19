@@ -3,6 +3,12 @@
 --------------------------------------------------
 function Test_CityMoney()	
 	local city = Entity_Get( EntityType.CITY, 3 )
+	--[[
+	InputUtil_Pause( city:ToString("ASSET") )
+	city:SetPopu( CityPopu.RESERVES, 5000 )
+	print( 'add reserve', 1000 )
+	InputUtil_Pause( city:ToString("ASSET") )
+]]
 	--print( "==", city:ToString("DEVELOP") )
 	while Game_IsRunning()  do
 		Game_MainLoop()

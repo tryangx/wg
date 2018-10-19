@@ -33,24 +33,42 @@ To Do List
 [ok] refactor action point( strategy, tactic, )
 
 10/12/18
-
-
 [delete] add solider limitation/requirement, reduce the complex of algorithm about Establish CROPS/TROOP
+
+[ok] refactor Military Economy:
+  Recruit/Conscript/Enroll corps/troop will cost a lot money
+  Maintain corps/troop will cost the same money
+[ok] troop has tireness
+[ok] reputation & influence
+       reputation
+         measure how famous the group is
+         change when finished/unfinished short goal
+         change when made event choice
+       influence
+          measure how strong the group is
+          change when occupied/lose city
+          change when military/economy/tech rank
+          change by leader's ability
 
 ---------------------------------------------------------
 
 [inprog] add chara skills / troop tactics etc
-[inprog] troop medal: kill troop + honor --> medals
-[inprog] reputation system( 1. can inc/dec, 2. affect all things like san5 )
-[inprog] influence system( 1. only increase, 2. dec in event or special situ )
 
-[ok] to solve the situation that A encounter a exist combat with B and C
+[inprog] troop medal
+         increase the maximum of Ability Limitation, likes morale, organization, weapon modification rate, etc.
+         How to get medal: 1. After combat, 2.Total Honor, 3.Limit by Medal & Level, 4.Kill Troop in Combat
+
+[inprog] to solve the situation that A encounter a exist combat with B and C
            1. A is the same group with B or C, attend combat
            2. A is the ally with B or C, attend combat
            3. A is the enemy with B or C, attend combat
            4. retreat
 
-redesign CITY.SECURITY, CITY.SATISFACTION -> CITY.DISS, CITY.SECURITY, leads to rebel
+!!! don't add/remove during foreach
+
+[inprog] Add *Equipment feature into troop, will reduce by time by combat, can refill
+
+[inprog] redesign CITY.SECURITY, CITY.SATISFACTION -> CITY.DISS, CITY.SECURITY, leads to rebel
 
 *intercept can cancel the corps task
 
@@ -73,6 +91,20 @@ disaster
 ------------------------------------------------
 
 [Concept]
+
+Influence & Reputation
+    Influence 
+        Desc: Measure how strong a group is.
+        Grade: World / Continent / Nation / Region / Local / Unknow
+
+    Reputation
+        Desc: Measure how famouse a group is.
+
+    Influence > Reputation * 1.2
+        Affect Diplomacy relation, reduce friendship
+
+    Influence < Reputation * 1.2
+        Affect Character, reduce loyality
 
 Gameplay
     Character

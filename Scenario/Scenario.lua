@@ -37,9 +37,9 @@ ScenarioData =
 	CHARA_GIVENNAME_DATA  = DefaultCharaGivenName,
 
 	--datas
-	CHARA_PROMOTE_DATA    = DefaultJobPromoteData,
-	CHARA_PROMOTE_METHOD  = DefaultCharaPromoteMethod,
-	CHARA_TRAIT_DATA      = DefaultCharaTrait,
+	CHARA_TITLE_DATA         = DefaultCharaTitle,
+	CHARA_CAREER_DATA        = DefaultCharaCareer,
+	CHARA_TRAIT_DATA         = DefaultCharaTrait,
 	CHARA_TRAIT_CONGENIALITY = DefaultCharaTraitCongeniality,
 
 	RELATION_OPINION      = DefaultRelationOpinion,
@@ -72,6 +72,7 @@ ScenarioData =
 	CHARA_SKILL_DATA = DefaultCharaSkill,		
 
 	TROOP_DATA       = DefaultTroopTable,
+	TROOP_MEDAL_DATA = DefaultTroopMedalTable,
 	WEAPON_DATA      = DefaultWeaponTable,
 	CORPS_TEMPLATE   = DefaultCorpsTemplate,
 
@@ -120,13 +121,7 @@ function Scenario_InitData()
 	for id, datas in pairs( CombatStepData ) do
 		CombatStepData[id] = MathUtil_ConvertDataStringToID( CombatStepType, datas )
 	end	
-
-	_Scenario.CHARA_PROMOTE_DATA   = MathUtil_ConvertKeyToID( CharaJob, _Scenario.CHARA_PROMOTE_DATA )
-	_Scenario.CHARA_PROMOTE_METHOD = MathUtil_ConvertKeyToID( CharaJob, _Scenario.CHARA_PROMOTE_METHOD )
-	for id, method in pairs( _Scenario.CHARA_PROMOTE_METHOD ) do
-		_Scenario.CHARA_PROMOTE_METHOD[id] = MathUtil_ConvertDataStringToID( CharaJob, method )
-	end
-
+	
 	--trait key2id
 	_Scenario.CHARA_TRAIT_DATA = MathUtil_ConvertKeyToID( CharaTraitType, _Scenario.CHARA_TRAIT_DATA )
 	_Scenario.CHARA_TRAIT_CONGENIALITY = MathUtil_ConvertKeyToID( CharaTraitType, _Scenario.CHARA_TRAIT_CONGENIALITY )

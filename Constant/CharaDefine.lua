@@ -30,11 +30,12 @@ CharaGrade =
 	PERFECT   = 4,
 }
 
-CharaJob = 
+--[[
+CharaTitle = 
 {
 	NONE              = 0,
 	
-	LOW_RANK_JOB      = 100,	
+	LOW_TITLE         = 100,	
 	OFFICER           = 101,
 	CIVIAL_OFFICIAL   = 102,
 	MILITARY_OFFICER  = 103,
@@ -43,8 +44,8 @@ CharaJob =
 	TRADER            = 130,
 	BUILDER           = 140,
 	MISSIONARY        = 150,
-		
-	HIGH_RANK_JOB     = 200,
+
+	HIGH_TITLE        = 200,
 	ASSISTANT_MINISTER= 201,
 	DIPLOMATIC        = 202,
 	GENERAL           = 210,
@@ -54,7 +55,7 @@ CharaJob =
 	TECHNICIAN        = 240,
 	APOSTLE           = 250,
 		
-	IMPORTANT_JOB     = 300,	
+	IMPORTANT_TITLE   = 300,	
 	PREMIER           = 301,
 	CABINET_MINISTER  = 302,
 	MARSHAL           = 310,
@@ -65,7 +66,7 @@ CharaJob =
 	SCIENTIST         = 340,
 	INQUISITOR        = 350,
 	
-	LEADER_JOB        = 400,
+	LEADER_TITLE      = 400,
 	MAYOR             = 400,
 	EMPEROR           = 401,	--Empire
 	KING              = 402,	--Kindom
@@ -73,6 +74,30 @@ CharaJob =
 	LEADER            = 404,	--Guerrilla
 	CHIEF             = 405,	--Family
 	PRESIDENT         = 406,    --Nation
+}
+]]
+
+CharaTitleGrade =
+{
+	NONE_TITLE     = 0,
+	LOW_TITLE      = 1,
+	HIGH_TITLE     = 2,
+	IMP_TITLE      = 3,
+	ROYAL_TITLE    = 4,
+	SUPREME_TITLE  = 5,
+}
+
+CharaRelation = 
+{
+	FATHER   = 10,
+	MOTHER   = 11,
+	HUSBAND  = 20,
+	WIFE     = 21,
+	SON      = 30,
+	DAUGHTER = 31,
+	FRIEND   = 100,
+	RIVAL    = 101,
+	ENEMY    = 102,
 }
 
 CharaStatus = 
@@ -90,6 +115,9 @@ CharaStatus =
 	OFFICER_EXP       = 102,
 	MILITARY_EXP      = 103,
 	DIPLOMATIC_EXP    = 104,
+
+	--
+	REPUTATION        = 110,
 
 	----------------------------
 	-- Time Status( use to gain new trait )
@@ -127,6 +155,11 @@ CharaSkillEffectCondition =
 
 CharaSkillEffect = 
 {
+	------------------------------------
+	-- 
+
+	------------------------------------
+	--	
 	HIRE_CHARA_BONUS   = 201,
 
 	--increase agriculture development

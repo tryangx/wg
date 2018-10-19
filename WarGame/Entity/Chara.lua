@@ -19,7 +19,8 @@ CharaAssetID =
 	--is historic or fictional
 	ORIGIN          = 106,
 	GROUP           = 110,
-	JOB             = 111,
+	TITLE           = 111,
+	CAREER          = 112,
 	HOME            = 120,
 	LOCATION        = 121,
 	CORPS           = 122,
@@ -60,6 +61,7 @@ CharaAssetID =
 	--relationship	
 	SUBORDINATES    = 400,
 	SUPERIOR        = 401,
+	RELATIONS       = 402,
 }
 
 local function Chara_SetTrait( entity, id, value, key )
@@ -79,7 +81,8 @@ CharaAssetAttrib =
 	gender     = AssetAttrib_SetNumber ( { id = CharaAssetID.GENDER,     type = CharaAssetType.BASE_ATTRIB, enum = CharaGender } ),
 	origin     = AssetAttrib_SetNumber ( { id = CharaAssetID.ORIGIN,     type = CharaAssetType.BASE_ATTRIB, enum = CharaOrigin } ),	
 	group      = AssetAttrib_SetPointer( { id = CharaAssetID.GROUP,      type = CharaAssetType.BASE_ATTRIB, setter = Entity_SetChara } ),
-	job        = AssetAttrib_SetNumber ( { id = CharaAssetID.JOB,        type = CharaAssetType.BASE_ATTRIB, enum = CharaJob, default = CharaJob.NONE } ),
+	title      = AssetAttrib_SetPointer ( { id = CharaAssetID.TITLE,     type = CharaAssetType.BASE_ATTRIB, setter = Entity_GetCharaTitle } ),
+	career     = AssetAttrib_SetNumber ( { id = CharaAssetID.CAREER,     type = CharaAssetType.BASE_ATTRIB, } ),
 	home       = AssetAttrib_SetPointer( { id = CharaAssetID.HOME,       type = CharaAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
 	location   = AssetAttrib_SetPointer( { id = CharaAssetID.LOCATION,   type = CharaAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
 	corps      = AssetAttrib_SetPointer( { id = CharaAssetID.CORPS,      type = CharaAssetType.BASE_ATTRIB, setter = Entity_SetCorps } ),
@@ -111,6 +114,7 @@ CharaAssetAttrib =
 
 	superior     = AssetAttrib_SetPointer    ( { id = CharaAssetID.SUPERIOR,     type = CharaAssetType.RELATION_ATTRIB } ),
 	subdordinate = AssetAttrib_SetPointerList( { id = CharaAssetID.SUBORDINATES, type = CharaAssetType.RELATION_ATTRIB } ),
+	relationship = AssetAttrib_SetPointerList( { id = CharaAssetID.RELATIONS,    type = CharaAssetType.RELATION_ATTRIB } ),
 }
 
 
@@ -129,7 +133,6 @@ function Chara:Load( data )
 
 	Asset_Set( self, CharaAssetID.BIRTH,     data.birth )
 	Asset_Set( self, CharaAssetID.AGE,       g_Time:CalcDiffYear( data.birth, data.birth < 0 and true or false ) )
-	Asset_Set( self, CharaAssetID.JOB,       CharaJob[data.job] )
 	Asset_Set( self, CharaAssetID.GENDER,    data.gender )
 	Asset_Set( self, CharaAssetID.LIFE,      data.life )
 	Asset_Set( self, CharaAssetID.ORIGIN,    data.origin )
@@ -159,6 +162,7 @@ function Chara:Load( data )
 	Asset_Set( self, CharaAssetID.LEVEL, data.level or 1 )
 	Asset_CopyList( self, CharaAssetID.SKILLS, data.skills )
 	Asset_CopyDict( self, CharaAssetID.TRAITS, data.traits )
+	Asset_CopyDict( self, CharaAssetID.RELATIONS, data.relations )
 
 	--FOR TEST
 	if data.politics[2] + data.strategy[2] + data.tactic[2] <= 0 then
@@ -173,10 +177,9 @@ function Chara:VerifyData()
 		Asset_Set( self, CharaAssetID.LOCATION, Asset_Get( self, CharaAssetID.HOME ) )
 	end
 
-	--default job is officer
-	local job = Asset_Get( self, CharaAssetID.JOB )
-	if not job or job == CharaJob.NONE then
-		Asset_Set( self, CharaAssetID.JOB, CharaJob.OFFICER )
+	--check position
+	if not Asset_Get( self, CharaAssetID.LOCATION ) and Asset_Get( self, CharaAssetID.GROUP ) then
+		DBG_Error( self.name, "no place to stay" )
 	end
 end
 
@@ -189,6 +192,15 @@ function Chara:ToString( type )
 
 	if type == "GROWTH" or type == "ALL" then
 		content = content .. " lv=" .. Asset_Get( self, CharaAssetID.LEVEL )
+	end
+
+	if type == "TITLE" or type == "ALL" then
+		local title = Asset_Get( self, CharaAssetID.TITLE )
+		content = content .. " til=" .. ( title and title.name or "" )
+		content = content .. " cot=" .. Asset_Get( self, CharaAssetID.CONTRIBUTION )
+	end
+
+	if type == "ALL" then
 	end
 
 	if type == "TASK" or type == "ALL" then
@@ -214,7 +226,6 @@ function Chara:ToString( type )
 	if type == "JOB" or type == "ALL" then
 		local home = Asset_Get( self, CharaAssetID.HOME )
 		content = content .. " job=" .. ( home and MathUtil_FindName( CityJob, home:GetCharaJob( self ) ) or "" )
-		content = content .. " cot=" .. Asset_Get( self, CharaAssetID.CONTRIBUTION )
 		content = content .. " txp=" .. ( self:GetStatus( CharaStatus.TOTAL_EXP ) or 0 )
 		content = content .. " mxp=" .. ( self:GetStatus( CharaStatus.MILITARY_EXP ) or 0 )
 		content = content .. " oop=" .. ( self:GetStatus( CharaStatus.OFFICER_EXP ) or 0 )
@@ -397,6 +408,18 @@ end
 
 -------------------------------------------
 
+--check wheter red has relation-type with b
+--@usage Chara_HasRelation( father, son, CharaRelation.FATHER )
+function Chara:HasRelation( target, relationType )
+	return Asset_FindItem( self, CharaAssetID.RELATIONS, function ( data )
+		if data.relation == relationType and data.chara == target.id then			
+			return true
+		end
+	end )
+end
+
+-------------------------------------------
+
 function Chara:Update()	
 	--update statuses
 	Asset_Foreach( self, CharaAssetID.STATUSES, function( value, status )
@@ -532,5 +555,18 @@ end
 function Chara:UpdateAP( elapsed )	
 	for _, type in pairs( CharaActionPoint ) do
 		self:GainAP( type, elapsed * self:GetAPBonus( type ) )
+	end
+end
+
+function Chara:PromoteTitle( title )
+	Asset_Set( self, CharaAssetID.TITLE, title )
+
+	Stat_Add( "Promote@" .. self.name, title.name, StatType.LIST )
+end
+
+function Chara:Captured()
+	local corps = Asset_Get( self, CharaAssetID.CORPS )
+	if corps then
+		corps:LoseOfficer( self )
 	end
 end

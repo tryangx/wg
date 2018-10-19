@@ -2,18 +2,21 @@
 --------------------------------------------------------
 -- Relation
 
+
 DefaultRelationOpinion =
 {
-	TRUST      = { increment = -1,  def = 500,   min = -500,   max = 1000, time = -1 },
+	TRUST      = { increment = -1,  def = 500,   min = -500,  max = 1000,  duration = -1 },
+	REPUTATION = { increment = 0,   def = 0,   min = -1000,   max = 1000,  duration = -1 },
+	INFLUENCE  = { increment = 0,   def = 0,   min = -1000,   max = 1000,  duration = -1 },
 
-	WAS_AT_WAR = { increment = 1,   def = -400,  min = -1000,  max = 0,    time = 1800 },
-	AT_WAR     = { increment = 1,   def = -300,  min = -1000,  max = 0,    time = -1 },
-	OLD_ENEMY  = { increment = 1,   def = -500,  min = -500,   max = 0,    time = 3600 },
+	WAS_AT_WAR = { increment = 1,   def = -400,  min = -1000,  max = 0,    duration = 1800 },
+	AT_WAR     = { increment = 1,   def = -300,  min = -1000,  max = 0,    duration = -1 },
+	OLD_ENEMY  = { increment = 1,   def = -500,  min = -500,   max = 0,    duration = 3600 },
 
-	NO_WAR     = { increment = -1,  def = 0,     min = 0,      max = 500,  time = 1 },
-	TRADE      = { increment = -1,  def = 0,     min = 200,    max = 500,  time = 1 },	
-	PROTECT    = { increment = -1,  def = 0,     min = 300,    max = 500,  time = 1 },	
-	ALLY       = { increment = -1,  def = 0,     min = 600,    max = 1000, time = 1 },	
+	NO_WAR     = { increment = -1,  def = 0,     min = 0,      max = 500,  duration = 1 },
+	TRADE      = { increment = -1,  def = 0,     min = 200,    max = 500,  duration = 1 },	
+	PROTECT    = { increment = -1,  def = 0,     min = 300,    max = 500,  duration = 1 },	
+	ALLY       = { increment = -1,  def = 0,     min = 600,    max = 1000, duration = 1 },	
 }
 
 

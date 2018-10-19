@@ -145,7 +145,7 @@ local function SubmitProposal( params )
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.COMMANDER_TASK )
 
 	elseif params.type == "PROMOTE_CHARA" then
-		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "job", _registers["JOB"] )
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "title", _registers["TITLE"] )
 	
 	elseif params.type == "HIRE_CHARA" then
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.HR_TASK )
@@ -217,6 +217,10 @@ local function SubmitProposal( params )
 
 	elseif params.type == "INSTRUCT_CITY" then
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "instructCityList", _registers["INSTRUCT_CITY_LIST"] )		
+
+	elseif params.type == "IMPROVE_GRADE" then
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "grade", _registers["grade"] )	
+		InputUtil_Pause("improve grade")
 
 	elseif params.type == "TRAIN_CORPS" then
 
@@ -422,13 +426,15 @@ local function CanEstablishCorps()
 		Debug_Log( _city.name, "EstCorpsFailed! corps limit, cann't est corps", _city.name, hasCorpsInCity .. "/" .. limitCorpsInCity )
 		return false
 	end
+
+	--[[
 	local hasCorpsInGroup = Asset_GetListSize( _group, GroupAssetID.CORPS_LIST )
 	local limitCorpsInGroup = Corps_GetLimitByGroup( _group )
-
 	if hasCorpsInGroup > limitCorpsInGroup then
 		Debug_Log( _city.name, "EstCorpsFailed! corps limit, cann't est corps", _city.name, hasCorpsInGroup .. "/" .. limitCorpsInGroup )
 		return false
 	end
+	]]
 
 	--need a leader
 	local charaList = _city:FindFreeCharas( function ( chara )
@@ -517,9 +523,8 @@ local function CanEnrollCorps()
 		if corps:IsAtHome() == false then return false end
 		--print( corps:ToString("STATUS"), Asset_GetListSize( corps, CorpsAssetID.TROOP_LIST ) )
 		if corps:IsBusy() == true then return false end
-		--print( "check corps", Asset_GetListSize( corps, CorpsAssetID.TROOP_LIST ), Scenario_GetData( "CORPS_PARAMS" ).REQ_TROOP_NUMBER )
-		if Asset_GetListSize( corps, CorpsAssetID.TROOP_LIST ) < Scenario_GetData( "CORPS_PARAMS" ).REQ_TROOP_NUMBER then
-			findCorps = corps
+		if Asset_GetListSize( corps, CorpsAssetID.TROOP_LIST ) < Corps_GetTroopNumber( corps ) then
+			--print( corps:ToString(), "need enroll", Corps_GetTroopNumber( corps ) )
 			return true
 		end
 	end)
@@ -1247,12 +1252,12 @@ local function CanHireChara()
 	end
 	return true
 end
-local function CanPromoteChara()
-	local job = Chara_FindPromoteJob( _proposer )
-	if job then
-		_registers["JOB"]   = job
+local function CanPromoteChara()	
+	local title = Chara_FindNewTitle( _proposer )
+	if title then
+		_registers["TITLE"] = title
 		_registers["ACTOR"] = _proposer
-		--InputUtil_Pause( "promote=" .. MathUtil_FindName( CharaJob, job ) )
+		--print( "promote=" .. title.name, _proposer:ToString("TITLE") )
 		return true
 	end
 	return false
@@ -1815,6 +1820,18 @@ end
 
 ------------------------------
 
+local function CanImproveGroupGrade()
+	local grade = Asset_Get( _group, GroupAssetID.GRADE )
+	local fitGrade = Group_FindFitGrade( _group )
+	if grade >= fitGrade then return false end
+
+	_registers["GRADE"] = fitGrade
+
+	return true
+end
+
+------------------------------
+
 local function DetermineGoal()
 	local goals = {}
 	local totalProb = 0
@@ -2275,14 +2292,13 @@ local _SubmitHRProposal =
 						{ type = "ACTION", action = SubmitProposal, params = { type = "HIRE_CHARA" } },
 					},
 				},
-				--[[
 				{ type = "SEQUENCE", children = 
 					{
+						{ type = "FILTER", condition = CheckProposer, params = { type = "PROMOTE_CHARA" } },
 						{ type = "FILTER", condition = CanPromoteChara },
 						{ type = "ACTION", action = SubmitProposal, params = { type = "PROMOTE_CHARA" } },
 					},
 				},
-				]]
 					--ENCOURGAE CHARA
 					--SUPERVISE CHARA
 			}
@@ -2384,8 +2400,8 @@ local _SubmitCommanderProposal =
 			{
 				--self security
 				LeadCorpsProposal,
-				ReinforceProposal,				
 				EnrollProposal,
+				ReinforceProposal,				
 				DispatchCorpsProposal,
 				EstablishCorpsProposal,
 				--ConscriptProposal,
@@ -2639,6 +2655,19 @@ local _InstructProposal =
 	},
 }
 
+local _GroupGradePropsal = 
+{
+	type = "SEQUENCE", children = 
+	{
+		{ type = "FILTER", condition = CheckProposer, params = { type = "IMPROVE_GRADE" } },
+		{ type = "FILTER", condition = IsCityCapital },
+		{ type = "FILTER", condition = IsGroupLeader },
+		{ type = "FILTER", condition = IsTopic, params = { topic = "CAPITAL" } },
+		{ type = "FILTER", condition = CanImproveGroupGrade },	
+		{ type = "ACTION", action = SubmitProposal, params = { type = "IMPROVE_GRADE" } },
+	},	
+}
+
 local _CapitalProposal =
 {
 	type = "SEQUENCE", children = 
@@ -2646,6 +2675,7 @@ local _CapitalProposal =
 		{ type = "FILTER", condition = IsTopic, params = { topic = "CAPITAL" } },
 		{ type = "FILTER", condition = CheckDate, params = { day="1" } },
 		_InstructProposal,
+		_GroupGradePropsal,
 	}
 }
 

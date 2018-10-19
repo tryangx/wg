@@ -67,6 +67,23 @@ CHUHAN_CharaData =
 		strategy    = { 0, 10, 1000 },
 		tactic      = { 0, 10, 1000 },
 		traits      = { OPEN = 80, GENEROUS = 80, FRIENDSHIP = 80, CONFIDENCE = 80, CAREFUL = 60, GREED = 80, VOLUBLE = 80, },
+		relations   = { { relation = 30, chara = 110, }, },
+	},
+	[110] = 
+	{
+		name = "Liu Fei",
+		birth       = 150,
+		ability     = 60,
+		potential   = 85,
+		grade       = "BEST",
+		purpose     = 0,
+		job         = "LEADER",
+		skills      = {},
+		politics    = { 0, 10, 1000 },
+		strategy    = { 0, 10, 1000 },
+		tactic      = { 0, 10, 1000 },
+		traits      = { OPEN = 80, GENEROUS = 80, FRIENDSHIP = 80, CONFIDENCE = 80, CAREFUL = 60, GREED = 80, VOLUBLE = 80, },
+		relations   = { { relation = 10, chara = 100, }, },
 	},
 	[101] = 
 	{
@@ -234,7 +251,7 @@ CHUHAN_CityData =
 		--adjacents = { 1, 4, 6 },
 		adjacents = { 4 },
 		level = 12,		
-		charas = { 100, 101, 102, 103, 104 },
+		charas = { 100, 101, 102, 103, 104, 110 },
 
 		defenses = { 15000, 10000, 15000 },
 		constrs  = { 4000, },
@@ -296,7 +313,7 @@ CHUHAN_GroupData =
 		leader = 100,
 		capital = 3,
 		cities = { 3 },
-		charas = { 100, 101, 102, 103, 104 },
+		charas = { 110, 100, 101, 102, 103, 104 },
 		troops = {},
 		corps = {},
 		relations = {  },

@@ -92,6 +92,19 @@ TroopStatus =
 	TRAINING   = 102,
 }
 
+TroopMedalEffect = 
+{
+	MORALE_BONUS       = 1,
+
+	ORGANIZATION_BONUS = 2,
+
+	DAMAGE_RATE        = 10,
+	HIT_RATE           = 11,
+
+	KINECT_BONUS       = 20,
+	PIERCE_BONUS       = 21,
+}
+
 TroopCombatData = 
 {
 	SIDE       = 10,
@@ -145,6 +158,7 @@ CorpsStatus =
 
 	DEPATURE_TIME = 12,
 
+	--Measure how many the current soldier is understaffed from maximum number
 	UNDERSTAFFED  = 100,
 }
 
@@ -310,7 +324,7 @@ CombatStatistic =
 
 	--troop / side statistic, 
 	_ACCUMULATE_TYPE= 10, --SEPERATOR
-	KILL            = 11,
+	KILL            = 11,		
 	GAIN_VP         = 12,
 	VP_RATIO        = 13,
 	ATTACK          = 14,
@@ -321,6 +335,7 @@ CombatStatistic =
 	BACKWARD        = 19,
 	PASS            = 20,
 	DEAD            = 21,
+	NEUTRALIZE_ENEMY= 22,
 
 	REST_DAY        = 30,
 	STORM_DAY       = 31,

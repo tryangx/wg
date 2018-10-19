@@ -270,10 +270,11 @@ end
 
 function Asset_SetList( entity, id, list )
 	if not id then error( "id invalid" ) end
-	if typeof( entity ) == "number" then		
+	--checker
+	if typeof( entity ) == "number" then
 		error( "entity invalid" )
 		return false
-	end
+	end		
 	entity[id] = list
 end
 

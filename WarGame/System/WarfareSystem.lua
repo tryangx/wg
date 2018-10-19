@@ -4,6 +4,10 @@ function Warfare_GetComat( plot )
 	return combat
 end
 
+function Warfare_BonusTroop( troop )
+
+end
+
 --atk can be invalid
 --def can be invalid
 function Warefare_FieldCombatOccur( plot, atk, def )
@@ -219,7 +223,6 @@ function Warfare_UpdateCombat( combat )
 				--InputUtil_Pause( "occupy", city:ToString(), group:ToString() )
 				Stat_Add( "City@Occupy", city:ToString() .. " occupied by " .. ( group and group:ToString() or "" ) .. " " .. g_Time:CreateCurrentDateDesc(), StatType.LIST )
 				Debug_Log( city:ToString() .. " occupied by " .. ( group and group:ToString() or "" ), g_Time:CreateCurrentDateDesc() )
-				print( city.name, "occupied")
 				group:OccupyCity( city )
 			end
 			
@@ -229,7 +232,7 @@ function Warfare_UpdateCombat( combat )
 				if Asset_Get( corps, CorpsAssetID.GROUP ) ~= group then
 					error( "why corps is here" )
 				end
-				print( corps:ToString("BRIEF"), city:ToString("BRIEF") )
+				--print( "garrision", corps:ToString(""), city:ToString("") )
 				Corps_Join( corps, city, true )
 			end
 
@@ -270,6 +273,38 @@ function Warfare_UpdateCombat( combat )
 		end
 	end )
 
+	function GrantMedal( troop )
+		local medal = TroopMedalTable_Find( function ( medal )
+			local existMedal = Asset_GetDictItem( troop, TroopAssetID.MEDALS, medal.id )
+			if existMedal then
+				--InputUtil_Pause( troop:ToString(), "has medal=" .. medal.name )
+				return
+			end
+			local valid = true
+			for _, cond in pairs( medal.prerequsite ) do
+				valid = true
+				--if valid == true and cond.combat and CombatType[cond.combat] ~= Asset_Get( combat, CombatAssetID.TYPE ) then valid = false end
+				if valid == true then break end
+			end			
+			return valid
+		end )
+		if medal then
+			troop:GrantMedal( medal )
+			--local existMedal = Asset_GetDictItem( troop, TroopAssetID.MEDALS, medal.id )
+			--print( troop:ToString(), "grant medal=" .. medal.name, existMedal )
+		end
+	end
+
+	--check medals
+	local listid = winner == CombatSide.ATTACKER and CombatAssetID.ATK_CORPS_LIST or CombatAssetID.DEF_CORPS_LIST
+	Asset_Foreach( combat, listid, function ( corps )
+		Asset_Foreach( corps, CorpsAssetID.TROOP_LIST, function ( troop )
+			--medal number is less than level / 5
+			--if Asset_GetDictSize( troop, TroopAssetID.MEDALS ) >= Asset_Get( troop, TroopAssetID.LEVEL ) * 0.5 then return end
+			GrantMedal( troop )
+		end)
+	end )
+
 	Stat_Add( "Combat@Result", combat:ToString( "RESULT" ), StatType.LIST )
 	Stat_Add( MathUtil_FindName( CombatType, type ) .. "@WIN=" .. MathUtil_FindName( CombatSide, winner ), 1, StatType.TIMES )
 	--Stat_Add( "Combat@Winner", combat:ToString() .. " winner=" .. combat:GetGroupName( winner ), StatType.LIST )
@@ -291,6 +326,7 @@ function Warfare_UpdateCombat( combat )
 	Asset_Foreach( combat, CombatAssetID.CORPS_LIST, function ( corps )
 		if corps:GetSoldier() == 0 then
 			Corps_Dismiss( corps, true )
+			print( "dismiss", corps:ToString() )
 			Stat_Add( "Corps@Vanished", corps:ToString( "SIMPLE"), StatType.LIST )
 		else
 			Corps_AfterCombat( corps )
@@ -347,6 +383,7 @@ local function Warfare_OnCombatRemove( msg )
 		if not corps:GetTask() then
 			--resume the move manually
 			if Move_IsMoving( corps ) then
+				Entity_ToString( EntityType.MOVE )
 				DBG_Error( "why is moving", corps:ToString("STATUS") )
 			end
 		end

@@ -16,6 +16,7 @@ ProposalType =
 {
 	SET_GOAL        = 10,
 	INSTRUCT_CITY   = 11,
+	IMPROVE_GRADE   = 12,
 
 	-----------------------
 

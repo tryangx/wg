@@ -186,6 +186,9 @@ function Chara_Die( chara )
 		Debug_Log( chara.name .. "die, no group" )
 	end
 
+	--Remove moving
+	Move_Stop( chara )
+
 	Debug_Log( chara:ToString(), "died" )
 
 	Stat_Add( "Chara@Die", chara:ToString(), StatType.LIST )
@@ -237,9 +240,6 @@ function Chara_Serve( chara, group, city )
 		--set home & location
 		chara:JoinCity( city, true )
 
-		--set job
-		Asset_Set( chara, CharaAssetID.JOB, CharaJob.OFFICER )
-
 		--[[
 		--to set relation		
 		local executive = Asset_GetDictItem( , CityAssetID.OFFICER_LIST, CityJob.EXECUTIVE )
@@ -259,11 +259,51 @@ end
 -------------------------------
 -- Promote relative
 
-function Chara_Promote( chara, job )
-	Asset_Set( chara, CharaAssetID.JOB, job )
-	DBG_Warning( "chara_promote", chara.name .. " promote " .. MathUtil_FindName( CharaJob, job ), job )
+function Chara_FindNewTitle( chara )
+	local group = Asset_Get( chara, CharaAssetID.GROUP )
+	local leader = group and Asset_Get( group, GroupAssetID.LEADER ) or nil
+	local capital = Asset_Get( group, GroupAssetID.CAPITAL )
+
+	function CheckConditions( chara, title )		
+		local valid = true
+		for _, cond in pairs( title.prerequisite ) do
+			if valid == true and cond.contribution and cond.contribution > Asset_Get( chara, CharaAssetID.CONTRIBUTION ) then valid = false end
+			if valid == true and cond.limit and group:HasTitle( title.id ) then valid = false end
+			if valid == true and cond.leader and leader ~= chara then valid = false end
+			if valid == true and cond.capital and not capital then valid = false end
+			--print( valid, cond.heir, leader:HasRelation( chara, CharaRelation.SON ), leader:HasRelation( chara, CharaRelation.DAUGHTER ) )
+			if valid == true and cond.heir and not leader:HasRelation( chara, CharaRelation.SON ) and not leader:HasRelation( chara, CharaRelation.DAUGHTER ) then valid = false end
+			if valid == false then break end
+		end
+		--InputUtil_Pause( chara.name, title.name, valid )
+		return valid
+	end
+
+	local currentTitle = Asset_Get( chara, CharaAssetID.TITLE )
+	--print( chara.name, "current", currentTitle and currentTitle.name or "" )
+	local list = {}
+	local datas = Scenario_GetData( "CHARA_TITLE_DATA" )
+	for _, title in pairs( datas ) do
+		if currentTitle == title then
+		elseif not currentTitle 
+			or currentTitle.grade < title.grade 
+			or ( currentTitle.grade == title.grade and currentTitle.priority and currentTitle.priority <= title.priority ) then
+			if CheckConditions( chara, title ) then
+				--print( "clear list", title.name )
+				currentTitle = title
+				list = { title }
+			end
+		end
+	end
+	
+	if #list == 0 then return end
+
+	currentTitle = Random_GetListItem( list )
+	Debug_Log( "settitle", chara.name, currentTitle and currentTitle.name or "" )
+	return currentTitle
 end
 
+--[[
 function Chara_FindPromoteJob( chara )
 	--print( chara.name, "job=" .. MathUtil_FindName( CharaJob, Asset_Get( chara, CharaAssetID.JOB ) ) )
 	local datas = Scenario_GetData( "CHARA_PROMOTE_DATA" )
@@ -305,6 +345,7 @@ function Chara_FindPromoteJob( chara )
 	if num == 0 then return nil end
 	return jobs[Random_GetInt_Sync( 1, num )]
 end
+]]
 
 -----------------------------------------------------
 
@@ -445,6 +486,11 @@ function Chara_ResetLoyality( chara )
 	--update tunable loyality
 	Chara_UpdateLoyality( chara )
 end
+
+-----------------------------------------------------
+
+-----------------------------------------------------
+
 
 -----------------------------------------------------
 

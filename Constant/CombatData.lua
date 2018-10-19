@@ -1,10 +1,28 @@
---------------------------------------------
-
 DefaultCorpsParams = 
 {
-	MAX_TROOP_NUMBER = 20,
-	REQ_TROOP_NUMBER = 8,
+	SOLDIER_NUMBER = 
+	{
+		MIN_NUMBER = 500,
+		TITLE_GRADE_BONUS = { [1] = 100, [2] = 200, [3] = 300, [4] = 400, [5] = 500 },
+		INFLUENCE_GRADE_BONUS = { [1] = 0, [2] = 200, [3] = 400, [4] = 600, [5] = 900 },
+	},
+
+	TROOP_NUMBER = 
+	{
+		MIN_NUMBER = 4,
+		TITLE_GRADE_BONUS     = { [1] = 1, [2] = 1, [3] = 2, [4] = 2, [5] = 3 },
+		INFLUENCE_GRADE_BONUS = { [1] = 1, [2] = 1, [3] = 2, [4] = 2, [5] = 3 },
+	},
+
+	CORPS_NUMBER = 
+	{
+		MIN_NUMBER         = 1,
+		CAIPTAL_BONUS      = 1,
+		CONSTRUCTION_BONUS = 1,
+	},
 }
+
+--------------------------------------------
 
 DefaultTroopParams = 
 {
@@ -16,25 +34,12 @@ DefaultTroopParams =
 	TRANSPORT_ID      = 20,
 	------------------------------
 
-	INIT_POTENTIAL    = 10,
-
 	MIN_TROOP_SOLDIER = 100,
 
 	TROOP_POTENTIAL   = 20,
 
 	TROOP_LEVELUP_EXP = 100,
-
-	TROOP_MAX_NUMBER = 
-	{
-		[0] = 200,
-		[1] = 500,
-		[2] = 1000,
-		[3] = 2000,
-		[4] = 4000,
-	}
 }
-
---------------------------------------------
 
 DefaultTroopTable = 
 {
@@ -217,6 +222,20 @@ DefaultTroopSkill =
 	},
 }
 
+DefaultTroopMedalTable = 
+{
+	{
+		id = 1, name = "BRAVERY", 
+		prerequsite = { { combat = "FIELD_COMBAT" } },
+		effects = { MORALE_BONUS = 10 }
+	},
+	{
+		id = 2, name = "TOUGHNESS",
+		prerequsite = { { combat = "SIEGE_COMBAT" } },
+		effects = { ORGANIZATION_BONUS = 10 }
+	},
+}
+
 DefaultCorpsTemplate = 
 {
 	--[[
@@ -271,15 +290,16 @@ DefaultCorpsTemplate =
 --sharpness: affect PIERCE damage, against ARMOR
 DefaultWeaponTable = 
 {
-	[10] = { name = "fork",      level = 1, weight = 60,  sharpness = 60,  range = "CLOSE",   ballistic = "NONE", attributes = {} },
-	[20] = { name = "sword",     level = 1, weight = 100, sharpness = 100, range = "CLOSE",   ballistic = "NONE", attributes = {} },
-	[30] = { name = "spear",     level = 1, weight = 150, sharpness = 120, range = "LONG",    ballistic = "NONE", attributes = {} },
-	[31] = { name = "lance",     level = 1, weight = 250, sharpness = 150, range = "LONG",    ballistic = "NONE", attributes = {} },
-	[40] = { name = "bow",       level = 1, weight = 50,  sharpness = 80,  range = "MISSILE", ballistic = "PROJECTTILE", attributes = {} },	
-	[41] = { name = "slingshot", level = 1, weight = 120, sharpness = 40,  range = "MISSILE", ballistic = "FLAT_FIRE", attributes = {} },
-	[42] = { name = "crossbow",  level = 1, weight = 80,  sharpness = 150, range = "MISSILE", ballistic = "FLAT_FIRE", attributes = {} },
-	[50] = { name = "stone",     level = 1, weight = 1000, sharpness = 100, range = "MISSILE", ballistic = "PROJECTTILE", attributes = {} },
-	[51] = { name = "ram",       level = 1, weight = 1000, sharpness = 100, range = "CLOSE",   ballistic = "NONE", attributes = {} },
+	[1]  = { name = "fist",      level = 1, weight = 10,  sharpness = 5,    material = 0,   range = "CLOSE",   ballistic = "NONE", attributes = {} },
+	[10] = { name = "fork",      level = 1, weight = 60,  sharpness = 60,   material = 100, range = "CLOSE",   ballistic = "NONE", attributes = {} },
+	[20] = { name = "sword",     level = 1, weight = 100, sharpness = 100,  material = 100, range = "CLOSE",   ballistic = "NONE", attributes = {} },
+	[30] = { name = "spear",     level = 1, weight = 150, sharpness = 120,  material = 100, range = "LONG",    ballistic = "NONE", attributes = {} },
+	[31] = { name = "lance",     level = 1, weight = 250, sharpness = 150,  material = 100, range = "LONG",    ballistic = "NONE", attributes = {} },
+	[40] = { name = "bow",       level = 1, weight = 50,  sharpness = 80,   material = 100, range = "MISSILE", ballistic = "PROJECTTILE", attributes = {} },	
+	[41] = { name = "slingshot", level = 1, weight = 120, sharpness = 40,   material = 100, range = "MISSILE", ballistic = "FLAT_FIRE", attributes = {} },
+	[42] = { name = "crossbow",  level = 1, weight = 80,  sharpness = 150,  material = 100, range = "MISSILE", ballistic = "FLAT_FIRE", attributes = {} },
+	[50] = { name = "stone",     level = 1, weight = 1000, sharpness = 100, material = 100, range = "MISSILE", ballistic = "PROJECTTILE", attributes = {} },
+	[51] = { name = "ram",       level = 1, weight = 1000, sharpness = 100, material = 100, range = "CLOSE",   ballistic = "NONE", attributes = {} },
 }
 
 --[[
@@ -539,6 +559,7 @@ CombatPurposeParam =
 		},
 		WITHDRAW = 
 		{
+			{ reason = "protect_capital", is_capital = 1, score = -100 },
 			{ reason = "wd_hascombat", ctimes_above = 1, prerequsite = 1 },
 			{ reason = "wd_combatday", days_above = 30, prerequsite = 1 },
 			{ reason = "wd_casualty1", casualty_above = 10, score = 15 },
@@ -584,6 +605,7 @@ CombatPurposeParam =
 		},
 		WITHDRAW = 
 		{
+			{ reason = "protect_capital", is_capital = 1, score = -150 },
 			{ reason = "wd_hascombat", ctimes_above = 2, prerequsite = 1 },
 			{ reason = "wd_combatday", days_above = 45, prerequsite = 1 },
 			{ reason = "wd_casualty1", casualty_above = 10, score = 10 },
@@ -629,6 +651,7 @@ CombatPurposeParam =
 		},
 		WITHDRAW = 
 		{
+			{ reason = "protect_capital", is_capital = 1, score = -200 },
 			{ reason = "wd_hascombat", ctimes_above = 3, prerequsite = 1 },
 			{ reason = "wd_combatday", days_above = 90, prerequsite = 1 },
 			{ reason = "wd_casualty1", casualty_above = 10, score = 10 },

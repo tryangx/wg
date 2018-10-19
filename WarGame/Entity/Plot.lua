@@ -10,12 +10,14 @@ PlotAssetID =
 	X               = 101,
 	Y               = 102,
 	TEMPLATE        = 103,
+	PROVINCE        = 104,
+	CONTINENT       = 105,
 
 	CITY            = 201,
 	RESOURCE        = 202,
 	DISTRICT        = 203,
 	POPULATION      = 204,
-	ROAD            = 205,	
+	ROAD            = 205,
 
 	AGRICULTURE     = 302,
 	COMMERCE        = 303,
@@ -46,6 +48,8 @@ PlotAssetAttrib =
 	x = AssetAttrib_SetNumber ( { id = PlotAssetID.X,           type = PlotAssetType.BASE_ATTRIB, min = 1, max = 4000 } ),
 	y = AssetAttrib_SetNumber ( { id = PlotAssetID.Y,           type = PlotAssetType.BASE_ATTRIB, min = 1, max = 4000 } ),
 	template = AssetAttrib_SetPointer( { id = PlotAssetID.TEMPLATE,    type = PlotAssetType.BASE_ATTRIB, setter = SetPlotTemplate } ),
+	province = AssetAttrib_SetPointer( { id = PlotAssetID.PROVINCE,    type = PlotAssetType.BASE_ATTRIB } ),
+	continent = AssetAttrib_SetPointer( { id = PlotAssetID.CONTINENT,  type = PlotAssetType.BASE_ATTRIB } ),
 
 	city       = AssetAttrib_SetPointer( { id = PlotAssetID.CITY,        type = PlotAssetType.PROPERTY_ATTRIB, setter = SetPlotCity } ),
 	resource   = AssetAttrib_SetPointer( { id = PlotAssetID.RESOURCE,    type = PlotAssetType.PROPERTY_ATTRIB, setter = SetPlotResource } ),

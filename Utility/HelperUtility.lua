@@ -292,3 +292,24 @@ function HelperUtil_RemoveDataSafety( list, data )
 	MathUtil_Remove( list, data )
 	return true
 end
+
+-----------------------------------------------
+
+--when travel in any list/dict, we may want to remove it, but it's very danger,
+--so we can call below functions manually to to di.
+local _removalList = {}
+
+function HelperUtil_AddToRemoval( data, list )
+	if not list then list = _removalList end
+	table.insert( list, data )
+end
+
+function HelperUtil_DoRemove( fn, list )
+	if not list then list = _removalList end
+	for _, data in ipairs( list ) do
+		fn( data )
+	end
+	list = {}
+end
+
+-----------------------------------------------

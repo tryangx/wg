@@ -33,7 +33,10 @@ function City_GetNextJob( city )
 end
 
 function City_GetPopuParams( city )
-	local params = Scenario_GetData( "CITY_POPUSTRUCTURE_PARAMS" )[1]
+	local params
+	if not city or true then
+		params = Scenario_GetData( "CITY_POPUSTRUCTURE_PARAMS" )[1]
+	end
 	if not params.POPU_NEED_RATIO.req_total or not params.POPU_NEED_RATIO.limit_total then
 		local req_total = 0
 		local limit_total = 0
@@ -320,8 +323,8 @@ function City_InitPopuStructure( city )
 end
 
 function City_PopuConv( city )
-	local security = Asset_Get( city, CityAssetID.SECURITY )
-	local DISS = Asset_Get( city, CityAssetID.DISS )
+	local security = city:GetSecurity()
+	local diss     = city:GetDiss()
 
 	local lv       = Asset_Get( city, CityAssetID.LEVEL )	
 	local list     = Asset_GetList( city, CityAssetID.POPU_STRUCTURE )
@@ -388,7 +391,7 @@ function City_PopuConv( city )
 		end
 	end
 
-	Asset_Set( city, CityAssetID.SECURITY, security + security_delta )
+	--Asset_Set( city, CityAssetID.SECURITY, security + security_delta )	
 	
 	for k, v  in pairs( CityPopu ) do
 		Track_Data( k, list[v] )
@@ -411,13 +414,13 @@ function City_Mental( city )
 	local maxparams  = popustparams.POPU_MENTAL_MAX
 	local minparams  = popustparams.POPU_MENTAL_MIN
 
-	local security = Asset_Get( city, CityAssetID.SECURITY )	
+	local security   = city:GetSecurity()
 	local soldiersec = math.min( soldier * mentalparams.SOLDIER / popu, maxparams.SOLDIER )
 	local officersec = math.min( officer * mentalparams.OFFICER / popu, maxparams.OFFICER )
 	local hobosec    = math.max( hobo * mentalparams.HOBO / popu, minparams.HOBO )	
 	local security_std = math.max( 50, math.ceil( 60 + soldiersec + officersec + hobosec ) )
 	
-	local DISS = Asset_Get( city, CityAssetID.DISS )
+	local diss     = city:GetDiss()
 	local richsat  = math.min( rich * mentalparams.RICH / popu, maxparams.RICH )
 	local noblesat = math.min( noble * mentalparams.NOBLE / popu, maxparams.NOBLE )
 	local midsat   = math.min( middle * mentalparams.MIDDLE / popu, maxparams.MIDDLE )
@@ -445,8 +448,8 @@ function City_Mental( city )
 	end	
 	]]	
 
-	Asset_Set( city, CityAssetID.SECURITY, security )
-	Asset_Set( city, CityAssetID.DISS, DISS )
+	--Asset_Set( city, CityAssetID.SECURITY, security )
+	--Asset_Set( city, CityAssetID.DISS, DISS )
 
 	Track_Data( "security", security )
 	Track_Data( "DISS", DISS )
@@ -459,8 +462,8 @@ function City_PopuGrow( city )
 	local rate  = 1 / MONTH_IN_YEAR
 	local population = Asset_Get( city, CityAssetID.POPULATION )
 	local growthRate = Random_GetInt_Sync( PopulationParams.GROWTH_MIN_RATE , PopulationParams.GROWTH_MAX_RATE )
-	local sec = Asset_Get( city, CityAssetID.SECURITY )
-	local diss = Asset_Get( city, CityAssetID.DISS )
+	local sec  = city:GetSecurity()
+	local diss = city:GetDiss()
 
 	--increase children
 	local increase = math.ceil( population * growthRate * rate * ( 100 + ( sec - diss ) ) * 0.000005 )
@@ -485,7 +488,7 @@ end
 function City_CheckFlag( city )	
 	--development evalution
 	local score = 0
-	local security = Asset_Get( city, CityAssetID.SECURITY )
+	local security = city:GetSecurity()
 	local agr     = Asset_Get( city, CityAssetID.AGRICULTURE )
 	local maxagr  = Asset_Get( city, CityAssetID.MAX_AGRICULTURE )
 	local comm    = Asset_Get( city, CityAssetID.COMMERCE )
@@ -645,7 +648,7 @@ end
 
 --development natural change
 function City_DevelopmentVary( city )
-	local security = Asset_Get( city, CityAssetID.SECURITY )
+	local security = city:GetSecurity()
 	local isSiege = Asset_GetDictItem( city, CityAssetID.STATUSES, CityStatus.IN_SIEGE )
 
 	local methods
@@ -1042,7 +1045,12 @@ function CitySystem:Update()
 
 		if day % 10 == 0 then
 			City_Mental( city )
-		end		
+		end
+
+		if day == DAY_IN_MONTH then
+			city:UpdateSecurity()
+			city:UpdateDiss()
+		end
 
 		--if day % 15 == 1 then City_DevelopmentVary( city ) end
 

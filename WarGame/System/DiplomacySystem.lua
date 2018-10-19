@@ -161,8 +161,8 @@ function Dipl_GetRelation( red, blue )
 	return System_Get( SystemType.DIPLOMACY_SYS ):GetRelation( red, blue )
 end
 
-function Dipl_GetRelations( group )
-	return System_Get( SystemType.DIPLOMACY_SYS ):GetRelations( group )
+function Dipl_GetRelations( group, pact )
+	return System_Get( SystemType.DIPLOMACY_SYS ):GetRelations( group, pact )
 end
 
 function Dipl_ImproveRelation( group, oppGroup, attitude )
@@ -258,6 +258,15 @@ function DiplomacySystem:HasOpinion( group, opinion )
 	return false
 end
 
-function DiplomacySystem:GetRelations( group )
-	return _groupRelations[group]
+function DiplomacySystem:GetRelations( group, pact )
+	if not pact then
+		return _groupRelations[group]
+	end
+	local list = {}
+	for _, relation in pairs( _groupRelations[group] ) do
+		if relation:HasPact( pact ) then
+			table.insert( list, relation )
+		end
+	end
+	return list
 end

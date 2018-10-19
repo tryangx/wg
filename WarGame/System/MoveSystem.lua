@@ -39,6 +39,11 @@ function Move_HasMoving( actor )
 	return System_Get( SystemType.MOVE_SYS ):HasMoving( actor )
 end
 
+function Move_Stop( actor )
+	--should be carefull, only when actor is invalid( chara died, corps dismiss , etc )
+	System_Get( SystemType.MOVE_SYS ):StopMoving( actor )
+end
+
 function Move_Suspend( actor )
 	return System_Get( SystemType.MOVE_SYS ):SuspendMove( actor )
 end
@@ -440,8 +445,7 @@ function MoveSystem:HasMoving( actor )
 	return self._actors[actor]
 end
 
-function MoveSystem:MoveP2P( actor, from, to , type )
-	
+function MoveSystem:MoveP2P( actor, from, to , type )	
 end
 
 function MoveSystem:MoveC2C( actor, fromCity, toCity, type )
@@ -477,8 +481,11 @@ function MoveSystem:MoveC2C( actor, fromCity, toCity, type )
 	Stat_Add( "Move@Start", actor:ToString() .. " move from=" .. fromCity.name .. " to " .. toCity.name, StatType.LIST )
 
 	Move_Debug( move, "moving" )
+	Debug_Log( actor:ToString(), "mov!!!" )
 
-	--if actor.id == 3 then print( "start", move:ToString() ) end	
+	if actor.id == 2 and move.id == 85 then
+		--InputUtil_Pause( "start" .. move:ToString() )
+	end	
 
 	--Debug_Log( actor:ToString( "LOCATION" ) .. " try to move from=" .. fromCity:ToString() .. " to " .. toCity:ToString() )
 	return move
@@ -497,11 +504,16 @@ end
 function MoveSystem:StopMoving( actor )
 	local move = self._actors[actor]
 	if move then
-		Move_Debug( move, "cancel move" )
-		Log_Write( "move", "cancel move=" .. actor:ToString() .. " moveto destc=" .. String_ToStr( Asset_Get( move, MoveAssetID.TO_CITY ), "name" ) .. " destp=" .. Asset_Get( move, MoveAssetID.DEST_PLOT ):ToString() )
-		Debug_Log( "cancel move", move:ToString() )
+		Move_Debug( move, "stop move" )		
+		Debug_Log( "stop move", move:ToString() )
+		Log_Write( "move", "stop move=" .. actor:ToString() .. " moveto destc=" .. String_ToStr( Asset_Get( move, MoveAssetID.TO_CITY ), "name" ) .. " destp=" .. Asset_Get( move, MoveAssetID.DEST_PLOT ):ToString() )		
+		--Entity_ToString( EntityType.MOVE )
+		--print( "moving stop", actor:ToString(), self:IsMoving( actor ) )
 		self._actors[actor] = nil
 		Entity_Remove( move )
+		return true
+	else
+		Debug_Log( "no move for ", actor:ToString() )
 	end
 end
 

@@ -11,12 +11,11 @@ local DEFAULT_TASK_DURATION      = 25
 
 local _removeTask
 
+--key is combat, value is tasks what related to the combat
 local _combatTasks = {}
 
-local _targetTasks = {}
-
 --all moving corps need to register this
-local _corpsTasks = {}
+--local _corpsTasks = {}
 
 local WorkType = 
 {
@@ -77,12 +76,6 @@ local function Task_Remove( task )
 	end
 
 	Debug_Log( "remove task" .. task:ToString() )
-
-	local dest = Asset_Get( task, TaskAssetID.DESTINATION )	
-	local taskList = _targetTasks[dest]
-	if taskList then
-		taskList[task] = nil
-	end
 
 	Entity_Remove( task )
 end
@@ -155,6 +148,21 @@ local function Task_Verify( task )
 			Log_Write( "task", task:ToString() )
 		end
 	end
+
+	--sanity checker
+	if Asset_Get( task, TaskAssetID.ELPASED_DAYS ) - Asset_Get( task, TaskAssetID.COMBAT_DAYS ) > 400 then
+		print( "turn=" .. g_Time:ToString() )
+		--print( Asset_Get( task, TaskAssetID.ELPASED_DAYS ), Asset_Get( task, TaskAssetID.COMBAT_DAYS ) )
+		--print( task:GetStepType() )
+		if not task:IsWaitCombat() then
+			local actor = Asset_Get( task, TaskAssetID.ACTOR )
+			print( actor:ToString("STATUS") )
+			Entity_ToString( EntityType.MOVE )
+			DBG_Error( task:ToString("DEBUG") .. " is bug" )
+		end
+
+		--checker actor exist?
+	end	
 end
 
 --reserved
@@ -757,8 +765,9 @@ local _finishTask =
 	end,
 	PROMOTE_CHARA = function ( task )
 		local actor = Asset_Get( task, TaskAssetID.ACTOR )
-		local job = Asset_GetDictItem( task, TaskAssetID.PARAMS, "job" )
-		Chara_Promote( actor, job )
+		local title = Asset_GetDictItem( task, TaskAssetID.PARAMS, "title" )
+		actor:PromoteTitle( title )
+		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
 		return Task_GetBonus( task, "success" )
 	end,
 	DISPATCH_CHARA  = Task_MoveChara,
@@ -1043,7 +1052,7 @@ function Task_CorpsReceive( corps, task )
 		error( corps:ToString() .. "already has task" )
 	end
 
-	_corpsTasks[corps] = task
+	--_corpsTasks[corps] = task
 
 	corps:SetTask( task )
 
@@ -1072,7 +1081,7 @@ function Task_Terminate( task, requestor )
 
 	Log_Write( "task", "Terminate task=" .. task:ToString() )
 
-	Debug_Log( task, "terminate by=" .. requestor:ToString() )
+	Debug_Log( task, "task terminate by=" .. requestor:ToString() )
 
 	Stat_Add( "Task@Terminate", task:ToString("DETAIL"), StatType.LIST )
 end
@@ -1111,10 +1120,6 @@ function Task_Create( taskType, actor, location, destination, params )
 		or type == TaskType.ATTACK_CITY then
 		Asset_Set( task, TaskAssetID.ACTOR_TYPE, TaskActorType.CORPS )
 		Task_CorpsReceive( actor, task )
-		if not _targetTasks[destination] then
-			_targetTasks[destination] = {}
-		end
-		_targetTasks[destination][task] = 1
 
 	elseif type == TaskType.INTERCEPT
 		or type == TaskType.DISPATCH_CORPS
@@ -1388,13 +1393,14 @@ end
 
 local function Task_OnMoveBlocked( msg )
 	--cancel task
-	local actor = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "actor" )
-	local task = _corpsTasks[actor]
+	local corps = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "actor" )
+	--local task = _corpsTasks[actor]
+	local task = corps:GetTask()
 	if not task then
-		DBG_Error( "why here?", actor:ToString() )
+		DBG_Error( "why here?", corps:ToString() )
 		return		
 	end
-	InputUtil_Pause( actor:ToString(), "task moving blocked by", task:ToString() )
+	InputUtil_Pause( corps:ToString(), "task moving blocked by", task:ToString() )
 	Task_Failed( task )
 end
 
@@ -1406,7 +1412,8 @@ local function Task_OnCombatUntrigger( msg )
 		DBG_Error( "why no corps" )
 		return
 	end
-	local task = _corpsTasks[corps]
+	--local task = _corpsTasks[corps]
+	local task = corps:GetTask()
 	if not task then
 		DBG_Error( "why no task" )
 		return
@@ -1429,9 +1436,10 @@ local function Task_OnCombatTriggered( msg )
 	function CheckTask( actor )
 		if not actor then return end
 
-		local task = _corpsTasks[actor]		
+		--local task = _corpsTasks[actor]
+		local task = actor:GetTask()
 		if not task then
-			print( "why corps no task?", actor:ToString() )
+			Debug_Log( "why corps no task?", actor:ToString() )
 			return
 		end
 
@@ -1580,24 +1588,11 @@ end
 function TaskSystem:Update()
 	--Debug_Log( "Task Running=" .. Entity_Number( EntityType.TASK ) )	
 	Entity_Foreach( EntityType.TASK, function( task )
-		Task_Verify( task )
-
 		local ret = false
 		while ret == false do
 			ret = Task_Update( task )
 		end
 
-		--sanity checker
-		if Asset_Get( task, TaskAssetID.ELPASED_DAYS ) - Asset_Get( task, TaskAssetID.COMBAT_DAYS ) > 400 then
-			print( "turn=" .. g_Time:ToString() )
-			--print( Asset_Get( task, TaskAssetID.ELPASED_DAYS ), Asset_Get( task, TaskAssetID.COMBAT_DAYS ) )
-			--print( task:GetStepType() )
-			if not task:IsWaitCombat() then
-				local actor = Asset_Get( task, TaskAssetID.ACTOR )
-				print( actor:ToString("STATUS") )
-				Entity_ToString( EntityType.MOVE )
-				DBG_Error( task:ToString("DEBUG") .. " is bug" )
-			end
-		end
+		Task_Verify( task )
 	end )
 end

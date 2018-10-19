@@ -12,22 +12,26 @@ TechType =
 	PRODUCTION  = 220,
 }
 
-
-----------------------------------------------------------------------------------------
---
---
---
-----------------------------------------------------------------------------------------
-
-GroupDomin = 
+TechEffect = 
 {
 
-	DOMINATION,
 }
 
-GroupRepuation = 
-{
+----------------------------------------------------------------------------------------
+--
+--
+--
+----------------------------------------------------------------------------------------
 
+GroupVictory = 
+{
+	NONE    = 0,
+
+	--conquer needs to control 35~75% terriority
+	CONQUER = 1,
+
+	--all survive needs to exterminate all other Group
+	SURVIVE = 2,
 }
 
 GroupGoalType = 
@@ -137,6 +141,17 @@ GroupStatus =
 	REPUTATION     = 1,
 }
 
+GroupGrade = 
+{
+	UNKNOWN   = 0,
+	LOCAL     = 1,
+	REGION    = 2,
+	NATION    = 3,
+	CONTINENT = 4,
+	WORLD     = 5,
+}
+
+--0~10000
 GroupInfluence = 
 {
 	TOTAL        = 0,
@@ -145,4 +160,20 @@ GroupInfluence =
 	ALLY         = 3,
 	LEADER_TITLE = 4,
 	LEADER_CHARM = 5,
+}
+
+--0~10000
+GroupReputation = 
+{
+	GOAL      = 10,
+	DECISION  = 11,
+	MILITARY  = 12,
+	
+	LEADER    = 20,
+	CHARA     = 21,	
+	CITY      = 22,
+	TECH      = 23,
+	
+	ALLY      = 30,
+	BELONG    = 31,
 }

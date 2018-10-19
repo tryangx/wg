@@ -264,8 +264,8 @@ function Combat:ToString( type )
 		content = content .. " winner=" .. self:GetGroupName( self:GetWinner() )
 		content = content .. " date=" .. g_Time:CreateCurrentDateDesc()
 		content = content .. " day=" .. Asset_Get( self, CombatAssetID.DAY )
-		content = content .. " atkkill=" .. self:GetStat( CombatSide.ATTACKER, CombatStatistic.KILL ) .. "/" .. self:GetStat( CombatSide.ATTACKER, CombatStatistic.TOTAL_SOLDIER )
-		content = content .. " defkill=" .. self:GetStat( CombatSide.DEFENDER, CombatStatistic.KILL ) .. "/" .. self:GetStat( CombatSide.DEFENDER, CombatStatistic.TOTAL_SOLDIER )
+		content = content .. " atkkill=" .. self:GetStat( CombatSide.ATTACKER, CombatStatistic.KILL ) .. "/" .. self:GetStat( CombatSide.ATTACKER, CombatStatistic.TOTAL_SOLDIER ) .. "/" .. self:GetStat( CombatSide.ATTACKER, CombatStatistic.MAX_SOLDIER )
+		content = content .. " defkill=" .. self:GetStat( CombatSide.DEFENDER, CombatStatistic.KILL ) .. "/" .. self:GetStat( CombatSide.DEFENDER, CombatStatistic.TOTAL_SOLDIER ) .. "/" .. self:GetStat( CombatSide.DEFENDER, CombatStatistic.MAX_SOLDIER )
 		content = content .. " at_corps=" .. Asset_GetListSize( self, CombatAssetID.ATK_CORPS_LIST ) .. "=" .. self:GetGroupName( CombatSide.ATTACKER )
 		content = content .. " df_corps=" .. Asset_GetListSize( self, CombatAssetID.DEF_CORPS_LIST ) .. "=" .. self:GetGroupName( CombatSide.DEFENDER )
 		content = content .. " c_day=" .. Asset_Get( self, CombatAssetID.COMBAT_DAYS )
@@ -955,6 +955,12 @@ function Combat:CheckConditions( obj, datas, type )
 		if match == true and cond.is_def and side ~= CombatSide.DEFENDER then match = false end
 		if match == true and cond.is_surrounded and cond.is_surrounded ~= self:GetStat( obj, CombatStatistic.SURROUNDED ) then match = false end
 		if match == true and cond.is_guard and ( obj == CombatSide.ATTACKER or Asset_GetListSize( self, CombatAssetID.DEF_CORPS_LIST ) ~= 0 ) then match = false end
+		if match == true and cond.is_capital then
+			local city = Asset_Get( self, CombatAssetID.CITY ) 
+			if city and not city:IsCapital() then
+				match = false
+			end
+		end
 		
 		if match == true and cond.prop_above and self:GetStat( obj, CombatStatistic.PROP_RATIO ) < cond.prop_above then match = false end
 		if match == true and cond.prop_below and self:GetStat( obj, CombatStatistic.PROP_RATIO ) > cond.prop_below then match = false end
@@ -980,7 +986,7 @@ function Combat:CheckConditions( obj, datas, type )
 
 		if match == true and cond.prob and Random_GetInt_Sync( 1, 100 ) > cond.prob then match = false end
 		if match == true then reason = reason .. cond.reason .. "," end
-		if match == true then
+		if match == true then						
 			if cond.score then
 				match = false 
 				score = score + cond.score
@@ -1140,8 +1146,8 @@ function Combat:PrepareDefense()
 		end
 	end
 	
-	local security   = Asset_Get( city, CityAssetID.SECURITY )
-	local maxSoldier = Corps_GetTroopMaxNumber( city )
+	local security   = city:GetSecurity()
+	local maxSoldier = Corps_GetSolderNumber()
 
 	function AddTempTroop( soldier, troopTable, fn )	
 		--MathUtil_Dump( troopTable.requirement )
@@ -1874,9 +1880,11 @@ function Combat:DoAction( troop, action, target, params )
 	
 	elseif action == CombatAction.ATTACK then
 		self:AffectMorale( troop, -Random_GetInt_Sync( 3, 6 ) )
+		troop:Action()
 	
 	elseif action == CombatAction.DEFEND then
 		self:AffectMorale( troop, -Random_GetInt_Sync( 4, 5 ) )
+		troop:Action()
 
 	elseif action == CombatAction.KILL then		
 		local officer = Asset_Get( troop, TroopAssetID.OFFICER )
@@ -2047,6 +2055,8 @@ end
 
 function Combat:NeutralizeTroop( attacker, defender )
 	WriteCombatLog( attacker:ToString( "COMBAT" ) .. " kill " .. defender:ToString( "COMBAT" ) )
+
+	self:AddStat( troop, CombatStatistic.NEUTRALIZE_ENEMY, 1 )
 
 	attacker:NeutralizeTroop( defender )
 
@@ -2228,18 +2238,22 @@ function Combat:CalcDamage( atk, def, params )
 	local def_lv    = Asset_Get( def, TroopAssetID.LEVEL ) or 0	
 	local hitRate = 35 + Random_GetInt_Sync( 0, atk_lv - def_lv )
 
+	local atk_mor = Asset_Get( atk, TroopAssetID.MORALE )
+	local def_mor = Asset_Get( def, TroopAssetID.MORALE )
+	local atk_tir = Asset_Get( atk, TroopAssetID.TIRENESS )	
+	local def_tir = Asset_Get( def, TroopAssetID.TIRENESS )	
+
 	local weight    = params.weapon.weight
-	local sharpness = params.weapon.sharpness
-	local pierce_pow = sharpness * 100 / ( 100 + armor )
-	local kinect_pow = weight * 100 / ( 100 + toughness )	
+	local sharpness = params.weapon.sharpness	
+	local pow_rate  = ( atk_tir > atk_mor and -50 or 0 ) + ( def_tir > def_mor and 50 or 0 ) + 100
+	local pierce_pow = sharpness * pow_rate / ( 100 + armor )
+	local kinect_pow = weight * pow_rate / ( 100 + toughness )	
 	local pow = ( pierce_pow + kinect_pow )
 
 	-------------------------------
 	--Determine damage rate, critical	
 	local dmgRate = 100 + Random_GetInt_Sync( 0, params.weapon.level )
-	local atk_mor = Asset_Get( atk, TroopAssetID.MORALE )
-	local def_mor = Asset_Get( def, TroopAssetID.MORALE )
-	if exposure > 80 then
+	if exposure > 50 then
 		local critical_range = MathUtil_Clamp( ( atk_mor - def_mor ) * 0.5, 1, 35 )
 		dmgRate = dmgRate + ( Random_GetInt_Sync( 1, 100 ) < critical_range and 100 or 0 )
 	end
@@ -2276,126 +2290,6 @@ function Combat:CalcDamage( atk, def, params )
 
 	return dmg, orgRate, hitRate, is_critical
 end
-
---[[
-function Combat:CalcDamage( atk, def, params )	
-	-------------------------------
-	--Number Modification
-	-------------------------------
-	local atkNumber = Asset_Get( atk, TroopAssetID.SOLDIER )
-	local defNumber = Asset_Get( def, TroopAssetID.SOLDIER ) or 0
-	
-	--attack from flank
-	if params.isFlank == true then
-		atkNumber = atkNumber * 0.75
-	end
-	--too many soldier in the grid
-	if params.isCrowd == true then
-		atkNumber = atkNumber * 0.75
-	end
-	--been suppresed by missile
-	if params.isSuppressed == true then
-		atkNumber = atkNumber * 0.75
-	end
-
-	function NormalizeNumber( num )
-		if num < 100 then return num
-		elseif num < 500 then return 100 + ( atkNumber - 100 ) * 0.25
-		elseif num < 2000 then return 200 + ( atkNumber - 500 ) * 0.1 end
-		return 350
-	end
-	--we get the final number
-	atkNumber = NormalizeNumber( atkNumber )	
-	defNumber = NormalizeNumber( defNumber )
-
-	-------------------------------
-	--Weapon & Armor Modification
-	-------------------------------
-	local atkmor     = Asset_Get( atk, TroopAssetID.MORALE )
-	local atklv      = Asset_Get( atk, TroopAssetID.LEVEL )	
-	local deflv      = Asset_Get( def, TroopAssetID.LEVEL )	or 0
-	local weapon_pow = params.weapon.power
-
-	local hitRate   = math.max( 10, params.weapon.accuracy + 5 * ( atklv - params.weapon.level ) - 3 * deflv )
-	local orgRate   = 100
-
-	--"def" maybe defensive, not soldier
-	local armor, toughness = 0, 0
-	if not params.isDefense then
-		armor     = def:GetArmor()
-		toughness = def:GetToughness()
-		hitRate  = hitRate * 100 / ( 100 + toughness )
-	end
-	if params.fort and params.fort > 0 then
-		armor = armor + params.fort
-	end
-	
-	pow = weapon_pow * atkNumber / defNumber
-
-	--------------------------------------------
-	-- Calculate the Organization Rate in Damage
-	--intel about enemy( exposure ) will determine how
-	local exposure = 100
-	if not params.isDefense then
-		exposure = math.ceil( ( def:GetCombatData( TroopCombatData.EXPOSURE ) or 0 ) * 0.5 ) + 50
-	end
-	orgRate = orgRate * Random_GetInt_Sync( exposure, 100 ) * 0.01
-
-	-------------------------------
-	--Determine critical( by morale )
-	local is_critical = false
-	if exposure > 80 then		
-		local defmor = Asset_Get( def, TroopAssetID.MORALE ) or 0
-		local critical_range = math.min( 35, ( atkmor - defmor ) * 0.5 + 10 )
-		is_critical = Random_GetInt_Sync( 1, 100 ) < critical_range
-	end
-
-	-------------------------------
-	--Determine damage rate
-	local dmgRate = Random_GetInt_Sync( 90, 110 ) * 0.01
-	--counter attack
-	if params.isCounter == true then
-		dmgRate = dmgRate * 0.75
-	end
-	--attacker is tired
-	if params.isTired == true then
-		dmgRate = dmgRate * 0.75
-	end
-	
-	-------------------------------
-	--Determine Defence Height Modification
-	if params.type ~= CombatTask.DESTROY then
-		if params.height ~= 0 then
-			--height advantage will increase the accuracy
-			hitRate = hitRate * MathUtil_Interpolate( params.height or 0, -1, 1, 0.8, 1.25 )
-
-			--height advantage will improve the damage
-			dmgRate = dmgRate * MathUtil_Interpolate( params.height or 0, -1, 1, 0.5, 1.25 )
-		end
-	end
-
-	if is_critical == true then
-		dmgRate = dmgRate * 200 / ( 100 + armor )
-	else
-		dmgRate = dmgRate * 100 / ( 100 + armor )
-	end	
-
-	---------------------------------
-	--Calculate final damage
-	local dmg = math.ceil( pow * dmgRate )
-	
-	--WriteCombatLog( "atk=".. atk.id, "def=" .. ( def.id or "defense" ), "dule=",params.isDule, "counter=",params.isCounter, "Suppressive=",params.isSuppressive )
-	local content = ""
-	content = content .. StringUtil_Abbreviate( atk:ToString(), 16 ) .. " " .. StringUtil_Abbreviate( def:ToString(), 16 )
-	content = content .. " p=" .. math.ceil( pow ) .. "/" .. weapon_pow .. " d=" .. dmg .. " hit=" .. PercentString( hitRate )
-	content = content .. " d_r=".. PercentString( dmgRate )
-	content = content .. " ar=" .. armor .. " tg=" .. toughness .. " w_n=" .. params.weapon.name
-	content = content .. " org_d=" .. PercentString( orgRate ) .. " crt=" .. ( is_critical and "true" or "false" )
-	--WriteCombatLog( content )
-
-	return dmg, orgRate, hitRate, is_critical
-end
---]]
 
 function Combat:CalcAttack( atk, def, params )
 	--too many soldier stay in the grid will leads a CROWD PENALITY

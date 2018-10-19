@@ -623,73 +623,142 @@ DefaultCharaSkill =
 	},
 }
 
-DefaultJobPromoteData = 
+DefaultCharaTitle =
 {
-	--[[
-	OFFICER           = { contribution = 0, service = 0 },
-	CIVIAL_OFFICIAL   = { contribution = 100, service = 0 },
-	MILITARY_OFFICER  = { contribution = 100, service = 0 },
-	SPY               = { contribution = 0, service = 0, has_skill = { { 0 } }, },
-	TRADER            = { contribution = 0, service = 0, has_skill = { { 0 } }, },
-	BUILDER           = { contribution = 0, service = 0, has_skill = { { 0 } }, },
-	MISSIONARY        = { contribution = 0, service = 0, has_skill = { { 0 } }, },
-
-	ASSISTANT_MINISTER= { contribution = 1000, service = 720 },
-	DIPLOMATIC        = { contribution = 1000, service = 720 },
-	GENERAL           = { contribution = 1000, service = 720 },
-	CAPTAIN           = { contribution = 1000, service = 720 },
-	AGENT             = { contribution = 1000, service = 720 },
-	MERCHANT          = { contribution = 1000, service = 720 },
-	TECHNICIAN        = { contribution = 1000, service = 720 },
-	APOSTLE           = { contribution = 1000, service = 720 },
-		
-	IMPORTANT_JOB     = { contribution = 10000, service = 1800 },
-	PREMIER           = { contribution = 10000, service = 1800 },
-	CABINET_MINISTER  = { contribution = 10000, service = 1800 },
-	MARSHAL           = { contribution = 10000, service = 1800 },
-	ADMIRAL           = { contribution = 10000, service = 1800 },
-	SPYMASTER         = { contribution = 10000, service = 1800 },
-	ASSASSIN          = { contribution = 10000, service = 1800 },
-	MONOPOLY          = { contribution = 10000, service = 1800 },
-	SCIENTIST         = { contribution = 10000, service = 1800 },
-	INQUISITOR        = { contribution = 10000, service = 1800 },
-	]]
+	{
+		id = 1000, name = "OFFICER_LV1", grade = 1, 
+		prerequisite = { { contribution = 1000, limit = 1 }, },
+	},
+	{
+		id = 1100, name = "OFFICER_LV2", grade = 2,
+		prerequisite = { { contribution = 2000, limit = 1 }, },
+	},
+	{
+		id = 1200, name = "OFFICER_LV3", grade = 3,
+		prerequisite = { { contribution = 3000, limit = 1 }, },
+	},
+	{
+		id = 2000, name = "OFFICIAL_LV1", grade = 1,
+		prerequisite = { { contribution = 1000, limit = 1 }, },
+	},
+	{
+		id = 2100, name = "OFFICIAL_LV2", grade = 2,
+		prerequisite = { { contribution = 2000, limit = 1 }, },
+	},
+	{
+		id = 2200, name = "OFFICIAL_LV3", grade = 3,
+		prerequisite = { { contribution = 3000, limit = 1 }, },
+	},
+	{
+		id = 3000, name = "Baron", grade = 4,
+		prerequisite = { { contribution = 0, heir = 1 }, { contribution = 5000, }, },
+	},
+	{
+		id = 3010, name = "Viscount", grade = 4,
+		prerequisite = { { contribution = 1000, heir = 1, }, { contribution = 6000, }, },
+	},
+	{
+		id = 3020, name = "Earl", grade = 4,
+		prerequisite = { { contribution = 2000, heir = 1, }, { contribution = 7000, }, },
+	},
+	{
+		id = 3030, name = "Marquess", grade = 4,
+		prerequisite = { { contribution = 3000, heir = 1, }, { contribution = 8000, }, },
+	},	
+	{
+		id = 3040, name = "Duke", grade = 4,
+		prerequisite = { { contribution = 4000, heir = 1, }, { contribution = 9000, }, },
+	},
+	{
+		id = 4000, name = "Chief", grade = 5, priority = 1,
+		prerequisite = { { leader = 1, terriority_more_than = 30 }, },
+	},
+	{
+		id = 4010, name = "Leader", grade = 5, priority = 2,
+		prerequisite = { { leader = 1 }, },
+	},
+	{
+		id = 4020, name = "Lord", grade = 5, priority = 3,
+		prerequisite = { { leader = 1 }, },
+	},
+	{
+		id = 4030, name = "King", grade = 5, priority = 4,
+		prerequisite = { { leader = 1 }, },
+	},
+	{
+		id = 4040, name = "Emperor", grade = 5, priority = 5,
+		prerequisite = { { leader = 1 }, },
+	},
 }
 
-DefaultCharaPromoteMethod = 
+DefaultCharaCareer =
 {
-	OFFICER           = { "CIVIAL_OFFICIAL", "MILITARY_OFFICER" },
-	CIVIAL_OFFICIAL   = { "ASSISTANT_MINISTER", "DIPLOMATIC" },
-	MILITARY_OFFICER  = { "GENERAL", "CAPTAIN" },
-	SPY               = { "AGENT", "MILITARY_OFFICER" },
-	TRADER            = { "MERCHANT", "CIVIAL_OFFICIAL" },
-	BUILDER           = { "TECHNICIAN", "CIVIAL_OFFICIAL" },
-	MISSIONARY        = { "APOSTLE", "CIVIAL_OFFICIAL" },
-	
-	ASSISTANT_MINISTER= { "PREMIER", "CABINET_MINISTER" },
-	DIPLOMATIC        = { "PREMIER", "CABINET_MINISTER" },
-	GENERAL           = { "MARSHAL", },
-	CAPTAIN           = { "ADMIRAL", },
-	AGENT             = { "SPYMASTER", "ASSASSIN" },	
-	MERCHANT          = { "MONOPOLY", },	
-	TECHNICIAN        = { "SCIENTIST", },
-	APOSTLE           = { "INQUISITOR", },
+	{
+		id = 100, name = "officer",
+	},
+	{
+		id = 110, name = "official",
+	},
+	{
+		id = 120, name = "lobbist",
+	},
+	{
+		id = 130, name = "agent",
+	},
+	{
+		id = 140, name = "trader",
+	},
+	{
+		id = 150, name = "builder",
+	},
 
-	PREMIER           = {},
-	CABINET_MINISTER  = {},
-	MARSHAL           = {},
-	ADMIRAL           = {},
-	SPYMASTER         = {},
-	ASSASSIN          = {},
-	MONOPOLY          = {},
-	SCIENTIST         = {},
-	INQUISITOR        = {},
-	
-	MAYOR             = {},
-	EMPEROR           = {},
-	KING              = {},
-	LORD              = {},
-	LEADER            = {},
-	CHIEF             = {},
-	PRESIDENT         = {},
+	{
+		id = 200, name = "ass_minister",
+	},
+	{
+		id = 210, name = "general",
+	},	
+	{
+		id = 211, name = "captain",
+	},
+	{
+		id = 220, name = "diplomat",
+	},
+	{
+		id = 230, name = "spy",
+	},
+	{
+		id = 240, name = "merchant",
+	},
+	{
+		id = 250, name = "technician",
+	},
+
+	{
+		id = 300, name = "premier",
+	},
+	{
+		id = 301, name = "cabinet_minister",
+	},
+	{
+		id = 310, name = "marshal",
+	},
+	{
+		id = 311, name = "admiral",
+	},
+	{
+		id = 320, name = "diplomat_minister",
+	},
+	{
+		id = 330, name = "spymaster",
+	},
+	{
+		id = 330, name = "assasin",
+	},
+	{
+		id = 340, name = "monopoly",
+	},
+	{
+		id = 350, name = "scientist",
+	},
 }

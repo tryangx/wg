@@ -35,9 +35,7 @@ function Game_Init()
 				--print( MathUtil_FindName( EntityType, entity.type )..entity.id.."(".. MathUtil_FindName( PlotAssetID, id )..")"..id.."." .. MathUtil_FindName( PlotAssetID, id ) .. " " ..( operation or "unkown" ) )
 			end
 		elseif entity.type == EntityType.CITY then
-			if id == CityAssetID.SECURITY then
-				--print( entity.name, MathUtil_FindName( CityAssetID, id ), operation or "unkown" )
-			elseif id == CityAssetID.DISS then
+			if id == CityAssetID.DISS then
 				--print( entity.name, MathUtil_FindName( CityAssetID, id ), operation or "unkown" )
 			elseif id == CityAssetID.STATUSES then
 				--InputUtil_Pause( "set statuses", operation )
@@ -95,11 +93,15 @@ function Game_Init()
 	PlotTable_Load        ( Scenario_GetData( "PLOT_TABLE_DATA" ), EntityType )
 	ResourceTable_Load    ( Scenario_GetData( "RESOURCE_DATA" ), EntityType)
 	TroopTable_Load       ( Scenario_GetData( "TROOP_DATA" ), EntityType )
+	TroopMedalTable_Load  ( Scenario_GetData( "TROOP_MEDAL_DATA" ), EntityType )
 	TacticTable_Load      ( Scenario_GetData( "TACTIC_DATA" ), EntityType )
 	BattlefieldTable_Load ( Scenario_GetData( "BATTLEFIELD_DATA" ), EntityType )
 	WeaponTable_Load      ( Scenario_GetData( "WEAPON_DATA" ), EntityType )
 	SkillTable_Load       ( Scenario_GetData( "CHARA_SKILL_DATA" ), EntityType )	
 	ConstructionTable_Load( Scenario_GetData( "CITY_CONSTR_DATA" ), EntityType )
+	CharaTitleTable_Load  ( Scenario_GetData( "CHARA_TITLE_DATA" ), EntityType )
+	CharaCareerTable_Load ( Scenario_GetData( "CHARA_CAREER_DATA" ), EntityType )
+
 
 	--init weapon pointers
 	TroopTable_Init()
@@ -204,6 +206,7 @@ function Game_Init()
 		end
 		print( chara:ToString( "TRAITS") )
 
+		--action
 		for _, type in pairs( CharaActionPoint ) do
 			chara:GainAP( type, math.ceil( chara:GetAPLimit( type ) * 0.5 ) )
 		end
@@ -285,10 +288,11 @@ function GameExit()
 		--print( entity:ToString( "BUDGET_YEAR" ) )
 		--print( entity:ToString( "GROWTH" ) )
 		print( entity:ToString( "POPULATION" ) )
-		print( entity:ToString( "DEVELOP" ) )
+		--print( entity:ToString( "DEVELOP" ) )
 		--print( entity:ToString( "TAX" ) )	
-		print( entity:ToString( "SUPPLY" ) )	
-		print( entity:ToString( "CHARA" ) )	
+		--print( entity:ToString( "SUPPLY" ) )	
+		print( entity:ToString( "ASSET" ) )
+		--print( entity:ToString( "CHARA" ) )	
 		--InputUtil_Pause()
 	end)		
 

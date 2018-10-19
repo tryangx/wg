@@ -176,10 +176,29 @@ CityConstrEffect =
 
 	--Attributes
 	--Measure the soldier can support in SING city, out of range will gain debuff
-	SUPPLY_SOLDIER = 300,
+	SUPPLY_SOLDIER = 300,	
+
+	CORPS_LIMIT    = 301,
+	TROOP_LIMIT    = 302,
+	SOLDIER_LIMIT  = 303,
 }
 
-CitySatisfactionType = 
+CitySecurity = 
 {
-	
+	OFFICER = 10,
+	GUARD   = 11,
+	SOLDIER = 12,
+
+	PATROL  = 20,
+	EVENT   = 21,
+}
+
+CityDiss = 
+{
+	--attack / been attacked
+	AT_AWR   = 10,
+	--been seiged
+	IN_SIEGE = 11,
+
+	LEVY_TAX = 12,
 }

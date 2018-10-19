@@ -69,6 +69,12 @@ function Relation:Update()
 	--  2.alter attitude
 	Asset_Foreach( self, RelationAssetID.OPINION_LIST, function ( data, type )
 		data.duration = data.duration + 1
+		if type == RelationOpinion.REPUTATION then
+			--todo
+		elseif type == RelationOpinion.INFLUENCE then
+			--todo
+		end
+
 		if data.time > 1 then
 			data.time = data.time - 1		
 			local opinion = Scenario_GetData( "RELATION_OPINION" )[type]
@@ -90,7 +96,7 @@ function Relation:Update()
 			--InputUtil_Pause( "pact over", MathUtil_FindName( RelationPact, pact ) )
 			Asset_SetDictItem( self, RelationAssetID.PACT_LIST, pact, nil )			
 		end
-	end)
+	end )
 end
 
 function Relation:GetPact( type )
@@ -139,7 +145,7 @@ function Relation:AddOpinion( type )
 	local opinion = {}
 	local data = Scenario_GetData( "RELATION_OPINION" )[type]
 	opinion.attitude = data.def
-	opinion.time     = data.time
+	opinion.time     = data.duration
 	opinion.duration = 1
 	Asset_SetDictItem( self, RelationAssetID.OPINION_LIST, type, opinion )
 end

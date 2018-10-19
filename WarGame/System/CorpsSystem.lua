@@ -75,66 +75,88 @@ function Corps_CalcNeedFood( corps, dest )
 	return needFood - hasFood
 end
 
-function Corps_GetTroopNumberLvByGroup( group )
-	local government = Asset_Get( group, GroupAssetID.GOVERNMENT )
-	return GroupGovernmentData[government].TROOP_NUMBER_LV or 0
-end
 
-function Corps_GetTroopNumberLv( city )
-	local maxLv = 0
-	if not city then
-		return maxLv
-	end
-	local group = Asset_Get( city, CityAssetID.GROUP )
-	if group then
-		maxLv = math.max( maxLv, Corps_GetTroopNumberLvByGroup( group ) )
-	end	
-	return maxLv
-end
 
-function Corps_GetTroopMaxNumber( city, troop )
-	local maxLv = Corps_GetTroopNumberLv( city )
-	local number = Scenario_GetData( "TROOP_PARAMS" ).TROOP_MAX_NUMBER[maxLv]
-	if not number then
-		number = Scenario_GetData( "TROOP_PARAMS" ).MIN_TROOP_SOLDIER
-	end	
-	if troop then
-		local maxNumber = Asset_Get( troop, TroopAssetID.MAX_SOLDIER )
-		if number < maxNumber then
-			number = maxNumber
-		end
+---------------------------------------------------------------------
+-- Determine the maximum number of soldier in one troop
+---------------------------------------------------------------------
+-- Soldier Number( 600~2000 )
+--    600 / leader+400~1400
+function Corps_GetSolderNumber( corps )
+	local number = Scenario_GetData( "CORPS_PARAMS" ).SOLDIER_NUMBER.MIN_NUMBER
+	
+	--check title
+	--local corps  = troop and Asset_Get( troop, TroopAssetID.CORPS ) or nil
+	local leader = corps and Asset_Get( corps, CorpsAssetID.LEADER ) or nil
+	local title  = leader and Asset_Get( leader, CharaAssetID.TITLE ) or nil
+	if title then
+		number = number + ( Scenario_GetData( "CORPS_PARAMS" ).SOLDIER_NUMBER.TITLE_GRADE_BONUS[title.grade] or 0 )
 	end
+
 	return number
 end
 
+---------------------------------------------------------------------
+-- Determine the maximum number of troop in one Corps
+---------------------------------------------------------------------
+
+-- Troop Number( 3~10 )
+--    3 / influ+1~5 / title+1~2
+function Corps_GetTroopNumber( corps )
+	local num = Scenario_GetData( "CORPS_PARAMS" ).TROOP_NUMBER.MIN_NUMBER
+	--group influence
+	local group = Asset_Get( corps, CorpsAssetID.GROUP )
+	if group then
+		local grade = Asset_Get( group, GroupAssetID.GRADE )
+		--print( "influgrade=" .. grade, num )
+		num = num + ( Scenario_GetData( "CORPS_PARAMS" ).TROOP_NUMBER.INFLUENCE_GRADE_BONUS[grade] or 0 )
+	end
+
+	--leader title	
+	local leader = Asset_Get( corps, CorpsAssetID.LEADER )
+	if leader then
+		local title = Asset_Get( leader, CharaAssetID.TITLE )
+		if title then
+			--print( "titlegrade=" .. title.grade, num, Scenario_GetData( "CORPS_PARAMS" ).TROOP_NUMBER.TITLE_GRADE_BONUS[title.grade] )
+			num = num + ( Scenario_GetData( "CORPS_PARAMS" ).TROOP_NUMBER.TITLE_GRADE_BONUS[title.grade] or 0 )
+		end
+	end
+
+	--InputUtil_Pause( corps:ToString(), num )
+
+	return num
+end
+
+---------------------------------------------------------------------
+-- Determine how many corps can establish in one Group
+---------------------------------------------------------------------
+-- Corps Number( 1~3 )
+--    1 / Barrack+1 / Capital+1
+function Corps_GetLimitByCity( city )
+	local num = Scenario_GetData( "CORPS_PARAMS" ).CORPS_NUMBER.MIN_NUMBER
+	if city:IsCapital() then num = num + Scenario_GetData( "CORPS_PARAMS" ).CORPS_NUMBER.CAIPTAL_BONUS end
+	if city:GetConstructionByEffect( CityConstrEffect.CORPS_LIMIT ) then num = num + Scenario_GetData( "CORPS_PARAMS" ).CORPS_NUMBER.CONSTRUCTION_BONUS end
+	return num
+end
+
+--get the number of limitation by group
 function Corps_GetLimitByGroup( group )
 	local numOfCity = Asset_GetListSize( group, GroupAssetID.CITY_LIST )
 	--at least more than on capital
-	return numOfCity * 2 + 2
-end
-
-function Corps_GetLimitByCity( city )
-	if city:IsCapital() == true then return 4 end
-	return 2
+	return numOfCity + 2
 end
 
 --get the number of requirement corps( minimum, not maximum )
 function Corps_GetRequiredByCity( city )
 	local num = 0
-	if city:IsCapital() == true then
-		num = num + 1
-	end
-	if city:GetStatus( CityStatus.BATTLEFRONT ) then
-		num = num + 1
-	end
-	if city:GetStatus( CityStatus.FRONTIER ) then
-		if num == 0 then num = 1 end
-	end
-	if city:GetStatus( CityStatus.MILITARY_BASE ) then
-		if num >= 2 then num = num - 1 end
-	end
+	if city:GetStatus( CityStatus.BATTLEFRONT ) then num = 1 end
+	if city:GetStatus( CityStatus.FRONTIER ) then num = 1 end	
+	if city:GetStatus( CityStatus.MILITARY_BASE ) then num = 1 end
+	if city:IsCapital() == true then num = num + 1 end
 	return num
 end
+
+---------------------------------------------------------------------
 
 function Corps_Enter( corps, city )
 	Asset_Set( corps, CorpsAssetID.LOCATION, city )
@@ -160,6 +182,8 @@ function Corps_Join( corps, city, isEnterCity )
 end
 
 function Corps_Dismiss( corps, neutralized )
+	Debug_Log( corps:ToString(), "dismiss neutralized=", neutralized )
+
 	Stat_Add( "Corps@Dismiss", corps:ToString() .. " neutralized=" .. ( neutralized and "1" or "0" ), StatType.LIST )
 
 	local group = Asset_Get( corps, CorpsAssetID.GROUP )
@@ -189,6 +213,9 @@ function Corps_Dismiss( corps, neutralized )
 	if task then
 		Task_Terminate( task, corps )
 	end
+
+	--remove moving
+	Move_Stop( corps )
 
 	--remove troop
 	Asset_Foreach( corps, CorpsAssetID.TROOP_LIST, function ( troop )
@@ -357,7 +384,7 @@ local function Corps_EstablishTroop( city, corps, numberOfReqTroop, soldierPerTr
 		--determine the potential, maybe consider about the culture
 		Asset_Set( troop, TroopAssetID.POTENTIAL, Scenario_GetData( "TROOP_PARAMS" ).TROOP_POTENTIAL )
 
-		local maxSoldier = Corps_GetTroopMaxNumber( city )
+		local maxSoldier = Corps_GetSolderNumber( corps )
 		Asset_Set( troop, TroopAssetID.SOLDIER, soldierPerTroop )
 		Asset_Set( troop, TroopAssetID.MAX_SOLDIER, maxSoldier )
 		Asset_Set( troop, TroopAssetID.CORPS, corps )
@@ -418,7 +445,7 @@ end
 
 -- @param purpose default is FIELD_COMBAT
 -- @useage CorpsSystem:EstablishCorpsInCity( city )
-function Corps_EstablishInCity( city, leader, purpose, troopNumber )
+function Corps_EstablishInCity( city, leader, troopNumber, purpose )
 	if not leader then
 		error( "no leader, no corps" )
 		return
@@ -433,10 +460,6 @@ function Corps_EstablishInCity( city, leader, purpose, troopNumber )
 	if not troopTables or #troopTables == 0 then
 		Debug_Log( "too bad, no troop table valid~" )
 		return
-	end
-
-	if not troopNumber then
-		troopNumber = 2
 	end
 
 	--find corps template
@@ -460,6 +483,10 @@ function Corps_EstablishInCity( city, leader, purpose, troopNumber )
 	Asset_RemoveListItem( city, CityAssetID.CHARA_LIST,   leader )
 
 	corps:AssignLeader( leader )
+
+	if not troopNumber then
+		troopNumber = Corps_GetTroopNumber( corps )
+	end
 
 	Asset_Set( leader, CharaAssetID.CORPS,     corps )
 
@@ -491,7 +518,7 @@ function Corps_EstablishInCity( city, leader, purpose, troopNumber )
 	soldierPerTroop = math.floor( reserves / numberOfReqTroop )
 
 	--limit by the tech/theory/etc.	
-	soldierPerTroop = math.min( soldierPerTroop, Corps_GetTroopMaxNumber( city, nil ) )
+	soldierPerTroop = math.min( soldierPerTroop, Corps_GetSolderNumber( corps ) )
 
 	--boundary checks
 	local minSoldier = Scenario_GetData( "TROOP_PARAMS" ).MIN_TROOP_SOLDIER
@@ -555,7 +582,7 @@ function Corps_EnrollInCity( corps, city )
 
 	local numberOfTroop = 1
 	local reserves = city:GetPopu( CityPopu.RESERVES )
-	local soldierPerTroop = Corps_GetTroopMaxNumber( city, nil )
+	local soldierPerTroop = Corps_GetSoldierNumber( nil )
 	if reserves < soldierPerTroop then soldierPerTroop = reserves end
 	Corps_EstablishTroop( city, corps, numberOfTroop, soldierPerTroop )
 
@@ -620,5 +647,11 @@ end
 function CorpsSystem:Update()
 	Entity_Foreach( EntityType.CORPS, function( corps )
 		corps:Update()
+
+		--sanity checker
+		local encampment = Asset_Get( corps, CorpsAssetID.ENCAMPMENT )
+		if Asset_Get( encampment, CityAssetID.GROUP ) ~= Asset_Get( corps, CorpsAssetID.GROUP ) then
+			DBG_Error( "why here?", corps:ToString("ALL"), encampment:ToString() )
+		end
 	end )
 end

@@ -36,6 +36,7 @@ DefaultCityPopuConsumeFood =
 {
 	RESERVES = 1,
 	GUARD    = 1,
+	SOLDIER  = 1,
 }
 
 --should without SOLDIER
@@ -43,9 +44,10 @@ DefaultCityPopuSalary =
 {
 	RESERVES = 1,
 	GUARD    = 1,
+	SOLDIER  = 1,
 
 	OFFICER  = 1,
-	BACHELOR = 2,
+	BACHELOR = 1,
 
 	NOBLE    = 100,
 }
@@ -126,8 +128,8 @@ DefaultCityPopuNeed =
 
 	MIDDLE   = { req = 0.05,  limit = 0.2 },
 
-	OFFICER  = { req = 0.005, limit = 0.01 },
 	BACHELOR = { req = 0.005, limit = 0.01 },
+	OFFICER  = { req = 0.005, limit = 0.01 },	
 	GUARD    = { req = 0.005, limit = 0.01 },
 
 	RICH     = { req = 0.005, limit = 0.01 },
@@ -686,4 +688,24 @@ Default_CityBuildingData =
 CityBuildMethod = 
 {
 	
+}
+
+--def means default value
+--min, max means the value range
+--normal means the value will approach to it
+CitySecurityData = 
+{
+	OFFICER = { def = 20, min = 0, max = 40, popu_need = "OFFICER" },
+	GUARD   = { def = 20, min = 0, max = 40, popu_need = "GUARD" },
+	SOLDIER = { def = 20, min = 0, max = 40, popu_bonus = { popu = "SOLDIER", value = 0.01 } },
+
+	PATROL  = { def = 0, normal = 0 },
+	EVENT   = { def = 0, normal = 0 },
+}
+
+CityDissData = 
+{
+	AT_AWR    = { def = 0, normal = 0 },
+	IN_SIEGE  = { def = 0, normal = 0 },
+	LEVY_TAX  = { def = 0, normal = 0 },
 }

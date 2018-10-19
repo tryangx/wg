@@ -103,6 +103,11 @@ function Corps:ToString( type )
 		content = content .. leader:ToString()
 	end
 
+	if type == "ALL" then
+		content = content .. " maxtrp=" .. Corps_GetTroopNumber( self )
+		content = content .. " maxsol=" .. Corps_GetSolderNumber( self )
+	end
+
 	if type == "SIMPLE" or type == "ALL" then
 		local loc = Asset_Get( self, CorpsAssetID.LOCATION )
 		content = content .. " loc=" .. ( loc and loc:ToString() or "" )
@@ -208,6 +213,7 @@ function Corps:GetCapacity( typename )
 	return capacity
 end
 
+--[[
 function Corps:GetConsume( typename )
 	local consume = 0
 	Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function( troop )
@@ -217,13 +223,16 @@ function Corps:GetConsume( typename )
 	end)
 	return consume
 end
+]]
 
 function Corps:GetConsumeFood()
-	return self:GetConsume( "FOOD" )
+	local params = City_GetPopuParams( Asset_Get( self, CorpsAssetID.ENCAMPMENT ) ).POPU_CONSUME_FOOD
+	return params.SOLDIER
 end
 
 function Corps:GetSalary()
-	return self:GetConsume( "MONEY" )
+	local params = City_GetPopuParams( Asset_Get( self, CorpsAssetID.ENCAMPMENT ) ).POPU_SALARY
+	return params.SOLDIER
 end
 
 function Corps:GetFoodCapacity()
@@ -380,7 +389,8 @@ end
 
 function Corps:Update( ... )
 	local soldier, maxSoldier = self:GetSoldier()
-	self:SetStatus( CorpsStatus.UNDERSTAFFED, ( maxSoldier - soldier ) * 100 / maxSoldier )
+	--print( self:ToString(), maxSoldier, soldier )
+	self:SetStatus( CorpsStatus.UNDERSTAFFED, ( maxSoldier - soldier ) * 100 / maxSoldier )	
 
 	--find new leader
 	local leader = Asset_Get( self, CorpsAssetID.LEADER )
@@ -398,6 +408,12 @@ function Corps:Update( ... )
 	if self:IsAtHome() then
 		Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function ( troop )
 			troop:UpdateAtHome()
+		end)
+	end
+
+	if Move_IsMoving( self ) then
+		Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function ( troop )
+			troop:Move( g_elpased )
 		end)
 	end
 end
