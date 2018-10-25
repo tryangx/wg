@@ -135,10 +135,6 @@ function Task:Load( data )
 	self.id = data.id
 end
 
-function Task:IsWaitCombat()
-	return Asset_Get( self, TaskAssetID.INCOMBAT ) ~= 0
-end
-
 --has result, not means end
 function Task:IsFinished()
 	return Asset_Get( self, TaskAssetID.RESULT ) ~= TaskResult.UNKNOWN
@@ -237,4 +233,13 @@ function Task:Update()
 	end
 	--print( self:ToString() .. " update=" .. Asset_Get( self, TaskAssetID.DURATION ) )
 	return false
+end
+
+function Task:IsWaitCombat()
+	return Asset_Get( self, TaskAssetID.INCOMBAT ) ~= 0
+end
+
+function Task:EnterCombat()
+end
+function Task:LeaveCombat()
 end

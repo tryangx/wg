@@ -158,6 +158,14 @@ function City:ToString( type )
 	local group = Asset_Get( self, CityAssetID.GROUP )
 	content = content .. "[" .. ( group and group.name or "" ) .. "]"
 
+	if type == "PLOTS" then
+		content = content .. " lv=" .. Asset_Get( self, CityAssetID.LEVEL )		
+		Asset_Foreach( self, CityAssetID.PLOTS, function ( plot )
+			content = content .. plot:ToString() .. ","
+		end)
+		content = content .. " plot=" .. Asset_GetDictSize( self, CityAssetID.PLOTS )
+	end
+
 	if type == "SIMPLE" then
 		content = content .. "(" .. Asset_Get( self, CityAssetID.CENTER_PLOT ):ToString() ..  ")"
 	end
@@ -168,7 +176,7 @@ function City:ToString( type )
 		end)		
 	end
 	if type == "OFFICER" then
-		content = content .. " chars=" .. Asset_GetListSize( self, CityAssetID.CHARA_LIST )
+		content = content .. " chars=" .. Asset_GetListSize( self, CityAssetID.CHARA_LIST ) .. "/" .. Chara_GetLimitByCity( self )
 		content = content .. " ofi=" .. Asset_GetListSize( self, CityAssetID.OFFICER_LIST )
 		Asset_Foreach( self, CityAssetID.OFFICER_LIST, function ( data )
 			content = content .. " [" .. MathUtil_FindName( CityJob, data.job ) .. "]=" .. data.officer.name
@@ -275,14 +283,17 @@ function City:ToString( type )
 	end
 
 	if type == "STATUS" or type == "ALL" then
-		Asset_Foreach( self, CityAssetID.STATUSES, function ( data, status )			
+		Asset_Foreach( self, CityAssetID.STATUSES, function ( data, status )
 			if typeof( data ) == "boolean" then
 				if data == true then
 					content = content .. " " .. MathUtil_FindName( CityStatus, status )
 					--content = content .. "=" .. ( data and "1" or "0" )
 				end
+			else
+				content = content .. " " .. MathUtil_FindName( CityStatus, status )
+				content = content .. "=" .. data
 			end
-		end)
+		end)		
 	end	
 
 	if type == "ALL" then
@@ -292,6 +303,8 @@ function City:ToString( type )
 		content = content .. " offr=" .. Asset_GetListSize( self, CityAssetID.OFFICER_LIST )
 		content = content .. " cons=" .. Asset_GetListSize( self, CityAssetID.CONSTR_LIST )
 		content = content .. " popu=" .. Asset_Get( self, CityAssetID.POPULATION )
+		content = content .. " secu=" .. MathUtil_Sum( Asset_GetDict( self, CityAssetID.SECURITY ) )
+		content = content .. " diss=" .. MathUtil_Sum( Asset_GetDict( self, CityAssetID.DISS ) )
 	end
 	
 	if type == "MILITARY" or type == "ALL" then
@@ -338,31 +351,6 @@ function City:TrackData( dump )
 	end
 end
 
-function City:DumpStats()
-	print( self.name .. "("..self.id..")" )
-	print( "lv=" .. Asset_Get( self, CityAssetID.LEVEL ) )
-	print( "plots=" .. Asset_GetListSize( self, CityAssetID.PLOTS ) )
-end
-
---[[
-function City:DumpPopu()
-	local popu = Asset_Get( self, CityAssetID.POPULATION )
-	Asset_Foreach( self, CityAssetID.POPU_STRUCTURE, function ( value, type )
-		local cur = value .. "(".. math.ceil( value * 100 / popu ) .."%)"
-		local need = City_NeedPopu( self, MathUtil_FindName( CityPopu, type ) )
-		local req = "->" .. need .. "("..math.ceil( value * 100 / need ) .. "%)"
-		print( StringUtil_Abbreviate( MathUtil_FindName( CityPopu, type ), 8 ) .." = " .. cur .. " " .. req )
-	end )
-	--City_GetSupportPopu( self )
-	print( StringUtil_Abbreviate( "POPU", 8 ) .. " = " .. Asset_Get( self, CityAssetID.POPULATION ) )
-end
-]]
-
-function City:DumpPlots()
-	Asset_Foreach( self, CityAssetID.PLOTS, function( plot )
-	end )
-end
-
 function City:DumpGrowthAttrs()
 	Entity_ForeachAttrib( self, function ( k, attrib )
 		if attrib.type == CityAssetType.GROWTH_ATTRIB then
@@ -392,8 +380,10 @@ function City:Init()
 			end
 			Asset_SetDictItem( self, CityAssetID.SPY_LIST, city, self:CreateSpy( city, grade ) )
 		end )
-	end
-	self:InitPlots()
+	end	
+	
+	self:UpdatePlots()
+
 	self:InitPopu()
 
 	--keep minimum food
@@ -403,21 +393,28 @@ function City:Init()
 	--InputUtil_Pause( self:ToString( 'CONSTRUCTION'), Asset_GetListSize( self, CityAssetID.CONSTR_LIST ) )
 end
 
-function City:InitPlots()
-	Asset_Foreach( self, CityAssetID.PLOTS, function( plot )
-		Asset_Plus( self, CityAssetID.POPULATION,  Asset_Get( plot, PlotAssetID.POPULATION ) )
-
-		Asset_Plus( self, CityAssetID.AGRICULTURE,     Asset_Get( plot, PlotAssetID.AGRICULTURE ) )
-		Asset_Plus( self, CityAssetID.MAX_AGRICULTURE, Asset_Get( plot, PlotAssetID.MAX_AGRICULTURE ) )
-		Asset_Plus( self, CityAssetID.COMMERCE,        Asset_Get( plot, PlotAssetID.COMMERCE ) )
-		Asset_Plus( self, CityAssetID.MAX_COMMERCE,    Asset_Get( plot, PlotAssetID.MAX_COMMERCE ) )
-		Asset_Plus( self, CityAssetID.PRODUCTION,      Asset_Get( plot, PlotAssetID.PRODUCTION ) )
-		Asset_Plus( self, CityAssetID.MAX_PRODUCTION,  Asset_Get( plot, PlotAssetID.MAX_PRODUCTION ) )
+function City:UpdatePlots()
+	local nums = {}
+	function AddToNums( id, num )
+		if not nums[id] then nums[id] = 0 end
+		nums[id] = nums[id] + num
+	end
+	Asset_Foreach( self, CityAssetID.PLOTS, function( plot )		
+		AddToNums( CityAssetID.POPULATION,      Asset_Get( plot, PlotAssetID.POPULATION ) )
+		AddToNums( CityAssetID.AGRICULTURE,     Asset_Get( plot, PlotAssetID.AGRICULTURE ) )
+		AddToNums( CityAssetID.MAX_AGRICULTURE, Asset_Get( plot, PlotAssetID.MAX_AGRICULTURE ) )
+		AddToNums( CityAssetID.COMMERCE,        Asset_Get( plot, PlotAssetID.COMMERCE ) )
+		AddToNums( CityAssetID.MAX_COMMERCE,    Asset_Get( plot, PlotAssetID.MAX_COMMERCE ) )
+		AddToNums( CityAssetID.PRODUCTION,      Asset_Get( plot, PlotAssetID.PRODUCTION ) )
+		AddToNums( CityAssetID.MAX_PRODUCTION,  Asset_Get( plot, PlotAssetID.MAX_PRODUCTION ) )
 	end )
+	for id, v in pairs( nums ) do
+		Asset_Set( self, id, v )
+	end
 end
 
 function City:InitPopu()
-	City_InitPopuStructure( self )
+	City_DividePopuStructure( self )
 end
 
 function City:VerifyData()
@@ -448,6 +445,11 @@ end
 
 -------------------------------------------
 --getter
+
+function City:GetExpandDuration()
+	local level = Asset_Get( self, CityAssetID.LEVEL )
+	return CityParams.ISOLATE_DURATION_MODULUS * level * level
+end
 
 function City:GetSecurity()
 	local dict = Asset_GetDict( self, CityAssetID.SECURITY )
@@ -616,8 +618,14 @@ function City:SetPopu( popuType, number )
 	Asset_SetDictItem( self, CityAssetID.POPU_STRUCTURE, popuType, number )
 end
 function City:AddPopu( popuType, number )
+	if not number then error( "1") end
 	local cur = self:GetPopu( popuType )
+	if not cur then	cur = 0 end
 	Asset_SetDictItem( self, CityAssetID.POPU_STRUCTURE, popuType, cur + number )
+end
+
+function City:LosePopu( number )
+
 end
 
 --type from enum CityJob
@@ -1116,7 +1124,7 @@ function City:SetOfficer( chara, job )
 	Asset_AppendList( self, CityAssetID.OFFICER_LIST, { officer = chara, job = job } )
 	Debug_Log( self.name, "Assign " .. chara.name .. "-->" .. MathUtil_FindName( CityJob, job ) )	
 	Stat_Add( "SetOfficer@" .. self.name, chara.name .. "=" .. MathUtil_FindName( CityJob, job ) .. " " .. g_Time:ToString(), StatType.LIST )
-	Stat_Add( "SetPosition@" .. chara.name, MathUtil_FindName( CityJob, job ) .. " " .. self.name .. " " .. g_Time:ToString(), StatType.LIST )
+	Stat_Add( "SetJob@" .. chara.name, MathUtil_FindName( CityJob, job ) .. " " .. self.name .. " " .. g_Time:ToString(), StatType.LIST )
 end
 
 --------------------------------------------
@@ -1207,7 +1215,12 @@ function City:UpdateDiss()
 				if value < param.normal then value = value + 1 end
 			end
 
+			if self:GetStatus( CityStatus[param.status] ) then
+				value = value + ( param.increment or 0 )
+			end
+
 			if param.min and param.max then value = MathUtil_Clamp( value, param.min, param.max ) end
+
 			Asset_SetDictItem( self, CityAssetID.DISS, type, value )
 		end
 	end
@@ -1251,6 +1264,9 @@ function City:Update()
 
 	if day == DAY_IN_MONTH then
 		self:UpdateConstrList()
+
+		self:UpdateSecurity()
+		self:UpdateDiss()
 	end
 
 	--cancel research
@@ -1309,13 +1325,13 @@ function City:Sabotage()
 	City_Pillage( self )
 	--InputUtil_Pause( "sabotage" )
 
-	Asset_SetDictItem( self, CityAssetID.STATUSES, CityStatus.VIGILANT, DAY_IN_SEASON )	
+	self:AddStatus( CityStatus.VIGILANT, DAY_IN_MONTH )
 end
 
 function City:DestroyDefensive()
 	City_DestroyDefensive( self )
 
-	Asset_SetDictItem( self, CityAssetID.STATUSES, CityStatus.VIGILANT, DAY_IN_SEASON )	
+	self:AddStatus( CityStatus.VIGILANT, DAY_IN_MONTH )
 end
 
 function City:Assassinate( target, killer )
@@ -1325,7 +1341,7 @@ function City:Assassinate( target, killer )
 	Stat_Add( "Assassinate", target:ToString() .. " by " .. killer:ToString(), StatType.LIST )
 	--InputUtil_Pause( target:ToString() .. " was assassinated" )
 
-	Asset_SetDictItem( self, CityAssetID.STATUSES, CityStatus.VIGILANT, DAY_IN_SEASON )	
+	self:AddStatus( CityStatus.VIGILANT, DAY_IN_MONTH )
 end
 
 ---------------------------------------
@@ -1400,6 +1416,14 @@ function City:SetStatus( status, value )
 	Asset_SetDictItem( self, CityAssetID.STATUSES, status, value )
 end
 
+function City:AddStatus( status, value )
+	local current = self:GetStatus( status ) or 0
+	current = current + value
+	Asset_SetDictItem( self, CityAssetID.STATUSES, status, current )
+	--print( self:ToString("STATUS"), MathUtil_FindName( CityStatus, status ), current )
+	--InputUtil_Pause( "ADD STATUS", status, current)
+end
+
 function City:WatchBudget( reason )
 	if reason then Debug_Log( "watchbudget=" .. self.name .."->" .. reason ) end
 	Debug_Log( self:ToString("POPULATION") )		
@@ -1419,3 +1443,135 @@ function City:WatchBudget( reason )
 end
 
 ---------------------------------
+
+function City:LevyTax()
+	local value = Asset_GetDictItem( self, CityAssetID.DISS, CityDiss.LEVY_TAX )
+	value = value + 10
+	Asset_SetDictItem( self, CityAssetID.DISS, CityDiss.LEVY_TAX, value )
+	InputUtil_Pause( "levytax=" .. Asset_GetDictItem( self, CityAssetID.DISS, CityDiss.LEVY_TAX ) )
+end
+
+function City:Demonstrate( time )
+	self:SetStatus( CityStatus.DEMONSTRATE, time )
+end
+
+function City:Strike( time )
+	City_Pillage( self )
+	self:SetStatus( CityStatus.STRIKE, time )
+end
+
+function City:FindExpandPlot()
+	if Asset_Get( self, CityAssetID.LEVEL ) >= Entity_GetAssetAttrib( self, CityAssetID.LEVEL ).max then
+		return
+	end
+
+	local plots = {}
+	Asset_Foreach( self, CityAssetID.PLOTS, function ( plot )		
+		plots = g_map:GetAdjoinPlots( Asset_Get( plot, PlotAssetID.X ), Asset_Get( plot, PlotAssetID.Y ), plots, function ( p )
+			return not Asset_Get( p, PlotAssetID.CITY )
+		end )
+	end)
+	local list = {}
+	for _, plot in pairs( plots ) do
+		local city = Asset_Get( plot, PlotAssetID.CITY )
+		if not city then
+			local plotType = plot:GetPlotType()
+			if plotType == PlotType.LAND or plotType == PlotType.HILLS then
+				table.insert( list, plot )
+			end
+		end
+	end
+	if #list == 0 then return end
+
+	local plot = Random_GetListItem( list )
+	self:SetStatus( CityStatus.EXPAND_PLOT, g_map:CreatePlotKey( plot ) )
+	local road  = Asset_Get( plot, PlotAssetID.ROAD )
+	local level = Asset_Get( self, CityAssetID.LEVEL )
+	local dur   = CityParams.ISOLATE_DURATION_MODULUS * level * level
+	self:SetStatus( CityStatus.EXPAND_DURATION, dur )
+
+	--[[
+	print( self:ToString( "POPULATION" ) )
+	print( self:ToString( "DEVELOP" ) )
+	print( self:ToString("PLOTS"), "find expand plot=" .. plot:ToString(), "dur=" .. dur )
+
+	Track_Reset()
+	Track_Data( "population", Asset_Get( self, CityAssetID.POPULATION ) )
+	Track_Data( "agri", Asset_Get( self, CityAssetID.AGRICULTURE ) )
+	Track_Data( "prod", Asset_Get( self, CityAssetID.PRODUCTION ) )
+	Track_Data( "comm", Asset_Get( self, CityAssetID.COMMERCE ) )	
+	--]]
+end
+
+function City:Expand()
+	local id = self:GetStatus( CityStatus.EXPAND_PLOT )	
+	local plot = id and g_map:GetPlotByKey( id ) or nil
+	if not plot then return end
+	Asset_AppendList( self, CityAssetID.PLOTS, plot )
+	self:SetStatus( CityStatus.EXPAND_PLOT, nil )
+	self:SetStatus( CityStatus.EXPAND_DURATION )
+
+	City_DividePopuStructure( self, Asset_Get( plot, PlotAssetID.POPULATION ) )
+	self:UpdatePlots()
+
+	--[[
+	print( self:ToString( "POPULATION" ) )
+	print( self:ToString( "DEVELOP" ) )
+	InputUtil_Pause( "expand", self:ToString("PLOTS") )
+	
+	Track_Data( "population", Asset_Get( self, CityAssetID.POPULATION ) )
+	Track_Data( "agri", Asset_Get( self, CityAssetID.AGRICULTURE ) )
+	Track_Data( "prod", Asset_Get( self, CityAssetID.PRODUCTION ) )
+	Track_Data( "comm", Asset_Get( self, CityAssetID.COMMERCE ) )
+	Track_Dump()
+	--]]
+end
+
+function City:Isolate()
+	--find outside plot
+	local list = {}
+	Asset_Foreach( self, CityAssetID.PLOTS, function ( plot )
+		local plots = {}
+		g_map:GetAdjoinPlots( Asset_Get( plot, PlotAssetID.X ), Asset_Get( plot, PlotAssetID.Y ), plots )
+		for _, adPlot in ipairs( plots ) do
+			if not Asset_Get( adPlot, PlotAssetID.CITY ) then
+				table.insert( list, plot )
+				break
+			end
+		end		
+	end)
+	if #list == 0 then return end
+
+	--[[
+	print( self:ToString( "PLOTS" ) )
+	print( self:ToString( "POPULATION" ) )
+	print( self:ToString( "DEVELOP" ) )
+	
+	Track_Reset()
+	Track_Data( "population", Asset_Get( self, CityAssetID.POPULATION ) )
+	Track_Data( "agri", Asset_Get( self, CityAssetID.AGRICULTURE ) )
+	Track_Data( "prod", Asset_Get( self, CityAssetID.PRODUCTION ) )
+	Track_Data( "comm", Asset_Get( self, CityAssetID.COMMERCE ) )
+	]]
+
+	--find 	
+	local plot = Random_GetListItem( list )
+	Asset_RemoveListItem( self, CityAssetID.PLOTS, plot )
+	self:SetStatus( CityStatus.EXPAND_PLOT, nil )
+	self:SetStatus( CityStatus.EXPAND_DURATION )	
+	
+	self:LosePopu( Asset_Get( plot, PlotAssetID.POPULATION ) )
+	self:UpdatePlots()
+
+	--[[
+	print( self:ToString( "POPULATION" ) )
+	print( self:ToString( "DEVELOP" ) )
+	InputUtil_Pause( "isolate", plot:ToString(), self:ToString("PLOTS") )
+
+	Track_Data( "population", Asset_Get( self, CityAssetID.POPULATION ) )
+	Track_Data( "agri", Asset_Get( self, CityAssetID.AGRICULTURE ) )
+	Track_Data( "prod", Asset_Get( self, CityAssetID.PRODUCTION ) )
+	Track_Data( "comm", Asset_Get( self, CityAssetID.COMMERCE ) )
+	Track_Dump()
+	]]
+end

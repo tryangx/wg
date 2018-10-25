@@ -87,7 +87,7 @@ function Game_Init()
 	Entity_Load( EntityType.CHARA, Scenario_GetData( "CHARA_DATA" ), EntityType )
 	Entity_Load( EntityType.CORPS, Scenario_GetData( "CORPS_DATA" ), EntityType )
 	--Entity_Load( EntityType.WEAPON, Scenario_GetData( "WEAPON_DATA" ), EntityType )
-	Entity_Load( EntityType.EVENT, Scenario_GetData( "EVENT_DATA" ), EntityType )
+	--Entity_Load( EntityType.EVENT, Scenario_GetData( "EVENT_DATA" ), EntityType )
 
 	--DistrictTable_Load    ( Scenario_GetData( "DISTRICT_DATA" ), EntityType )
 	PlotTable_Load        ( Scenario_GetData( "PLOT_TABLE_DATA" ), EntityType )
@@ -101,6 +101,7 @@ function Game_Init()
 	ConstructionTable_Load( Scenario_GetData( "CITY_CONSTR_DATA" ), EntityType )
 	CharaTitleTable_Load  ( Scenario_GetData( "CHARA_TITLE_DATA" ), EntityType )
 	CharaCareerTable_Load ( Scenario_GetData( "CHARA_CAREER_DATA" ), EntityType )
+	EventTable_Load       ( Scenario_GetData( "EVENT_DATA" ), EntityType )
 
 
 	--init weapon pointers
@@ -204,7 +205,7 @@ function Game_Init()
 		for i = 1, 3 do
 			Chara_GainTrait( chara )
 		end
-		print( chara:ToString( "TRAITS") )
+		--print( chara:ToString( "TRAITS") )
 
 		--action
 		for _, type in pairs( CharaActionPoint ) do
@@ -284,15 +285,21 @@ function GameExit()
 		end
 	end )
 
+	Entity_Foreach( EntityType.CHARA, function ( entity )
+		local home = Asset_Get( entity, CharaAssetID.HOME )
+		if entity.id == 102 then print( entity:ToString(), MathUtil_FindName( CityJob, home:GetCharaJob( entity ) ) ) end
+	end )
+
 	Entity_Foreach( EntityType.CITY, function ( entity )
 		--print( entity:ToString( "BUDGET_YEAR" ) )
 		--print( entity:ToString( "GROWTH" ) )
-		print( entity:ToString( "POPULATION" ) )
+		--print( entity:ToString( "POPULATION" ) )
 		--print( entity:ToString( "DEVELOP" ) )
 		--print( entity:ToString( "TAX" ) )	
 		--print( entity:ToString( "SUPPLY" ) )	
-		print( entity:ToString( "ASSET" ) )
+		--print( entity:ToString( "ASSET" ) )
 		--print( entity:ToString( "CHARA" ) )	
+		--print( entity:ToString( "OFFICER" ) )
 		--InputUtil_Pause()
 	end)		
 

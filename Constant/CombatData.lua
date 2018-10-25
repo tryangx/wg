@@ -3,8 +3,9 @@ DefaultCorpsParams =
 	SOLDIER_NUMBER = 
 	{
 		MIN_NUMBER = 500,
-		TITLE_GRADE_BONUS = { [1] = 100, [2] = 200, [3] = 300, [4] = 400, [5] = 500 },
-		INFLUENCE_GRADE_BONUS = { [1] = 0, [2] = 200, [3] = 400, [4] = 600, [5] = 900 },
+		TROOP_LV_BONUS        = { per_level = 30 },
+		TITLE_GRADE_BONUS     = { [1] = 100, [2] = 200, [3] = 300, [4] = 400, [5] = 500 },
+		INFLUENCE_GRADE_BONUS = { [1] = 100, [2] = 200, [3] = 300, [4] = 400, [5] = 500 },
 	},
 
 	TROOP_NUMBER = 
@@ -37,8 +38,6 @@ DefaultTroopParams =
 	MIN_TROOP_SOLDIER = 100,
 
 	TROOP_POTENTIAL   = 20,
-
-	TROOP_LEVELUP_EXP = 100,
 }
 
 DefaultTroopTable = 

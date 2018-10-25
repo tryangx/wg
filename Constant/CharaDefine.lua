@@ -105,8 +105,9 @@ CharaStatus =
 	----------------------------
 	--Flag / Data
 	IN_TASK           = 1,
-	DEAD              = 2,
-	SURRENDER         = 3,
+	OUTSIDE           = 2,
+	DEAD              = 3,
+	SURRENDER         = 4,
 
 	----------------------------
 	--ACCUMULATION
@@ -114,10 +115,11 @@ CharaStatus =
 	TOTAL_EXP         = 101,	
 	OFFICER_EXP       = 102,
 	MILITARY_EXP      = 103,
-	DIPLOMATIC_EXP    = 104,
+	DIPLOMAT_EXP      = 104,
 
 	--
 	REPUTATION        = 110,
+	NOTORIETY         = 111,
 
 	----------------------------
 	-- Time Status( use to gain new trait )
@@ -137,9 +139,22 @@ CharaStatus =
 CharaActionPoint = 
 {
 	STAMINA  = 1,
-	TACTIC   = 1,
-	STRATEGY = 2,
-	POLITICS = 3,
+	TACTIC   = 2,
+	STRATEGY = 3,
+	POLITICS = 4,
+}
+
+CharaSkillType = 
+{
+	DIPLOMAT  = 10,
+	OFFICIALS = 11,
+	HR        = 12,
+
+	COMMANDER = 20,
+	OFFICER   = 21,
+	STAFF     = 22,
+
+	TECHNICIAN = 30,	
 }
 
 CharaSkillEffectCondition = 
@@ -188,7 +203,7 @@ CharaSkillEffect =
 	POLITICS_LIMIT     = 707,
 
 	------------------------------
-	-- Combat Relate
+	-- Commander related
 
 	--Affect the damage made
 	DAMAGE_BONUS       = 1001,
@@ -205,8 +220,12 @@ CharaSkillEffect =
 	ORGANIZATION_BONUS = 1102,
 	--affect the movement
 	MOVEMENT_BONUS     = 1104,
+
+	------------------------------
+	-- Officer related
 	--speed up the troop training
-	TRAINING_BONUS     = 1100,
+	TRAINING_EFF_BONUS = 2000,	
+	TRAINING_EXP_BONUS = 2001,
 }
 
 

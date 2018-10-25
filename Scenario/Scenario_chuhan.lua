@@ -108,7 +108,7 @@ CHUHAN_CharaData =
 		grade       = "PERFECT",
 		purpose     = 0,
 		job 		= "",
-		skills      = { 7200, 7300, 7400, 7410, 7500, 10001 },
+		skills      = { 7200, 7300, 7400, 7410, 7500, 7510, 10001 },
 		politics    = { 0, 10, 1000 },
 		strategy    = { 0, 10, 1000 },
 		tactic      = { 0, 10, 1000 },
@@ -399,21 +399,77 @@ CHUHAN_CorpsTemplate =
 
 	
 --]]
+
+--[[
+	trigger
+	  compare = { left, right, method = "<"/"="/">"/">="/"<=" }
+
+	effect
+--]]
 CHUHAN_EventData = 
 {
+	--[[
+	[100] = 
+	{
+		type     = "CITY_EVENT",
+		target   = "CITY",
+		name     = "demonstration",
+		trigger  = { { NO_GLB_CD = { id = "CITY_DISS_EVT" }, COMPARE = { left = "CITY_DISS", right = "CITY_SECURITY", method = "MORE", value = 10 }, PROB = 10000 }, },
+		effect   = { { CITY_DEMONSTRATE = { time = 45 }, SET_GLB_CD = { id = "CITY_DISS_EVT", value = 60 } } },
+	},
+	[101] = 
+	{
+		type     = "CITY_EVENT",
+		target   = "CITY",
+		name     = "strike",
+		trigger  = { { NO_GLB_CD = { id = "CITY_DISS_EVT" }, COMPARE = { left = "CITY_DISS", right = "CITY_SECURITY", method = "MORE", value = 10 }, PROB = 10000 }, },
+		effect   = { { CITY_STRIKE = { time = 90 }, SET_GLB_CD = { id = "CITY_DISS_EVT", time = 60 } } },
+	},
+	]]
+
+	--[[
+	--test storyboard
+	[200] = 
+	{
+		type     = "STORY_EVENT",
+		target   = "CITY",
+		name     = "test",
+		trigger  = { { NO_GLB_CD = { id = "CITY_DIALOG_EVT" }, PROB = 10000 }, },
+		effect   = 
+		{
+			{ CITY_STRIKE = { time = 90 }, SET_GLB_CD = { id = "CITY_DISS_EVT", time = 60 } },			
+			{ DIALOG = "are u fool?", CHOICE = { { title = "agree", goto = "branch1" }, { title = "deny", goto = "branch2" } } },
+			{ BRANCH = { title = "branch1", effect = { DIALOG = "maybe" } } },
+			{ BRANCH = { title = "branch2", effect = { DIALOG = "i'm not fool" } } },
+		},
+	},
+	]]
+
+	--[[
+	[110] = 
+	{
+		type     = "CITY_EVENT",
+		target   = "CITY",
+		name     = "rebel",
+		trigger  = { { COMPARE = { left = "CITY_DISS", right = "CITY_SECURITY", method = "MORE", value = 20 }, PROB = 4000 }, },
+		effect   = { ADD_CITY_STATUS = { status = "DEMONSTRATION", value = 10, SET_GLB_FLAG = { id = "SKIP_CITY_DISS", value = 1 } } },
+	},
+	]]
+
+	--[[
 	[100] = 
 	{
 		type     = EventType.DISASTER,
 		target   = "CITY",
 		trigger  = { { NO_EVT_CD = -1 }, { PROB = 1000 }, { SET_EVT_CD = 30 }, },
-		effects  = { { SECURITY = -10 }, { SATISFACTION = -10 }, { SET_EVT_CD = 100 }, { SET_EVT_FLAG = EventFlag.EVT_TRIGGER_THIS_TURN } },
+		effect   = { { SECURITY = -10 }, { SATISFACTION = -10 }, { SET_EVT_CD = 100 }, { SET_EVT_FLAG = EventFlag.EVT_TRIGGER_THIS_TURN } },
 	},
 	[101] = 
 	{
 		type     = EventType.WARFARE,
 		target   = "CITY",
 		trigger  = { { NO_EVT_CD = -1 }, { PROB = 1000 }, { NO_EVT_FLAG = EventFlag.EVT_TRIGGER_THIS_TURN }, { SET_EVT_CD = 30 } },
-		effects  = { { SECURITY = -10 }, { SATISFACTION = -5 }, { SET_EVT_CD = 100 } },
+		effect   = { { SECURITY = -10 }, { SATISFACTION = -5 }, { SET_EVT_CD = 100 } },
 	},	
 	[200] = 
 	{
@@ -421,4 +477,5 @@ CHUHAN_EventData =
 		target   = "CHARA",
 		triggers = { { NO_EVT_CD = -1 }, },
 	},
+	]]
 }

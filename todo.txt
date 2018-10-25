@@ -29,10 +29,10 @@ To Do List
 [ok] buy / sell food
 [ok] add task=ASSASSINATE_CHARA
 
-09/28/18
+#09/28/18
 [ok] refactor action point( strategy, tactic, )
 
-10/12/18
+#10/12/18
 [delete] add solider limitation/requirement, reduce the complex of algorithm about Establish CROPS/TROOP
 
 [ok] refactor Military Economy:
@@ -50,6 +50,12 @@ To Do List
           change when military/economy/tech rank
           change by leader's ability
 
+[ok] redesign CITY.SECURITY, CITY.SATISFACTION -> CITY.DISS, CITY.SECURITY
+   security < diss : leads easy to been sabotage, demonstration, strike, rebel,
+
+#10/25/2018
+[ok] expand / isolate plot
+
 ---------------------------------------------------------
 
 [inprog] add chara skills / troop tactics etc
@@ -64,11 +70,13 @@ To Do List
            3. A is the enemy with B or C, attend combat
            4. retreat
 
+[inprog] 1.war, 2.trade war, 3.diplomacy war, 4.tactic, bribe enemy to against war
+
 !!! don't add/remove during foreach
 
 [inprog] Add *Equipment feature into troop, will reduce by time by combat, can refill
 
-[inprog] redesign CITY.SECURITY, CITY.SATISFACTION -> CITY.DISS, CITY.SECURITY, leads to rebel
+rebel--> add new system: neutral 
 
 *intercept can cancel the corps task
 
@@ -86,7 +94,7 @@ refactor goal as a series task
 
 when proposer is mayor should find the fit actor for the task
 
-disaster
+disaster event
 
 ------------------------------------------------
 

@@ -680,24 +680,4 @@ RTK_CorpsTemplate =
 --]]
 RTK_EventData = 
 {
-	[100] = 
-	{
-		type     = EventType.DISASTER,
-		target   = "CITY",
-		trigger  = { { NO_EVT_CD = -1 }, { PROB = 1000 }, { SET_EVT_CD = 30 }, },
-		effects  = { { SECURITY = -10 }, { SATISFACTION = -10 }, { SET_EVT_CD = 100 }, { SET_EVT_FLAG = EventFlag.EVT_TRIGGER_THIS_TURN } },
-	},
-	[101] = 
-	{
-		type     = EventType.WARFARE,
-		target   = "CITY",
-		trigger  = { { NO_EVT_CD = -1 }, { PROB = 1000 }, { NO_EVT_FLAG = EventFlag.EVT_TRIGGER_THIS_TURN }, { SET_EVT_CD = 30 } },
-		effects  = { { SECURITY = -10 }, { SATISFACTION = -5 }, { SET_EVT_CD = 100 } },
-	},	
-	[200] = 
-	{
-		type     = EventType.DISEASE,
-		target   = "CHARA",
-		triggers = { { NO_EVT_CD = -1 }, },
-	},
 }

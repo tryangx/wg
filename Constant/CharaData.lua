@@ -311,7 +311,7 @@ DefaultCharaSkill =
 {
 	[2000] =
 	{
-		name="LOBBYIST", desc = "hr expert who is good at hiring chara",
+		name="LOBBYIST",  type = "DIPLOMAT", desc = "hr expert who is good at hiring chara",
 		effects =
 		{
 			{ type = "HIRE_CHARA_BONUS", value = 50 },
@@ -325,7 +325,7 @@ DefaultCharaSkill =
 
 	[3010] =
 	{
-		name="Agri expert",
+		name="Agri expert", type = "OFFICIALS",
 		effects =
 		{
 			{ type = "AGRICULTURE_BONUS", value = 50 },
@@ -337,7 +337,7 @@ DefaultCharaSkill =
 	},
 	[3020] =
 	{
-		name="Comm expert",
+		name="Comm expert", type = "OFFICIALS",
 		effects =
 		{
 			{ type = "COMMERCE_BONUS", value = 50 },
@@ -349,7 +349,7 @@ DefaultCharaSkill =
 	},
 	[3030] = 
 	{
-		name="Prod expert",
+		name="Prod expert", type = "OFFICIALS",
 		effects =
 		{
 			{ type = "PRODUCTION_BONUS", value = 50 },
@@ -361,7 +361,7 @@ DefaultCharaSkill =
 	},
 	[3040] =
 	{
-		name="Builder expert",
+		name="Builder expert", type = "OFFICIALS",
 		effects =
 		{
 			{ type = "BUILD_BONUS", value = 50 },
@@ -372,7 +372,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=3050, name="Tax expert",
+		id=3050, name="Tax expert", type = "OFFICIALS",
 		effects =
 		{
 			{ type = "LEVY_TAX_BONUS", value = 50 },
@@ -384,7 +384,7 @@ DefaultCharaSkill =
 	},
 
 	{
-		id=4010, name="SCOUT expert",
+		id=4010, name="SCOUT expert", type = "STAFF",
 		effects =
 		{
 			{ type = "RECONNOITRE_BONUS", value = 50 },
@@ -395,7 +395,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=4020, name="Spy TypeB", desc = "who is good at operation likes sabotage",
+		id=4020, name="Spy TypeB", type = "STAFF", desc = "who is good at operation likes sabotage",
 		effects =
 		{
 			{ type = "SABOTAGE_BONUS", value = 50 },
@@ -406,7 +406,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=4030, name="Spy TypeC", desc = "who is good at operation likes sabotage",
+		id=4030, name="Spy TypeC", type = "STAFF", desc = "who is good at operation likes sabotage",
 		effects =
 		{
 			{ type = "ASSASSINATE", value = 50 },
@@ -418,7 +418,7 @@ DefaultCharaSkill =
 	},
 
 	{
-		id=5010, name="dipl expert",
+		id=5010, name="dipl expert", type = "DIPLOMAT",
 		effects =
 		{
 			{ type = "IMPROVE_RELATION_BONUS", value = 50 },
@@ -429,7 +429,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=5020, name="pact expert",
+		id=5020, name="pact expert", type = "DIPLOMAT",
 		effects =
 		{
 			{ type = "SIGN_PACT_BONUS", value = 50 },
@@ -441,7 +441,7 @@ DefaultCharaSkill =
 	},
 
 	{
-		id=6010, name="tech expert",
+		id=6010, name="tech expert", type = "TECHNICIAN",
 		effects =
 		{
 			{ type = "RESEARCH_BONUS", value = 50 },
@@ -453,7 +453,7 @@ DefaultCharaSkill =
 	},
 
 	{
-		id=7000, name="atk expert",
+		id=7000, name="atk expert", type = "COMMANDER",
 		effects = 
 		{
 			{ type = "ORG_DAMAGE_BONUS", value = 20 },
@@ -465,7 +465,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=7010, name="infantry expert",
+		id=7010, name="infantry expert", type = "COMMANDER",
 		effects = 
 		{
 			{ type = "ORG_DAMAGE_BONUS", prob = 80, value = 10 },
@@ -477,7 +477,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=7020, name="cavalry expert",
+		id=7020, name="cavalry expert", type = "COMMANDER",
 		effects = 
 		{
 			{ type = "ORG_DAMAGE_BONUS", value = 10 },
@@ -489,7 +489,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=7030, name="archer expert",
+		id=7030, name="archer expert", type = "COMMANDER",
 		effects = 
 		{
 			{ type = "ORG_DAMAGE_BONUS", value = 10 },
@@ -501,7 +501,7 @@ DefaultCharaSkill =
 		},
 	},	
 	{
-		id=7040, name="siegeweapon expert",
+		id=7040, name="siegeweapon expert", type = "COMMANDER",
 		effects = 
 		{
 			{ type = "ORG_DAMAGE_BONUS", value = 10 },
@@ -513,7 +513,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=7100, name="def expert",
+		id=7100, name="def expert", type = "COMMANDER",
 		effects = 
 		{
 			{ type = "ORG_DAMAGE_RESIST", type = "ORG_DAMAGE_BONUS", value = 20 },
@@ -525,7 +525,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=7200, name="field expert",
+		id=7200, name="field expert", type = "COMMANDER",
 		effects = 
 		{
 			{ type = "ORG_DAMAGE_BONUS", conditions = { "IS_FIELD_COMBAT", }, value = 10 },
@@ -539,7 +539,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=7300, name="siege expert",
+		id=7300, name="siege expert", type = "COMMANDER",
 		effects = 
 		{
 			{ type = "ORG_DAMAGE_BONUS", conditions = { "IS_SIEGE_COMBAT", }, value = 10 },
@@ -553,7 +553,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=7400, name="Leadership Lv1",
+		id=7400, name="Leadership Lv1", type = "OFFICER",
 		effects = 
 		{
 			{ type = "ORGANIZATION_BONUS", value = 20 },
@@ -564,7 +564,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=7410, name="Commander Lv1",
+		id=7410, name="Commander Lv1", type = "OFFICER",
 		effects = 
 		{
 			{ type = "MORALE_BONUS", value = 20 },
@@ -575,12 +575,25 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=7500, name="training expert",
+		id=7500, name="training expert", type = "OFFICER",
 		effects = 
 		{
-			{ type = "TRAINING_BONUS", value = 20 },
-			{ type = "TRAINING_BONUS", prob = 80, value = 15 },
-			{ type = "TRAINING_BONUS", prob = 50, value = 15 },
+			{ type = "TRAINING_EFF_BONUS", value = 20 },
+			{ type = "TRAINING_EFF_BONUS", prob = 80, value = 15 },
+			{ type = "TRAINING_EFF_BONUS", prob = 50, value = 15 },
+		},
+		conditions = 
+		{
+			{ pot_above = 50, prob = 30, traits = { "HARDWORK", "VOLUBLE", "OBSERVANT", "CAREFUL" }, },
+		},
+	},
+	{
+		id=7510, name="training teacher", type = "OFFICER",
+		effects = 
+		{
+			{ type = "TRAINING_EXP_BONUS", value = 10 },
+			{ type = "TRAINING_EXP_BONUS", prob = 80, value = 5 },
+			{ type = "TRAINING_EXP_BONUS", prob = 50, value = 5 },
 		},
 		conditions = 
 		{
@@ -590,7 +603,7 @@ DefaultCharaSkill =
 
 	--historical role
 	{
-		id=10000, name="Overlord of West Chu",
+		id=10000, name="Overlord of West Chu", type = "COMMANDER",
 		effects = 
 		{ 
 			{ type = "DAMAGE_BONUS",     value = 15 },
@@ -606,7 +619,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=10001, name="GuoShiWuShuang",
+		id=10001, name="GuoShiWuShuang", type = "COMMANDER",
 		effects = 
 		{
 			{ type = "DAMAGE_RESIST",     value = 15 },

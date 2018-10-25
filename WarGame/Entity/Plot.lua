@@ -10,8 +10,9 @@ PlotAssetID =
 	X               = 101,
 	Y               = 102,
 	TEMPLATE        = 103,
-	PROVINCE        = 104,
-	CONTINENT       = 105,
+
+	PROVINCE        = 110,
+	CONTINENT       = 111,
 
 	CITY            = 201,
 	RESOURCE        = 202,
@@ -156,15 +157,23 @@ function Plot:Update()
 
 	local city = Asset_Get( self, PlotAssetID.CITY )
 	if city then return end
+
 	local day   = g_Time:GetDay()
 	if day % GlobalTime.TIME_PER_YEAR ~= 0 then return end
 
 	local population = Asset_Get( self, PlotAssetID.POPULATION )
 	
-	--population grow
-	local growthRate = Random_GetInt_Sync( PlotParams.POPULATION.GROWTH_MIN_RATE , PlotParams.POPULATION.GROWTH_MAX_RATE  )
+	--children grow
+	local growthRate = Random_GetInt_Sync( PlotParams.POPULATION.GROWTH_MIN_RATE , PlotParams.POPULATION.GROWTH_MAX_RATE  )		
+	local increase = popu * growthRate * 0.001
+	Asset_Set( self, PlotAssetID.POPULATION, population + increase )
+	city:AddPopu( CityPopu.CHILDREN, increase )
 	
-	--increase
-	local increase = popu * growthRate * 0.001	
-	Asset_Set( self, PlotAssetID.POPULATION, population + increase )	
+	--old died
+	local deadRate = Random_GetInt_Sync( PlotParams.POPULATION.DEAD_MIN_RATE, PlotParams.POPULATION.DEAD_MAX_RATE )
+	local dead = popu * deadRate * 0.001
+	city:ReducePopu( CityPopu.OLD, dead )
+
+	local delta = increase - dead	
+	Asset_Plus( city, CityAssetID.POPULATION, delta )
 end

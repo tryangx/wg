@@ -79,7 +79,7 @@ function Group:ToString( type )
 	end
 	if type == "POWER" or type == "ALL" then
 		content = content .. " popu=" .. self:GetPopu( CityPopu.ALL )
-		content = content .. " sldr=" .. self:GetPopu( CityPopu.SOLDIER )		
+		content = content .. " sldr=" .. self:GetPopu( CityPopu.SOLDIER )
 		content = content .. " food=" .. self:GetProperty( CityAssetID.FOOD )
 		content = content .. " money=" .. self:GetProperty( CityAssetID.MONEY )		
 		content = content .. " mat=" .. self:GetProperty( CityAssetID.MATERIAL )
@@ -170,12 +170,13 @@ function Group:VerifyData()
 		--check location and home
 		local home = Asset_Get( chara, CharaAssetID.HOME )		
 		if not home then
-			chara:JoinCity( Asset_Get( self, GroupAssetID.CAPITAL ) )
+			home =  Asset_Get( self, GroupAssetID.CAPITAL )
+			chara:JoinCity( home )
 			CRR_Tolerate( chara.name .. " home correct to " .. String_ToStr( Asset_Get( chara, CharaAssetID.HOME ), "name" ) )
 		end
 		local loc = Asset_Get( chara, CharaAssetID.LOCATION )
 		if not loc then
-			chara:JoinCity( Asset_Get( chara, CharaAssetID.HOME ) )
+			chara:EnterCity( home )
 			CRR_Tolerate( chara.name .. " loc correct to " .. String_ToStr( Asset_Get( chara, CharaAssetID.HOME ), "name" ) )
 		end
 
@@ -285,7 +286,7 @@ end
 function Group:GetPopu( popuType )
 	local num = 0
 	Asset_Foreach( self, GroupAssetID.CITY_LIST, function ( city )
-		num = num + city:GetPopu( popuType )
+		num = num + ( city:GetPopu( popuType ) or 0 )
 	end)
 	return num
 end

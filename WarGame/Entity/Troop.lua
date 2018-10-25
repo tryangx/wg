@@ -136,6 +136,10 @@ end
 
 -------------------------------------
 
+function Troop:GetLevelUPExp()
+	return Asset_Get( self, TroopAssetID.MAX_SOLDIER ) * Asset_Get( self, TroopAssetID.LEVEL )
+end
+
 function Troop:GetMaxMorale()	
 	local maxMorale = 50
 	--level effect
@@ -235,6 +239,11 @@ function Troop:SetStatus( status, value )
 	Asset_SetDictItem( self, TroopAssetID.STATUSES, status, value )
 end
 
+function Troop:AddStatus( status, value )
+	local cur = Asset_GetDictItem( self, TroopAssetID.STATUSES, status ) or 0
+	Asset_SetDictItem( self, TroopAssetID.STATUSES, status, cur + value )
+end
+
 function Troop:SetOfficer( officer )
 	Asset_Set( self, TroopAssetID.OFFICER, officer )
 end
@@ -277,8 +286,7 @@ function Troop:AffectMorale( delta )
 end
 
 function Troop:KillSoldier( number )
-	local exp = self:GetStatus( TroopStatus.EXP )
-	self:SetStatus( TroopStatus.EXP, exp + number )
+	self:AddStatus( TroopStatus.EXP, number )
 	--print( self:ToString(), "exp=" .. exp, number )
 end
 
@@ -302,17 +310,23 @@ function Troop:CanLevelUp()
 	local potential = Asset_Get( self, TroopAssetID.POTENTIAL )
 	if level >= potential then return false end	
 
-	local exp = self:GetStatus( TroopStatus.EXP )
-	local maxExp = Asset_Get( self, TroopAssetID.MAX_SOLDIER ) * level
-	if not exp or exp < maxExp then return false end
-	return true
+	local hasExp = self:GetStatus( TroopStatus.EXP ) or 0
+	local needExp = self:GetLevelUPExp()
+
+	return hasExp > needExp
+end
+
+function Troop:GainExp( exp )
+	self:AddStatus( TroopStatus.EXP, exp )
 end
 
 function Troop:LevelUp()
-	if self:CanLevelUp() == false then return false end
-	local exp = Asset_GetDictItem( self, TroopAssetID.STATUSES, TroopStatus.EXP )
-	exp = exp - Scenario_GetData( "TROOP_PARAMS" ).TROOP_LEVELUP_EXP
-	self:SetStatus( TroopStatus.EXP, exp )
+	if not self:CanLevelUp() then return false end
+	
+	local hasExp = self:GetStatus( TroopStatus.EXP ) or 0
+	local needExp = self:GetLevelUPExp()
+
+	self:SetStatus( TroopStatus.EXP, hasExp - needExp )
 	Asset_Plus( self, TroopAssetID.LEVEL, 1 )
 
 	Stat_Add( "TroopLevelUp@" .. self.name, 1, StatType.TIMES )
@@ -354,5 +368,6 @@ end
 
 function Troop:GrantMedal( medal )
 	Asset_SetDictItem( self, TroopAssetID.MEDALS, medal.id, medal )
-	Stat_Add( "GrantMedal@" .. self.name, medal.name, StatType.LIST )
+	--local corps = Asset_Get( self, TroopAssetID.CORPS )	
+	Stat_Add( "GrantMedal@" .. self.name .. "_" .. self.id, medal.name, StatType.LIST )
 end

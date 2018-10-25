@@ -36,7 +36,7 @@ function Move_IsMoving( actor )
 end
 
 function Move_HasMoving( actor )
-	return System_Get( SystemType.MOVE_SYS ):HasMoving( actor )
+	return System_Get( SystemType.MOVE_SYS ):GetMove( actor )
 end
 
 function Move_Stop( actor )
@@ -132,6 +132,8 @@ local function Move_CheckEncounter( move )
 					or Dipl_IsAlly( actGroup, Asset_Get( combat, CombatAssetID.DEF_GROUP ) )
 					or Dipl_IsAtWar( actGroup, Asset_Get( combat, CombatAssetID.ATK_GROUP ) ) then
 	
+					--InputUtil_Pause( "encounter", actor:ToString(), combat:ToString("BRIEF") )
+
 					--help defender, will cancel the exist siege combat
 					local defList = MathUtil_ShallowCopy( Asset_GetList( combat, CombatAssetID.ATK_CORPS_LIST ) )
 					Message_Post( MessageType.COMBAT_INTERRUPTED, { combat = combat } )
@@ -139,7 +141,7 @@ local function Move_CheckEncounter( move )
 					--trigger a new field combat
 					--  todo: should corps in siege city will attend the field combat?
 					--InputUtil_Pause( "trigger new combat" )
-					Message_Post( MessageType.FIELD_COMBAT_TRIGGER, { plot = plot, atk = actor, def = defList } )
+					Message_Post( MessageType.FIELD_COMBAT_TRIGGER, { plot = plot, atk = actor, defList = defList } )
 				else
 					--help attacker, just attend the combat					
 					Message_Post( MessageType.COMBAT_ATTEND, { combat = combat, atk = actor } )
@@ -244,8 +246,14 @@ local function Move_MoveToNext( move )
 	Asset_Set( move, MoveAssetID.CUR_PLOT, nextplot )
 	Asset_Set( move, MoveAssetID.NEXT_PLOT, routeplot )
 
-	if nextplot then Asset_Plus( move, MoveAssetID.DURATION, Asset_Get( nextplot, PlotAssetID.ROAD ) ) end
-	if routeplot then Asset_Plus( move, MoveAssetID.DURATION, Asset_Get( routeplot, PlotAssetID.ROAD ) ) end
+	if nextplot then
+		--InputUtil_Pause( "addroad", Asset_Get( nextplot, PlotAssetID.ROAD ) )
+		Asset_Plus( move, MoveAssetID.DURATION, Asset_Get( nextplot, PlotAssetID.ROAD ) )
+	end
+	if routeplot then
+		--InputUtil_Pause( "addroad", Asset_Get( routeplot, PlotAssetID.ROAD ) )
+		Asset_Plus( move, MoveAssetID.DURATION, Asset_Get( routeplot, PlotAssetID.ROAD ) )
+	end
 	
 	--Follow tracks
 	--Debug_Log( "moving-->" .. move:ToString() )
@@ -298,6 +306,8 @@ local function Move_DoAction( move )
 	Log_Write( "move", actor:ToString("LOCATION") .. " move to=" .. dest:ToString() )
 	--Debug_Log( actor:ToString() .. " move to " .. dest:ToString() )
 
+	move:End()
+
 	Message_Post( MessageType.ARRIVE_DESTINATION, { actor = Asset_Get( move, MoveAssetID.ACTOR ), destination = Asset_Get( move, MoveAssetID.DEST_PLOT ) } )
 
 	--Stat_Add( "Move@End", move:ToString( "END" ), StatType.LIST )
@@ -317,15 +327,7 @@ local function Move_Update( move )
 	end
 
 	--move on
-	local actor = Asset_Get( move, MoveAssetID.ACTOR )
-	local role = Asset_Get( move, MoveAssetID.ROLE )
-	
-	local movement
-	if role == MoveRole.CORPS then
-		movement = Asset_Get( actor, CorpsAssetID.MOVEMENT )
-	elseif role == MoveRole.CHARA then
-		movement = Move_GetCharaMovement( actor )
-	end
+	local movement = move:GetMovement()
 	Asset_Plus( move, MoveAssetID.PROGRESS, movement )
 
 	--Move_Debug( move, "update mv=" .. movement .. " role=" .. role )
@@ -342,8 +344,9 @@ end
 
 
 local function Move_OnStartMoving( msg )
-	local actor = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "actor" )
-	System_Get( SystemType.MOVE_SYS ):StartMoving( actor )
+	local actor    = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "actor" )
+	local waittime = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "waittime" )
+	System_Get( SystemType.MOVE_SYS ):StartMoving( actor, waittime )
 end
 
 local function Move_OnStopMoving( msg )
@@ -353,26 +356,6 @@ end
 
 local function Move_OnCancelMoving( msg )
 	error( "it shouldn't be here" )
-end
-
-local function Move_OnCombatEnded( msg )	
-	local combat  = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "combat" )
-	if not combat then
-		return
-	end
-
---[[
-	Asset_Foreach( combat, CombatAssetID.CORPS_LIST, function ( corps )
-		if corps:IsBusy() == false then
-			Log_Write( "move", "on combat end" .. corps:ToString("STATUS") )
-			System_Get( SystemType.MOVE_SYS ):StopMoving( corps )
-		else
-			local task = corps:GetTask()
-			--print( "task=", task )
-			--Debug_Log( "busy corps=" .. corps:ToString( "STATUS"), "is busying" )
-		end
-	end )
-	]]
 end
 
 ------------------------------------------------
@@ -389,7 +372,6 @@ function MoveSystem:Start()
 	Message_Handle( self.type, MessageType.START_MOVING,  Move_OnStartMoving )
 	Message_Handle( self.type, MessageType.STOP_MOVING,   Move_OnStopMoving )
 	Message_Handle( self.type, MessageType.CANCEL_MOVING, Move_OnCancelMoving )
-	Message_Handle( self.type, MessageType.COMBAT_ENDED,  Move_OnCombatEnded )
 end
 
 --1. Determine whether move to the next plot, put them into list
@@ -414,7 +396,7 @@ function MoveSystem:Update()
 				end
 			end
 			self._actors[actor] = nil
-			Entity_Remove( move )			
+			Entity_Remove( move )
 		end
 	end
 
@@ -441,7 +423,7 @@ function MoveSystem:IsMoving( actor )
 	return move:IsMoving()
 end
 
-function MoveSystem:HasMoving( actor )
+function MoveSystem:GetMove( actor )
 	return self._actors[actor]
 end
 
@@ -460,7 +442,7 @@ function MoveSystem:MoveC2C( actor, fromCity, toCity, type )
 		return
 	end
 	if self._actors[actor] then
-		InputUtil_Pause( actor:ToString() .. " is moving" )
+		DBG_Error( actor:ToString() .. " is moving" )
 		return
 	end
 
@@ -476,12 +458,13 @@ function MoveSystem:MoveC2C( actor, fromCity, toCity, type )
 	Asset_Set( move, MoveAssetID.DEST_PLOT, g_map:GetPlot( Asset_Get( toCity, CityAssetID.X ), Asset_Get( toCity, CityAssetID.Y ) ) )
 	Move_MoveToNext( move )
 	
+	move:Start()
+
 	self._actors[actor] = move
 
 	Stat_Add( "Move@Start", actor:ToString() .. " move from=" .. fromCity.name .. " to " .. toCity.name, StatType.LIST )
 
 	Move_Debug( move, "moving" )
-	Debug_Log( actor:ToString(), "mov!!!" )
 
 	if actor.id == 2 and move.id == 85 then
 		--InputUtil_Pause( "start" .. move:ToString() )
@@ -517,12 +500,15 @@ function MoveSystem:StopMoving( actor )
 	end
 end
 
-function MoveSystem:StartMoving( actor )
+function MoveSystem:StartMoving( actor, prepareTime )
 	local move = self._actors[actor]
 	if move then
-		Move_Debug( move, "start move" )
-		--InputUtil_Pause( "resume moving", move:ToString() )
-		Asset_Set( move, MoveAssetID.STATUS, MoveStatus.MOVING )
+		--sanity checker
+		if actor:GetStatus( CorpsStatus.IN_COMBAT ) then DBG_Error( "why move", actor:ToString("STAUTS"), move:ToString("STATUS") ) end
+
+		move:Start()
+		move:Wait( prepareTime )
+		--InputUtil_Pause( "resume moving", move:ToString() )		
 	end
 end
 

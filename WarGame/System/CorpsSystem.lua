@@ -30,18 +30,7 @@ function Troop_RemoveOfficer( troop, isKilled )
 		Chara_Die( officer )
 	end
 end
-
-function Troop_LevelUp( troop )
-	troop:LevelUp()
-end
-
 -------------------------------------------
-
-function Corps_AfterCombat( corps )
-	Asset_Foreach( corps, CorpsAssetID.TROOP_LIST, function ( troop )
-		Troop_LevelUp( troop )
-	end)
-end
 
 --return the food need carried to move to destination
 function Corps_CalcNeedFood( corps, dest )
@@ -81,16 +70,30 @@ end
 -- Determine the maximum number of soldier in one troop
 ---------------------------------------------------------------------
 -- Soldier Number( 600~2000 )
---    600 / leader+400~1400
-function Corps_GetSolderNumber( corps )
-	local number = Scenario_GetData( "CORPS_PARAMS" ).SOLDIER_NUMBER.MIN_NUMBER
-	
+--    600 / influ+100~500 / leader+400~800 / troop lv+(0~600) /
+function Corps_GetSolderNumber( corps, troop )
+	local number = Scenario_GetData( "CORPS_PARAMS" ).SOLDIER_NUMBER.MIN_NUMBER	
+
+	--group influence
+	local group = corps and Asset_Get( corps, CorpsAssetID.GROUP ) or nil
+	if group then
+		local grade = Asset_Get( group, GroupAssetID.GRADE )
+		--print( "influgrade=" .. grade, number )
+		number = number + ( Scenario_GetData( "CORPS_PARAMS" ).SOLDIER_NUMBER.INFLUENCE_GRADE_BONUS[grade] or 0 )
+	end
+
 	--check title
 	--local corps  = troop and Asset_Get( troop, TroopAssetID.CORPS ) or nil
 	local leader = corps and Asset_Get( corps, CorpsAssetID.LEADER ) or nil
 	local title  = leader and Asset_Get( leader, CharaAssetID.TITLE ) or nil
 	if title then
 		number = number + ( Scenario_GetData( "CORPS_PARAMS" ).SOLDIER_NUMBER.TITLE_GRADE_BONUS[title.grade] or 0 )
+	end
+
+	--check troop lv
+	if troop then
+		local level = Asset_Get( troop, TroopAssetID.LEVEL )
+		number = number + ( Scenario_GetData( "CORPS_PARAMS" ).SOLDIER_NUMBER.TROOP_LV_BONUS.per_level or 0 ) * level
 	end
 
 	return number
@@ -103,13 +106,13 @@ end
 -- Troop Number( 3~10 )
 --    3 / influ+1~5 / title+1~2
 function Corps_GetTroopNumber( corps )
-	local num = Scenario_GetData( "CORPS_PARAMS" ).TROOP_NUMBER.MIN_NUMBER
+	local number = Scenario_GetData( "CORPS_PARAMS" ).TROOP_NUMBER.MIN_NUMBER
 	--group influence
 	local group = Asset_Get( corps, CorpsAssetID.GROUP )
 	if group then
 		local grade = Asset_Get( group, GroupAssetID.GRADE )
-		--print( "influgrade=" .. grade, num )
-		num = num + ( Scenario_GetData( "CORPS_PARAMS" ).TROOP_NUMBER.INFLUENCE_GRADE_BONUS[grade] or 0 )
+		--print( "influgrade=" .. grade, number )
+		number = number + ( Scenario_GetData( "CORPS_PARAMS" ).TROOP_NUMBER.INFLUENCE_GRADE_BONUS[grade] or 0 )
 	end
 
 	--leader title	
@@ -117,14 +120,14 @@ function Corps_GetTroopNumber( corps )
 	if leader then
 		local title = Asset_Get( leader, CharaAssetID.TITLE )
 		if title then
-			--print( "titlegrade=" .. title.grade, num, Scenario_GetData( "CORPS_PARAMS" ).TROOP_NUMBER.TITLE_GRADE_BONUS[title.grade] )
-			num = num + ( Scenario_GetData( "CORPS_PARAMS" ).TROOP_NUMBER.TITLE_GRADE_BONUS[title.grade] or 0 )
+			--print( "titlegrade=" .. title.grade, number, Scenario_GetData( "CORPS_PARAMS" ).TROOP_NUMBER.TITLE_GRADE_BONUS[title.grade] )
+			number = number + ( Scenario_GetData( "CORPS_PARAMS" ).TROOP_NUMBER.TITLE_GRADE_BONUS[title.grade] or 0 )
 		end
 	end
 
-	--InputUtil_Pause( corps:ToString(), num )
+	--InputUtil_Pause( corps:ToString(), number )
 
-	return num
+	return number
 end
 
 ---------------------------------------------------------------------
@@ -134,24 +137,21 @@ end
 --    1 / Barrack+1 / Capital+1
 function Corps_GetLimitByCity( city )
 	local num = Scenario_GetData( "CORPS_PARAMS" ).CORPS_NUMBER.MIN_NUMBER
-	if city:IsCapital() then num = num + Scenario_GetData( "CORPS_PARAMS" ).CORPS_NUMBER.CAIPTAL_BONUS end
-	if city:GetConstructionByEffect( CityConstrEffect.CORPS_LIMIT ) then num = num + Scenario_GetData( "CORPS_PARAMS" ).CORPS_NUMBER.CONSTRUCTION_BONUS end
+	if city:IsCapital() then
+		num = num + Scenario_GetData( "CORPS_PARAMS" ).CORPS_NUMBER.CAIPTAL_BONUS
+	end
+	if city:GetConstructionByEffect( CityConstrEffect.CORPS_LIMIT ) then
+		num = num + Scenario_GetData( "CORPS_PARAMS" ).CORPS_NUMBER.CONSTRUCTION_BONUS
+	end
 	return num
-end
-
---get the number of limitation by group
-function Corps_GetLimitByGroup( group )
-	local numOfCity = Asset_GetListSize( group, GroupAssetID.CITY_LIST )
-	--at least more than on capital
-	return numOfCity + 2
 end
 
 --get the number of requirement corps( minimum, not maximum )
 function Corps_GetRequiredByCity( city )
 	local num = 0
+	if city:GetStatus( CityStatus.FRONTIER ) then num = 1 end
 	if city:GetStatus( CityStatus.BATTLEFRONT ) then num = 1 end
-	if city:GetStatus( CityStatus.FRONTIER ) then num = 1 end	
-	if city:GetStatus( CityStatus.MILITARY_BASE ) then num = 1 end
+	if city:GetStatus( CityStatus.MILITARY_BASE ) then num = num + 1 end
 	if city:IsCapital() == true then num = num + 1 end
 	return num
 end
@@ -591,12 +591,23 @@ function Corps_EnrollInCity( corps, city )
 	city:WatchBudget( "enroll=" .. reserves )
 end
 
+function Corps_GainExp( corps, rate )
+	if not rate or rate <= 0 then return end
+	Asset_Foreach( corps, CorpsAssetID.TROOP_LIST, function ( troop )
+		local needExp = troop:GetLevelUPExp()
+		local exp = math.ceil( needExp * rate * 0.01 )
+		troop:GainExp( exp )
+		print( corps.name, troop.name, rate, exp .. "/" .. needExp )
+	end )
+end
+
 function Corps_Train( corps, progress )
 	local maxTraining = corps:GetMaxTraining()
 	Asset_Foreach( corps, CorpsAssetID.TROOP_LIST, function ( troop )
 		local training = troop:GetStatus( TroopStatus.TRAINING )
 		if not training then training = 0 end
 		training = training + progress
+
 		troop:SetStatus( TroopStatus.TRAINING, math.min( training, maxTraining ) )
 	end )
 	--InputUtil_Pause( "train corps", corps:GetTraining() )

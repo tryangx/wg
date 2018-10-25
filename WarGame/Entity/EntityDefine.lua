@@ -7,6 +7,7 @@ EntityType =
 	CHARA  = 3,	
 	CORPS  = 4,
 	TROOP  = 5,
+	NEUTRAL = 6,
 
 	WEAPON = 22,
 	CONSTRUCTION = 23,
@@ -72,10 +73,10 @@ end
 
 -------------------------------------------
 
-function Entity_ToString( type )
+function Entity_ToString( type, stringType )
 	print( "=========Travel " .. MathUtil_FindName( EntityType, type ) )
 	Entity_Foreach( type, function ( data )
-		print( data:ToString() )
+		print( data:ToString(stringType) )
 	end)
 	print( "===============================")
 end
@@ -103,3 +104,5 @@ require "Entity/Task"
 require "Entity/Event"
 require "Entity/Meeting"
 require "Entity/Move"
+
+require "Entity/Neutral"

@@ -58,21 +58,32 @@ end
 
 function Chara_GetRatingCharaSuitJob( chara, job )
 	local score = 100
+
+	--job
 	if job == CityJob.EXECUTIVE then
 
 	elseif job == CityJob.COMMANDER then
-		score = score + chara:GetStatus( CharaStatus.MILITARY_EXP, 0 )
+		score = score + chara:HasSkill( CharaSkillType.COMMANDER ) * 100
+		score = score + chara:HasSkill( CharaSkillType.OFFICER ) * 100
+
 	elseif job == CityJob.STAFF then
-		score = score + chara:GetStatus( CharaStatus.MILITARY_EXP, 0 )
+		score = score + chara:HasSkill( CharaSkillType.STAFF ) * 100
+
 	elseif job == CityJob.HR then
-		score = score + chara:GetStatus( CharaStatus.OFFICER_EXP, 0 )
+		score = score + chara:HasSkill( CharaSkillType.HR ) * 100
+
 	elseif job == CityJob.AFFAIRS then
-		score = score + chara:GetStatus( CharaStatus.OFFICER_EXP, 0 )
+		score = score + chara:HasSkill( CharaSkillType.OFFICIALS ) * 100
+
 	elseif job == CityJob.DIPLOMATIC then
-		score = score + chara:GetStatus( CharaStatus.DIPLOMATIC_EXP, 0 )
+		score = score + chara:HasSkill( CharaSkillType.DIPLOMAT ) * 100
+
 	elseif job == CityJob.TECHNICIAN then
+		score = score + chara:HasSkill( CharaSkillType.TECHNICIAN ) * 100
+
 	end
-	return 100
+
+	return score
 end
 
 function Chara_FindBestCharaForJob( job, charaList )

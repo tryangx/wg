@@ -210,7 +210,7 @@ function Chara:ToString( type )
 		end
 	end
 
-	if type == "AP" then
+	if type == "AP" or type == "ALL" then
 		for _, type in pairs( CharaActionPoint ) do
 			content = content .. " "  .. MathUtil_FindName( CharaActionPoint, type ) .. "=" .. self:GetAP( type )
 		end
@@ -229,7 +229,7 @@ function Chara:ToString( type )
 		content = content .. " txp=" .. ( self:GetStatus( CharaStatus.TOTAL_EXP ) or 0 )
 		content = content .. " mxp=" .. ( self:GetStatus( CharaStatus.MILITARY_EXP ) or 0 )
 		content = content .. " oop=" .. ( self:GetStatus( CharaStatus.OFFICER_EXP ) or 0 )
-		content = content .. " dpp=" .. ( self:GetStatus( CharaStatus.DIPLOMATIC_EXP ) or 0 )
+		content = content .. " dpp=" .. ( self:GetStatus( CharaStatus.DIPLOMAT_EXP ) or 0 )
 	end	
 	if type == "TRAITS" or type == "GROWTH" then		
 		for trait, _ in pairs( Asset_GetDict( self, CharaAssetID.TRAITS ) ) do
@@ -340,6 +340,7 @@ function Chara:IsGroupLeader()
 end
 
 function Chara:IsAtHome()
+	if self:GetStatus( CharaStatus.OUTSIDE ) then return false end
 	local location = Asset_Get( self, CharaAssetID.LOCATION )
 	local home     = Asset_Get( self, CharaAssetID.HOME )	
 	return home == location
@@ -382,6 +383,15 @@ function Chara:HasPotential()
 	--print( self.name, "ca=" .. ca .. " pot=" .. potential )
 
 	return ca < potential
+end
+
+function Chara:HasSkill( type )
+	local num = 0
+	Asset_Foreach( self, CharaAssetID.SKILLS, function ( skill )
+		if skill.type == type then num = num + 1 end
+	end)
+	--if num > 0 then print( self:ToString(), type, num ) end
+	return num
 end
 
 function Chara:CanLevelUp()
@@ -445,6 +455,8 @@ end
 -- For easily to make misunderstand
 
 function Chara:JoinCity( city, isEnterCity )
+	--if Asset_Get( self, CharaAssetID.HOME ) == city then DBG_Error( "why same" ) end
+
 	Asset_Set( self, CharaAssetID.HOME, city )
 	
 	if isEnterCity then Asset_Set( self, CharaAssetID.LOCATION, city ) end

@@ -33,9 +33,10 @@ local function Proposal_Execute( proposal )
 
 	--issue task include initializing actortype, issue task to every subordinates
 	local task = Task_IssueByProposal( proposal )
-
 	--Log_Write( "meeting", "			issue proposal=" .. proposal:ToString() )
-	--if task then Log_Write( "meeting", "  task=" .. task:ToString() ) end
+	if task then
+		Log_Write( "meeting", "  task=" .. task:ToString() )
+	end
 
 	--remove proposal
 	Entity_Remove( proposal )
@@ -146,7 +147,7 @@ local function Meeting_Update( meeting )
 				return
 			end
 			if chara:IsBusy() then
-				Log_Write( "meeting", "    chara=" .. chara:ToString() .. " busy=" .. chara:GetTask():ToString() )
+				--Log_Write( "meeting", "  chara=" .. chara:ToString() .. " busy=" .. chara:GetTask():ToString() )
 				return
 			end			
 			freeParticiants = freeParticiants + 1
@@ -157,7 +158,7 @@ local function Meeting_Update( meeting )
 				submitProposal = submitProposal + 1
 				totalSubmit    = totalSubmit + 1
 			else
-				Log_Write( "meeting", "    topic=" .. MathUtil_FindName( MeetingTopic, topic ) .. " chara=" .. chara:ToString() .. " passed" )
+				--Log_Write( "meeting", "  topic=" .. MathUtil_FindName( MeetingTopic, topic ) .. " chara=" .. chara:ToString() .. " passed" )
 			end
 			return numofproposer <= 0
 		end )
@@ -170,10 +171,10 @@ local function Meeting_Update( meeting )
 				if CharaAI_SubmitMeetingProposal( superior, meeting ) then
 					totalSubmit    = totalSubmit + 1
 				else
-					Log_Write( "meeting", "    topic=" .. MathUtil_FindName( MeetingTopic, topic ) .. " superior=" .. superior:ToString() .. " passed" )
+					--Log_Write( "meeting", "  topic=" .. MathUtil_FindName( MeetingTopic, topic ) .. " superior=" .. superior:ToString() .. " passed" )
 				end
 			else
-				Log_Write( "meeting", "    topic=" .. MathUtil_FindName( MeetingTopic, topic ) .. " superior=" .. superior:ToString() .. " busy=" .. superior:GetTask():ToString() )
+				--Log_Write( "meeting", "  topic=" .. MathUtil_FindName( MeetingTopic, topic ) .. " superior=" .. superior:ToString() .. " busy=" .. superior:GetTask():ToString() )
 			end
 			--Stat_Add( "Meeting@Cancel_Times", nil, StatType.TIMES )
 			--print( "end meeting" )
@@ -275,12 +276,12 @@ function Meeting_Hold( city, topic, target )
 		end
 		table.insert( participants, chara )
 		Debug_Log( chara:ToString(), "enter meeting" )
-		Log_Write( "meeting", "         " .. chara:ToString() .. "=" .. MathUtil_FindName( CityJob, city:GetCharaJob( chara ) ) .. " attend" )
+		--Log_Write( "meeting", "       " .. chara:ToString() .. "=" .. MathUtil_FindName( CityJob, city:GetCharaJob( chara ) ) .. " attend" )
 	end )
 	participants = MathUtil_Shuffle_Sync( participants )
 	Asset_CopyList( meeting, MeetingAssetID.PARTICIPANTS, participants )
 
-	Log_Write( "meeting", "prepare=" .. city.name .. " chara=" .. Asset_GetListSize( city, CityAssetID.CHARA_LIST ) .. " parti=" .. Asset_GetListSize( meeting, MeetingAssetID.PARTICIPANTS ) )
+	--Log_Write( "meeting", "prepare=" .. city.name .. " chara=" .. Asset_GetListSize( city, CityAssetID.CHARA_LIST ) .. " parti=" .. Asset_GetListSize( meeting, MeetingAssetID.PARTICIPANTS ) )
 
 	Stat_Add( "Meeting@HoldTimes", 1, StatType.TIMES )
 	Stat_Add( "Meeting@CityHold_" .. city.name, 1, StatType.TIMES )

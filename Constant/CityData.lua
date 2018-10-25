@@ -10,6 +10,11 @@
 -- FARMER * 2 -> FOOD 
 --
 
+CityParams = 
+{
+	ISOLATE_DURATION_MODULUS = 10,
+}
+
 DefaultCitySupply =
 {
 	------------------------------
@@ -424,8 +429,11 @@ CitySpyParams =
 PopulationParams =
 {
 	-- Growth rate per Year, rate one per thousand
-	GROWTH_MIN_RATE    = 12,
-	GROWTH_MAX_RATE    = 24,
+	GROWTH_MIN_RATE    = 16,
+	GROWTH_MAX_RATE    = 48,
+
+	DEAD_MIN_RATE      = 8,
+	DEAD_MAX_RATE      = 24,
 }
 
 PlotParams = 
@@ -705,7 +713,13 @@ CitySecurityData =
 
 CityDissData = 
 {
-	AT_AWR    = { def = 0, normal = 0 },
-	IN_SIEGE  = { def = 0, normal = 0 },
-	LEVY_TAX  = { def = 0, normal = 0 },
+	FRONTIER    = { def = 0, increment = 1, min = 0, max = 10, status = "FRONTIER" },
+	BATTLEFRONT = { def = 0, increment = 1, min = 0, max = 20, status = "BATTLEFRONT" },
+	
+	IN_SIEGE    = { def = 0, increment = 1, min = 0, max = 40, status = "IN_SIEGE" },
+	STARVATION  = { def = 0, increment = 1, min = 0, max = 40, status = "IN_SIEGE" },
+	
+	LEVY_TAX      = { def = 0, normal = 0, min = 0, max = 100 },
+	DEMONSTRATION = { def = 0, normal = 0, min = 0, max = 20 },
+	STRIKE        = { def = 0, normal = 0, min = 0, max = 30 },
 }

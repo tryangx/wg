@@ -236,14 +236,16 @@ function Combat:ToString( type )
 	if type == "BRIEF" then
 		content = content .. " date=" .. g_Time:CreateCurrentDateDesc()
 		content = content .. " day=" .. Asset_Get( self, CombatAssetID.DAY )
+		content = content .. " atk=" .. String_ToStr( Asset_Get( self, CombatAssetID.ATK_GROUP ), "name" )
+		content = content .. " def=" .. String_ToStr( Asset_Get( self, CombatAssetID.DEF_GROUP ), "name" )
 	end
-	if type == "DEBUG_CORPS" or type == "ALL" then
+	if type == "DEBUG_CORPS" or type == "ALL" or type == "RESULT" then		
 		content = content .. " corps="
 		Asset_Foreach( self, CombatAssetID.ATK_CORPS_LIST, function( corps )
-			content = content .. corps:ToString( ) .. ","
+			content = content .. corps:ToString( "MILITARY" ) .. ","
 		end )
 		Asset_Foreach( self, CombatAssetID.DEF_CORPS_LIST, function ( corps )
-			content = content .. corps:ToString( ) .. ","
+			content = content .. corps:ToString( "MILITARY" ) .. ","
 		end )
 	end
 	if type == "DEBUG_TROOP" then
@@ -357,14 +359,21 @@ function Combat:AddSingleCorps( corps, side )
 		self:AddTroop( troop, side )
 	end )
 
-	corps:SetStatus( CorpsStatus.IN_COMBAT, true )
+	--print( corps:ToString(), "joincombat=" .. self.id)
+
+	corps:SetStatus( CorpsStatus.IN_COMBAT, self.id )
 end
 
 --Add single troop into Combat
 function Combat:AddCorps( corps, side )
 	--sanity checker
-	if not side then DBG_Error( "why here") end		
+	if not side then DBG_Error( "why here") end
 	if self:GetGroup( side ) and self:GetGroup( side ) ~= Asset_Get( corps, CorpsAssetID.GROUP ) then DBG_Error( "why not the same group" ) end
+	local combatid = corps:GetStatus( CorpsStatus.IN_COMBAT )
+	if combatid and combatid ~= self.id then
+		Entity_ToString( EntityType.COMBAT, "ALL" )
+		DBG_Error( "corps cann't join two combat", corps:ToString("STATUS"), "combat=" .. corps:GetStatus( CorpsStatus.IN_COMBAT ) .."/".. self.id )
+	end
 
 	if typeof( corps ) == "table" then
 		for _, single in ipairs( corps ) do
@@ -401,6 +410,7 @@ function Combat:RemoveTroop( troop, isKilled )
 end
 
 function Combat:RemoveCorps( corps )
+	DBG_Error( "no one use this now" )
 	Asset_RemoveListItem( self, CombatAssetID.CORPS_LIST, corps )
 
 	Asset_Foreach( corps, CorpsAssetID.TROOP_LIST, function( troop )
@@ -409,7 +419,6 @@ function Combat:RemoveCorps( corps )
 
 	Asset_SetDictItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_COMBAT, nil )
 end
-
 
 -----------------------------------------------------
 -- Grid
@@ -828,6 +837,19 @@ function Combat:GetStatus( side, status )
 	return nil
 end
 
+-----------------------------------------------------
+
+function Combat:WipeCorps()
+	Asset_Foreach( self, CombatAssetID.CORPS_LIST, function ( corps )
+		if corps:GetSoldier() == 0 then
+			Corps_Dismiss( corps, true )
+			--print( "dismiss", corps:ToString() )
+			Stat_Add( "Corps@Vanished", corps:ToString( "SIMPLE"), StatType.LIST )
+		else
+			corps:LeaveCombat()			
+		end
+	end )
+end
 -----------------------------------------------------
 -- Embattle 
 -- 

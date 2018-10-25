@@ -421,6 +421,7 @@ local function CanEstablishCorps()
 
 	--check corps limitation
 	local hasCorpsInCity   = Asset_GetListSize( _city, CityAssetID.CORPS_LIST )
+
 	local limitCorpsInCity = Corps_GetLimitByCity( _city )
 	if hasCorpsInCity >= limitCorpsInCity then
 		Debug_Log( _city.name, "EstCorpsFailed! corps limit, cann't est corps", _city.name, hasCorpsInCity .. "/" .. limitCorpsInCity )
@@ -428,10 +429,11 @@ local function CanEstablishCorps()
 	end
 
 	--[[
-	local hasCorpsInGroup = Asset_GetListSize( _group, GroupAssetID.CORPS_LIST )
-	local limitCorpsInGroup = Corps_GetLimitByGroup( _group )
-	if hasCorpsInGroup > limitCorpsInGroup then
-		Debug_Log( _city.name, "EstCorpsFailed! corps limit, cann't est corps", _city.name, hasCorpsInGroup .. "/" .. limitCorpsInGroup )
+	--check req corps
+	local reqCorps = Corps_GetRequiredByCity( _city )
+	if hasCorpsInCity >= reqCorps then		
+		--print( "won't est corps, enough coprs" .. hasCorpsInCity .."/"..reqCorps )
+		--_city:SetStatus( CityStatus.RESERVE_UNDERSTAFFED, 1 )		
 		return false
 	end
 	]]
@@ -442,6 +444,8 @@ local function CanEstablishCorps()
 		if Asset_Get( chara, CharaAssetID.CORPS ) then
 			return false
 		end
+		--check skill
+		--check relation( extension )
 		local job = _city:GetCharaJob( chara )
 		--Debug_Log( chara.name, MathUtil_FindName( CityJob, job ) )
 		return job == CityJob.COMMANDER or job == CityJob.EXECUTIVE
@@ -455,14 +459,6 @@ local function CanEstablishCorps()
 	local reserves = _city:GetPopu( CityPopu.RESERVES )
 	if reserves < Scenario_GetData( "TROOP_PARAMS" ).MIN_TROOP_SOLDIER then
 		Debug_Log( _city.name, "EstCorpsFailed! not enough reserves=", reserves )
-
-		--check req corps
-		local reqCorps = Corps_GetRequiredByCity( _city )
-		if hasCorpsInCity < reqCorps then
-			--print( "has" .. hasCorpsInCity .."/"..reqCorps)
-			--_city:SetStatus( CityStatus.RESERVE_UNDERSTAFFED, 1 )
-		end
-
 		return false
 	end
 
@@ -488,23 +484,37 @@ local function CanReinforceCorps()
 		return false
 	end
 
+	local totalnum = 0
 	local corpsList = {}
 	Asset_Foreach( _city, CityAssetID.CORPS_LIST, function ( corps )
 		if corps:IsAtHome() == false then return false end
 		if corps:IsBusy() == true then return false end
-		local understaffed = corps:GetStatus( CorpsStatus.UNDERSTAFFED ) or 0
-		if understaffed == 0 then return false end		
+		local understaffed = math.floor( corps:GetStatus( CorpsStatus.UNDERSTAFFED ) ) or 0
+		if understaffed == 0 then return false end
 		--print( "staff", corps:ToString(), understaffed )
-		table.insert( corpsList, corps )
+		totalnum = totalnum + understaffed
+		table.insert( corpsList, { num = understaffed, corps = corps } )
 	end )
 	if #corpsList == 0 then return false end
 
-	local findCorps = corpsList[Random_GetInt_Sync( 1, #corpsList )]
+	local findCorps
+	local prob = Random_GetInt_Sync( 1, totalnum )
+	for _, data in ipairs( corpsList ) do
+		if prob <= data.num then
+			findCorps = data.corps
+			break
+		end
+		prob = prob - data.num
+	end
+
+	if not findCorps then	
+		DBG_Error( "why here" )
+	end
 
 	_registers["CORPS"] = findCorps
 	_registers["ACTOR"] = findCorps
 
-	--InputUtil_Pause( "REINFORCE_CORPS", findCorps:ToString( "MILITARY") )
+	--print( "REINFORCE_CORPS", findCorps:ToString( "MILITARY") )
 
 	return true
 end
@@ -534,7 +544,7 @@ local function CanEnrollCorps()
 	end
 
 	if Corps_CanEstablishCorps( _city, reserves, City_HasTroopBudget ) == false then
-		--print( "cann't enroll corps" )
+		Debug_Log( "cann't enroll corps" )
 		return false
 	end
 
@@ -599,6 +609,12 @@ local function CanRegroupCorps()
 	_registers["CORPS_LIST"] = list
 
 	return true
+end
+
+local function CheckWarWeariness()
+	local weariness = _city:GetStatus( CityStatus.WAR_WEARINESS )
+	if not weariness then return true end
+	return Random_GetInt_Sync( 1, 100 ) < weariness * DAY_IN_MONTH / DAY_IN_SEASON
 end
 
 local function CheckEnemyCity( adjaCity, city, params )	
@@ -969,6 +985,39 @@ local function CanHireGuard()
 	return true
 end
 
+local function CanEnhanceMilitaryBase()
+	local corpsList = _city:GetFreeCorps()
+	if #corpsList == 0 then
+		--print( "no corps" )
+		return false
+	end
+
+	local cityList = {}
+	Asset_Foreach( _group, GroupAssetID.CITY_LIST, function ( city )
+		if city == _city then return end
+		if NeedCorps( city, score ) == false then return end
+		if not city:GetStatus( CityStatus.MILITARY_BASE ) then return end
+		table.insert( cityList, city )
+	end)
+	if #cityList == 0 then
+		return false
+	end
+
+	local corps    = Random_GetListItem( corpsList )
+	local destCity = Random_GetListItem( cityList )
+	_registers["ACTOR"] = corps
+	_registers["CORPS"] = _registers["ACTOR"]
+	_registers["TARGET_CITY"] = destCity
+
+	if destCity == Asset_Get( corps, CorpsAssetID.LOCATION ) then
+		DBG_Error( _city.name, destCity.name, corps.name )
+	end
+
+	--print( _city:ToString("STATUS"), _city:ToString("CORPS") )
+	--print( destCity:ToString("STATUS"), destCity:ToString("CORPS") )
+	InputUtil_Pause( "dispatch", corps:ToString(), "to=" .. destCity:ToString(), "from=" .. _city.name .. "+" .. numOfCorps )
+end
+
 local function CanReinforceAdvancedBase()
 	local corpsList = _city:GetFreeCorps()
 	if #corpsList == 0 then
@@ -1033,6 +1082,10 @@ local function CanCorpsBack2Capital()
 		return false
 	end
 
+	if capital == Asset_Get( corps, CorpsAssetID.ENCAMPMENT ) then
+		return false
+	end
+
 	_registers["ACTOR"] = corps
 	_registers["CORPS"] = _registers["ACTOR"]
 	_registers["TARGET_CITY"] = capital
@@ -1085,6 +1138,10 @@ local function CanDispatchCorps()
 	_registers["ACTOR"] = corps
 	_registers["CORPS"] = _registers["ACTOR"]
 	_registers["TARGET_CITY"] = destCity
+
+	if destCity == Asset_Get( corps, CorpsAssetID.LOCATION ) then
+		DBG_Error( _city.name, destCity.name, corps.name )
+	end
 
 	--print( _city:ToString("STATUS"), _city:ToString("CORPS") )
 	--print( destCity:ToString("STATUS"), destCity:ToString("CORPS") )
@@ -1357,6 +1414,10 @@ local function CanCharaBack2Capital()
 
 	local capital = Asset_Get( _group, GroupAssetID.CAPITAL )
 	if capital == _city then
+		return false
+	end
+
+	if Asset_Get( chara, CharaAssetID.HOME ) == capital then
 		return false
 	end
 
@@ -1842,30 +1903,6 @@ local function DetermineGoal()
 	local incSoldier
 
 	function AddGoal( goalType, prob )
-		--[[
-		if goalType == GroupGoalType.DEVELOP_CITY then
-			if not incScore then
-				local item = MathUtil_Approximate( devTargets, scores, "dev" )
-				if item.target <= 0 then
-					InputUtil_Pause( "too high" )
-					return
-				end
-				incScore = item.target
-			end
-			if incScore <= 0 then
-				return
-			end
-			
-		elseif goalType == GroupGoalType.ENHANCE_CITY then
-			if not incSoldier then
-				incSoldier = _city:GetPopu( CityPopu.RESERVES )
-			end
-			if incSoldier and incSoldier <= Scenario_GetData( "TROOP_PARAMS" ).MIN_TROOP_SOLDIER then
-				return
-			end
-			
-		end
-		]]
 		if goals[goalType] then
 			goals[goalType] = goals[goalType] + prob
 		else
@@ -2090,7 +2127,7 @@ local EnhanceMilitaryBaseProposal =
 	type = "SEQUENCE", children = 
 	{
 		{ type = "FILTER", condition = CheckProposer, params = { type = "DISPATCH_CORPS" } },
-		{ type = "FILTER", condition = CanEnhanceAdavanceBase },
+		{ type = "FILTER", condition = CanEnhanceMilitaryBase },
 		{ type = "ACTION", action = SubmitProposal, params = { type = "DISPATCH_CORPS" } },
 	},
 }
@@ -2409,6 +2446,7 @@ local _SubmitCommanderProposal =
 				HireGuardProposal,
 				TrainProposal,
 				RegroupProposal,
+				EnhanceMilitaryBaseProposal,
 			},
 		},
 	}
@@ -2472,6 +2510,7 @@ local _SubmitStrategyProposal =
 	type = "SEQUENCE", children = 
 	{
 		{ type = "FILTER", condition = CanSubmitPlan, params = { topic = "STRATEGY" } },
+		{ type = "FILTER", condition = CheckWarWeariness, params = { topic = "STRATEGY" } },
 		{ type = "SELECTOR", children = 
 			{
 				{ type = "SEQUENCE", children = 

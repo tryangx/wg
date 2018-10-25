@@ -134,6 +134,10 @@ function Corps:ToString( type )
 		if task then
 			content = content .. " task=" .. task:ToString()
 		end
+		local combat = self:GetStatus( CorpsStatus.IN_COMBAT )
+		if combat then
+			content = content .. " combat=" .. combat
+		end
 		if leader then
 			local ldTask = leader:GetTask()
 			if ldTask then
@@ -255,6 +259,7 @@ function Corps:SetTask( task )
 end
 
 function Corps:IsAtHome()
+	if self:GetStatus( CorpsStatus.OUTSIDE ) then return false end
 	local location   = Asset_Get( self, CorpsAssetID.LOCATION )
 	local encampment = Asset_Get( self, CorpsAssetID.ENCAMPMENT )
 	return location == encampment
@@ -340,6 +345,8 @@ function Corps:AssignLeader( leader )
 
 	Asset_Set( self, CorpsAssetID.LEADER, leader )
 	self:AddOfficer( leader )
+
+	self:Recalculate()
 end
 
 function Corps:LoseOfficer( officer )	
@@ -470,3 +477,23 @@ function Corps:PaySalary( isEnough )
 end
 
 -------------------------------------------
+
+function Corps:Recalculate( ... )
+	Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function ( troop )
+		local maxSoldier = Corps_GetSolderNumber( self, troop )
+		local cur = Asset_Get( troop, TroopAssetID.MAX_SOLDIER )
+		if cur ~= maxSoldier then Debug_Log( troop:ToString(), "recal", cur, maxSoldier ) end
+		Asset_Set( troop, TroopAssetID.MAX_SOLDIER, maxSoldier )		
+	end )
+end
+
+function Corps:LeaveCombat()
+	--print( self:ToString(), "leave combat" )
+	self:SetStatus( CorpsStatus.IN_COMBAT )
+
+	local hasLevelup = false
+	Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function ( troop )
+		if troop:LevelUp() then hasLevelup = true end
+	end)
+	if hasLevelup then self:Recalculate() end
+end

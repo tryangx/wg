@@ -9,14 +9,14 @@ function Test_CityMoney()
 	print( 'add reserve', 1000 )
 	InputUtil_Pause( city:ToString("ASSET") )
 ]]
+
+	--city:FindExpandPlot()
+	--city:Expand()
+	city:Isolate()
 	--print( "==", city:ToString("DEVELOP") )
-	while Game_IsRunning()  do
-		Game_MainLoop()
-	end	
+	--while Game_IsRunning() do Game_MainLoop() end	
 	--InputUtil_Pause( city:ToString("DEVELOP") )
-	if city then
-		city:WatchBudget()
-	end
+	if city then city:WatchBudget() end
 end
 
 --------------------------------------------------
@@ -185,5 +185,5 @@ function Game_Debug()
 	Test_CityMoney()
 	--Test_CharaLevelUp()
 	--Test_Combat()
-	return true
+	return false
 end

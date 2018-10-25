@@ -78,9 +78,29 @@ function Map:CreateKey( x, y )
 	return self._size * y + x
 end
 
+function Map:CreatePlotKey( plot )
+	return self._size * Asset_Get( plot, PlotAssetID.Y ) + Asset_Get( plot, PlotAssetID.X )
+end
+
 function Map:GetPlot( x, y )
 	local key = self:CreateKey( x, y )
+	local plot = Asset_GetDictItem( self, MapAssetID.PLOTS, key )
+	return plot
+end
+
+function Map:GetPlotByKey( key )
 	return Asset_GetDictItem( self, MapAssetID.PLOTS, key )
+end
+
+function Map:GetAdjoinPlots( x, y, list, fn )
+	for _, offset in ipairs( PlotAdjacentOffsets ) do
+		local adjaPlot = self:GetPlot( x + offset.x, y + offset.y )		
+		if adjaPlot and ( not fn or fn( adjaPlot ) ) then
+			table.insert( list, adjaPlot )
+			--print( x + offset.x, y + offset.y, adjaPlot )
+		end
+	end
+	return list
 end
 
 -------------------------------------------
@@ -93,7 +113,7 @@ function Map:MatchCondition( plot, condition )
 	function CheckNearPlot( distance, fn )
 		distance = distance or 1
 		local matchCondition = false
-		for k, offset in ipairs( PlotAdjacentOffsets ) do
+		for _, offset in ipairs( PlotAdjacentOffsets ) do
 			if offset.distance <= distance then
 				local adjaPlot = self:GetPlot( x + offset.x, y + offset.y )
 				if adjaPlot and fn( adjaPlot ) then matchCondition = true break end

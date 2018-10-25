@@ -83,7 +83,7 @@ end
 local function Task_Resume( task )
 	Task_Debug( task, "resume" )
 	Asset_Set( task, TaskAssetID.STATUS, TaskStatus.MOVING )
-	Message_Post( MessageType.START_MOVING, { actor = Asset_Get( task, TaskAssetID.ACTOR ) } )
+	Message_Post( MessageType.START_MOVING, { actor = Asset_Get( task, TaskAssetID.ACTOR ), waittime = 5 } )
 end
 
 local function Task_Failed( task )
@@ -221,12 +221,18 @@ local _movingTask =
 local _prepareTask = 
 {
 	HARASS_CITY     = function ( task )
+		local loc = Asset_Get( task, TaskAssetID.LOCATION )
+		loc:AddStatus( CityStatus.WAR_WEARINESS, DAY_IN_SEASON )
+
 		Intel_Post( IntelType.HARASS_CITY, Asset_Get( task, TaskAssetID.LOCATION ), { actor = Asset_Get( task, TaskAssetID.ACTOR ) } )
 		Asset_Set( task, TaskAssetID.DURATION, 10 )
 		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WAITING )
 	end,
 	ATTACK_CITY     = function ( task )
-		Intel_Post( IntelType.ATTACK_CITY, Asset_Get( task, TaskAssetID.LOCATION ), { actor = Asset_Get( task, TaskAssetID.ACTOR ) } )
+		local loc = Asset_Get( task, TaskAssetID.LOCATION )
+		loc:AddStatus( CityStatus.WAR_WEARINESS, DAY_IN_SEASON )
+
+		Intel_Post( IntelType.ATTACK_CITY, loc, { actor = Asset_Get( task, TaskAssetID.ACTOR ) } )
 		Asset_Set( task, TaskAssetID.DURATION, 10 )
 		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WAITING )	
 	end,
@@ -544,13 +550,14 @@ local _workOnTask =
 		local progress = Random_GetInt_Sync( 20, 30 )
 		local corps    = Asset_GetDictItem( task, TaskAssetID.PARAMS, "corps" )
 		local officer  = Asset_Get( corps, CorpsAssetID.LEADER )
-		progress = math.ceil( progress * ( 100 + Chara_GetSkillEffectValue( officer, CharaSkillEffect.TRAINING_BONUS ) ) * 0.01 )
+		progress = math.ceil( progress * ( 100 + Chara_GetSkillEffectValue( officer, CharaSkillEffect.TRAINING_EFF_BONUS ) ) * 0.01 )
 		task:DoTask( progress )
 		local workload = Asset_Get( task, TaskAssetID.WORKLOAD )
 		if Asset_Get( task, TaskAssetID.PROGRESS ) >= workload then
-			local corps = Asset_GetDictItem( task, TaskAssetID.PARAMS, "corps" )
-			Corps_Train( corps, 1 )
 			Asset_Set( task, TaskAssetID.PROGRESS, 0 )
+			local corps = Asset_GetDictItem( task, TaskAssetID.PARAMS, "corps" )						
+			Corps_Train( corps, progress )			
+			Corps_GainExp( corps, Chara_GetSkillEffectValue( officer, CharaSkillEffect.TRAINING_EFF_BONUS ) )
 			return DEFAULT_TASK_CONTRIBUTION
 		end
 		return Task_GetBonus( task, "work" )
@@ -1077,7 +1084,7 @@ function Task_Terminate( task, requestor )
 
 	Task_Remove( task )
 
-	Task_BackHome( task )
+	--Task_BackHome( task )
 
 	Log_Write( "task", "Terminate task=" .. task:ToString() )
 
@@ -1110,7 +1117,7 @@ function Task_Create( taskType, actor, location, destination, params )
 		Task_CharaReceive( leader, task )
 
 	elseif type == TaskType.REGROUP_CORPS then
-		Asset_Set( task, TaskAssetID.ACTOR_TYPE, TaskActorType.CORPS )
+		Asset_Set( task, TaskAssetID.ACTOR_TYPE, TaskActorType.CORPS )		
 		local list = Asset_GetDictItem( task, TaskAssetID.PARAMS, "corps_list" )
 		for _, corps in ipairs( list ) do
 			Task_CorpsReceive( corps, task )
@@ -1230,7 +1237,7 @@ local function Task_Reply( task )
 			local bonus = Task_GetBonus( task )
 			data.actor:AffectExp( CharaStatus.MILITARY_EXP, bonus.mil_exp )
 			data.actor:AffectExp( CharaStatus.OFFICER_EXP, bonus.off_exp )
-			data.actor:AffectExp( CharaStatus.DIPLOMATIC_EXP, bonus.dip_exp )
+			data.actor:AffectExp( CharaStatus.DIPLOMAT_EXP, bonus.dip_exp )
 			data.actor:Contribute( data.value )
 		end )
 	else
@@ -1533,7 +1540,7 @@ local function Task_OnCombatEnded( msg )
 
 				elseif taskType == TaskType.ATTACK_CITY or taskType == TaskType.DISPATCH_CORPS then
 					--resume to attack city
-					Task_Resume( task )					
+					Task_Resume( task )
 					return
 				end
 			end		
@@ -1547,6 +1554,7 @@ local function Task_OnCombatEnded( msg )
 	end
 
 	for _, task in ipairs( taskList ) do
+		--print( "relatedcombat=" .. combat.id, task:ToString() )
 		CheckTask( task )
 	end
 

@@ -13,6 +13,7 @@ function Randomizer:SetSeed( seed )
 	self.seed = seed
 end
 
+--return value in range of [min, max]
 function Randomizer:GetInt( min, max )
 	self.times = self.times + 1		
 	self.seed = ( self.seed * 32765 + 12345 ) % 2147483647
@@ -52,11 +53,7 @@ function Random_GetInt_Sync( min, max, desc )
 	if desc then
 		--Log_Add( "random", "time=" .. _randomizer.times .. " seed=" .. _randomizer.seed .. " min=" .. min .. " max=" .. max .. ( desc and " desc=" .. desc or "" ) )
 	end
-	local ret = _randomizer:GetInt( min, max )
-	if _randomizer.times == 70788 then
-		--Log_Add( "random", "time=" .. _randomizer.times .. " seed=" .. _randomizer.seed .. " min=" .. min .. " max=" .. max .. ( desc and " desc=" .. desc or "" ) )
-		--error( "wrong seed min=" .. min .. " max=" .. max )
-	end
+	local ret = _randomizer:GetInt( min, max )	
 	return ret
 end
 function Random_GetInt_Unsync( min, max )

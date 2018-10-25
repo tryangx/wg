@@ -65,7 +65,6 @@ MessageType =
 	SIEGE_COMBAT_OCCURED  = 122,
 
 	COMBAT_ENDED          = 130,
-	COMBAT_REMOVE         = 131,	
 	----------------------------------
 
 	----------------------------------
@@ -94,9 +93,15 @@ MoveStatus =
 	MOVING  = 0,
 	SUSPEND = 1,
 	STOP    = 2,
+	END     = 3,
 }
 
 ------------------------------
+
+NeutralType = 
+{
+	REBEL_CORPS = 1,
+}
 
 ------------------------------
 

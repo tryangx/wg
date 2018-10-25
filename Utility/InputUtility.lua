@@ -14,7 +14,6 @@ function InputUtil_Pause( ... )
 	end
 	print( ">>>Press any key to continue<<<" )
 	InputUtil_ReceiveInput()
-	k.p = 1
 end
 
 function InputUtil_Wait( content, key )
@@ -28,4 +27,17 @@ function InputUtil_Wait( content, key )
 	while input ~= key do
 		input = InputUtil_ReceiveInput()
 	end	
+end
+
+--options = { { content, key } }
+function InputUtil_Read( options )
+	for key, option in pairs( options ) do
+		print( option.content )
+	end	
+	print( "@please make choice=" )
+	local input
+	while not MathUtil_IndexOf( options, input, "key" ) do
+		input = InputUtil_ReceiveInput()
+	end
+	return input
 end

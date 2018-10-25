@@ -248,13 +248,15 @@ end
 --   Determined by the City Index( Development, Security, etc )
 --
 --
-function City_InitPopuStructure( city )
+function City_DividePopuStructure( city, popu )
 	--get params
-	local popu   = Asset_Get( city, CityAssetID.POPULATION )
 	local popustparams = City_GetPopuParams( city )
 	local needparam  = popustparams.POPU_NEED_RATIO
 	local initparam  = popustparams.POPU_INIT
-	
+
+	--check popu
+	if not popu then popu = Asset_Get( city, CityAssetID.POPULATION ) end
+
 	--initalize population structure
 	local nums = {}	
 	for k, v  in pairs( CityPopu ) do
@@ -265,61 +267,28 @@ function City_InitPopuStructure( city )
 	end
 
 	--check pleb is in the range of limitation
-	local lastPleb = nums[CityPopu.FARMER] + nums[CityPopu.WORKER] + nums[CityPopu.MERCHANT]		
+	local lastPleb = nums[CityPopu.FARMER] + nums[CityPopu.WORKER] + nums[CityPopu.MERCHANT]
 	local needPleb = popu * needparam["PLEB"].limit
 	if lastPleb >= needPleb then
 		local ratio = needPleb / lastPleb
 		nums[CityPopu.FARMER]   = math.floor( nums[CityPopu.FARMER] * ratio )
 		nums[CityPopu.WORKER]   = math.floor( nums[CityPopu.WORKER] * ratio )
 		nums[CityPopu.MERCHANT] = math.floor( nums[CityPopu.MERCHANT] * ratio )
-		local curPleb = nums[CityPopu.FARMER] + nums[CityPopu.WORKER] + nums[CityPopu.MERCHANT]			
 	end
 
 	--calculate the hobo
 	local hobo = popu
 	for k, v  in pairs( CityPopu ) do
-		if initparam[k] and v ~= CityPopu.HOBO then
-			hobo = hobo - nums[v]
-		end
+		if initparam[k] and v ~= CityPopu.HOBO then hobo = hobo - nums[v] end
 	end
 
 	for k, v in pairs( CityPopu ) do
-		city:SetPopu( v, nums[v] )
 		if nums[v] then
-			--print( city.name .. " " .. k  .. "=" .. nums[v] .. "+" .. PercentString( nums[v] / popu ) )
-		end		
-	end
-	--InputUtil_Pause( k, v, nums[v], Asset_GetDictItem( city, CityAssetID.POPU_STRUCTURE, v ) )
-
-	--[[
-	local needfarmer   = City_NeedPopu( city, "FARMER" )
-	local needworker   = City_NeedPopu( city, "WORKER" )
-	local needmerchant = City_NeedPopu( city, "MERCHANT" )
-	
-	local nums = {}	
-	local notpleb = 0
-	for k, v  in pairs( CityPopu ) do
-		if initparam[k] then
-			local num = math.floor( popu * needparam[k].req * Random_GetInt_Sync( initparam[k].min, initparam[k].max ) * 0.01 )
-			nums[v] = num
-			notpleb = notpleb + num
+			--if v == CityPopu.PLEB then MathUtil_Dump( nums ) end
+			city:AddPopu( v, nums[v] )
 		end
+		--if nums[v] then print( city.name .. " " .. k  .. "=" .. nums[v] .. "+" .. PercentString( nums[v] / popu ) ) end		
 	end
-
-	local needpleb = needfarmer + needworker + needmerchant
-	
-	local leftpopu = popu - notpleb
-	local plebrate = leftpopu / needpleb
-	nums[CityPopu.FARMER]   = math.floor( needfarmer * plebrate )
-	nums[CityPopu.WORKER]   = math.floor( needworker * plebrate )
-	nums[CityPopu.MERCHANT] = math.floor( needmerchant* plebrate )
-	nums[CityPopu.HOBO] = nums[CityPopu.HOBO] + ( leftpopu - nums[CityPopu.FARMER] - nums[CityPopu.WORKER] - nums[CityPopu.MERCHANT] )
-
-	for k, v in pairs( CityPopu ) do
-		city:SetPopu( v, nums[v] )
-		--InputUtil_Pause( k, v, nums[v], Asset_GetDictItem( city, CityAssetID.POPU_STRUCTURE, v ) )
-	end
-	]]
 end
 
 function City_PopuConv( city )
@@ -459,25 +428,30 @@ function City_Mental( city )
 end
 
 function City_PopuGrow( city )
-	local rate  = 1 / MONTH_IN_YEAR
-	local population = Asset_Get( city, CityAssetID.POPULATION )
-	local growthRate = Random_GetInt_Sync( PopulationParams.GROWTH_MIN_RATE , PopulationParams.GROWTH_MAX_RATE )
-	local sec  = city:GetSecurity()
-	local diss = city:GetDiss()
-
-	--increase children
-	local increase = math.ceil( population * growthRate * rate * ( 100 + ( sec - diss ) ) * 0.000005 )
-	local children = Asset_GetDictItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.CHILDREN )
+	local rate = 0.001 / MONTH_IN_YEAR
+	local popu = Asset_Get( city, CityAssetID.POPULATION )
 
 	Track_Reset()
-	Track_Data( "children", children )
-	Track_Data( "popu", population )
+	Track_Data( "children", city:GetPopu( CityPopu.CHILDREN ) )
+	Track_Data( "old", city:GetPopu( CityPopu.OLD ) )
+	Track_Data( "popu", popu )
 
-	city:SetPopu( CityPopu.CHILDREN, children + increase )
-	Asset_Plus( city, CityAssetID.POPULATION, increase )
+	--children grow
+	local growthRate = Random_GetInt_Sync( PopulationParams.GROWTH_MIN_RATE, PopulationParams.GROWTH_MAX_RATE )
+	local increase = math.ceil( popu * growthRate * rate )
 
-	Track_Data( "children", Asset_GetDictItem( city, CityAssetID.POPU_STRUCTURE, CityPopu.CHILDREN ) )
-	Track_Data( "popu", Asset_Get( city, CityAssetID.POPULATION ) )
+	--old died
+	local deadRate = Random_GetInt_Sync( PopulationParams.DEAD_MIN_RATE, PopulationParams.DEAD_MAX_RATE )
+	local dead = math.ceil( popu * deadRate * rate )
+
+	city:AddPopu( CityPopu.CHILDREN, increase )
+	city:ReducePopu( CityPopu.OLD, dead )
+	
+	Asset_Plus( city, CityAssetID.POPULATION, increase - dead )
+
+	Track_Data( "children", city:GetPopu( CityPopu.CHILDREN ) )
+	Track_Data( "old", city:GetPopu( CityPopu.OLD ) )
+	Track_Data( "popu", Asset_Get( city, CityAssetID.POPULATION ) )	
 	--Track_Dump()
 end
 
@@ -540,6 +514,34 @@ function City_CheckFlag( city )
 		{ ratio = 3,   score = 80, },
 		{ ratio = 4,   score = 90, },
 	}
+
+	--expand
+	local expandPlot = Asset_Get( city, CityStatus.EXPAND_PLOT )
+	if not expandPlot and not city:GetStatus( CityStatus.EXPAND_END ) then
+		if not city:FindExpandPlot() then
+			city:SetStatus( CityStatus.EXPAND_END, true )
+		end
+	end
+
+	--time status
+	Asset_Foreach( city, CityAssetID.STATUSES, function ( value, status )
+		if status >= CityStatus.TIME_STATUS_BEG and status <= CityStatus.TIME_STATUS_END then
+			--Reduce time
+			value = value - g_elapsed			
+			--InputUtil_Pause( city.name .. "_" .. MathUtil_FindName( CityStatus, status ) .. "=", value )
+
+			if status == CityStatus.EXPAND_DURATION then
+				if value <= 0 then
+					city:Expand()
+				elseif value >= city:GetExpandDuration() then
+					city:Isolate()
+				end
+			else
+				city:SetStatus( status, value <= 0 and nil or value )
+			end
+		end
+		--print( city.name .. "_" .. MathUtil_FindName( CityStatus, status ) .. "=", value )
+	end)
 	
 	--city:SetStatus( CityStatus.PRODUCTION_BASE, true )
 	Asset_Foreach( city, CityAssetID.ADJACENTS, function( adjaCity )
@@ -597,26 +599,15 @@ function City_CheckFlag( city )
 			end
 		end
 	end )
-
-	--Reduce time
-	local cur = Asset_GetDictItem( city, CityAssetID.STATUSES, CityStatus.VIGILANT )
-	if cur then
-		cur = cur - g_elapsed
-		city:SetStatus( CityStatus.VIGILANT, cur <= 0 and nil or cur )
-	end
-
-	--debug flag
-	Asset_Foreach( city, CityAssetID.STATUSES, function ( value, status )
-		if value == true then
-			--print( city.name .. "_" .. MathUtil_FindName( CityStatus, status ) .. "=", value )
-		end
-	end)
 end
 
 --------------------------------------
 
 function City_Event( city )	
-	--System_Get( SystemType.EVENT_SYS ):Trigger( city )
+	--diss > security
+	Event_Trigger( city, EventType.CITY_EVENT )
+
+	Event_Trigger( city, EventType.DLG_EVENT )	
 end
 
 --------------------------------------
@@ -873,6 +864,9 @@ function City_LevyTax( city, progress )
 	--Stat_Add( city.name .. "@LevyTax", "money=" .. income, StatType.LIST )
 	Stat_Add( city.name .. "@LevyTax", income, StatType.ACCUMULATION )
 	--Debug_Log( "City=" .. city.name .. " Levy tax=" .. income .. " Money=" .. Asset_Get( city, CityAssetID.MONEY ) )	
+
+	City:LevyTax()
+
 	return income
 end
 
@@ -919,7 +913,7 @@ function City_SellFood( city, progress )
 	local has_money = Asset_Get( city, CityAssetID.MONEY )
 	local gap_money = req_money - has_money
 	if gap_money < 0 then
-		DBG_Error( "why enough money? req=" .. req_money .. " has=" .. has_money )
+		--DBG_Error( "why enough money? req=" .. req_money .. " has=" .. has_money )
 		return
 	end
 
@@ -1020,7 +1014,7 @@ function CitySystem:Update()
 		--city:DumpProperty()
 
 		--1st event turn
-		if day % 15 == 0 then
+		if day == 1 then
 			City_Event( city )
 		end
 
@@ -1046,12 +1040,7 @@ function CitySystem:Update()
 		if day % 10 == 0 then
 			City_Mental( city )
 		end
-
-		if day == DAY_IN_MONTH then
-			city:UpdateSecurity()
-			city:UpdateDiss()
-		end
-
+		
 		--if day % 15 == 1 then City_DevelopmentVary( city ) end
 
 		if day == 1 then

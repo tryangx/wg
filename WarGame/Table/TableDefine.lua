@@ -13,6 +13,7 @@ require "Table/TraitTable"
 require "Table/ConstructionTable"
 require "Table/CharaTitleTable"
 require "Table/CharaCareerTable"
+require "Table/EventTable"
 
 function Table_SetTroop( entity, id, value )
 	return TroopTable_Get( value ) or value

@@ -14,6 +14,7 @@ MoveAssetID =
 	CUR_PLOT   = 5,
 	NEXT_PLOT  = 6,
 	DEST_PLOT  = 7,
+
 	BEGIN_TIME = 10,
 	END_TIME   = 11,
 	STATUS     = 12,
@@ -26,14 +27,18 @@ MoveAssetAttrib =
 {
 	role     = AssetAttrib_SetNumber ( { id = MoveAssetID.ROLE,       type = MoveAssetType.BASE_ATTRIB, enum = MoveRole } ),
 	actor    = AssetAttrib_SetPointer( { id = MoveAssetID.ACTOR,      type = MoveAssetType.BASE_ATTRIB } ),
+
 	fromcity = AssetAttrib_SetPointer( { id = MoveAssetID.FROM_CITY,  type = MoveAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
 	tocity   = AssetAttrib_SetPointer( { id = MoveAssetID.TO_CITY,    type = MoveAssetType.BASE_ATTRIB, setter = Entity_SetCity } ),
 	curplot  = AssetAttrib_SetPointer( { id = MoveAssetID.CUR_PLOT,   type = MoveAssetType.BASE_ATTRIB, setter = Entity_SetPlot } ),
 	nextplot = AssetAttrib_SetPointer( { id = MoveAssetID.NEXT_PLOT,  type = MoveAssetType.BASE_ATTRIB, setter = Entity_SetPlot } ),
 	destplot = AssetAttrib_SetPointer( { id = MoveAssetID.DEST_PLOT,  type = MoveAssetType.BASE_ATTRIB, setter = Entity_SetPlot } ),
+
 	begtime  = AssetAttrib_SetNumber ( { id = MoveAssetID.BEGIN_TIME, type = MoveAssetType.BASE_ATTRIB } ),
 	endtime  = AssetAttrib_SetNumber ( { id = MoveAssetID.END_TIME,   type = MoveAssetType.BASE_ATTRIB } ),
+
 	status   = AssetAttrib_SetNumber ( { id = MoveAssetID.STATUS,     type = MoveAssetType.BASE_ATTRIB, enum = MoveStatus } ),
+
 	progress = AssetAttrib_SetNumber ( { id = MoveAssetID.PROGRESS,   type = MoveAssetType.BASE_ATTRIB } ),
 	duration = AssetAttrib_SetNumber ( { id = MoveAssetID.DURATION,   type = MoveAssetType.BASE_ATTRIB } ),
 	path     = AssetAttrib_SetPointer( { id = MoveAssetID.PATH,       type = MoveAssetType.BASE_ATTRIB } ),
@@ -91,8 +96,28 @@ function Move:IsMoving()
 	return Asset_Get( self, MoveAssetID.STATUS ) == MoveStatus.MOVING
 end
 
+function Move:GetMovement()	
+	local actor = Asset_Get( self, MoveAssetID.ACTOR )
+	local role = Asset_Get( self, MoveAssetID.ROLE )	
+	if role == MoveRole.CORPS then
+		return Asset_Get( actor, CorpsAssetID.MOVEMENT )
+	elseif role == MoveRole.CHARA then
+		return Move_GetCharaMovement( actor )
+	end
+	return 1
+end
+
 function Move:GetPassDay()
 	return g_Time:CalcDiffDayByDate( Asset_Get( self, MoveAssetID.BEGIN_TIME ) )
+end
+
+--------------------------------------------
+
+function Move:Wait( time )
+	if time then
+		local movement = self:GetMovement()
+		Asset_Plus( self, MoveAssetID.DURATION, movement * time )
+	end
 end
 
 function Move:Suspend()
@@ -101,4 +126,26 @@ function Move:Suspend()
 	Asset_Set( self, MoveAssetID.STATUS, MoveStatus.SUSPEND )
 end
 
---------------------------------------------
+function Move:Start()
+	Asset_Set( self, MoveAssetID.STATUS, MoveStatus.MOVING )
+
+	local actor = Asset_Get( self, MoveAssetID.ACTOR )
+	local role = Asset_Get( self, MoveAssetID.ROLE )	
+	if role == MoveRole.CORPS then
+		actor:SetStatus( CharaStatus.OUTSIDE, true )
+	elseif role == MoveRole.CHARA then
+		actor:SetStatus( CorpsStatus.OUTSIDE, true )
+	end
+end
+
+function Move:End()
+	Asset_Set( self, MoveAssetID.STATUS, MoveStatus.END )
+
+	local actor = Asset_Get( self, MoveAssetID.ACTOR )
+	local role = Asset_Get( self, MoveAssetID.ROLE )	
+	if role == MoveRole.CORPS then
+		actor:SetStatus( CharaStatus.OUTSIDE )
+	elseif role == MoveRole.CHARA then
+		actor:SetStatus( CorpsStatus.OUTSIDE )
+	end
+end

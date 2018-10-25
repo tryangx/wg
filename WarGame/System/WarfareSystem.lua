@@ -4,13 +4,14 @@ function Warfare_GetComat( plot )
 	return combat
 end
 
-function Warfare_BonusTroop( troop )
-
+local function Warfare_JoinCombat( combat, corps, side )
+	Move_Suspend( corps )
+	combat:AddCorps( corps, side )
 end
 
 --atk can be invalid
 --def can be invalid
-function Warefare_FieldCombatOccur( plot, atk, def )
+function Warefare_FieldCombatOccur( plot, atk, def, defList )
 	--first, we should find exist combat in this plot
 	local combatExist = true
 	local combat = Warfare_GetComat( plot )
@@ -37,8 +38,14 @@ function Warefare_FieldCombatOccur( plot, atk, def )
 		combatExist = false
 	end
 
-	if atk then combat:AddCorps( atk, CombatSide.ATTACKER ) end
-	if def then combat:AddCorps( def, CombatSide.DEFENDER )	end
+	if atk then Warfare_JoinCombat( combat, atk, CombatSide.ATTACKER ) end
+	if def then Warfare_JoinCombat( combat, def, CombatSide.DEFENDER ) end
+
+	if defList then
+		for _, corps in pairs( defList ) do
+			Warfare_JoinCombat( combat, corps, CombatSide.DEFENDER )
+		end
+	end
 
 	if combatExist == false then
 		Stat_Add( "Combat@Occur", combat:ToString( "ALL" ), StatType.LIST )
@@ -79,7 +86,7 @@ function Warefare_HarassCombatOccur( city, corps )
 		local corpsList = city:GetDefendCorps()
 		for _, def in ipairs( corpsList ) do
 			if def:IsAtHome() then
-				combat:AddCorps( def, CombatSide.DEFENDER )
+				Warfare_JoinCombat( combat, def, CombatSide.DEFENDER )
 			end
 		end
 
@@ -93,7 +100,7 @@ function Warefare_HarassCombatOccur( city, corps )
 	end
 
 	--add attacker
-	combat:AddCorps( corps, CombatSide.ATTACKER )
+	Warfare_JoinCombat( combat, corps, CombatSide.ATTACKER )
 
 	if combatExist == false then
 		Stat_Add( "Combat@Occur", combat:ToString( "ALL" ), StatType.LIST )
@@ -135,7 +142,7 @@ function Warefare_SiegeCombatOccur( city, corps )
 		--add defender
 		Asset_Foreach( city, CityAssetID.CORPS_LIST, function ( def )
 			if def:IsAtHome() then
-				combat:AddCorps( def, CombatSide.DEFENDER )	
+				Warfare_JoinCombat( combat, def, CombatSide.DEFENDER )
 			end
 		end )
 
@@ -149,7 +156,7 @@ function Warefare_SiegeCombatOccur( city, corps )
 	end
 
 	--add attacker
-	combat:AddCorps( corps, CombatSide.ATTACKER )
+	Warfare_JoinCombat( combat, corps, CombatSide.ATTACKER )
 
 	if not combatExist then
 		Stat_Add( "Combat@Occur", combat:ToString( "ALL" ), StatType.LIST )
@@ -309,6 +316,7 @@ function Warfare_UpdateCombat( combat )
 	Stat_Add( MathUtil_FindName( CombatType, type ) .. "@WIN=" .. MathUtil_FindName( CombatSide, winner ), 1, StatType.TIMES )
 	--Stat_Add( "Combat@Winner", combat:ToString() .. " winner=" .. combat:GetGroupName( winner ), StatType.LIST )
 
+	--combat bonus
 	local group = combat:GetGroup( winner )
 	local oppGroup = combat:GetGroup( combat:GetOppSide( winner ) )
 	if group then
@@ -320,29 +328,20 @@ function Warfare_UpdateCombat( combat )
 		if IsAffectReputation then oppGroup:LoseCombat( combat ) end
 	end
 
-	Debug_Log( combat:ToString( "DEBUG_CORPS" ) )
+	--Debug_Log( combat:ToString( "DEBUG_CORPS" ) )
 	Debug_Log( combat:ToString( "RESULT" ), "combat end!!!" )
 
-	Asset_Foreach( combat, CombatAssetID.CORPS_LIST, function ( corps )
-		if corps:GetSoldier() == 0 then
-			Corps_Dismiss( corps, true )
-			print( "dismiss", corps:ToString() )
-			Stat_Add( "Corps@Vanished", corps:ToString( "SIMPLE"), StatType.LIST )
-		else
-			Corps_AfterCombat( corps )
-		end
-	end )
+	combat:WipeCorps()
 
-	Debug_Log( "combat end", combat:ToString( "RESULT" ) )
+	Message_Send( MessageType.COMBAT_ENDED, { combat = combat } )
 
-	Message_Post( MessageType.COMBAT_ENDED, { combat = combat } )
-
-	--sanity checker, whether release all guard & reserves
+	--release all guard & reserves
 	for _, troop in ipairs( removeTroopList ) do
 		Debug_Log( "remove troop=" .. troop.id .. " CID=" .. combat.id )
 		Entity_Remove( troop )
 	end
 	--[[
+	--sanity checker, wheter guard & reserve still exist
 	Entity_Foreach( EntityType.TROOP, function ( troop )		
 		if troop:GetStatus( TroopStatus.RESERVE ) then
 			--InputUtil_Pause( "1")
@@ -364,12 +363,7 @@ end
 
 -------------------------------------
 
-local function Warfare_OnCombatEnded( msg )		
-	local params = Asset_GetList( msg, MessageAssetID.PARAMS )
-	Message_Send( MessageType.COMBAT_REMOVE, params )
-end
-
-local function Warfare_OnCombatRemove( msg )
+local function Warfare_OnCombatEnded( msg )	
 	local combat = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "combat" )
 	if not combat then
 		DBG_Error( "why no combat to remove?" )
@@ -377,18 +371,17 @@ local function Warfare_OnCombatRemove( msg )
 	end
 
 	Stat_Add( "CombatDur@" .. combat.id, Asset_Get( combat, CombatAssetID.DAY ), StatType.VALUE )
-	
+
 	Asset_Foreach( combat, CombatAssetID.CORPS_LIST, function ( corps )
-		corps:SetStatus( CorpsStatus.IN_COMBAT )
+		--sanity checker
 		if not corps:GetTask() then
-			--resume the move manually
 			if Move_IsMoving( corps ) then
 				Entity_ToString( EntityType.MOVE )
 				DBG_Error( "why is moving", corps:ToString("STATUS") )
 			end
 		end
 	end )
---[[
+	--[[
 	Asset_Foreach( combat, CombatAssetID.ATK_CORPS_LIST, function ( corps )
 		Asset_SetDictItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_COMBAT, nil )
 	end )
@@ -396,6 +389,9 @@ local function Warfare_OnCombatRemove( msg )
 		Asset_SetDictItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_COMBAT, nil )
 	end )
 	]]
+
+	--remove combat cached manually
+	System_Get( SystemType.WARFARE_SYS ):RemoveCombat( combat )
 
 	--don't remove combat now, should after combat_end message was processed
 	Entity_Remove( combat )
@@ -407,10 +403,11 @@ local function Warfare_OnFieldCombatTrigger( msg )
 	local plot = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "plot" )
 	local atk  = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "atk" )
 	local def  = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "def" )
+	local defList = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "defList" )
 
 	local combat
 	if plot then
-		combat = Warefare_FieldCombatOccur( plot, atk, def )
+		combat = Warefare_FieldCombatOccur( plot, atk, def, defList )
 
 	elseif city then
 		local corps = city:GetDefendCorps()
@@ -458,12 +455,14 @@ local function Warfare_OnCombatAttend( msg )
 	end	
 end
 
-local function Warfare_OnCombatInterrupted( msg )
-	local params = Asset_GetList( msg, MessageAssetID.PARAMS )	
-	Message_Send( MessageType.COMBAT_ENDED, params )
+local function Warfare_OnCombatInterrupted( msg )	
+	print( "interuppted" )
 
-	--remove combat cached manually
-	System_Get( SystemType.WARFARE_SYS ):RemoveCombat( params.combat )
+	local combat = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "combat" )
+	combat:WipeCorps()
+
+	local params = Asset_GetList( msg, MessageAssetID.PARAMS )
+	Message_Send( MessageType.COMBAT_ENDED, params )
 end
 
 -------------------------------------
@@ -485,7 +484,6 @@ function WarfareSystem:Start()
 	Message_Handle( self.type, MessageType.COMBAT_ATTEND,        Warfare_OnCombatAttend )	
 
 	Message_Handle( self.type, MessageType.COMBAT_ENDED, Warfare_OnCombatEnded )
-	Message_Handle( self.type, MessageType.COMBAT_REMOVE, Warfare_OnCombatRemove )
 end
 
 function WarfareSystem:UpdateCombat( combat )
@@ -496,7 +494,7 @@ function WarfareSystem:Update()
 	for id, combat in pairs( self._combats ) do
 		if Warfare_UpdateCombat( combat ) == true then
 			Stat_Add( "Combat@Duration", Asset_Get( combat, CombatAssetID.TIME ), StatType.ACCUMULATION )
-			self._combats[id] = nil
+			--self._combats[id] = nil
 		end
 	end
 end

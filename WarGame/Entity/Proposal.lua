@@ -51,9 +51,10 @@ function Proposal:ToString()
 	local type = Asset_Get( self, ProposalAssetID.TYPE )
 	local content = ""
 	content = content .. " " .. MathUtil_FindName( ProposalType, type )
-	content = content .. " p=[" .. String_ToStr( Asset_Get( self, ProposalAssetID.PROPOSER ), "name" ) .. "]"
-	content = content .. " a=[" .. String_ToStr( Asset_Get( self, ProposalAssetID.ACTOR ), "name" ) .. "]"
-	content = content .. " @" .. String_ToStr( Asset_Get( self, ProposalAssetID.DESTINATION ), "name" )
+	content = content .. " psr=[" .. String_ToStr( Asset_Get( self, ProposalAssetID.PROPOSER ), "name" ) .. "]"
+	content = content .. " atr=[" .. String_ToStr( Asset_Get( self, ProposalAssetID.ACTOR ), "name" ) .. "]"
+	content = content .. " loc=" .. String_ToStr( Asset_Get( self, ProposalAssetID.LOCATION ), "name" )
+	content = content .. " dst=" .. String_ToStr( Asset_Get( self, ProposalAssetID.DESTINATION ), "name" )
 	content = content .. " t=" .. g_Time:CreateDateDescByValue( Asset_Get( self, ProposalAssetID.TIME ) )
 	if type == ProposalType.HARASS_CITY or type == ProposalType.ATTACK_CITY then
 	end

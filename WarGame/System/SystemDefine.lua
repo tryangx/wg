@@ -17,6 +17,7 @@ require "System/DiplomacySystem"
 require "System/GoalSystem"
 require "System/ReportSystem"
 require "System/RankingSystem"
+require "System/NeutralSystem"
 
 --System running sequence as follow
 SystemType =
@@ -29,6 +30,7 @@ SystemType =
 	CITY_SYS          = 101,
 	GROUP_SYS         = 102,
 	CORPS_SYS         = 103,
+	NEUTRAL_SYS       = 104,
 	MOVE_SYS          = 110,
 	WARFARE_SYS       = 111,
 	DIPLOMACY_SYS     = 112,

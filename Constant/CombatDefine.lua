@@ -129,6 +129,7 @@ TroopCombatData =
 	SURROUNDED = 42,
 }
 
+--[[
 TroopSkillEffect = 
 {
 	--Affect the damage made
@@ -148,13 +149,13 @@ TroopSkillEffect =
 	MOVEMENT_BONUS     = 1104,
 	--speed up the troop training
 	TRAINING_BONUS     = 1100,
-}
+}]]
 
 CorpsStatus = 
 {
 	IN_COMBAT = 10,
-
-	IN_TASK   = 11,	
+	IN_TASK   = 11,
+	OUTSIDE   = 12,
 
 	DEPATURE_TIME = 12,
 

@@ -74,7 +74,7 @@ CityStatus =
 	-- Flag
 	---------------------------------
 	IN_SIEGE           = 20,
-	STARVATION         = 21,
+	STARVATION         = 21,	
 
 	OLD_CAPITAL        = 30,
 	
@@ -96,10 +96,14 @@ CityStatus =
 	SAFETY             = 42,
 	BUDGET_DANGER      = 50,
 
+	EXPAND_PLOT        = 60,
+	EXPAND_END         = 61,
+
 	-----------------------------------
 	--sabotage success or something else will trigger this for at least 3 mons
-	VIGILANT           = 100,
 	MOBILE_MERCHANT    = 101,
+	--Measure the price to buy/sell food
+	PRICE              = 102,
 
 	FLOOD              = 110,
 	LOCUSTS_PLAGUE     = 111,
@@ -107,23 +111,33 @@ CityStatus =
 	TYPHOON            = 112,
 	BLIZZARD           = 113,
 
-	--Measure the price to buy/sell food
-	PRICE              = 120,
+	-----------------------------------
+	--time
+	TIME_STATUS_BEG    = 1000,
+	
+	VIGILANT           = 1001,
+	DEMONSTRATE        = 1002,
+	STRIKE             = 1003,
+	WAR_WEARINESS      = 1004,
+
+	EXPAND_DURATION    = 1500,
+
+	TIME_STATUS_END    = 1999,
 
 	-----------------------------------
 	--not enough aggressive military power
-	AGGRESSIVE_WEAK    = 1000,
-	AGGRESSIVE_ADV     = 1001,
+	AGGRESSIVE_WEAK    = 3000,
+	AGGRESSIVE_ADV     = 3001,
 	--not enough defender military power
-	DEFENSIVE_WEAK     = 1010,	
-	DEFENSIVE_DANGER   = 1011,
+	DEFENSIVE_WEAK     = 3010,	
+	DEFENSIVE_DANGER   = 3011,
 	--need develop
-	DEVELOPMENT_WEAK   = 1020,
-	DEVELOPMENT_DANGER = 1021,
+	DEVELOPMENT_WEAK   = 3020,
+	DEVELOPMENT_DANGER = 3021,
 
 	--not enough reserves
-	RESERVE_UNDERSTAFFED = 1030,
-	RESERVE_NEED         = 1031,
+	RESERVE_UNDERSTAFFED = 3030,
+	RESERVE_NEED         = 3031,
 }
 
 CityJob = 
@@ -196,9 +210,14 @@ CitySecurity =
 CityDiss = 
 {
 	--attack / been attacked
-	AT_AWR   = 10,
-	--been seiged
-	IN_SIEGE = 11,
+	FRONTIER    = 11,
+	BATTLEFRONT = 12,
 
-	LEVY_TAX = 12,
+	--been seiged
+	IN_SIEGE    = 13,
+	STARVATION  = 14,
+
+	LEVY_TAX      = 20,
+	DEMONSTRATION = 21,
+	STRIKE        = 22,
 }
