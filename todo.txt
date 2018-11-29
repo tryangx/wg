@@ -56,9 +56,15 @@ To Do List
 #10/25/2018
 [ok] expand / isolate plot
 
+#11/02/2018
+[ok] tune higher of the damage calculated in combat, add features: 1.atk attitude, 2.def attitude
+[ok] job will determine by the city size/construction/status
+
 ---------------------------------------------------------
 
-[inprog] add chara skills / troop tactics etc
+[inprog] Refactor task system, move task decision into Chara / Corps 
+
+[inprog] add chara skills etc
 
 [inprog] troop medal
          increase the maximum of Ability Limitation, likes morale, organization, weapon modification rate, etc.
@@ -75,6 +81,12 @@ To Do List
 !!! don't add/remove during foreach
 
 [inprog] Add *Equipment feature into troop, will reduce by time by combat, can refill
+
+[inprog] refactor task:
+    update actor( chara, corps )
+    check task
+
+[] chara will make choice every turn(day), refactor task update
 
 rebel--> add new system: neutral 
 

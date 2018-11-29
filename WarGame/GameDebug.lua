@@ -10,6 +10,14 @@ function Test_CityMoney()
 	InputUtil_Pause( city:ToString("ASSET") )
 ]]
 
+
+	local chara = Entity_Get( EntityType.CHARA, 102 )
+	if chara then
+		Asset_Foreach( chara, CharaAssetID.SKILLS, function ( skill )
+			--print( chara.name, skill.name, MathUtil_FindName( CharaSkillType, skill.type ) )
+		end )
+	end
+
 	--city:FindExpandPlot()
 	--city:Expand()
 	city:Isolate()

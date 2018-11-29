@@ -15,7 +15,6 @@ TaskAssetID =
 	STATUS       = 11,
 	RESULT       = 12,
 	STEP         = 13,
-	INCOMBAT     = 14,		
 
 	ACTOR        = 20,
 	ACTOR_TYPE   = 21,
@@ -51,7 +50,6 @@ TaskAssetAttrib =
 	status       = AssetAttrib_SetNumber ( { id = TaskAssetID.STATUS,     type = TaskAssetType.BASE_ATTRIB, enum = TaskStatus, default = TaskStatus.RUNNING } ),
 	result       = AssetAttrib_SetNumber ( { id = TaskAssetID.RESULT,     type = TaskAssetType.BASE_ATTRIB, enum = TaskResult, default = TaskResult.UNKNOWN } ),
 	step         = AssetAttrib_SetNumber ( { id = TaskAssetID.STEP,       type = TaskAssetType.BASE_ATTRIB, default = 1 } ),
-	incombat     = AssetAttrib_SetNumber ( { id = TaskAssetID.INCOMBAT,   type = TaskAssetType.BASE_ATTRIB, default = 0 } ),
 	
 	actor        = AssetAttrib_SetPointer( { id = TaskAssetID.ACTOR,      type = TaskAssetType.BASE_ATTRIB } ),
 	actortype    = AssetAttrib_SetNumber ( { id = TaskAssetID.ACTOR_TYPE, type = TaskAssetType.BASE_ATTRIB, enum = TaskActorType } ),	
@@ -90,19 +88,20 @@ end
 function Task:ToString( type )
 	local content = self.id .. " " .. MathUtil_FindName( TaskType, Asset_Get( self, TaskAssetID.TYPE ) )
 	content = content .. " " .. String_ToStr( Asset_Get( self, TaskAssetID.GROUP ), "name" )
-	if self:IsWaitCombat() then
-		content = content .. " in-combat=" .. Asset_Get( self, TaskAssetID.INCOMBAT )
+	if self:GetCombat() then
+		content = content .. " in-combat=" .. self:GetCombat()
 	end
 	content = content .. " sts=" .. MathUtil_FindName( TaskStatus, Asset_Get( self, TaskAssetID.STATUS ) )
 	if type == "SIMPLE" then
 		content = content .. " beg=" .. g_Time:CreateDateDescByValue( Asset_Get( self, TaskAssetID.BEGIN_TIME ) )
 	elseif type == "DEBUG" then
 		content = content .. " atr=" .. ( Asset_Get( self, TaskAssetID.ACTOR ):ToString() )
-		content = content .. " dur=" .. Asset_Get( self, TaskAssetID.DURATION )
+		content = content .. " dst=" .. Asset_Get( self, TaskAssetID.DESTINATION ):ToString()
 		content = content .. " stp=" .. MathUtil_FindName( TaskStep, self:GetStepType() )
 		content = content .. " prg=" .. Asset_Get( self, TaskAssetID.PROGRESS )
 		content = content .. " wrk=" .. Asset_Get( self, TaskAssetID.WORKLOAD )
 		content = content .. " cmd=" .. Asset_Get( self, TaskAssetID.COMBAT_DAYS )
+		content = content .. " dur=" .. Asset_Get( self, TaskAssetID.DURATION )
 		content = content .. " epd=" .. Asset_Get( self, TaskAssetID.ELPASED_DAYS )
 
 		if Asset_Get( self, TaskAssetID.TYPE ) == TaskType.INTERCEPT then			
@@ -158,7 +157,7 @@ function Task:IsStepFinished()
 
 	if status == TaskStatus.WORKING then
 		if Asset_Get( self, TaskAssetID.PROGRESS ) >= Asset_Get( self, TaskAssetID.WORKLOAD ) then
-			return not self:IsWaitCombat()
+			return not self:GetCombat()
 		end
 		return Asset_Get( self, TaskAssetID.DURATION ) <= 0
 	end
@@ -185,7 +184,7 @@ function Task:ElpasedTime( time )
 
 	Asset_Plus( self, TaskAssetID.ELPASED_DAYS, time )	
 
-	if self:IsWaitCombat() then
+	if self:GetCombat() then
 		Asset_Plus( self, TaskAssetID.COMBAT_DAYS, 1 )
 	end
 end
@@ -217,7 +216,7 @@ function Task:NextStep()
 	end
 end
 
-function Task:End()
+function Task:Finish()
 	Asset_Set( self, TaskAssetID.STATUS, TaskStatus.RUNNING )
 	Asset_Set( self, TaskAssetID.DURATION, 0 )
 	--step should be the maximum
@@ -235,11 +234,17 @@ function Task:Update()
 	return false
 end
 
-function Task:IsWaitCombat()
-	return Asset_Get( self, TaskAssetID.INCOMBAT ) ~= 0
-end
-
-function Task:EnterCombat()
-end
-function Task:LeaveCombat()
+function Task:GetCombat()
+	local actorType = Asset_Get( self, TaskAssetID.ACTOR_TYPE )
+	if actorType == TaskActorType.CORPS then
+		local actor = Asset_Get( self, TaskAssetID.ACTOR )
+		--print( actor:ToString() )
+		local ret = actor:GetStatus( CorpsStatus.IN_COMBAT )
+		if ret == true then
+			Asset_Foreach( actor, CorpsAssetID.STATUSES, function ( data, item )
+				--print( data, item )
+			end)	
+		end
+		return ret
+	end
 end

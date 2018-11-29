@@ -27,9 +27,6 @@ function Game_Init()
 	--[[
 	AssetAttrib_SetWatcher( function( entity, id, operation )
 		if entity.type == EntityType.CHARA then
-			if id == CharaAssetID.LOCATION then
-				--InputUtil_Pause( entity.name, operation )
-			end
 		elseif entity.type == EntityType.PLOT then
 			if id > 300 then
 				--print( MathUtil_FindName( EntityType, entity.type )..entity.id.."(".. MathUtil_FindName( PlotAssetID, id )..")"..id.."." .. MathUtil_FindName( PlotAssetID, id ) .. " " ..( operation or "unkown" ) )
@@ -248,22 +245,28 @@ end
 function Game_MainLoop()
 	System_Update( g_turnStep )
 	Game_NextTurn()
+
+	--VERIFY DATA
+	--Entity_Foreach( EntityType.CHARA, function ( entity ) end )
 end
 
 function Game_Start()
 	Game_Init()
+
+	local begTime = os.clock()
 	
 	--test
 	if not Game_Test() then
-		while Game_IsRunning()  do
+		while Game_IsRunning() do
 			Game_MainLoop()
 		end
 	end
+
+	local endTime = os.clock()
+	print( "usetime=" .. ( endTime - begTime ) )
 	
 	--local city = Entity_Get( EntityType.CITY, 1 )
-	--if city then city:TrackData() end
-
-	
+	--if city then city:TrackData() end	
 
 	GameExit()
 end
@@ -299,9 +302,9 @@ function GameExit()
 		--print( entity:ToString( "SUPPLY" ) )	
 		--print( entity:ToString( "ASSET" ) )
 		--print( entity:ToString( "CHARA" ) )	
-		--print( entity:ToString( "OFFICER" ) )
+		print( entity:ToString( "OFFICER" ) )
 		--InputUtil_Pause()
-	end)		
+	end)
 
 --	Debug_Normal( "Troop==>" ) Entity_Foreach( EntityType.TROOP, function ( entity ) Debug_Normal( entity:ToString( "ALL" ) ) end )
 	Debug_Normal( "Chara==>" .. Entity_Number( EntityType.CHARA ) ) Entity_Foreach( EntityType.CHARA, function ( entity ) Debug_Normal( entity:ToString( "ALL" ) ) end )

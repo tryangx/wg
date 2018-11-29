@@ -59,18 +59,33 @@ function Move:ToString( type )
 	content = content .. self.id
 	content = content .. " " .. Asset_Get( self, MoveAssetID.ACTOR ):ToString()
 
-	local from = Asset_Get( self, MoveAssetID.FROM_CITY )
-	content = content .. " from=" .. from:ToString( "SIMPLE" )
+	content = content .. MathUtil_FindName( MoveStatus, Asset_Get( self, MoveAssetID.STATUS ) )
 	
 	local curplot = Asset_Get( self, MoveAssetID.CUR_PLOT )
 	if curplot then content = content .. " cur=" .. curplot:ToString() end
 
-	content = content .. MathUtil_FindName( MoveStatus, Asset_Get( self, MoveAssetID.STATUS ) )
+	local fromCity = Asset_Get( self, MoveAssetID.FROM_CITY )
+	content = content .. " from=" .. fromCity:ToString( "SIMPLE" )	
+	
+	local tocity = Asset_Get( self, MoveAssetID.TO_CITY )
+	if tocity then
+		content = content .. " dst=" .. tocity:ToString("SIMPLE")
+	else
+		content = content .. " dst=" .. Asset_Get( self, MoveAssetID.DEST_PLOT ):ToString()	
+	end
+
+	if type == "TRACK" then
+		content = content .. " next=" ..  Asset_Get( self, MoveAssetID.NEXT_PLOT ):ToString()
+	end
+
+	if type == "PATH" then
+		for _, plot in pairs( path ) do
+			content = content .. plot:ToString() .. ","
+		end
+	end
 
 	content = content .. " beg=" .. g_Time:CreateDateDescByValue( Asset_Get( self, MoveAssetID.BEGIN_TIME ) )
 	
-	content = content .. " dst=" .. Asset_Get( self, MoveAssetID.DEST_PLOT ):ToString()
-
 	if type == "END" then
 		content = content .. " day=" .. g_Time:CalcDiffDayByDates( Asset_Get( self, MoveAssetID.END_TIME ), Asset_Get( self, MoveAssetID.BEGIN_TIME ) )
 	elseif type == "DEBUG" then
@@ -79,6 +94,7 @@ function Move:ToString( type )
 	else
 		content = content .. " pas=" .. self:GetPassDay()
 	end
+
 	return content
 end
 
@@ -132,9 +148,9 @@ function Move:Start()
 	local actor = Asset_Get( self, MoveAssetID.ACTOR )
 	local role = Asset_Get( self, MoveAssetID.ROLE )	
 	if role == MoveRole.CORPS then
-		actor:SetStatus( CharaStatus.OUTSIDE, true )
-	elseif role == MoveRole.CHARA then
 		actor:SetStatus( CorpsStatus.OUTSIDE, true )
+	elseif role == MoveRole.CHARA then
+		actor:SetStatus( CharaStatus.OUTSIDE, true )
 	end
 end
 
@@ -143,9 +159,9 @@ function Move:End()
 
 	local actor = Asset_Get( self, MoveAssetID.ACTOR )
 	local role = Asset_Get( self, MoveAssetID.ROLE )	
-	if role == MoveRole.CORPS then
+	if role == MoveRole.CHARA then
 		actor:SetStatus( CharaStatus.OUTSIDE )
-	elseif role == MoveRole.CHARA then
+	elseif role == MoveRole.CORPS then
 		actor:SetStatus( CorpsStatus.OUTSIDE )
 	end
 end

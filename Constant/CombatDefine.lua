@@ -153,11 +153,15 @@ TroopSkillEffect =
 
 CorpsStatus = 
 {
-	IN_COMBAT = 10,
+	DISMISSED       = 1,
+	RETREAT_TO_CITY = 2,
+
+	IN_COMBAT = 10,	
 	IN_TASK   = 11,
+
 	OUTSIDE   = 12,
 
-	DEPATURE_TIME = 12,
+	DEPATURE_TIME = 13,
 
 	--Measure how many the current soldier is understaffed from maximum number
 	UNDERSTAFFED  = 100,
@@ -221,7 +225,7 @@ CombatStepType =
 	ORDER    = 3,
 
 	--in combat, duration game time
-	INCOMBAT = 4,
+	FIGHT    = 4,
 
 	--have a rest
 	REST     = 5,
@@ -337,7 +341,7 @@ CombatStatistic =
 	PASS            = 20,
 	DEAD            = 21,
 	NEUTRALIZE_ENEMY= 22,
-
+	
 	REST_DAY        = 30,
 	STORM_DAY       = 31,
 	COMBAT_DAY      = 32,

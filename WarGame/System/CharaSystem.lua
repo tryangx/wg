@@ -63,23 +63,23 @@ function Chara_GetRatingCharaSuitJob( chara, job )
 	if job == CityJob.EXECUTIVE then
 
 	elseif job == CityJob.COMMANDER then
-		score = score + chara:HasSkill( CharaSkillType.COMMANDER ) * 100
-		score = score + chara:HasSkill( CharaSkillType.OFFICER ) * 100
+		score = score + chara:HasSkillType( CharaSkillType.COMMANDER ) * 100
+		score = score + chara:HasSkillType( CharaSkillType.OFFICER ) * 100
 
 	elseif job == CityJob.STAFF then
-		score = score + chara:HasSkill( CharaSkillType.STAFF ) * 100
+		score = score + chara:HasSkillType( CharaSkillType.STAFF ) * 100
 
 	elseif job == CityJob.HR then
-		score = score + chara:HasSkill( CharaSkillType.HR ) * 100
+		score = score + chara:HasSkillType( CharaSkillType.HR ) * 100
 
-	elseif job == CityJob.AFFAIRS then
-		score = score + chara:HasSkill( CharaSkillType.OFFICIALS ) * 100
+	elseif job == CityJob.OFFICIAL then
+		score = score + chara:HasSkillType( CharaSkillType.OFFICIALS ) * 100
 
 	elseif job == CityJob.DIPLOMATIC then
-		score = score + chara:HasSkill( CharaSkillType.DIPLOMAT ) * 100
+		score = score + chara:HasSkillType( CharaSkillType.DIPLOMAT ) * 100
 
 	elseif job == CityJob.TECHNICIAN then
-		score = score + chara:HasSkill( CharaSkillType.TECHNICIAN ) * 100
+		score = score + chara:HasSkillType( CharaSkillType.TECHNICIAN ) * 100
 
 	end
 
@@ -101,45 +101,52 @@ function Chara_FindBestCharaForJob( job, charaList )
 end
 
 -------------------------------------------
+-- Determine the number of Chara in the city
 
+--Group Limitation
+--  
 function Chara_GetLimitByGroup( group )
 	if not group then return 0 end
-	local government = Asset_Get( group, GroupAssetID.GOVERNMENT )
-	--print( "gov=" .. MathUtil_FindName( GroupGovernment, government ) )
-	local number = GroupGovernmentData[government].CAPITAL_CHARA_LIMIT
 
-	local lv = 0
+	local government = Asset_Get( group, GroupAssetID.GOVERNMENT )
+	local typeName = MathUtil_FindName( GroupGovernment, government )
+	local number = CharaParams.LIMIT_NUMBER.GOVENRMENT[typeName]
+
 	Asset_Foreach( group, GroupAssetID.CITY_LIST, function ( city )
-		lv = lv + Asset_Get( city, CityAssetID.LEVEL )
+		if city:IsCapital() then return end
+		number = number + math.floor( Asset_Get( city, CityAssetID.LEVEL ) * 0.25 )
 	end )
-	number = number + math.floor( lv * 0.4 )	
+
 	return number
 end
 
-function Chara_GetLimitByCity( city )
-	if not city then return 0 end
-	--if city:IsCapital() then return Chara_GetLimitByGroup( Asset_Get( city, CityAssetID.GROUP ) ) end
-	local lv = Asset_Get( city, CityAssetID.LEVEL )	
-	local ret = math.ceil( lv / 4 ) + 1
-	if city:IsCapital() then
-		ret = ret + 10
-	end
-	--DBG_Warning( "chara_limit_bycity", ret )
-	return ret
-end
-
 function Chara_GetReqNumOfOfficer( city )
+	local number = CharaParams.REQUIRE_NUMBER.MIN_NUMBER	
+	
+	local level = Asset_Get( city, CityAssetID.LEVEL )
+	number = number + ( CharaParams.REQUIRE_NUMBER.LEVEL_BNOUS[level] or 0 )
+
 	if city:IsCapital() then
-		return 8
+		number = number + CharaParams.REQUIRE_NUMBER.CAPITAL_BONUS
+	end	
+	--[[
+	if city:GetStatus( CityStatus.FRONTIER ) then
+		number = number + ( CharaParams.REQUIRE_NUMBER.FRONTIER_BONUS or 0 )
+	elseif city:GetStatus( CityStatus.BATTLEFRONT ) then
+		number = number + ( CharaParams.REQUIRE_NUMBER.BATTLEFRONT_BONUS or 0 )
 	end
-	if city:GetStatus( CityStatus.BATTLEFRONT ) then
-		return 6
-	elseif city:GetStatus( CityStatus.FRONTIER ) then
-		return 4
-	elseif city:GetStatus( CityStatus.SAFETY ) then
-		return 2
+	if city:GetStatus( CityStatus.ADVANCED_BASE ) then
+		number = number + ( CharaParams.REQUIRE_NUMBER.ADVANCED_BASE_BONUS or 0 )
 	end
-	return 3
+	if city:GetStatus( CityStatus.PRODUCTION_BASE ) then
+		number = number + ( CharaParams.REQUIRE_NUMBER.PRODUCTION_BASE_BONUS or 0 )
+	end
+	if city:GetStatus( CityStatus.MILITARY_BASE ) then
+		number = number + ( CharaParams.REQUIRE_NUMBER.MILITARY_BASE_BONUS or 0 )
+	end
+	]]
+	--print( city.name, number )
+	return number
 end
 
 function Chara_FindLeader( charaList )
@@ -245,26 +252,38 @@ function Chara_Serve( chara, group, city )
 		Asset_Set( chara, CharaAssetID.GROUP, group )
 	end
 
-	if city then
-		city:CharaJoin( chara )
+	if not city then return end
 
-		--set home & location
-		chara:JoinCity( city, true )
-
-		--[[
-		--to set relation		
-		local executive = Asset_GetDictItem( , CityAssetID.OFFICER_LIST, CityJob.EXECUTIVE )
-		if executive then
-			Asset_Set( chara, CharaAssetID.SUPERIOR, executive )
-			DBG_Trace( "chara_serve", executive.name .. " manage " .. chara.name )
-			
-			Asset_AppendList( executive, CharaAssetID.SUBORDINATES, chara )
-			DBG_Trace( "chara_serve", chara.name .. " serve " .. executive.name )
-		end
-		]]
-
-		Stat_Add( "Chara@Hire", chara.name .. " join " .. city.name .. " " .. g_Time:ToString(), StatType.LIST )
+	local isEnterCity = true
+	if Asset_Get( city, CityAssetID.GROUP ) ~= group then
+		isEnterCity = false
+		--find frendly nearby city or capital
+		print( "oldcity=" .. city:ToString() )
+		city = Random_GetListItem( city:FindNearbyFriendCities( group ) )
+		if not city then city = Asset_Get( group, GroupAssetID.CAPITAL ) end
+		print( "newcity=" .. city:ToString() )
+		--move to new home
+		Move_Stop( chara )
+		Move_Chara( chara, city )
 	end
+
+	city:CharaJoin( chara )
+	--set home & location
+	chara:JoinCity( city, isEnterCity )
+
+	--[[
+	--to set relation		
+	local executive = Asset_GetDictItem( , CityAssetID.OFFICER_LIST, CityJob.EXECUTIVE )
+	if executive then
+		Asset_Set( chara, CharaAssetID.SUPERIOR, executive )
+		DBG_Trace( "chara_serve", executive.name .. " manage " .. chara.name )
+		
+		Asset_AppendList( executive, CharaAssetID.SUBORDINATES, chara )
+		DBG_Trace( "chara_serve", chara.name .. " serve " .. executive.name )
+	end
+	]]
+
+	Stat_Add( "Chara@Hire", chara.name .. " join " .. city.name .. " " .. g_Time:ToString(), StatType.LIST )
 end
 
 -------------------------------
@@ -359,19 +378,6 @@ end
 ]]
 
 -----------------------------------------------------
-
-local function Chara_WorkForJob( chara )
-	if chara:IsAtHome() == false then return end
-
-	local home = Asset_Get( chara, CharaAssetID.HOME )
-	if not home then return end
-
-	local task = chara:GetTask()
-	if not task then return end
-	
-	--InputUtil_Pause( chara.name, "work on" .. task:ToString() )
-	Task_Do( task, chara )
-end
 
 function Chara_LearnSkill( chara )
 	if not chara:HasPotential() then return false end
@@ -522,8 +528,6 @@ end
 function CharaSystem:Update()
 	local day   = g_Time:GetDay()
 	Entity_Foreach( EntityType.CHARA, function ( chara )
-		chara:Update()
-
 		if day % 10 == 0 then
 			Chara_LevelUp( chara )
 			if Chara_LearnSkill( chara ) == false then
@@ -539,7 +543,9 @@ function CharaSystem:Update()
 		if day == 1 then
 			chara:UpdateAP( DAY_IN_MONTH )
 		end
+
+		chara:Update()
 		
-		Chara_WorkForJob( chara )
+		chara:Todo()
 	end )
 end

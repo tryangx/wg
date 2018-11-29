@@ -69,7 +69,7 @@ CharaTitle =
 	LEADER_TITLE      = 400,
 	MAYOR             = 400,
 	EMPEROR           = 401,	--Empire
-	KING              = 402,	--Kindom
+	KING              = 402,	--Kingdom
 	LORD              = 403,	--Region
 	LEADER            = 404,	--Guerrilla
 	CHIEF             = 405,	--Family
@@ -103,11 +103,12 @@ CharaRelation =
 CharaStatus = 
 {
 	----------------------------
-	--Flag / Data
-	IN_TASK           = 1,
-	OUTSIDE           = 2,
-	DEAD              = 3,
-	SURRENDER         = 4,
+	--Flag / Data	
+	DEAD              = 1,
+	OUTSIDE           = 10,	
+	SURRENDER         = 11,
+
+	IN_TASK           = 20,
 
 	----------------------------
 	--ACCUMULATION
@@ -130,7 +131,6 @@ CharaStatus =
 	WORK_ON_AGRI      = 1011,
 	WORK_ON_COMM      = 1012,
 	WORK_ON_PROD      = 1013,
-	COMBAT            = 1011,
 
 	CD_STATUS_END     = 2000,
 	----------------------------

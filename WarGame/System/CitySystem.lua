@@ -16,20 +16,45 @@ end
 ]]
 -----------------------------------------------
 
-function City_GetNextJob( city )
+function City_GetVacancyJobs( city )
+	local list = {}	
+	local limits = {}
+
 	local isCapital = city:IsCapital()
+	local totalnum = 0
+	local jobs = {}
 	local params = Scenario_GetData( "CITY_JOB_PARAMS" )
-	for _, item in pairs( params ) do
+	for _, item in pairs( params.SEQUENCE ) do
+		local job = CityJob[item.job]
 		local valid = true
 		if valid == true and item.capital and isCapital == false then valid = false end
 		if valid == true and item.prob and Random_GetInt_Sync( 1, 100 ) > item.prob then valid = false end
 		if valid == true and item.max and city:GetNumberOfOfficer( CityJob[item.job] ) >= item.max then valid = false end
+		if valid == true and item.level and Asset_Get( city, CityAssetID.LEVEL ) < item.level then valid = false end
+		if valid == true and item.has_constr_eff and not city:GetStatus( item.has_constr_eff ) then valid = false end
 		if valid == true then
-			return CityJob[item.job]
+			totalnum = totalnum + 1
+			if not jobs[job] then jobs[job] = 0 end
+			local officer = city:GetOfficer( job, jobs[job] )
+			if officer then				
+				jobs[job] = jobs[job] + 1
+				--print( "has job", officer.name, MathUtil_FindName( CityJob, job ), jobs[job] )
+			else
+				table.insert( list, job )
+			end
 		end
 	end
+	if Asset_GetListSize( city, CityAssetID.OFFICER_LIST ) > totalnum then
+		print( city.name, "has too much jobs", totalnum, Asset_GetListSize( city, CityAssetID.OFFICER_LIST ), #list )
+	end
+	if nil and city.id == 3 then
+		for _, job in pairs( list ) do
+			print( _, MathUtil_FindName( CityJob, job ) )
+		end
+		InputUtil_Pause( city:ToString(), "vacancy jobs" )
+	end
 	--default commander
-	return CityJob.COMMANDER
+	return list
 end
 
 function City_GetPopuParams( city )
@@ -98,18 +123,6 @@ function City_NeedPopu( city, popuname )
 	end
 
 	return 0
-	--[[
-	--some career needs the number of population per development index
-	local assetid = City_GetAssetIDByPopuName( popuname )
-	if not assetid then
-		InputUtil_Pause( "0")
-		return 0
-	end
-
-
-	return Asset_Get( city, assetid ) * unitparam[popuname]
-
-	]]
 end
 
 -------------------------------------------------------
@@ -230,6 +243,7 @@ end
 function City_Harvest( city )
 	if city:GetStatus( CityStatus.IN_SIEGE ) then
 		--no food, should food will reserved by the farmer?
+		--print( city:ToString(), "insige, cann't harvest")
 		return
 	end
 
@@ -865,7 +879,7 @@ function City_LevyTax( city, progress )
 	Stat_Add( city.name .. "@LevyTax", income, StatType.ACCUMULATION )
 	--Debug_Log( "City=" .. city.name .. " Levy tax=" .. income .. " Money=" .. Asset_Get( city, CityAssetID.MONEY ) )	
 
-	City:LevyTax()
+	city:LevyTax()
 
 	return income
 end
@@ -898,7 +912,8 @@ function City_BuyFood( city, progress )
 
 	--print( city:ToString("BUDGET_YEAR") )
 	Asset_Reduce( city, CityAssetID.MONEY, need_money )
-	Asset_Plus( city, CityAssetID.FOOD, buy_food )
+	city:ReceiveFood( buy_food )
+	Stat_Add( "BuyFood@" .. city:ToString(), "buyfood=" .. buy_food .. " usemoney=" .. need_money, StatType.LIST )
 	--InputUtil_Pause( "buyfood", city:ToString( "ASSET" ) )
 end
 
@@ -931,6 +946,8 @@ function City_SellFood( city, progress )
 	--print( city:ToString("BUDGET_YEAR") )
 	Asset_Reduce( city, CityAssetID.FOOD, need_food )
 	Asset_Plus( city, CityAssetID.MONEY, sell_money )
+
+	Stat_Add( "SellFood@" .. city:ToString(), "sellfood=" .. need_food .. " getmoney=" .. sell_money, StatType.LIST )
 	--InputUtil_Pause( "buyfood", city:ToString( "ASSET" ) )
 end
 

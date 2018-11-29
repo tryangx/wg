@@ -5,6 +5,7 @@ function Warfare_GetComat( plot )
 end
 
 local function Warfare_JoinCombat( combat, corps, side )
+	--print( corps:ToString(), "join combat, move suspend", combat.id )
 	Move_Suspend( corps )
 	combat:AddCorps( corps, side )
 end
@@ -48,7 +49,7 @@ function Warefare_FieldCombatOccur( plot, atk, def, defList )
 	end
 
 	if combatExist == false then
-		Stat_Add( "Combat@Occur", combat:ToString( "ALL" ), StatType.LIST )
+		Stat_Add( "Combat@Occur", combat:ToString( "DEBUG_CORPS" ), StatType.LIST )
 	else
 		Stat_Add( "Combat@Update", combat:ToString( "ALL" ), StatType.LIST )
 	end
@@ -103,7 +104,7 @@ function Warefare_HarassCombatOccur( city, corps )
 	Warfare_JoinCombat( combat, corps, CombatSide.ATTACKER )
 
 	if combatExist == false then
-		Stat_Add( "Combat@Occur", combat:ToString( "ALL" ), StatType.LIST )
+		Stat_Add( "Combat@Occur", combat:ToString( "DEBUG_CORPS" ), StatType.LIST )
 	else
 		Stat_Add( "Combat@Update", combat:ToString( "ALL" ), StatType.LIST )
 	end
@@ -118,7 +119,7 @@ end
 
 function Warefare_SiegeCombatOccur( city, corps )
 	if Asset_Get( corps, CorpsAssetID.GROUP ) == Asset_Get( city, CityAssetID.GROUP ) then
-		--print( city:ToString(), "is already occupied" )
+		print( city:ToString(), "is already occupied" )
 		return
 	end
 	local combatExist = true
@@ -138,6 +139,9 @@ function Warefare_SiegeCombatOccur( city, corps )
 
 		Asset_Set( combat, CombatAssetID.PLOT, plot )
 		Asset_Set( combat, CombatAssetID.CITY, city )
+
+		--print( combat:ToString(), " combatbegin" )
+		--city:TrackData()
 
 		--add defender
 		Asset_Foreach( city, CityAssetID.CORPS_LIST, function ( def )
@@ -159,7 +163,7 @@ function Warefare_SiegeCombatOccur( city, corps )
 	Warfare_JoinCombat( combat, corps, CombatSide.ATTACKER )
 
 	if not combatExist then
-		Stat_Add( "Combat@Occur", combat:ToString( "ALL" ), StatType.LIST )
+		Stat_Add( "Combat@Occur", combat:ToString( "DEBUG_CORPS" ), StatType.LIST )
 	else
 		Stat_Add( "Combat@Update", combat:ToString( "ALL" ), StatType.LIST )
 	end
@@ -227,7 +231,7 @@ function Warfare_UpdateCombat( combat )
 		if winner == CombatSide.ATTACKER  then
 			local group = combat:GetGroup( winner )
 			if group then
-				--InputUtil_Pause( "occupy", city:ToString(), group:ToString() )
+				print( "occupy", city:ToString(), group:ToString() )
 				Stat_Add( "City@Occupy", city:ToString() .. " occupied by " .. ( group and group:ToString() or "" ) .. " " .. g_Time:CreateCurrentDateDesc(), StatType.LIST )
 				Debug_Log( city:ToString() .. " occupied by " .. ( group and group:ToString() or "" ), g_Time:CreateCurrentDateDesc() )
 				group:OccupyCity( city )
@@ -239,7 +243,7 @@ function Warfare_UpdateCombat( combat )
 				if Asset_Get( corps, CorpsAssetID.GROUP ) ~= group then
 					error( "why corps is here" )
 				end
-				--print( "garrision", corps:ToString(""), city:ToString("") )
+				--InputUtil_Pause( "garrision", corps:ToString(""), city:ToString("") )
 				Corps_Join( corps, city, true )
 			end
 
@@ -329,7 +333,7 @@ function Warfare_UpdateCombat( combat )
 	end
 
 	--Debug_Log( combat:ToString( "DEBUG_CORPS" ) )
-	Debug_Log( combat:ToString( "RESULT" ), "combat end!!!" )
+	--print( combat:ToString( "RESULT" ), "combat end!!!" )
 
 	combat:WipeCorps()
 
@@ -369,13 +373,21 @@ local function Warfare_OnCombatEnded( msg )
 		DBG_Error( "why no combat to remove?" )
 		return
 	end
+	
+	if Asset_Get( combat, CombatAssetID.TYPE ) == CombatType.SIEGE_COMBAT then
+		--local city = Asset_Get( combat, CombatAssetID.CITY )
+		--city:TrackData( true )
+	end
+
+	--print( "combat=" .. combat.id, "end", g_Time:ToString() )
 
 	Stat_Add( "CombatDur@" .. combat.id, Asset_Get( combat, CombatAssetID.DAY ), StatType.VALUE )
 
 	Asset_Foreach( combat, CombatAssetID.CORPS_LIST, function ( corps )
 		--sanity checker
-		if not corps:GetTask() then
-			if Move_IsMoving( corps ) then
+		--print( corps:ToString(), "should leave combat="..combat:ToString())
+		if not corps:GetTask() and Move_IsMoving( corps ) then
+			if not corps:GetStatus( CorpsStatus.RETREAT_TO_CITY ) then
 				Entity_ToString( EntityType.MOVE )
 				DBG_Error( "why is moving", corps:ToString("STATUS") )
 			end
@@ -383,10 +395,10 @@ local function Warfare_OnCombatEnded( msg )
 	end )
 	--[[
 	Asset_Foreach( combat, CombatAssetID.ATK_CORPS_LIST, function ( corps )
-		Asset_SetDictItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_COMBAT, nil )
+		corps:SetStatus( CorpsStatus.IN_COMBAT )
 	end )
 	Asset_Foreach( combat, CombatAssetID.DEF_CORPS_LIST, function ( corps )
-		Asset_SetDictItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_COMBAT, nil )
+		corps:SetStatus( CorpsAssetID.STATUSES, CorpsStatus.IN_COMBAT )
 	end )
 	]]
 
@@ -435,8 +447,8 @@ local function Warfare_OnSiegeCombatTrigger( msg )
 		Message_Post( MessageType.COMBAT_TRIGGERRED_NOTIFY, { combat = combat, atk = atk } )
 		Stat_Add( "Combat@Siege", 1, StatType.TIMES )
 	else
-		DBG_Error( "why here" )
-		Message_Post( MessageType.COMBAT_UNTRIGGER_NOTIFY, { corps = atk } )
+		Debug_Log( atk:ToString(), "no need to attack", city:ToString() )
+		Message_Post( MessageType.COMBAT_UNTRIGGER_NOTIFY, { corps = atk, city = city } )
 	end
 end
 
@@ -455,11 +467,11 @@ local function Warfare_OnCombatAttend( msg )
 	end	
 end
 
-local function Warfare_OnCombatInterrupted( msg )	
-	print( "interuppted" )
-
+local function Warfare_OnCombatInterrupted( msg )		
 	local combat = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "combat" )
 	combat:WipeCorps()
+
+	--print( "interuppted", combat:ToString("") )
 
 	local params = Asset_GetList( msg, MessageAssetID.PARAMS )
 	Message_Send( MessageType.COMBAT_ENDED, params )
@@ -483,7 +495,7 @@ function WarfareSystem:Start()
 	Message_Handle( self.type, MessageType.SIEGE_COMBAT_TRIGGER, Warfare_OnSiegeCombatTrigger )
 	Message_Handle( self.type, MessageType.COMBAT_ATTEND,        Warfare_OnCombatAttend )	
 
-	Message_Handle( self.type, MessageType.COMBAT_ENDED, Warfare_OnCombatEnded )
+	Message_Handle( self.type, MessageType.COMBAT_ENDED,         Warfare_OnCombatEnded )
 end
 
 function WarfareSystem:UpdateCombat( combat )
@@ -522,5 +534,7 @@ function WarfareSystem:RemoveCombat( combat )
 	local plot = Asset_Get( combat, CombatAssetID.PLOT )	
 	if plot then
 		self._combats[plot.id] = nil
+	else
+		error( "1")
 	end
 end

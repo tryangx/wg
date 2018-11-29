@@ -7,6 +7,7 @@ function SkillTable:Load( data )
 	self.id   = data.id or 0	
 	self.name = data.name or 0
 	self.type = CharaSkillType[data.type]
+	self.level = data.level or 0
 
 	if not data.type then DBG_Error( "no skilltype", data.id ) end
 

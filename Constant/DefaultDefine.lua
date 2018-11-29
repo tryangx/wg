@@ -30,6 +30,7 @@ MessageType =
 	STOP_MOVING           = 71,
 	--@param actor
 	CANCEL_MOVING         = 72,
+	
 	------------------------------------
 
 

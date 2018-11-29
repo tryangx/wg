@@ -83,7 +83,7 @@ end
 local function Task_Resume( task )
 	Task_Debug( task, "resume" )
 	Asset_Set( task, TaskAssetID.STATUS, TaskStatus.MOVING )
-	Message_Post( MessageType.START_MOVING, { actor = Asset_Get( task, TaskAssetID.ACTOR ), waittime = 5 } )
+	Move_Resume( Asset_Get( task, TaskAssetID.ACTOR ), 5 )
 end
 
 local function Task_Failed( task )
@@ -91,12 +91,13 @@ local function Task_Failed( task )
 
 	Log_Write( "task", task:ToString("DEBUG") .. " Failed" )
 	
+	--should consider about whether to do next
 	local actor = Asset_Get( task, TaskAssetID.ACTOR )
-	Message_Post( MessageType.STOP_MOVING, { actor = actor } )
+	Move_Suspend( actor )
 	Log_Write( "move", "task failed=" .. actor:ToString() .. " taks=" .. task:ToString("DEBUG") )
 
 	Asset_Set( task, TaskAssetID.RESULT, TaskResult.FAILED )
-	task:End()
+	task:Finish()
 
 	local type = Asset_Get( task, TaskAssetID.TYPE )
 	if type == TaskType.INTERCEPT then
@@ -111,7 +112,7 @@ end
 local function Task_Success( task )	
 	Log_Write( "task",  task:ToString() .. " succeed!!!" )
 	local actor = Asset_Get( task, TaskAssetID.ACTOR )
-	Message_Post( MessageType.STOP_MOVING, { actor = actor } )
+	Move_Suspend( actor )
 	Log_Write( "move", "task suc=" .. actor:ToString() .. " taks=" .. task:ToString() )
 
 	local type = Asset_Get( task, TaskAssetID.TYPE )
@@ -128,9 +129,9 @@ local function Task_Success( task )
 	end
 
 	Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
-	task:End()
+	task:Finish()
 
-	Stat_Add( "Task@Success", 1, StatType.TIMES )
+	Stat_Add( "Task@Success", task:ToString( "END" ), StatType.LIST )
 
 	--InputUtil_Pause( task:ToString(), "success" )
 end
@@ -151,14 +152,16 @@ local function Task_Verify( task )
 
 	--sanity checker
 	if Asset_Get( task, TaskAssetID.ELPASED_DAYS ) - Asset_Get( task, TaskAssetID.COMBAT_DAYS ) > 400 then
-		print( "turn=" .. g_Time:ToString() )
+		--print( "turn=" .. g_Time:ToString() )
 		--print( Asset_Get( task, TaskAssetID.ELPASED_DAYS ), Asset_Get( task, TaskAssetID.COMBAT_DAYS ) )
 		--print( task:GetStepType() )
-		if not task:IsWaitCombat() then
+		if not task:GetCombat() then
 			local actor = Asset_Get( task, TaskAssetID.ACTOR )
-			print( actor:ToString("STATUS") )
-			Entity_ToString( EntityType.MOVE )
-			DBG_Error( task:ToString("DEBUG") .. " is bug" )
+			if Asset_Get( task, TaskAssetID.ACTOR_TYPE ) == TaskActorType.CORPS then
+				print( actor:ToString("STATUS") )
+				Entity_ToString( EntityType.MOVE )
+				DBG_Error( task:ToString("DEBUG") .. " is bug" )
+			end
 		end
 
 		--checker actor exist?
@@ -272,7 +275,7 @@ local _prepareTask =
 		transMoney = math.min( transMoney,  money - reqMoney )
 		Asset_SetDictItem( task, TaskAssetID.PARAMS, "food",     transFood )
 		Asset_SetDictItem( task, TaskAssetID.PARAMS, "material", transMat )
-		Asset_SetDictItem( task, TaskAssetID.PARAMS, "money",    transMoney )
+		Asset_SetDictItem( task, TaskAssetID.PARAMS, "money",    transMoney )		
 		Asset_Set( loc, CityAssetID.FOOD, food - transFood )
 		Asset_Set( loc, CityAssetID.MATERIAL, mat - transMat )
 		Asset_Set( loc, CityAssetID.MONEY, money - transMoney )
@@ -738,7 +741,7 @@ local _finishTask =
 		local money = Asset_GetDictItem( task, TaskAssetID.PARAMS, "money" )
 		local dest  = Asset_Get( task, TaskAssetID.DESTINATION )
 		--print( dest:ToString( "SUPPLY" ) )
-		Asset_Plus( dest, CityAssetID.FOOD, food )
+		dest:ReceiveFood( food )
 		Asset_Plus( dest, CityAssetID.MATERIAL, mat )
 		Asset_Plus( dest, CityAssetID.MONEY, money )
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
@@ -914,7 +917,6 @@ local function Task_IsArriveDestination( task )
 	end
 
 	local destination = Asset_Get( task, TaskAssetID.DESTINATION )
-	--print( actor.name,  loc.name, destination.name )	
 	return loc == destination
 end
 
@@ -931,7 +933,7 @@ local function Task_IsAtHome( task )
 	return false
 end
 
-local function Task_BackHome( task )
+local function Task_BackHome( task )	
 	if Move_IsMoving( Asset_Get( task, TaskAssetID.ACTOR ) ) == false then
 		Stat_Add( "Task@BackHome", 1, StatType.TIMES )
 		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.MOVING )
@@ -941,7 +943,6 @@ local function Task_BackHome( task )
 		if actorType == TaskActorType.CHARA then
 			local home = Asset_Get( actor, CharaAssetID.HOME )
 			if not home then
-				--print( actor:ToString( "ALL" ) )
 				print( task:ToString() )
 				Debug_Log( "no home" .. task.id )
 			else
@@ -956,6 +957,7 @@ local function Task_BackHome( task )
 					Task_Debug( task, "back loc=" .. loc.name .. " dest=" .. dest.name )
 					Log_Write( "task", task:ToString() .. " back home=" .. String_ToStr( dest, "name" ) )
 					Move_Corps( actor, dest )
+					return
 				end
 			else
 				dest = Asset_Get( task, TaskAssetID.LOCATION )
@@ -964,8 +966,17 @@ local function Task_BackHome( task )
 					Task_Debug( task, "back loc=" .. loc.name .. " dest=" .. dest.name )
 					Log_Write( "task", task:ToString() .. " back home=" .. String_ToStr( dest, "name" ) )
 					Move_Corps( actor, dest )
+					return
 				end
 			end
+			--whether actor is outside and in-move, to modify movesystem let it can goback home			
+			Move_Corps( actor, dest )
+			--[[
+			print( "debug this")
+			Entity_ToString( EntityType.MOVE )
+			print( actor:ToString("STATUS"))
+			error("")
+			]]
 		end
 	end
 end
@@ -984,7 +995,7 @@ local function Task_Move2Destination( task )
 		if actorType == TaskActorType.CHARA then
 			Log_Write( "task", task:ToString() .. " move to dest=" .. String_ToStr( loc, "name" ) )
 			Move_Chara( actor, loc )
-		elseif actorType == TaskActorType.CORPS then			
+		elseif actorType == TaskActorType.CORPS then
 			Log_Write( "task", task:ToString() .. " move to dest=" .. String_ToStr( loc, "name" ) )
 			Move_Corps( actor, loc )
 			Supply_CorpsCarryFood( actor, loc )
@@ -1020,14 +1031,15 @@ local function Task_End( task )
 		print( actor:ToString("LOCATION") )
 		error( task:ToString() .. " actor not at home" )
 		]]
+		--Task_BackHome( task )		
 		return
 	end
 
 	Asset_Set( task, TaskAssetID.END_TIME, g_Time:GetDateValue() )
-
+	
 	Stat_Add( "Task@End", task:ToString( "END" ), StatType.LIST )
-	Stat_Add( "TaskEnd@" .. MathUtil_FindName( TaskType, Asset_Get( task, TaskAssetID.TYPE ) ), 1, StatType.TIMES )
 	Log_Write( "task",  task:ToString() .. "end task" )
+	
 	--Log_Write( "meeting", g_Time:ToString() .. task:ToString() .. " end" )
 	Task_Remove( task )
 
@@ -1083,8 +1095,6 @@ function Task_Terminate( task, requestor )
 	end
 
 	Task_Remove( task )
-
-	--Task_BackHome( task )
 
 	Log_Write( "task", "Terminate task=" .. task:ToString() )
 
@@ -1358,8 +1368,10 @@ local function Task_Prepare( task )
 	Stat_Add( "Task@Prepare", 1, StatType.TIMES )
 end
 
-local function Task_Update( task )	
-	if task:IsWaitCombat() then
+--core function
+function Task_Update( task )	
+	--in combat
+	if task:GetCombat() then
 		return
 	end
 
@@ -1441,8 +1453,6 @@ local function Task_OnCombatTriggered( msg )
 	if not _combatTasks[id] then _combatTasks[id] = {} end
 
 	function CheckTask( actor )
-		if not actor then return end
-
 		--local task = _corpsTasks[actor]
 		local task = actor:GetTask()
 		if not task then
@@ -1451,11 +1461,11 @@ local function Task_OnCombatTriggered( msg )
 		end
 
 		if MathUtil_IndexOf( _combatTasks[id], task ) then
-			--print( "task combat exist" )
-			return
+			if task:GetCombat() and combat.id ~= task:GetCombat() then
+				error( "trigger=" .. combat.id .. " combat_exist" .. task:ToString() .. actor:ToString() )
+			end
 		end
 
-		Asset_Set( task, TaskAssetID.INCOMBAT, id )
 		table.insert( _combatTasks[id], task )
 		
 		Task_Debug( task, "!!!!trigger combat=" .. combat:ToString("DEBUG_CORPS") )
@@ -1463,6 +1473,8 @@ local function Task_OnCombatTriggered( msg )
 	end
 
 	function CheckCorps( target )
+		if not target then return end
+
 		if typeof( target ) == "table" then
 			for _, single in ipairs( target ) do
 				CheckTask( single )
@@ -1506,10 +1518,6 @@ local function Task_OnCombatEnded( msg )
 
 	function CheckTask( task )		
 		local taskType = Asset_Get( task, TaskAssetID.TYPE )
-
-		Asset_Set( task, TaskAssetID.INCOMBAT, 0 )
-
-		Task_Debug( task, "combat end=" .. combat:ToString() )
 
 		--print( "combat end task", task:ToString() )
 
@@ -1595,6 +1603,7 @@ end
 
 function TaskSystem:Update()
 	--Debug_Log( "Task Running=" .. Entity_Number( EntityType.TASK ) )	
+	if 1 then return end
 	Entity_Foreach( EntityType.TASK, function( task )
 		local ret = false
 		while ret == false do

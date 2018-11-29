@@ -54,7 +54,7 @@ ScenarioData =
 	CITY_RECRUIT_PARAMS          = DefaultCityRecruit,
 	CITY_HIREGUARD_PARAMS        = DefaultCityHireGuard,
 	
-	CITY_JOB_PARAMS              = DefaultCityJobProb,
+	CITY_JOB_PARAMS              = DefaultCityJobParams,
 	CORPS_PARAMS                 = DefaultCorpsParams,
 	TROOP_PARAMS                 = DefaultTroopParams,
 

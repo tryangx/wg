@@ -72,6 +72,12 @@ function Group:ToString( type )
 		content = content .. " grd=" .. MathUtil_FindName( GroupGrade, Asset_Get( self, GroupAssetID.GRADE ) )
 	end
 
+	if type == "CITY" then
+		Asset_Foreach( self, GroupAssetID.CITY, function ( city )
+			content = content .. " " .. city.name
+		end)
+	end
+
 	if type == "SIMPLE" or type == "ALL" then
 		content = content .. " city=" .. Asset_GetListSize( self, GroupAssetID.CITY_LIST )
 		content = content .. " chara=" .. Asset_GetListSize( self, GroupAssetID.CHARA_LIST )		
@@ -86,7 +92,7 @@ function Group:ToString( type )
 	end	
 	if type == "CHARA" then
 		Asset_Foreach( self, GroupAssetID.CHARA_LIST, function ( chara)
-			content = content .. " " .. chara.name
+			content = content .. " " .. chara:ToString( "LOCATION" )
 		end)
 	end
 	if type == "DIPLOMACY" then
@@ -125,7 +131,7 @@ function Group:Load( data )
 
 	Asset_Set( self, GroupAssetID.LEADER, data.leader )
 	Asset_Set( self, GroupAssetID.CAPITAL, data.capital )
-	Asset_Set( self, GroupAssetID.GOVERNMENT, data.government )
+	Asset_Set( self, GroupAssetID.GOVERNMENT, GroupGovernment[data.government] )
 
 	Asset_CopyList( self, GroupAssetID.CITY_LIST, data.cities )
 	Asset_CopyList( self, GroupAssetID.CHARA_LIST, data.charas )
@@ -330,19 +336,15 @@ function Group:GetStatusCityList( status )
 	return list
 end
 
-function Group:GetVacancyCityList()
+function Group:GetVacancyCityList( excludeCity )
 	local list = {}
 	Asset_Foreach( self, GroupAssetID.CITY_LIST, function ( city )
+		if city == excludeCity then return end
 		local limit
 		local has = Asset_GetListSize( city, CityAssetID.CHARA_LIST )
 		limit = Chara_GetReqNumOfOfficer( city )
 		if has >= limit then
 			--print( "not vac req", has .. "/" .. limit )
-			return
-		end
-		limit = Chara_GetLimitByCity( city )
-		if has >= limit then
-			--print( "not vac limi", has .. "/" .. limit )
 			return
 		end
 		table.insert( list, city )
@@ -370,12 +372,15 @@ end
 
 function Group:LoseCity( city, toCity )
 	print( self.name, "lose city=" .. city.name )	
+	
 	--remove city from list
 	Asset_RemoveListItem( self, GroupAssetID.CITY_LIST, city )
 
 	--is capital?	
 	local capital = Asset_Get( self, GroupAssetID.CAPITAL )	
-	if not toCity then toCity = capital end
+	if not toCity then
+		toCity = capital
+	end
 	if capital == city then
 		--find new capital
 		local newCapital
@@ -396,9 +401,11 @@ function Group:LoseCity( city, toCity )
 	Asset_Foreach( city, CityAssetID.CHARA_LIST, function( chara )
 		if chara:IsAtHome() or not toCity then
 			--captured
+			Debug_Log( chara.name, "captured" )
 			chara:Captured()			
 			Asset_AppendList( city, CityAssetID.PRISONER_LIST, chara )
 		else
+			print( chara.name, "go", toCity.name )
 			--set home to nearby city
 			toCity:CharaJoin( chara )
 		end
@@ -411,11 +418,10 @@ function Group:LoseCity( city, toCity )
 	local dismissList = {}
 	local retreatList = {}
 	Asset_Foreach( city, CityAssetID.CORPS_LIST, function( corps )
-		--print( corps:ToString(), "Need retreat" )
-		if corps:IsAtHome() then			
-			HelperUtil_AddToRemoval( corps, dismissList )
-		elseif toCity then
+		if toCity then
 			HelperUtil_AddToRemoval( corps, retreatList )
+		else--if corps:IsAtHome() then			
+			HelperUtil_AddToRemoval( corps, dismissList )
 		end
 	end )
 	Asset_Clear( city, CityAssetID.CORPS_LIST )
@@ -431,8 +437,12 @@ function Group:LoseCity( city, toCity )
 	HelperUtil_DoRemove( function( corps )
 		--retreat to nearby city
 		--print( Move_Track( corps ) )
-		print( corps:ToString( "POSITION" ), "retreat to", toCity:ToString() )
-		Corps_Join( corps, toCity )
+		Debug_Log( corps:ToString( "POSITION" ), "retreat to", toCity:ToString() )
+		corps:SetStatus( CorpsStatus.RETREAT_TO_CITY, 1 )
+		corps:LeaveCombat()
+		if Asset_Get( corps, CorpsAssetID.ENCAMPMENT ) ~= toCity then
+			Corps_Join( corps, toCity )
+		end
 	end, retreatList )
 	
 	city:SetPopu( CityPopu.HOBO, hobo )
@@ -441,6 +451,17 @@ end
 function Group:OccupyCity( city )
 	local oldGroup = Asset_Get( city, CityAssetID.GROUP )
 	if oldGroup == self then return end
+
+	--remove city from last owner
+	if oldGroup then oldGroup:LoseCity( city ) end
+
+	--broken some constructions?
+	Asset_Foreach( city, CityAssetID.CONSTR_LIST, function ( constr )
+		--to do
+	end )
+
+	--other things to do in the future
+	Asset_Set( city, CityAssetID.GROUP, self )
 
 	--rescue prisoner
 	local rescueList = {}
@@ -453,17 +474,6 @@ function Group:OccupyCity( city )
 	for _, chara in ipairs( rescueList ) do
 		Asset_RemoveListItem( city, CityAssetID.PRISONER_LIST, chara )
 	end
-
-	--remove city from last owner
-	if oldGroup then oldGroup:LoseCity( city ) end
-
-	--broken some constructions?
-	Asset_Foreach( city, CityAssetID.CONSTR_LIST, function ( constr )
-		--to do
-	end )
-
-	--other things to do in the future
-	Asset_Set( city, CityAssetID.GROUP, self )
 
 	--append to group
 	Asset_AppendList( self, GroupAssetID.CITY_LIST, city )
@@ -579,7 +589,7 @@ end
 
 function Group:MasterTech( tech )
 	Asset_AppendList( self, GroupAssetID.TECH_LIST, tech )
-	--InputUtil_Pause( "master tech" .. tech.id )
+	Stat_Add( "MasterTech@" .. self.name, g_Time:ToString() .. " " .. ( tech.name or tech.id ), StatType.LIST )
 end
 
 function Group:ModifyReputation( type, value )

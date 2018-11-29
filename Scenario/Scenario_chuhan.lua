@@ -310,6 +310,7 @@ CHUHAN_GroupData =
 	{
 		name = "HAN",
 		goals = { { type="TERRIORITY", target = 1 } },
+		government = "KINGDOM",
 		leader = 100,
 		capital = 3,
 		cities = { 3 },
@@ -325,6 +326,7 @@ CHUHAN_GroupData =
 	{
 		name = "CHU",
 		goals = { { type="DOMINATION", target = 1 } },
+		government = "KINGDOM",
 		leader = 200,
 		capital = 5,
 		cities = { 5 },

@@ -82,7 +82,7 @@ CityStatus =
 	--build defensive in DEFEND_CITY goal	
 	--receive resources
 	ADVANCED_BASE      = 31,	
-	--affairs priority
+	--official priority
 	--transport resource to advanced_base
 	PRODUCTION_BASE    = 32,
 	--commander priority
@@ -150,8 +150,8 @@ CityJob =
 	COMMANDER       = 11,
 	STAFF           = 12,
 	HR              = 13,
-	AFFAIRS         = 14,
-	POSITION_END    = 15,  --end
+	OFFICIAL        = 14,
+	POSITION_END    = 14,  --end
 
 	--capital
 	DIPLOMATIC      = 15,
@@ -173,9 +173,10 @@ CityConstructionType =
 {
 	DEVELOPMENT = 10,
 	MANAGEMENT  = 20,
-	MILITARY    = 30,
-	DEFENSIVE   = 40,
-	FOREIGN     = 50,
+	MILITARY    = 30,	
+	DEFENSIVE   = 40,	
+	--add slot for diplomat
+	FOREIGN     = 50,	
 	MISC        = 60,
 }
 
@@ -187,6 +188,14 @@ CityConstrEffect =
 
 	--attributes
 	FORT           = 200,
+
+	--support more jobs	
+	COMMANDER_SLOT = 210,
+	OFFICIAL_SLOT  = 211,
+	HR_SLOT        = 212,
+	STAFF_SLOT     = 213,
+	DIPLOMAT_SLOT  = 214,
+	TECHNICIAN     = 215,	
 
 	--Attributes
 	--Measure the soldier can support in SING city, out of range will gain debuff

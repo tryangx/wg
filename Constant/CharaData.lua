@@ -1,6 +1,43 @@
 --------------------------------------------------------
 --  Character Relative
 
+CharaParams = 
+{
+	LIMIT_NUMBER = 
+	{
+		GOVENRMENT = { KINGDOM = 16, EMPIRE = 24, REGION = 8, FAMILY = 8, GUERRILLA = 8, WARZONE = 8, },
+	},
+
+	REQUIRE_NUMBER = 
+	{
+		--total jobs 22, reference "DefaultCityJobParams"
+
+		--level bonus
+		LEVEL_BNOUS = { 0, 1, 2, 3, 4, 
+		                5, 5, 6, 6, 6,
+		                7, 7, 8, 8, 9,
+		                9, 10, 10, 11, 12 },
+		--executive,commander,staff,hr,officials
+		MIN_NUMBER          = 5,
+		--diplomat, commander, staff, official, hr
+		CAPITAL_BONUS       = 5,
+		
+		--[[
+		--add commander / official
+		FRONTIER_BONUS        = 1,
+		--commander, commander
+		BATTLEFRONT_BONUS     = 2,
+
+		--commander, official
+		ADVANCED_BASE_BONUS   = 2,
+		--2 official
+		PRODUCTION_BASE_BONUS = 2,
+		--commander, staff
+		MILITARY_BASE_BONUS   = 1,
+		]]
+	},
+}
+
 DefaultCharaFamilyName = 
 {
 	{ name="Zhao", prob=15 },
@@ -311,7 +348,7 @@ DefaultCharaSkill =
 {
 	[2000] =
 	{
-		name="LOBBYIST",  type = "DIPLOMAT", desc = "hr expert who is good at hiring chara",
+		name="LOBBYIST",  type = "DIPLOMAT", desc = "hr expert who is good at hiring chara", level = 1,
 		effects =
 		{
 			{ type = "HIRE_CHARA_BONUS", value = 50 },
@@ -325,7 +362,7 @@ DefaultCharaSkill =
 
 	[3010] =
 	{
-		name="Agri expert", type = "OFFICIALS",
+		name="Agri expert", type = "OFFICIALS", level = 1,
 		effects =
 		{
 			{ type = "AGRICULTURE_BONUS", value = 50 },
@@ -337,7 +374,7 @@ DefaultCharaSkill =
 	},
 	[3020] =
 	{
-		name="Comm expert", type = "OFFICIALS",
+		name="Comm expert", type = "OFFICIALS", level = 1,
 		effects =
 		{
 			{ type = "COMMERCE_BONUS", value = 50 },
@@ -349,7 +386,7 @@ DefaultCharaSkill =
 	},
 	[3030] = 
 	{
-		name="Prod expert", type = "OFFICIALS",
+		name="Prod expert", type = "OFFICIALS", level = 1,
 		effects =
 		{
 			{ type = "PRODUCTION_BONUS", value = 50 },
@@ -361,7 +398,7 @@ DefaultCharaSkill =
 	},
 	[3040] =
 	{
-		name="Builder expert", type = "OFFICIALS",
+		name="Builder expert", type = "OFFICIALS", level = 1,
 		effects =
 		{
 			{ type = "BUILD_BONUS", value = 50 },
@@ -372,7 +409,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=3050, name="Tax expert", type = "OFFICIALS",
+		id=3050, name="Tax expert", type = "OFFICIALS", level = 1,
 		effects =
 		{
 			{ type = "LEVY_TAX_BONUS", value = 50 },
@@ -384,7 +421,7 @@ DefaultCharaSkill =
 	},
 
 	{
-		id=4010, name="SCOUT expert", type = "STAFF",
+		id=4010, name="SCOUT expert", type = "STAFF", level = 1,
 		effects =
 		{
 			{ type = "RECONNOITRE_BONUS", value = 50 },
@@ -395,7 +432,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=4020, name="Spy TypeB", type = "STAFF", desc = "who is good at operation likes sabotage",
+		id=4020, name="Spy TypeB", type = "STAFF", desc = "who is good at operation likes sabotage", level = 1,
 		effects =
 		{
 			{ type = "SABOTAGE_BONUS", value = 50 },
@@ -406,7 +443,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=4030, name="Spy TypeC", type = "STAFF", desc = "who is good at operation likes sabotage",
+		id=4030, name="Spy TypeC", type = "STAFF", desc = "who is good at operation likes sabotage", level = 1,
 		effects =
 		{
 			{ type = "ASSASSINATE", value = 50 },
@@ -418,7 +455,7 @@ DefaultCharaSkill =
 	},
 
 	{
-		id=5010, name="dipl expert", type = "DIPLOMAT",
+		id=5010, name="dipl expert", type = "DIPLOMAT", level = 1,
 		effects =
 		{
 			{ type = "IMPROVE_RELATION_BONUS", value = 50 },
@@ -429,7 +466,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=5020, name="pact expert", type = "DIPLOMAT",
+		id=5020, name="pact expert", type = "DIPLOMAT", level = 1,
 		effects =
 		{
 			{ type = "SIGN_PACT_BONUS", value = 50 },
@@ -441,7 +478,7 @@ DefaultCharaSkill =
 	},
 
 	{
-		id=6010, name="tech expert", type = "TECHNICIAN",
+		id=6010, name="tech expert", type = "TECHNICIAN", level = 1,
 		effects =
 		{
 			{ type = "RESEARCH_BONUS", value = 50 },
@@ -453,7 +490,7 @@ DefaultCharaSkill =
 	},
 
 	{
-		id=7000, name="atk expert", type = "COMMANDER",
+		id=7000, name="atk expert", type = "COMMANDER", level = 1,
 		effects = 
 		{
 			{ type = "ORG_DAMAGE_BONUS", value = 20 },
@@ -465,7 +502,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=7010, name="infantry expert", type = "COMMANDER",
+		id=7010, name="infantry expert", type = "COMMANDER", level = 1,
 		effects = 
 		{
 			{ type = "ORG_DAMAGE_BONUS", prob = 80, value = 10 },
@@ -477,7 +514,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=7020, name="cavalry expert", type = "COMMANDER",
+		id=7020, name="cavalry expert", type = "COMMANDER", level = 1,
 		effects = 
 		{
 			{ type = "ORG_DAMAGE_BONUS", value = 10 },
@@ -489,7 +526,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=7030, name="archer expert", type = "COMMANDER",
+		id=7030, name="archer expert", type = "COMMANDER", level = 1,
 		effects = 
 		{
 			{ type = "ORG_DAMAGE_BONUS", value = 10 },
@@ -501,7 +538,7 @@ DefaultCharaSkill =
 		},
 	},	
 	{
-		id=7040, name="siegeweapon expert", type = "COMMANDER",
+		id=7040, name="siegeweapon expert", type = "COMMANDER", level = 1,
 		effects = 
 		{
 			{ type = "ORG_DAMAGE_BONUS", value = 10 },
@@ -513,7 +550,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=7100, name="def expert", type = "COMMANDER",
+		id=7100, name="def expert", type = "COMMANDER", level = 1,
 		effects = 
 		{
 			{ type = "ORG_DAMAGE_RESIST", type = "ORG_DAMAGE_BONUS", value = 20 },
@@ -525,7 +562,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=7200, name="field expert", type = "COMMANDER",
+		id=7200, name="field expert", type = "COMMANDER", level = 1,
 		effects = 
 		{
 			{ type = "ORG_DAMAGE_BONUS", conditions = { "IS_FIELD_COMBAT", }, value = 10 },
@@ -539,7 +576,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=7300, name="siege expert", type = "COMMANDER",
+		id=7300, name="siege expert", type = "COMMANDER", level = 1,
 		effects = 
 		{
 			{ type = "ORG_DAMAGE_BONUS", conditions = { "IS_SIEGE_COMBAT", }, value = 10 },
@@ -553,7 +590,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=7400, name="Leadership Lv1", type = "OFFICER",
+		id=7400, name="Leadership Lv1", type = "OFFICER", level = 1,
 		effects = 
 		{
 			{ type = "ORGANIZATION_BONUS", value = 20 },
@@ -564,7 +601,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=7410, name="Commander Lv1", type = "OFFICER",
+		id=7410, name="Commander Lv1", type = "OFFICER", level = 1,
 		effects = 
 		{
 			{ type = "MORALE_BONUS", value = 20 },
@@ -575,7 +612,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=7500, name="training expert", type = "OFFICER",
+		id=7500, name="training expert", type = "OFFICER", level = 1,
 		effects = 
 		{
 			{ type = "TRAINING_EFF_BONUS", value = 20 },
@@ -588,7 +625,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=7510, name="training teacher", type = "OFFICER",
+		id=7510, name="training teacher", type = "OFFICER", level = 1,
 		effects = 
 		{
 			{ type = "TRAINING_EXP_BONUS", value = 10 },
@@ -603,15 +640,15 @@ DefaultCharaSkill =
 
 	--historical role
 	{
-		id=10000, name="Overlord of West Chu", type = "COMMANDER",
+		id=10000, name="Overlord of West Chu", type = "COMMANDER", level = 10,
 		effects = 
 		{ 
-			{ type = "DAMAGE_BONUS",     value = 15 },
-			{ type = "ORG_DAMAGE_BONUS", value = 15 },
-			{ type = "DAMAGE_BONUS",     conditions = { "IS_FIELD_COMBAT", }, value = 10 },
-			{ type = "DAMAGE_BONUS",     conditions = { "IS_FIELD_COMBAT", "LEAD_CAVALRY" }, value = 20 },
-			{ type = "ORG_DAMAGE_BONUS", conditions = { "IS_FIELD_COMBAT" }, value = 10 },
-			{ type = "ORG_DAMAGE_BONUS", conditions = { "IS_FIELD_COMBAT", "LEAD_CAVALRY" }, value = 25 },
+			{ type = "DAMAGE_BONUS",     value = 25 },
+			{ type = "ORG_DAMAGE_BONUS", value = 50 },
+			{ type = "DAMAGE_BONUS",     conditions = { "IS_FIELD_COMBAT", }, value = 25 },
+			{ type = "DAMAGE_BONUS",     conditions = { "IS_FIELD_COMBAT", "LEAD_CAVALRY" }, value = 50 },
+			{ type = "ORG_DAMAGE_BONUS", conditions = { "IS_FIELD_COMBAT" }, value = 50 },
+			{ type = "ORG_DAMAGE_BONUS", conditions = { "IS_FIELD_COMBAT", "LEAD_CAVALRY" }, value = 100 },
 		},
 		conditions = 
 		{
@@ -619,7 +656,7 @@ DefaultCharaSkill =
 		},
 	},
 	{
-		id=10001, name="GuoShiWuShuang", type = "COMMANDER",
+		id=10001, name="GuoShiWuShuang", type = "COMMANDER", level = 10,
 		effects = 
 		{
 			{ type = "DAMAGE_RESIST",     value = 15 },

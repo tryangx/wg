@@ -33,7 +33,7 @@ DefaultCitySupply =
 --  2. One farmer can supply 2 population normally
 DefaultCityPopuHarvest = 
 {
-	FARMER   = 360,
+	FARMER   = 36,
 }
 
 --should without SOLDIER
@@ -246,14 +246,59 @@ DefaultCityHireGuard =
 	{ from = "MIDDLE",   to = "GUARD", prob = 20, min_rate = 5, max_rate = 15 },	
 }
 
-DefaultCityJobProb = 
+DefaultCityJobParams = 
 {
-	{ prob = 40, job = "COMMANDER",  max = 5 },
-	{ prob = 30, job = "AFFAIRS",    max = 3 },
-	{ prob = 30, job = "STAFF",      max = 2 },	
-	{ prob = 20, job = "HR",         max = 2 },	
-	{ prob = 20, job = "DIPLOMATIC", capital = 1 },
-	{ prob = 20, job = "TECHNICIAN", capital = 1 },
+	SEQUENCE = 
+	{
+		--first line
+		{ job = "COMMANDER" },
+		{ job = "HR" },
+		{ job = "OFFICIAL" },
+		{ job = "STAFF" },
+		
+		--capital
+		{ job = "DIPLOMATIC", capital = 1 },
+		{ job = "COMMANDER",  capital = 1 },
+		{ job = "HR",         capital = 1 },
+		{ job = "OFFICIAL",   capital = 1 },
+		{ job = "STAFF",      capital = 1 },
+		
+		--level
+		{ job = "COMMANDER",  level = 6 },
+		{ job = "OFFICIAL",   level = 7 },
+		{ job = "STAFF",      level = 8 },
+		{ job = "HR",         level = 9 },			
+		{ job = "DIPLOMATIC", level = 10, capital = 1 },
+		{ job = "TECHNICIAN", level = 10, capital = 1 },
+				
+		--construction
+		{ job = "DIPLOMATIC", capital = 1, has_constr_eff = "DIPLOMAT_SLOT",   },
+		{ job = "TECHNICIAN", capital = 1, has_constr_eff = "TECHNICIAN_SLOT", },
+		{ job = "HR",         capital = 1, has_constr_eff = "HR_SLOT",         },
+		{ job = "OFFICIAL",   capital = 1, has_constr_eff = "OFFICIAL_SLOT",   },
+		{ job = "STAFF",      capital = 1, has_constr_eff = "STAFF_SLOT",      },
+		{ job = "COMMANDER",  capital = 1, has_constr_eff = "COMMANDER_SLOT",  },
+
+		--[[
+		--battlefront
+		{ job = "COMMANDER", has_status = "BATTLEFRONT" },
+		{ job = "COMMANDER", has_status = "BATTLEFRONT" },
+		--frontier
+		{ job = "OFFICIAL",   has_status = "FRONTIER", status_limit = 1, prob = 60 },
+		{ job = "COMMANDER", has_status = "FRONTIER", status_limit = 1 },
+		--]]
+		--[[
+		--military base
+		{ job = "COMMANDER", has_status = "MILITARY_BASE" },		
+		{ job = "COMMANDER", has_status = "MILITARY_BASE" },
+		--production base
+		{ job = "OFFICIAL",   has_status = "PRODUCTION_BASE_BONUS" },
+		{ job = "OFFICIAL",   has_status = "PRODUCTION_BASE_BONUS" },
+		--advanced base
+		{ job = "COMMANDER", has_status = "ADVANCED_BASE_BONUS" },
+		{ job = "OFFICIAL",   has_status = "ADVANCED_BASE_BONUS" },
+		--]]		
+	},
 }
 
 DefaultCityPopuStructureParams = 
@@ -460,6 +505,8 @@ CityLevelParams =
 --FOREGIN
 --
 -- duration means how long to build the construction, same as HP
+-- #
+-- prerequsite = city_lv / number / has_constr / singleton
 Default_CityBuildingData =
 {
 	[1000] = 
@@ -632,6 +679,14 @@ Default_CityBuildingData =
 		effects = {},		
 		prerequsite = { has_constr = 3000 },
 	},
+	[3040] = 
+	{
+		name = "Headquarter",
+		type = "MILITARY",
+		duration = 180,
+		effects = { COMMANDER_SLOT = 1 },		
+		prerequsite = { num = 1 },
+	},
 
 	--Defensive
 	[4000] = 
@@ -680,8 +735,8 @@ Default_CityBuildingData =
 		name = "Embassy Lv1",
 		type = "FOREIGN",
 		duration = 180,
-		effects = {},
-		prerequsite = { has_constr = 3000, },
+		effects = { DIPLOMAT_SLOT = 1 },
+		prerequsite = { has_constr = 3000, num = 1 },
 	},
 	[5010] = 
 	{

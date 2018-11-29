@@ -103,23 +103,17 @@ function Corps:ToString( type )
 		content = content .. leader:ToString()
 	end
 
+	local loc = Asset_Get( self, CorpsAssetID.LOCATION )
+	local enc = Asset_Get( self, CorpsAssetID.LOCATION )
+	content = content .. " @=" .. ( loc and loc:ToString() or "--" ) .."/" .. ( enc and enc:ToString() or "--" )
+
 	if type == "ALL" then
 		content = content .. " maxtrp=" .. Corps_GetTroopNumber( self )
 		content = content .. " maxsol=" .. Corps_GetSolderNumber( self )
 	end
 
 	if type == "SIMPLE" or type == "ALL" then
-		local loc = Asset_Get( self, CorpsAssetID.LOCATION )
-		content = content .. " loc=" .. ( loc and loc:ToString() or "" )
-		local encampment = Asset_Get( self, CorpsAssetID.ENCAMPMENT )
-		content = content .. " camp=" .. ( encampment and encampment:ToString() or "" )
 		content = content .. " ld=" .. String_ToStr( Asset_Get( self, CorpsAssetID.LEADER ), "name" )		
-	end
-
-	if type == "MILITARY" or type == "ALL" then
-		content = content .. " trp=" .. Asset_GetListSize( self, CorpsAssetID.TROOP_LIST )
-		local soldier, maxSoldier = self:GetSoldier()
-		content = content .. " soldier=" .. soldier .. "/" .. maxSoldier
 	end
 
 	if type == "TASK" then
@@ -130,14 +124,6 @@ function Corps:ToString( type )
 	end
 	
 	if type == "STATUS" or type == "ALL" then
-		local task = self:GetTask()
-		if task then
-			content = content .. " task=" .. task:ToString()
-		end
-		local combat = self:GetStatus( CorpsStatus.IN_COMBAT )
-		if combat then
-			content = content .. " combat=" .. combat
-		end
 		if leader then
 			local ldTask = leader:GetTask()
 			if ldTask then
@@ -146,9 +132,20 @@ function Corps:ToString( type )
 				content = content .. " ld_task=no"
 			end
 		end
+		local task = self:GetTask()
+		if task then
+			content = content .. " task=" .. task:ToString()
+		end
+		local combat = self:GetStatus( CorpsStatus.IN_COMBAT )
+		if combat then
+			content = content .. " combat=" .. combat
+		end		
+		content = content .. ( self:GetStatus( CorpsStatus.DISMISSED ) and "dismissed" or " " )
 		content = content .. " " .. ( self:IsAtHome() and "athome" or "outside" )
 		content = content .. " " .. ( self:IsBusy() and "busy" or "idle" )
-		content = content .. " " .. ( Move_IsMoving( self ) and "moving" or "stay" )
+		content = content .. " " .. ( Move_IsMoving( self ) and "moving" or "stay" )		
+		local soldier, maxSoldier = self:GetSoldier()
+		content = content .. " soldier=" .. soldier .. "/" .. maxSoldier
 	end
 
 	if type == "OFFICER" then
@@ -169,8 +166,7 @@ function Corps:ToString( type )
 		end)	
 	
 	elseif type == "POSITION" then
-		content = content .. " camp=" .. Asset_Get( self, CorpsAssetID.ENCAMPMENT ):ToString()
-		content = content .. " @" .. Asset_Get( self, CorpsAssetID.LOCATION ):ToString()
+		content = content .. " @" .. Asset_Get( self, CorpsAssetID.LOCATION ):ToString() .."/" .. Asset_Get( self, CorpsAssetID.ENCAMPMENT ):ToString()
 	
 	elseif type == "MAINTAIN" then
 		local food = Asset_Get( self, CorpsAssetID.FOOD )
@@ -179,6 +175,13 @@ function Corps:ToString( type )
 		print( self.name, "food supply=" .. foodDays .. "Days" )
 		content = content .. " suply" .. foodDays .. "/" .. foodDays
 	end
+
+	if type == "MILITARY" or type == "ALL" then
+		content = content .. " trp=" .. Asset_GetListSize( self, CorpsAssetID.TROOP_LIST )
+		local soldier, maxSoldier = self:GetSoldier()
+		content = content .. " soldier=" .. soldier .. "/" .. maxSoldier
+	end
+
 	return content
 end
 
@@ -248,7 +251,6 @@ function Corps:GetMaterialCapacity()
 end
 
 -------------------------------------------
--- 
 
 function Corps:GetTask()
 	return Asset_GetDictItem( self, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )	
@@ -373,6 +375,9 @@ function Corps:GetStatus( status )
 end
 
 function Corps:SetStatus( status, value )
+	if status == CorpsStatus.IN_COMBAT and typeof(value) == "boolean" then
+		error( "setcorpsstat=", value )	
+	end
 	Asset_SetDictItem( self, CorpsAssetID.STATUSES, status, value )
 end
 
@@ -422,6 +427,23 @@ function Corps:Update( ... )
 		Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function ( troop )
 			troop:Move( g_elpased )
 		end)
+	end
+end
+
+--about task
+function Corps:Todo()
+	local task = self:GetTask()
+	if task then
+		Task_Update( task )
+		return
+	end
+
+	if not self:IsAtHome() then
+		--mostly, go back home
+		if not Move_IsMoving( self ) then
+			Move_Corps( self, Asset_Get( self, CorpsAssetID.ENCAMPMENT ) )
+		end
+		return
 	end
 end
 
@@ -488,9 +510,9 @@ function Corps:Recalculate( ... )
 end
 
 function Corps:LeaveCombat()
-	--print( self:ToString(), "leave combat" )
+	local id = self:GetStatus( CorpsStatus.IN_COMBAT )
 	self:SetStatus( CorpsStatus.IN_COMBAT )
-
+	--print( self:ToString("STATUS"), "leave combat=", id )
 	local hasLevelup = false
 	Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function ( troop )
 		if troop:LevelUp() then hasLevelup = true end

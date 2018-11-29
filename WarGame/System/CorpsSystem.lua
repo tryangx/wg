@@ -134,11 +134,14 @@ end
 -- Determine how many corps can establish in one Group
 ---------------------------------------------------------------------
 -- Corps Number( 1~3 )
---    1 / Barrack+1 / Capital+1
+--    1 / Barrack+1 / Military Base + 1 / Capital+1
 function Corps_GetLimitByCity( city )
 	local num = Scenario_GetData( "CORPS_PARAMS" ).CORPS_NUMBER.MIN_NUMBER
 	if city:IsCapital() then
 		num = num + Scenario_GetData( "CORPS_PARAMS" ).CORPS_NUMBER.CAIPTAL_BONUS
+	end
+	if city:GetStatus( CityStatus.MILITARY_BASE ) then
+		num = num + Scenario_GetData( "CORPS_PARAMS" ).CORPS_NUMBER.MILITARY_BASE_BONUS
 	end
 	if city:GetConstructionByEffect( CityConstrEffect.CORPS_LIMIT ) then
 		num = num + Scenario_GetData( "CORPS_PARAMS" ).CORPS_NUMBER.CONSTRUCTION_BONUS
@@ -159,6 +162,8 @@ end
 ---------------------------------------------------------------------
 
 function Corps_Enter( corps, city )
+	corps:SetStatus( CorpsStatus.RETREAT_TO_CITY )
+
 	Asset_Set( corps, CorpsAssetID.LOCATION, city )
 
 	Asset_Foreach( corps, CorpsAssetID.OFFICER_LIST, function ( chara )				
@@ -183,6 +188,8 @@ end
 
 function Corps_Dismiss( corps, neutralized )
 	Debug_Log( corps:ToString(), "dismiss neutralized=", neutralized )
+
+	corps:SetStatus( CorpsStatus.DISMISSED, 1 )
 
 	Stat_Add( "Corps@Dismiss", corps:ToString() .. " neutralized=" .. ( neutralized and "1" or "0" ), StatType.LIST )
 
@@ -597,7 +604,7 @@ function Corps_GainExp( corps, rate )
 		local needExp = troop:GetLevelUPExp()
 		local exp = math.ceil( needExp * rate * 0.01 )
 		troop:GainExp( exp )
-		print( corps.name, troop.name, rate, exp .. "/" .. needExp )
+		--print( corps.name, troop.name, rate, exp .. "/" .. needExp )
 	end )
 end
 
@@ -658,6 +665,8 @@ end
 function CorpsSystem:Update()
 	Entity_Foreach( EntityType.CORPS, function( corps )
 		corps:Update()
+
+		corps:Todo()
 
 		--sanity checker
 		local encampment = Asset_Get( corps, CorpsAssetID.ENCAMPMENT )

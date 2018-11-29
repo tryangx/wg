@@ -20,6 +20,7 @@ DefaultCorpsParams =
 		MIN_NUMBER         = 1,
 		CAIPTAL_BONUS      = 1,
 		CONSTRUCTION_BONUS = 1,
+		MILITARY_BASE_BONUS= 1,
 	},
 }
 
@@ -549,6 +550,8 @@ CombatPurposeParam =
 		ATTITUDE = 
 		{
 			END_DAY = 60,
+			ATTACK  = 80,
+			DEFEND  = 150,
 		},
 
 		SURRENDER = 
@@ -596,6 +599,8 @@ CombatPurposeParam =
 		ATTITUDE = 
 		{
 			END_DAY = 120,
+			ATTACK  = 100,
+			DEFEND  = 100,
 		},
 		SURRENDER = 
 		{
@@ -642,6 +647,9 @@ CombatPurposeParam =
 		ATTITUDE = 
 		{
 			END_DAY = 360,
+			ATTACK  = 120,
+			DEFEND  = 80,
+
 		},
 		SURRENDER = 
 		{
@@ -732,6 +740,6 @@ CombatStepData =
 		"PREPARE",
 		"EMBATTLE",
 		"ORDER",
-		"INCOMBAT",
+		"FIGHT",
 	},
 }

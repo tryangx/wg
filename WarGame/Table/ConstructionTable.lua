@@ -12,6 +12,14 @@ function ConstructionTable:Load( data )
 	self.prerequsite = MathUtil_Copy( data.prerequsite )
 end
 
+function ConstructionTable:ToString()
+	local content = ""
+	for type, value in pairs( self.effects ) do
+		content = content .. type .. "=" .. value
+	end
+	return content
+end
+
 ----------------------------
 
 local _ConstructionTableMng = Manager( 0, "ConstructionTable", ConstructionTable )

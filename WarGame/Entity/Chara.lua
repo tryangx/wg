@@ -385,7 +385,7 @@ function Chara:HasPotential()
 	return ca < potential
 end
 
-function Chara:HasSkill( type )
+function Chara:HasSkillType( type )
 	local num = 0
 	Asset_Foreach( self, CharaAssetID.SKILLS, function ( skill )
 		if skill.type == type then num = num + 1 end
@@ -582,3 +582,26 @@ function Chara:Captured()
 		corps:LoseOfficer( self )
 	end
 end
+
+--decide what to do with task
+function Chara:Todo()
+	local task = self:GetTask()
+	if task then
+		Task_Update( task )
+		return
+	end
+
+	if not self:IsAtHome() then
+		--should go back home
+		if not Move_IsMoving( self ) then
+			local home = Asset_Get( self, CharaAssetID.HOME )
+			if home then
+				InputUtil_Pause( self:ToString(), "go back home=", home )
+				Move_Chara( self, home )
+			end
+		end
+		return
+	end
+end
+
+------------------------------------------------------

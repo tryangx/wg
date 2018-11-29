@@ -116,7 +116,6 @@ CombatAssetID =
 	TIME          = 203,
 	END_TIME      = 204,
 	STEPDATA      = 205,
-	COMBAT_DAYS   = 206,
 
 	RESULT        = 210,
 	WINNER        = 211,	
@@ -153,7 +152,6 @@ CombatAssetAttrib =
 	time        = AssetAttrib_SetNumber( { id = CombatAssetID.TIME,        type = CombatAssetType.STATUS_ATTRIB, default = 0 } ),
 	endtime     = AssetAttrib_SetNumber( { id = CombatAssetID.END_TIME,    type = CombatAssetType.STATUS_ATTRIB, default = 0 } ),	
 	stepdaa     = AssetAttrib_SetPointer( { id = CombatAssetID.STEPDATA,   type = CombatAssetType.STATUS_ATTRIB, default = CombatStepData[1] } ),		
-	ctimes      = AssetAttrib_SetNumber( { id = CombatAssetID.COMBAT_DAYS, type = CombatAssetType.STATUS_ATTRIB, default = 0 } ),	
 
 	result      = AssetAttrib_SetNumber( { id = CombatAssetID.RESULT,   type = CombatAssetType.STATUS_ATTRIB, default = CombatResult.UNKNOWN } ),	
 	winner      = AssetAttrib_SetNumber( { id = CombatAssetID.WINNER,   type = CombatAssetType.STATUS_ATTRIB, default = CombatSide.UNKNOWN } ),	
@@ -239,6 +237,25 @@ function Combat:ToString( type )
 		content = content .. " atk=" .. String_ToStr( Asset_Get( self, CombatAssetID.ATK_GROUP ), "name" )
 		content = content .. " def=" .. String_ToStr( Asset_Get( self, CombatAssetID.DEF_GROUP ), "name" )
 	end
+	if type == "RESULT" then		
+		content = content .. " rsult=" .. MathUtil_FindName( CombatResult, Asset_Get( self, CombatAssetID.RESULT ) )
+		content = content .. " winner=" .. self:GetGroupName( self:GetWinner() )
+		content = content .. " date=" .. g_Time:CreateCurrentDateDesc()
+		content = content .. " day=" .. Asset_Get( self, CombatAssetID.DAY )
+		content = content .. " atkkill=" .. self:GetStat( CombatSide.ATTACKER, CombatStatistic.KILL ) .. "/" .. self:GetStat( CombatSide.ATTACKER, CombatStatistic.TOTAL_SOLDIER ) .. "/" .. self:GetStat( CombatSide.ATTACKER, CombatStatistic.MAX_SOLDIER )
+		content = content .. " defkill=" .. self:GetStat( CombatSide.DEFENDER, CombatStatistic.KILL ) .. "/" .. self:GetStat( CombatSide.DEFENDER, CombatStatistic.TOTAL_SOLDIER ) .. "/" .. self:GetStat( CombatSide.DEFENDER, CombatStatistic.MAX_SOLDIER )
+		content = content .. " at_corps=" .. Asset_GetListSize( self, CombatAssetID.ATK_CORPS_LIST ) .. "=" .. self:GetGroupName( CombatSide.ATTACKER )
+		content = content .. " df_corps=" .. Asset_GetListSize( self, CombatAssetID.DEF_CORPS_LIST ) .. "=" .. self:GetGroupName( CombatSide.DEFENDER )
+		content = content .. " c_day=" .. self:GetStat( CombatSide.ALL, CombatStatistic.COMBAT_DAY )		
+		content = content .. " s_day=" .. self:GetStat( CombatSide.ALL, CombatStatistic.STORM_DAY )
+		content = content .. " r_day=" .. self:GetStat( CombatSide.ALL, CombatStatistic.REST_DAY )
+	end
+	if type == "ALL" then
+		content = content .. " atkkill=" .. self:GetStat( CombatSide.ATTACKER, CombatStatistic.KILL ) .. "/" .. self:GetStat( CombatSide.ATTACKER, CombatStatistic.TOTAL_SOLDIER ) .. "/" .. self:GetStat( CombatSide.ATTACKER, CombatStatistic.MAX_SOLDIER )
+		content = content .. " defkill=" .. self:GetStat( CombatSide.DEFENDER, CombatStatistic.KILL ) .. "/" .. self:GetStat( CombatSide.DEFENDER, CombatStatistic.TOTAL_SOLDIER ) .. "/" .. self:GetStat( CombatSide.DEFENDER, CombatStatistic.MAX_SOLDIER )
+		content = content .. " at_corps=" .. Asset_GetListSize( self, CombatAssetID.ATK_CORPS_LIST ) .. "=" .. self:GetGroupName( CombatSide.ATTACKER )
+		content = content .. " df_corps=" .. Asset_GetListSize( self, CombatAssetID.DEF_CORPS_LIST ) .. "=" .. self:GetGroupName( CombatSide.DEFENDER )
+	end
 	if type == "DEBUG_CORPS" or type == "ALL" or type == "RESULT" then		
 		content = content .. " corps="
 		Asset_Foreach( self, CombatAssetID.ATK_CORPS_LIST, function( corps )
@@ -260,17 +277,6 @@ function Combat:ToString( type )
 		Asset_Foreach( self, CombatAssetID.TROOP_LIST, function ( troop )
 			content = content .. troop:ToString( "COMBAT" ) .. ","
 		end )
-	end
-	if type == "RESULT" then		
-		content = content .. " rsult=" .. MathUtil_FindName( CombatResult, Asset_Get( self, CombatAssetID.RESULT ) )
-		content = content .. " winner=" .. self:GetGroupName( self:GetWinner() )
-		content = content .. " date=" .. g_Time:CreateCurrentDateDesc()
-		content = content .. " day=" .. Asset_Get( self, CombatAssetID.DAY )
-		content = content .. " atkkill=" .. self:GetStat( CombatSide.ATTACKER, CombatStatistic.KILL ) .. "/" .. self:GetStat( CombatSide.ATTACKER, CombatStatistic.TOTAL_SOLDIER ) .. "/" .. self:GetStat( CombatSide.ATTACKER, CombatStatistic.MAX_SOLDIER )
-		content = content .. " defkill=" .. self:GetStat( CombatSide.DEFENDER, CombatStatistic.KILL ) .. "/" .. self:GetStat( CombatSide.DEFENDER, CombatStatistic.TOTAL_SOLDIER ) .. "/" .. self:GetStat( CombatSide.DEFENDER, CombatStatistic.MAX_SOLDIER )
-		content = content .. " at_corps=" .. Asset_GetListSize( self, CombatAssetID.ATK_CORPS_LIST ) .. "=" .. self:GetGroupName( CombatSide.ATTACKER )
-		content = content .. " df_corps=" .. Asset_GetListSize( self, CombatAssetID.DEF_CORPS_LIST ) .. "=" .. self:GetGroupName( CombatSide.DEFENDER )
-		content = content .. " c_day=" .. Asset_Get( self, CombatAssetID.COMBAT_DAYS )
 	end
 	return content
 end
@@ -301,11 +307,15 @@ function Combat:AddTroop( troop, side )
 	troop:SetCombatData( TroopCombatData.EXPOSURE, 0 )
 
 	--default order
+	local purpose
 	if side == CombatSide.ATTACKER then
 		troop:SetCombatData( TroopCombatData.ORDER, CombatOrder.ATTACK )
+		purpose = Asset_Get( self, CombatAssetID.ATK_PURPOSE )
 	elseif side == CombatSide.DEFENDER then
 		troop:SetCombatData( TroopCombatData.ORDER, CombatOrder.DEFEND )
+		purpose = Asset_Get( self, CombatAssetID.DEF_PURPOSE )
 	end
+	troop._attitude = CombatPurposeParam[purpose].ATTITUDE
 
 	--vp
 	local soldier = Asset_Get( troop, TroopAssetID.SOLDIER )
@@ -359,8 +369,6 @@ function Combat:AddSingleCorps( corps, side )
 		self:AddTroop( troop, side )
 	end )
 
-	--print( corps:ToString(), "joincombat=" .. self.id)
-
 	corps:SetStatus( CorpsStatus.IN_COMBAT, self.id )
 end
 
@@ -369,7 +377,7 @@ function Combat:AddCorps( corps, side )
 	--sanity checker
 	if not side then DBG_Error( "why here") end
 	if self:GetGroup( side ) and self:GetGroup( side ) ~= Asset_Get( corps, CorpsAssetID.GROUP ) then DBG_Error( "why not the same group" ) end
-	local combatid = corps:GetStatus( CorpsStatus.IN_COMBAT )
+		local combatid = corps:GetStatus( CorpsStatus.IN_COMBAT )
 	if combatid and combatid ~= self.id then
 		Entity_ToString( EntityType.COMBAT, "ALL" )
 		DBG_Error( "corps cann't join two combat", corps:ToString("STATUS"), "combat=" .. corps:GetStatus( CorpsStatus.IN_COMBAT ) .."/".. self.id )
@@ -409,6 +417,7 @@ function Combat:RemoveTroop( troop, isKilled )
 	WriteCombatLog( "remove troop", troop:ToString() )
 end
 
+--[[
 function Combat:RemoveCorps( corps )
 	DBG_Error( "no one use this now" )
 	Asset_RemoveListItem( self, CombatAssetID.CORPS_LIST, corps )
@@ -417,8 +426,9 @@ function Combat:RemoveCorps( corps )
 		self:TroopLeave( troop )
 	end )
 
-	Asset_SetDictItem( corps, CorpsAssetID.STATUSES, CorpsStatus.IN_COMBAT, nil )
+	corps:SetCombat( CorpsAssetID.IN_COMBAT )
 end
+]]
 
 -----------------------------------------------------
 -- Grid
@@ -532,7 +542,7 @@ end
 
 function Combat:GetGroupName( side )
 	local group = self:GetGroup( side )	
-	return group and group.name or ( "[UN]" .. MathUtil_FindName( CombatSide, side ) )
+	return group and group.name or MathUtil_FindName( CombatSide, side )
 end
 
 function Combat:GetCorpsList( side )
@@ -846,7 +856,7 @@ function Combat:WipeCorps()
 			--print( "dismiss", corps:ToString() )
 			Stat_Add( "Corps@Vanished", corps:ToString( "SIMPLE"), StatType.LIST )
 		else
-			corps:LeaveCombat()			
+			corps:LeaveCombat()
 		end
 	end )
 end
@@ -923,8 +933,6 @@ function Combat:Embattle()
 
 	--WriteCombatLog( "combatid=" .. self.id, self:ToString( "DEBUG_CORPS" ) )
 
-	Asset_Plus( self, CombatAssetID.COMBAT_DAYS, 1 )
-
 	self:DrawBattlefield()
 end
 
@@ -967,7 +975,7 @@ function Combat:CheckConditions( obj, datas, type )
 	for _, cond in pairs( conditions ) do		
 		if not cond.reason then error( "reason data checker" ) end
 		local match = true
-		if match == true and cond.ctimes_above and Asset_Get( self, CombatAssetID.COMBAT_DAYS ) < cond.ctimes_above then  match = false end
+		if match == true and cond.ctimes_above and self:GetStat( CombatSide.ALL, CombatStatistic.COMBAT_DAY ) < cond.ctimes_above then  match = false end
 		if match == true and cond.days_above and Asset_Get( self, CombatAssetID.DAY ) < cond.days_above then match = false end
 		if match == true and cond.not_siege and ( combatType == CombatType.SIEGE_COMBAT or combatType == CombatType.CAMP_COMBAT ) then match = false end
 		if match == true and cond.not_field and combatType == CombatType.FIELD_COMBAT then match = false end
@@ -1073,10 +1081,10 @@ function Combat:Prepare()
 		and Asset_GetListSize( self, CombatAssetID.DEF_CORPS_LIST ) > 0
 		and self:CheckConditions( CombatSide.DEFENDER, CombatPurposeParam[defPurpose], "WITHDRAW" ) == true then
 		defWithdraw = true
-	end
+	end	
 	if atkWithdraw and defWithdraw then
 		--WriteCombatLog( self:ToString( "DEBUG_CORPS" ) )
-		--InputUtil_Pause( "both withdraw" )
+		Stat_Add( "Combat@BothWithdraw", 1, StatType.TIMES )
 		Asset_Set( self, CombatAssetID.RESULT, CombatResult.DRAW )
 		return CombatPrepareResult.BOTH_DECLINED
 	elseif atkWithdraw then
@@ -1260,8 +1268,10 @@ function Combat:NextStep( step )
 		elseif result == CombatPrepareResult.BOTH_DECLINED then
 			if Asset_Get( self, CombatAssetID.RESULT ) == CombatResult.DRAW then
 				Stat_Add( "Combat@BothWithdraw", 1, StatType.TIMES )
+
 			elseif Asset_Get( self, CombatAssetID.RESULT ) ~= CombatResult.UNKNOWN then
 				Stat_Add( "Combat@OneWithdraw", 1, StatType.TIMES )
+
 			else
 				self:AddStat( CombatSide.ALL, CombatStatistic.REST_DAY, 1 )
 				Stat_Add( "Combat@Rest", 1, StatType.TIMES )
@@ -1321,7 +1331,7 @@ function Combat:NextStep( step )
 	elseif step == CombatStepType.ORDER then
 		self:Order()
 
-	elseif step == CombatStepType.INCOMBAT then
+	elseif step == CombatStepType.FIGHT then
 		--initialize time
 		Asset_Set( self, CombatAssetID.TIME, 0 )
 		Asset_Set( self, CombatAssetID.END_TIME, CombatTime.NORMAL_END_TIME )
@@ -1370,7 +1380,8 @@ function Combat:NextDay()
 	if Asset_Get( self, CombatAssetID.DAY ) >= Asset_Get( self, CombatAssetID.END_DAY ) then
 		Asset_Set( self, CombatAssetID.RESULT, CombatResult.DRAW )
 		Asset_Set( self, CombatAssetID.WINNER, CombatSide.UNKNOWN )
-		Stat_Add( "Combat@Draw", 1, StatType.TIMES )
+		Stat_Add( "Combat@Deadline", 1, StatType.TIMES )
+		--print( "deadline", self:ToString("RESULT"))
 		return
 	end
 
@@ -2267,9 +2278,9 @@ function Combat:CalcDamage( atk, def, params )
 
 	local weight    = params.weapon.weight
 	local sharpness = params.weapon.sharpness	
-	local pow_rate  = ( atk_tir > atk_mor and -50 or 0 ) + ( def_tir > def_mor and 50 or 0 ) + 100
-	local pierce_pow = sharpness * pow_rate / ( 100 + armor )
-	local kinect_pow = weight * pow_rate / ( 100 + toughness )	
+	local pow_rate  = ( atk_tir > atk_mor and -50 or 0 ) + ( def_tir > def_mor and 50 or 0 ) + atk._attitude.ATTACK
+	local pierce_pow = sharpness * pow_rate / ( atk._attitude.DEFEND + armor )
+	local kinect_pow = weight * pow_rate / ( atk._attitude.DEFEND + toughness )	
 	local pow = ( pierce_pow + kinect_pow )
 
 	-------------------------------

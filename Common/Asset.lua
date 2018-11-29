@@ -474,7 +474,7 @@ function Asset_SetDictItem( entity, id, name, item )
 			attrib.changer( entity, id, item )
 		end
 	end
-
+	
 	entity[id][name] = item
 
 	if _defaultAssetWatcher then _defaultAssetWatcher( entity, id, item ) end	
@@ -487,6 +487,12 @@ function Asset_GetDictItem( entity, id, name )
 		end
 	end
 	local dict = Asset_GetDict( entity, id )
+
+	local v = dict and dict[name] or nil
+	if name == 11 and typeof( v ) == "boolean" then
+		error("sfddsf")
+	end
+
 	return dict and dict[name] or nil
 end
 

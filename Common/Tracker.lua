@@ -69,21 +69,24 @@ function Track_Data( name, data, need )
 	end
 end
 
-function Track_Dump()
-	print( "[TRACK_DUMP]" )
-	for k, v in pairs( _trackerCaches ) do
+function Track_Dump( name, showall )
+	print( "[TRACK_DUMP]=" .. name )
+	local caches = name and _trackerStacks[name] or _trackerCaches
+	for k, v in pairs( caches ) do
 		local delta = v.current - v.init
-		if delta ~= 0 then
-			local content = StringUtil_Abbreviate( k, 10 ) .. "= " .. v.init .. "->" .. v.current .. ( delta >= 0 and " +" or " " ) .. delta .. "(" .. ( math.ceil( delta * 100 / v.init ) ) .. "%)"
+		if showall or delta ~= 0 then
+			local percent = " " .. ( v.init > 0 and ( math.ceil( delta * 100 / v.init ) .. "%" ) or "" )
+			local content = StringUtil_Abbreviate( k, 10 ) .. "= " .. v.init .. "->" .. v.current .. ( delta > 0 and " +" .. delta or delta ) .. percent
 			if v.need then
 				content = content .. " req=" ..  v.need
 			end
 			print( content )
-		end		
+		end
 	end
-	InputUtil_Pause()
+	print( "[DUMP_END]" )
+	--InputUtil_Pause()
 end
 
-function Track_Reset( dump )
+function Track_Reset()
 	_trackerCaches = {}
 end

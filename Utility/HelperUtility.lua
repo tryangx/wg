@@ -219,20 +219,6 @@ function HelperUtil_RemoveVarb( varbs, varbType, value, minimum )
 	end
 end
 
-------------------------------------------
--- 
-function HelperUtil_IsHarvestTime()
-	return MathUtil_IndexOf( CityParams.HARVEST.HARVEST_TIME, g_Time:GetMonth() ) and g_Time:GetDay() <= 1
-end
-
-function HelperUtil_IsLevyTaxTime()
-	return MathUtil_IndexOf( CityParams.LEVY_TAX.LEVY_TAX_TIME, g_Time:GetMonth() ) and g_Time:GetDay() <= 1
-end
-
-function HelperUtil_IsTurnOverTaxTime()
-	return MathUtil_IndexOf( CityParams.TURN_OVER_TAX_TIME, g_Time:GetMonth() ) and g_Time:GetDay() <= 1
-end
-
 -----------------------------------------
 
 function HelperUtil_FindPathBetweenCity( location, destination )

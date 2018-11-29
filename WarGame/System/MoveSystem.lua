@@ -39,8 +39,12 @@ function Move_HasMoving( actor )
 	return System_Get( SystemType.MOVE_SYS ):GetMove( actor )
 end
 
-function Move_Stop( actor )
-	--should be carefull, only when actor is invalid( chara died, corps dismiss , etc )
+function Move_Resume( actor, waittime )
+	return System_Get( SystemType.MOVE_SYS ):StartMoving( actor, waittime )
+end
+
+--!!!! should be carefull, only when actor is invalid( chara died, corps dismiss , etc )
+function Move_Stop( actor )	
 	System_Get( SystemType.MOVE_SYS ):StopMoving( actor )
 end
 
@@ -52,7 +56,7 @@ function Move_Chara( chara, dest )
 	System_Get( SystemType.MOVE_SYS ):CharaMove( chara, dest )
 end
 
-function Move_Corps( corps, dest )	
+function Move_Corps( corps, dest )
 	System_Get( SystemType.MOVE_SYS ):CorpsMove( corps, dest )
 end
 
@@ -156,6 +160,7 @@ local function Move_CheckEncounter( move )
 			end
 		else
 			--retreat
+			--[[
 			print( "act=" .. actGroup:ToString() )
 			print( "atk=", Asset_Get( combat, CombatAssetID.ATK_GROUP ), Dipl_IsAlly( actGroup, Asset_Get( combat, CombatAssetID.ATK_GROUP ) ), Dipl_IsAtWar( actGroup, Asset_Get( combat, CombatAssetID.ATK_GROUP ) ) )
 			print( "def=", Asset_Get( combat, CombatAssetID.DEF_GROUP ), Dipl_IsAlly( actGroup, Asset_Get( combat, CombatAssetID.DEF_GROUP ) ), Dipl_IsAtWar( actGroup, Asset_Get( combat, CombatAssetID.DEF_GROUP ) ) )
@@ -163,9 +168,11 @@ local function Move_CheckEncounter( move )
 			print( "act=", actGroup:ToString(), actor:ToString() )
 			print( combat:ToString() )
 			print( "blocked")
+			--]]		
 			Message_Post( MessageType.MOVE_IS_BLOCKED, { plot = plot, actor = actor } )	
 		end
 
+		Debug_Log( actor:ToString(), "move suspend" )
 		move:Suspend()
 
 		return true
@@ -174,8 +181,9 @@ local function Move_CheckEncounter( move )
 	local list = _plotActors[plot]
 	if not list then return false end
 
+	--check task, sometime no task like during retreat to other city
 	local task = actor:GetTask()
-	if Asset_Get( task, TaskAssetID.RESULT ) ~= TaskResult.UNKNOWN then
+	if task and Asset_Get( task, TaskAssetID.RESULT ) ~= TaskResult.UNKNOWN then
 		--task failed, in retreat status
 		return false
 	end
@@ -218,19 +226,23 @@ local function Move_CheckEncounter( move )
 end
 
 local function Move_MoveToNext( move )
+	--reset step-counter
 	local dur = Asset_Get( move, MoveAssetID.DURATION )
 	Asset_Reduce( move, MoveAssetID.PROGRESS, dur )
 	Asset_Set( move, MoveAssetID.DURATION, 0 )
 
-	local nextplot = Asset_Get( move, MoveAssetID.NEXT_PLOT )
 	--check encounter in the new plot
+	local nextplot = Asset_Get( move, MoveAssetID.NEXT_PLOT )	
 	if Move_CheckEncounter( move ) == true then
 		Move_Debug( move, "encounter in" .. nextplot:ToString() )
-		return true
+		return false
 	end
 
+	--actor moved
+	Asset_Set( move, MoveAssetID.CUR_PLOT, nextplot )
+
+	--find next plot
 	local curplot  = Asset_Get( move, MoveAssetID.CUR_PLOT )
-	--local tocity   = Asset_Get( move, MoveAssetID.TO_CITY )	
 	local routeplot
 	local path     = Asset_Get( move, MoveAssetID.PATH )	
 	for inx, p in ipairs( path ) do
@@ -240,50 +252,33 @@ local function Move_MoveToNext( move )
 		end
 	end
 
-	--print( "cur  =", Asset_Get( curplot, PlotAssetID.X ), ",", Asset_Get( curplot, PlotAssetID.Y ) )
-	--print( route, curplot, nextplot, toCity, routeplot )
-	--print( "next =", Asset_Get( routeplot, PlotAssetID.X ), ",", Asset_Get( routeplot, PlotAssetID.Y ) )
-	Asset_Set( move, MoveAssetID.CUR_PLOT, nextplot )
-	Asset_Set( move, MoveAssetID.NEXT_PLOT, routeplot )
+	--is route finished?
+	if not routeplot then return false end
 
+	Asset_Set( move, MoveAssetID.NEXT_PLOT, routeplot )	
 	if nextplot then
 		--InputUtil_Pause( "addroad", Asset_Get( nextplot, PlotAssetID.ROAD ) )
 		Asset_Plus( move, MoveAssetID.DURATION, Asset_Get( nextplot, PlotAssetID.ROAD ) )
 	end
-	if routeplot then
-		--InputUtil_Pause( "addroad", Asset_Get( routeplot, PlotAssetID.ROAD ) )
-		Asset_Plus( move, MoveAssetID.DURATION, Asset_Get( routeplot, PlotAssetID.ROAD ) )
-	end
+	Asset_Plus( move, MoveAssetID.DURATION, Asset_Get( routeplot, PlotAssetID.ROAD ) )
 	
 	--Follow tracks
 	--Debug_Log( "moving-->" .. move:ToString() )
+	
+	--[[
+	print( move:ToString() )
+	print( "next=", nextplot:ToString() )
+	print( "route=", routeplot:ToString() )
+	]]
 
-	--is route finished?
-	if not routeplot then
-		--MathUtil_Dump( path )
-		--InputUtil_Pause( "FINISH PATH" )
-		return false
-	end
-
-	Move_Debug( move, "moveto=" .. nextplot:ToString() )
+	Move_Debug( move,g_Time:ToString() .. "moveto=" .. nextplot:ToString() )
 
 	Move_AddToPlot( move )
 
 	return true
 end
 
---return weather finish the move
-local function Move_DoAction( move )
-	if Asset_Get( move, MoveAssetID.STATUS ) ~= MoveStatus.MOVING then
-		Move_Debug( move, "not moving" )
-		return
-	end
-
-	if Move_MoveToNext( move ) == true then
-		--haven't reach the destination
-		return false
-	end
-	
+local function Move_Reach( move )
 	--reach the destination
 	Asset_Set( move, MoveAssetID.END_TIME, g_Time:GetDateValue() )
 	
@@ -303,15 +298,29 @@ local function Move_DoAction( move )
 
 	end
 	
-	Log_Write( "move", actor:ToString("LOCATION") .. " move to=" .. dest:ToString() )
-	--Debug_Log( actor:ToString() .. " move to " .. dest:ToString() )
+	Log_Write( "move", g_Time:ToString() .. actor:ToString("LOCATION") .. " reach=" .. dest:ToString() )
 
 	move:End()
 
 	Message_Post( MessageType.ARRIVE_DESTINATION, { actor = Asset_Get( move, MoveAssetID.ACTOR ), destination = Asset_Get( move, MoveAssetID.DEST_PLOT ) } )
 
 	--Stat_Add( "Move@End", move:ToString( "END" ), StatType.LIST )
+end
 
+
+--return weather finish the move
+local function Move_DoAction( move )
+	if Asset_Get( move, MoveAssetID.STATUS ) ~= MoveStatus.MOVING then
+		Move_Debug( move, "not moving" )
+		return
+	end
+
+	if Move_MoveToNext( move ) == true then
+		--haven't reach the destination
+		return false
+	end
+
+	Move_Reach( move )
 	return true
 end
 
@@ -324,6 +333,15 @@ local function Move_Update( move )
 	--suspend or stop?
 	if Asset_Get( move, MoveAssetID.STATUS ) ~= MoveStatus.MOVING then
 		return
+	end
+
+	--SANITY CHECKER, is in combat?
+	if Asset_Get( move, MoveAssetID.ROLE ) == MoveRole.CORPS then
+		if Asset_Get( move, MoveAssetID.ACTOR ):GetStatus( CorpsStatus.IN_COMBAT ) then
+			print( "incombat=", Asset_Get( move, MoveAssetID.ACTOR ):GetStatus( CorpsStatus.IN_COMBAT ))
+			error( "no move" .. move:ToString() )
+			return
+		end		
 	end
 
 	--move on
@@ -343,21 +361,6 @@ end
 ------------------------------------------------
 
 
-local function Move_OnStartMoving( msg )
-	local actor    = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "actor" )
-	local waittime = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "waittime" )
-	System_Get( SystemType.MOVE_SYS ):StartMoving( actor, waittime )
-end
-
-local function Move_OnStopMoving( msg )
-	local actor = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "actor" )
-	System_Get( SystemType.MOVE_SYS ):StopMoving( actor )
-end
-
-local function Move_OnCancelMoving( msg )
-	error( "it shouldn't be here" )
-end
-
 ------------------------------------------------
 
 MoveSystem = class()
@@ -368,10 +371,6 @@ end
 
 function MoveSystem:Start()
 	self._actors = {}
-
-	Message_Handle( self.type, MessageType.START_MOVING,  Move_OnStartMoving )
-	Message_Handle( self.type, MessageType.STOP_MOVING,   Move_OnStopMoving )
-	Message_Handle( self.type, MessageType.CANCEL_MOVING, Move_OnCancelMoving )
 end
 
 --1. Determine whether move to the next plot, put them into list
@@ -389,7 +388,7 @@ function MoveSystem:Update()
 	for _, move in pairs( _plotMoves ) do
 		if Move_DoAction( move ) == true then
 			local actor = Asset_Get( move, MoveAssetID.ACTOR )			
-			Log_Write( "move", actor:ToString() .. " arrive destc=" .. String_ToStr( Asset_Get( move, MoveAssetID.TO_CITY ), "name" ) .. " destp=" .. Asset_Get( move, MoveAssetID.DEST_PLOT ):ToString() )
+			Log_Write( "move", g_Time:ToString() .. actor:ToString() .. " arrive destc=" .. String_ToStr( Asset_Get( move, MoveAssetID.TO_CITY ), "name" ) .. " destp=" .. Asset_Get( move, MoveAssetID.DEST_PLOT ):ToString() )
 			if Asset_Get( move, MoveAssetID.ROLE ) == MoveRole.CORPS then
 				if actor:IsAtHome() then
 					Asset_SetDictItem( actor, CorpsAssetID.STATUSES, CorpsStatus.DEPATURE_TIME, nil )
@@ -405,14 +404,14 @@ function MoveSystem:Update()
 		if entity:IsAtHome() then return end
 		if entity:IsBusy() then return end
 		if self:IsMoving( entity ) then return end
-		error( entity:ToString("LOCATION") .. "idle outside" )
+		Debug_Log( entity:ToString("LOCATION") .. "idle outside" )
 	end)
 	Entity_Foreach( EntityType.CORPS, function ( entity )
 		if entity:IsAtHome() then return end
 		if entity:IsBusy() then return end
-		if self:IsMoving( entity ) then return end
-		error( entity:ToString("POSITION") .. "idle outside" )
-	end)
+		if self:IsMoving( entity ) then return end		
+		Debug_Log( entity:ToString("POSITION") .. "idle outside" )
+	end)	
 
 	--print( "move has", Entity_Number( EntityType.MOVE ) )
 end
@@ -427,71 +426,87 @@ function MoveSystem:GetMove( actor )
 	return self._actors[actor]
 end
 
-function MoveSystem:MoveP2P( actor, from, to , type )	
-end
-
 function MoveSystem:MoveC2C( actor, fromCity, toCity, type )
 	if fromCity == toCity then
-		DBG_TrackBug( actor:ToString() .. " already in=" .. fromCity.name )
-		return
+		if not self._actors[actor] then
+			Debug_Log( actor:ToString("STATUS") .. " already incity=" .. fromCity.name )
+			return
+		end
 	end
+	
+	local to   = Asset_Get( toCity, CityAssetID.CENTER_PLOT )		
+	local from
 
-	local path = Route_FindPathByCity( fromCity, toCity )
+	local move = self._actors[actor]
+	if move then
+		--exist move
+		from = Asset_Get( move, MoveAssetID.CUR_PLOT )		
+		if not from then from = Asset_Get( move, MoveAssetID.NEXT_PLOT ) end
+		--print( move:ToString() )
+	else
+		move = Entity_New( EntityType.MOVE )
+		Asset_Set( move, MoveAssetID.ROLE, type )
+		Asset_Set( move, MoveAssetID.ACTOR, actor )
+
+		from = Asset_Get( fromCity, CityAssetID.CENTER_PLOT )
+		Asset_Set( move, MoveAssetID.NEXT_PLOT, from )
+	end
+	Asset_Set( move, MoveAssetID.DEST_PLOT, to )
+
+	local path = Route_FindPathByPlot( from, to )
 	if not path or #path == 0 then
-		error( "no path from=" .. String_ToStr( fromCity, "name" ) .. " to=" .. String_ToStr( toCity, "name" ) )
+		if from == to then
+			Move_Reach( move )
+		else
+			DBG_Error( "no path from=" .. from:ToString() .. " to=" .. to:ToString() )
+		end
 		return
-	end
-	if self._actors[actor] then
-		DBG_Error( actor:ToString() .. " is moving" )
-		return
-	end
-
-	local move = Entity_New( EntityType.MOVE )
-	Asset_Set( move, MoveAssetID.BEGIN_TIME, g_Time:GetDateValue() )
-	Asset_Set( move, MoveAssetID.ROLE, type )
-	Asset_Set( move, MoveAssetID.ACTOR, actor )
+	end	
+	
+	Asset_Set( move, MoveAssetID.BEGIN_TIME, g_Time:GetDateValue() )	
 	Asset_Set( move, MoveAssetID.STATUS, MoveStatus.MOVING )
 	Asset_Set( move, MoveAssetID.FROM_CITY, fromCity )
 	Asset_Set( move, MoveAssetID.TO_CITY, toCity )
 	Asset_Set( move, MoveAssetID.PATH, path )
-	Asset_Set( move, MoveAssetID.NEXT_PLOT, g_map:GetPlot( Asset_Get( fromCity, CityAssetID.X ), Asset_Get( fromCity, CityAssetID.Y ) ) )
-	Asset_Set( move, MoveAssetID.DEST_PLOT, g_map:GetPlot( Asset_Get( toCity, CityAssetID.X ), Asset_Get( toCity, CityAssetID.Y ) ) )
-	Move_MoveToNext( move )
-	
-	move:Start()
 
+	move:Start()
 	self._actors[actor] = move
 
-	Stat_Add( "Move@Start", actor:ToString() .. " move from=" .. fromCity.name .. " to " .. toCity.name, StatType.LIST )
-
 	Move_Debug( move, "moving" )
-
-	if actor.id == 2 and move.id == 85 then
-		--InputUtil_Pause( "start" .. move:ToString() )
-	end	
-
+	Stat_Add( "Move@Start", actor:ToString() .. " move from=" .. fromCity.name .. " to " .. toCity.name, StatType.LIST )	
 	--Debug_Log( actor:ToString( "LOCATION" ) .. " try to move from=" .. fromCity:ToString() .. " to " .. toCity:ToString() )
+
+	Move_MoveToNext( move )
+
+	if Asset_Get( move, MoveAssetID.STATUS ) ~= MoveStatus.MOVING  then
+		--error( "blocked")
+	end
+	
 	return move
 end
 
 function MoveSystem:CorpsMove( actor, destination )
 	actor:Departure()
 	local move = self:MoveC2C( actor, Asset_Get( actor, CorpsAssetID.LOCATION ), destination, MoveRole.CORPS )
-	Log_Write( "move", actor:ToString() .. " moveto destc=" .. String_ToStr( Asset_Get( move, MoveAssetID.TO_CITY ), "name" ) .. " destp=" .. Asset_Get( move, MoveAssetID.DEST_PLOT ):ToString() )
+	if move then
+		Log_Write( "move", g_Time:ToString() .. actor:ToString() .. " startmove destc=" .. String_ToStr( Asset_Get( move, MoveAssetID.TO_CITY ), "name" ) .. " destp=" .. Asset_Get( move, MoveAssetID.DEST_PLOT ):ToString() )
+	end
 end
 
 function MoveSystem:CharaMove( actor, destination )	
 	self:MoveC2C( actor, Asset_Get( actor, CharaAssetID.LOCATION ), destination, MoveRole.CHARA )
 end
 
+--only use when actor is removed
 function MoveSystem:StopMoving( actor )
 	local move = self._actors[actor]
 	if move then
+		move:End()
 		Move_Debug( move, "stop move" )		
 		Debug_Log( "stop move", move:ToString() )
 		Log_Write( "move", "stop move=" .. actor:ToString() .. " moveto destc=" .. String_ToStr( Asset_Get( move, MoveAssetID.TO_CITY ), "name" ) .. " destp=" .. Asset_Get( move, MoveAssetID.DEST_PLOT ):ToString() )		
 		--Entity_ToString( EntityType.MOVE )
-		--print( "moving stop", actor:ToString(), self:IsMoving( actor ) )
+		Debug_Log( "moving stop", actor:ToString(), self:IsMoving( actor ) )
 		self._actors[actor] = nil
 		Entity_Remove( move )
 		return true
@@ -508,7 +523,8 @@ function MoveSystem:StartMoving( actor, prepareTime )
 
 		move:Start()
 		move:Wait( prepareTime )
-		--InputUtil_Pause( "resume moving", move:ToString() )		
+		--InputUtil_Pause( "resume moving", move:ToString() )
+		return true
 	end
 end
 

@@ -88,8 +88,8 @@ local function CheckTopicWithChara( city, chara, topic )
 			return true
 		end
 	end
-	if job == CityJob.AFFAIRS then
-		if topic == MeetingTopic.AFFAIRS then
+	if job == CityJob.OFFICIAL then
+		if topic == MeetingTopic.OFFICIAL then
 			return true
 		end
 	end
@@ -211,6 +211,8 @@ local function Meeting_Update( meeting )
 		content = content .. MathUtil_FindName( CityJob, data.job ) .. "=" .. data.officer.name .. ","
 	end)
 	Log_Write( "meeting", content )
+	Log_Write( "meeting", "--------------------------------------------------------" )
+
 	DBG_Watch( "Debug_Meeting", content )
 end
 
@@ -289,6 +291,7 @@ function Meeting_Hold( city, topic, target )
 	--print( city:ToString( "OFFICER" ) )
 	--local group = Asset_Get( city, CityAssetID.GROUP )	
 	--Log_Write( "meeting", g_Time:ToString() .. " " .. city.name .. " hold meeting t=" .. MathUtil_FindName( MeetingTopic, topic ) .. " p=" .. #participants .. ( group and " g=" .. group:ToString( "GOAL" ) or "" ) )
+	Log_Write( "meeting", "--------------------------------------------------------" )
 end
 
 --------------------------------------
