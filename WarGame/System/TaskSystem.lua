@@ -1,4 +1,58 @@
 --
+--
+-- Command: Expand the task system easily
+--
+--
+local _cmds = {}
+
+local function Cmd_Execute( cmd )
+	if cmd.params then
+		if cmd.params.dur and cmd.params.dur > 0 then
+			cmd.params.dur = cmd.params.dur - 1
+		end
+	end
+
+	if cmd.type == "MOVE_TO_CITY" then
+		--print( 'check', cmd.actor:ToString("LOCATION", cmd.city:ToString() ) )
+		if Asset_Get( cmd.actor, CharaAssetID.LOCATION ) == cmd.city then
+			--InputUtil_Pause( "finish cmd" )
+		end
+
+	end
+end
+
+function Cmd_MoveToCity( actor, city, params )
+	local cmd = _cmds[actor]
+	if cmd then
+		DBG_Error( actor:ToString(), "has command" )
+	end
+	cmd = { type = "MOVE_TO_CITY", actor = actor, city = city, params = params }
+	_cmds[actor] = cmd
+end
+
+function Cmd_Query( actor )
+	return _cmds[actor]
+end
+
+function Cmd_Clear( actor )
+	_cmds[actor] = nil
+end
+
+function Cmd_Update()
+	local removeList = {}
+	for _, cmd in pairs( _cmds ) do
+		if Cmd_Execute( cmd ) then
+			table.insert( removeList, cmd.actor )
+		end
+	end
+
+	for _, actor in ipairs( removeList ) do
+		_cmds[actor] = nil
+	end
+end
+
+---------------------------------------------------
+--
 -- How to add new task( proposal )
 --	1. add codes in Task_Create()
 --  2. add data in DefaultTaskSteps, DefaultTaskContribution
@@ -13,9 +67,6 @@ local _removeTask
 
 --key is combat, value is tasks what related to the combat
 local _combatTasks = {}
-
---all moving corps need to register this
---local _corpsTasks = {}
 
 local WorkType = 
 {
@@ -52,7 +103,7 @@ local function Task_DoDefault( task )
 	return Task_GetBonus( task, "work" )
 end
 
-local function Task_Remove( task )
+function Task_Remove( task )
 	--remove from actor
 	local actor = Asset_Get( task, TaskAssetID.ACTOR )
 	local actorType = Asset_Get( task, TaskAssetID.ACTOR_TYPE )
@@ -78,6 +129,8 @@ local function Task_Remove( task )
 	Debug_Log( "remove task" .. task:ToString() )
 
 	Entity_Remove( task )
+
+	--print( "end", task:ToString() )
 end
 
 local function Task_Resume( task )
@@ -285,11 +338,6 @@ local _prepareTask =
 	DISPATCH_CHARA  = function ( task )
 		Asset_Set( task, TaskAssetID.DURATION, 5 )
 		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WAITING )
-	end,
-	CALL_CHARA      = function ( task )
-		local dur = Move_CalcIntelTransDuration( Asset_Get( task, TaskAssetID.GROUP ), Asset_Get( task, TaskAssetID.LOCATION ), Asset_Get( task, TaskAssetID.DESTINATION ) )
-		Asset_Set( task, TaskAssetID.DURATION, dur )
-		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WAITING )
 	end,	
 
 	DECLARE_WAR     = function ( task )
@@ -420,10 +468,7 @@ local _executeTask =
 	DISPATCH_CHARA  = function ( task )
 		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WAITING )
 	end,
-	CALL_CHARA  = function ( task )
-		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WAITING )
-	end,	
-
+	
 	RECONNOITRE = function ( task )
 		Asset_Set( task, TaskAssetID.DURATION, 80 )
 		Asset_Set( task, TaskAssetID.STATUS, TaskStatus.WORKING )
@@ -631,6 +676,9 @@ local function Task_MoveChara( task )
 	if dest then
 		dest:CharaJoin( actor )
 	end
+
+	--print( actor:ToString(), "move to", dest:ToString() )
+
 	Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
 	return Task_GetBonus( task, "success" )
 end
@@ -781,8 +829,7 @@ local _finishTask =
 		return Task_GetBonus( task, "success" )
 	end,
 	DISPATCH_CHARA  = Task_MoveChara,
-	CALL_CHARA      = Task_MoveChara,
-
+	
 	RECONNOITRE = function ( task )		
 		Asset_Set( task, TaskAssetID.RESULT, TaskResult.SUCCESS )
 		return Task_GetBonus( task, "success" )
@@ -1009,11 +1056,14 @@ local function Task_IsBackHome( task )
 		if Asset_Get( task, TaskAssetID.STATUS ) ~= TaskStatus.MOVING then
 			Task_BackHome( task )
 		else
-			--sanity checker			
+			--[[
+			--sanity checker
 			if not Move_HasMoving( Asset_Get( task, TaskAssetID.ACTOR ) ) then
 				Entity_ToString( EntityType.MOVE )
-				DBG_Error( "why here", task:ToString() )
+				print( Asset_Get( task, TaskAssetID.ACTOR ):ToString("LOCATION") )
+				DBG_Error( "why here", g_Time:ToString(), task:ToString() )
 			end
+			]]
 		end
 		return false
 	else
@@ -1036,8 +1086,15 @@ local function Task_End( task )
 	end
 
 	Asset_Set( task, TaskAssetID.END_TIME, g_Time:GetDateValue() )
+
+	if Asset_Get( task, TaskAssetID.STATUS ) == TaskStatus.END then
+		--error( "why")
+	end
+
+	Asset_Set( task, TaskAssetID.STATUS, TaskStatus.END )
 	
-	Stat_Add( "Task@End", task:ToString( "END" ), StatType.LIST )
+	local type = Asset_Get( task, TaskAssetID.TYPE )
+	Stat_Add( "TaskEnd@" .. MathUtil_FindName( TaskType, type ), 1, StatType.VALUE )
 	Log_Write( "task",  task:ToString() .. "end task" )
 	
 	--Log_Write( "meeting", g_Time:ToString() .. task:ToString() .. " end" )
@@ -1071,23 +1128,26 @@ function Task_CorpsReceive( corps, task )
 		error( corps:ToString() .. "already has task" )
 	end
 
-	--_corpsTasks[corps] = task
+	if task then
+		local actor = Asset_Get( task, TaskAssetID.ACTOR )
+		if actor ~= corps then
+			--attack city may include lots corps
+			--error( "why" )
+		end
+	end
 
 	corps:SetTask( task )
-
-	Asset_Foreach( corps, CorpsAssetID.OFFICER_LIST, function ( chara )
-		chara:SetTask( task )
-	end)
 
 	Log_Write( "task",  corps:ToString(), "recv task" )
 end
 
---actor was removed
+--actor was removed or captured
 function Task_Terminate( task, requestor )
+	if not task then return end
 	--sanity checker
 	local actor = Asset_Get( task, TaskAssetID.ACTOR )
 	if actor ~= requestor then
-		Debug_Log( "!!!!" .. requestor:ToString() .. " isn't actor=" .. actor:ToString() .. " for task=" .. task:ToString() )
+		Debug_Log( "!!!!" .. ( requestor and requestor:ToString() or "" ) .. " isn't actor=" .. actor:ToString() .. " for task=" .. task:ToString() )
 		--only remove requestor's task
 		requestor:SetTask()
 		--InputUtil_Pause( requestor:ToString("STATUS") )
@@ -1097,9 +1157,7 @@ function Task_Terminate( task, requestor )
 	Task_Remove( task )
 
 	Log_Write( "task", "Terminate task=" .. task:ToString() )
-
-	Debug_Log( task, "task terminate by=" .. requestor:ToString() )
-
+	--Debug_Log( task, "task terminate by=" .. requestor:ToString() )
 	Stat_Add( "Task@Terminate", task:ToString("DETAIL"), StatType.LIST )
 end
 
@@ -1115,7 +1173,7 @@ function Task_Create( taskType, actor, location, destination, params )
 
 	local actor = Asset_Get( task, TaskAssetID.ACTOR )
 	local type = Asset_Get( task, TaskAssetID.TYPE )
-	
+
 	Task_CityReceive( task, location )
 
 	--need CORPS
@@ -1154,7 +1212,6 @@ function Task_Create( taskType, actor, location, destination, params )
 	elseif type == TaskType.HIRE_CHARA
 		or type == TaskType.PROMOTE_CHARA
 		or type == TaskType.DISPATCH_CHARA
-		or type == TaskType.CALL_CHARA
 		or type == TaskType.MOVE_CAPITAL
 
 		or type == TaskType.ESTABLISH_CORPS
@@ -1413,7 +1470,6 @@ end
 local function Task_OnMoveBlocked( msg )
 	--cancel task
 	local corps = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "actor" )
-	--local task = _corpsTasks[actor]
 	local task = corps:GetTask()
 	if not task then
 		DBG_Error( "why here?", corps:ToString() )
@@ -1431,7 +1487,6 @@ local function Task_OnCombatUntrigger( msg )
 		DBG_Error( "why no corps" )
 		return
 	end
-	--local task = _corpsTasks[corps]
 	local task = corps:GetTask()
 	if not task then
 		DBG_Error( "why no task" )
@@ -1453,7 +1508,6 @@ local function Task_OnCombatTriggered( msg )
 	if not _combatTasks[id] then _combatTasks[id] = {} end
 
 	function CheckTask( actor )
-		--local task = _corpsTasks[actor]
 		local task = actor:GetTask()
 		if not task then
 			Debug_Log( "why corps no task?", actor:ToString() )
@@ -1599,9 +1653,31 @@ function TaskSystem:Start()
 	_finishTask  = MathUtil_ConvertKeyToID( TaskType, _finishTask )
 	_workOnTask  = MathUtil_ConvertKeyToID( TaskType, _workOnTask )
 	_movingTask  = MathUtil_ConvertKeyToID( TaskType, _movingTask )
+
+	for name, type in pairs( TaskType ) do
+		Stat_Add( "TaskEnd@" .. name, 0, StatType.VALUE )
+	end	
 end
 
 function TaskSystem:Update()
+	Cmd_Update()
+
+	Entity_Foreach( EntityType.TASK, function ( t )
+		local actor = Asset_Get( t, TaskAssetID.ACTOR )
+		if not actor:GetTask() then
+			print( t:ToString() )
+			DBG_Error( actor:ToString(), actor.id, "should has task" )
+		end
+		--[[
+		if Asset_Get( t, TaskAssetID.ACTOR ) == actor and t.id ~= task.id then
+			print( actor:ToString("TASK") )
+			print( t:ToString() )
+			print( task:ToString() )
+			DBG_Error( actor:ToString() )
+		end
+		]]
+	end)
+
 	--Debug_Log( "Task Running=" .. Entity_Number( EntityType.TASK ) )	
 	if 1 then return end
 	Entity_Foreach( EntityType.TASK, function( task )

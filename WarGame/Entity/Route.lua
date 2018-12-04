@@ -50,6 +50,20 @@ end
 
 --------------------------------------------
 
+function Route:Contains( x, y )
+	local find = Asset_FindItem( self, RouteAssetID.NODES, function ( node, index )
+		return Asset_Get( node, PlotAssetID.X ) == x and Asset_Get( node, PlotAssetID.Y ) == y
+	end )
+	return find ~= nil
+end
+
+function Route:ContainsPlot( plot )
+	local find = Asset_FindItem( self, RouteAssetID.NODES, function ( node, index )
+		return node == plot
+	end )
+	return find ~= nil
+end
+
 --find next plot in the route nodes by given current node and destination 
 function Route:FindNext( cur, to )
 	local cx = Asset_Get( cur, PlotAssetID.X )

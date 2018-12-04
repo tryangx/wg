@@ -85,7 +85,7 @@ function Group:ToString( type )
 	end
 	if type == "POWER" or type == "ALL" then
 		content = content .. " popu=" .. self:GetPopu( CityPopu.ALL )
-		content = content .. " sldr=" .. self:GetPopu( CityPopu.SOLDIER )
+		content = content .. " sldr=" .. self:GetSoldier()
 		content = content .. " food=" .. self:GetProperty( CityAssetID.FOOD )
 		content = content .. " money=" .. self:GetProperty( CityAssetID.MONEY )		
 		content = content .. " mat=" .. self:GetProperty( CityAssetID.MATERIAL )
@@ -289,6 +289,14 @@ function Group:SetStatus( status, value )
 	Asset_SetDictItem( self, GroupAssetID.STATUSES, status, value )
 end
 
+function Group:GetSoldier()
+	local num = 0
+	Asset_Foreach( self, GroupAssetID.CORPS_LIST, function ( obj )
+		num = num + obj:GetSoldier()
+	end)
+	return num
+end
+
 function Group:GetPopu( popuType )
 	local num = 0
 	Asset_Foreach( self, GroupAssetID.CITY_LIST, function ( city )
@@ -371,7 +379,7 @@ end
 ----------------------------------------------------------
 
 function Group:LoseCity( city, toCity )
-	print( self.name, "lose city=" .. city.name )	
+	--print( self.name, "lose city=" .. city.name )	
 	
 	--remove city from list
 	Asset_RemoveListItem( self, GroupAssetID.CITY_LIST, city )
@@ -402,10 +410,10 @@ function Group:LoseCity( city, toCity )
 		if chara:IsAtHome() or not toCity then
 			--captured
 			Debug_Log( chara.name, "captured" )
-			chara:Captured()			
+			chara:Captured()
 			Asset_AppendList( city, CityAssetID.PRISONER_LIST, chara )
-		else
-			print( chara.name, "go", toCity.name )
+		elseif not Asset_Get( chara, CharaAssetID.CORPS ) then
+			Debug_Log( chara.name, "retreat to", toCity.name )
 			--set home to nearby city
 			toCity:CharaJoin( chara )
 		end
@@ -528,7 +536,12 @@ function Group:MoveCapital( capital )
 	if current == capital then
 		error( "same capital, why move" )
 	end
+
+	--clear officer
+	Asset_Clear( current, CityAssetID.OFFICER_LIST )
+
 	Asset_Set( self, GroupAssetID.CAPITAL, capital )
+
 	Debug_Log( self:ToString() .. " move capital=" .. capital:ToString() )
 end
 

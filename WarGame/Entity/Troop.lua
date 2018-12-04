@@ -137,7 +137,7 @@ end
 -------------------------------------
 
 function Troop:GetLevelUPExp()
-	return Asset_Get( self, TroopAssetID.MAX_SOLDIER ) * Asset_Get( self, TroopAssetID.LEVEL )
+	return 100 * Asset_Get( self, TroopAssetID.LEVEL )
 end
 
 function Troop:GetMaxMorale()	
@@ -339,7 +339,7 @@ function Troop:Move( tireness )
 	--DBG_Error( self.name, "move", tireness )
 end
 
-function Troop:Action( tireness )
+function Troop:Fight( tireness )
 	if not tireness then tireness = 1 end
 	Asset_Plus( self, TroopAssetID.TIRENESS, tireness )
 	--DBG_Error( self.name, "action", tireness, Asset_Get( self, TroopAssetID.TIRENESS ) )

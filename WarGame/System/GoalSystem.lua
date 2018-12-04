@@ -65,10 +65,10 @@ function GoalSystem:Update()
 				if achieveGoal then
 					group:AchieveGoal()
 					--InputUtil_Pause( "achieve goal", MathUtil_FindName( GroupGoalType, goalType ) )					
-					Stat_Add( "AchieveGoal@" .. MathUtil_FindName( GroupGoalType, goalType ), 1, StatType.TIMES )
+					Stat_Add( "GoalAchieve@" .. MathUtil_FindName( GroupGoalType, goalType ), 1, StatType.TIMES )
 				else
 					group:UnfinishGoal()
-					Stat_Add( "Unfinish@" .. MathUtil_FindName( GroupGoalType, goalType ), 1, StatType.TIMES )
+					Stat_Add( "GoalUnfinish@" .. MathUtil_FindName( GroupGoalType, goalType ), 1, StatType.TIMES )
 				end
 
 				--remove goal

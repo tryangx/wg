@@ -17,7 +17,8 @@ require "GameDebug"
 ------------------------------
 
 function Game_Init()	
-	g_gameSeed = 1536141028--os.time()
+	g_gameSeed = 1543817286 --os.time()
+	--g_gameId   = g_gameSeed
 
 	-- Initialize random generator
 	Random_SetSeed( g_gameSeed )
@@ -233,6 +234,11 @@ function Game_Init()
 end
 
 function Game_Test()
+	local from = g_map:GetPlot( 7, 12 )
+	local to = g_map:GetPlot( 18, 12 )
+	local path = Route_FindPathByPlot( from, to )
+	if not path or #path == 0 then error( "no" ) end
+
 	--[[]]
 	--test combat
 	return Game_Debug()
@@ -254,7 +260,7 @@ function Game_Start()
 	Game_Init()
 
 	local begTime = os.clock()
-	
+
 	--test
 	if not Game_Test() then
 		while Game_IsRunning() do

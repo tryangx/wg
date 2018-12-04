@@ -183,13 +183,12 @@ function City:ToString( type )
 		end )
 
 	elseif type == "ASSET" or type == "ALL" then
-		content = content .. " food=" .. HelperUtil_CreateNumberDesc( Asset_Get( self, CityAssetID.FOOD ) )
+		content = content .. " food=" .. HelperUtil_CreateNumberDesc( Asset_Get( self, CityAssetID.FOOD ) ) .. "+" .. HelperUtil_CreateNumberDesc( City_GetFoodIncome( self ) )
 		content = content .. " consume=" .. HelperUtil_CreateNumberDesc( self:GetConsumeFood() * DAY_IN_YEAR )
-		content = content .. " harvest=" .. HelperUtil_CreateNumberDesc( City_GetFoodIncome( self ) )
-		content = content .. " money=" .. HelperUtil_CreateNumberDesc( Asset_Get( self, CityAssetID.MONEY ) )		
+		content = content .. " money=" .. HelperUtil_CreateNumberDesc( Asset_Get( self, CityAssetID.MONEY ) ) .. "+" .. HelperUtil_CreateNumberDesc( City_GetYearTax( self ) )
 		content = content .. " salary=" .. HelperUtil_CreateNumberDesc( self:GetSalary() * MONTH_IN_YEAR )
-		content = content .. " income=" .. HelperUtil_CreateNumberDesc( City_GetYearTax( self ) )
-		content = content .. " more_sol=" .. self:GetPotentialMilitary()
+		content = content .. " sup_sol=" .. self:GetSupportMilitary()
+		content = content .. " has_sol=" .. self:GetSoldier()
 	
 	--[[
 	elseif type == "SUPPLY" then
@@ -288,7 +287,6 @@ function City:ToString( type )
 		content = content .. " corps=" .. Asset_GetListSize( self, CityAssetID.CORPS_LIST )
 		content = content .. " offr=" .. Asset_GetListSize( self, CityAssetID.OFFICER_LIST )
 		content = content .. " cons=" .. Asset_GetListSize( self, CityAssetID.CONSTR_LIST )
-		content = content .. " popu=" .. Asset_Get( self, CityAssetID.POPULATION )
 		content = content .. " secu=" .. MathUtil_Sum( Asset_GetDict( self, CityAssetID.SECURITY ) )
 		content = content .. " diss=" .. MathUtil_Sum( Asset_GetDict( self, CityAssetID.DISS ) )
 	end
@@ -461,22 +459,6 @@ function City:GetDiss()
 	return MathUtil_Sum( Asset_GetDict( self, CityAssetID.DISS ) )
 end
 
---calculate how many guard/reserves/soldier can support in this city
-function City:GetPotentialMilitary()
-	local eat     = ( City_GetPopuParams( self ).POPU_CONSUME_FOOD.SOLDIER ) * DAY_IN_YEAR
-	local salary  = ( City_GetPopuParams( self ).POPU_SALARY.SOLDIER ) * MONTH_IN_YEAR
-	local money   = Asset_Get( self, CityAssetID.MONEY )
-	local food    = Asset_Get( self, CityAssetID.FOOD )
-	money = 0
-	food  = 0
-	local harvest = City_GetFoodIncome( self )
-	local income  = City_GetYearTax( self )
-	local num1 = math.floor( ( money + income ) / salary )
-	local num2 = math.floor( ( food + harvest ) / eat )
-	--print( "num=" .. num1 .. "," .. num2 .. " harvest=" .. harvest, "eat=" .. eat * num2 )
-	return math.min( num1, num2 )
-end
-
 function City:GetPlan( plan )
 	return Asset_GetDictItem( self, CityAssetID.PLANS, plan )
 end
@@ -542,6 +524,20 @@ function City:GetPopuValue( paramType, popuType )
 		end
 	end
 	return math.ceil( sum )
+end
+
+--calculate how many guard/reserves/soldier can support in this city
+function City:GetSupportMilitary()
+	local eat     = ( City_GetPopuParams( self ).POPU_CONSUME_FOOD.SOLDIER ) * DAY_IN_YEAR
+	local salary  = ( City_GetPopuParams( self ).POPU_SALARY.SOLDIER ) * MONTH_IN_YEAR
+	local money   = Asset_Get( self, CityAssetID.MONEY )
+	local food    = Asset_Get( self, CityAssetID.FOOD )
+	local harvest = City_GetFoodIncome( self )
+	local income  = City_GetYearTax( self )
+	local num1 = math.floor( ( money + income ) / salary )
+	local num2 = math.floor( ( food + harvest ) / eat )
+	--print( "num=" .. num1 .. "," .. num2 .. " harvest=" .. harvest, "eat=" .. eat * num2 )
+	return math.min( num1, num2 )
 end
 
 function City:GetDevelopCost()
@@ -682,8 +678,7 @@ end
 --get reality number of soldier, dynamic
 function City:GetSoldier()
 	--corps in city
-	local soldier = 0
-	local maxSoldier = 0
+	local soldier, maxSoldier = 0, 0
 	Asset_Foreach( self, CityAssetID.CORPS_LIST, function ( corps )
 		Asset_Foreach( corps, CorpsAssetID.TROOP_LIST, function( troop )
 			local cur = Asset_Get( troop, TroopAssetID.SOLDIER )
@@ -692,7 +687,6 @@ function City:GetSoldier()
 			maxSoldier = maxSoldier + max
 		end )
 	end )
-
 	return soldier, maxSoldier
 end
 
@@ -840,7 +834,7 @@ function City:GetNumOfOfficerSlot()
 end
 
 --return list of characters not chara in any officer position
-function City:FindNonOfficerFreeCharas( charaList )
+function City:FindNonOfficerFreeCharas( charaList, fn )
 	if not charaList then charaList = {} end
 	Asset_Foreach( self, CityAssetID.CHARA_LIST, function( chara )
 		if chara:IsAtHome() == false then
@@ -857,6 +851,9 @@ function City:FindNonOfficerFreeCharas( charaList )
 		end
 		if self:GetCharaJob( chara ) ~= CityJob.NONE then
 			--print( chara.name .. " has job" )
+			return
+		end
+		if fn and fn( chara ) == false then
 			return
 		end
 		table.insert( charaList, chara )
@@ -1013,7 +1010,7 @@ function City:CorpsJoin( corps, isEnterCity )
 	Asset_AppendList( self, CityAssetID.CORPS_LIST, corps )
 
 	--insert charalist
-	Asset_Foreach( corps, CorpsAssetID.OFFICER_LIST, function ( chara )
+	Asset_Foreach( corps, CorpsAssetID.OFFICER_LIST, function ( chara )		
 		chara:JoinCity( self, isEnterCity )
 		Asset_AppendList( self, CityAssetID.CHARA_LIST, chara )
 	end)
@@ -1375,7 +1372,7 @@ end
 function City:EatFood()
 	local value = Asset_GetDictItem( self, CityAssetID.STATUSES, CityStatus.STARVATION )
 	if not value or value == 0 then return end
-	Asset_SetDictItem( self, CityAssetID.STATUSES, CityStatus.STARVATION, math.floor( value * 0.5 ) )
+	Asset_SetDictItem( self, CityAssetID.STATUSES, CityStatus.STARVATION, math.floor( value * 0.35 ) )
 
 	Stat_Add( "EatFood@" .. self.name, 1, StatType.TIMES )
 end
@@ -1579,4 +1576,24 @@ function City:Isolate()
 	Track_Data( "comm", Asset_Get( self, CityAssetID.COMMERCE ) )
 	Track_Dump()
 	]]
+end
+
+-----------------------------------
+-- Event 
+
+function City:SoldierFled()
+	local soldier, maxSoldier = self:GetSoldier()
+	if maxSoldier == 0 then return end
+
+	local supportSoldier = self:GetSupportMilitary()
+	if soldier < supportSoldier then return end
+
+	local fledRatio = ( ( soldier - supportSoldier ) * 0.5 ) / soldier
+
+	Asset_Foreach( self, CityAssetID.CORPS_LIST, function ( corps )
+		if not corps:IsAtHome() then return end
+		corps:SoldierFled( fledRatio )
+	end )
+
+	--InputUtil_Pause( self:ToString("ASSET"), "soldier fled", fledRatio, supportSoldier, soldier, maxSoldier )
 end

@@ -80,7 +80,7 @@ function GameMapDrawer:Draw()
 	if not self.map then return end
 
 	--self:UpdateMap()
-	--self:DrawPlotMap()
+	self:DrawPlotMap()
 	--self:DrawResourceMap( true )
 	--self:DrawCityMap( true )
 	--self:DrawGroupMap( true )
@@ -224,6 +224,7 @@ end
 _gamemapDrawer = GameMapDrawer()
 
 function GameMap_Draw( map )
+	if 1 then return end
 	--InputUtil_Pause()
 	_gamemapDrawer:SetMapData( map )
 	_gamemapDrawer:Draw()

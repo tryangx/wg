@@ -368,8 +368,6 @@ function Combat:AddSingleCorps( corps, side )
 	Asset_Foreach( corps, CorpsAssetID.TROOP_LIST, function( troop )
 		self:AddTroop( troop, side )
 	end )
-
-	corps:SetStatus( CorpsStatus.IN_COMBAT, self.id )
 end
 
 --Add single troop into Combat
@@ -392,7 +390,7 @@ function Combat:AddCorps( corps, side )
 	end
 end
 
-function Combat:RemoveTroop( troop, isKilled )
+function Combat:RemoveTroop( troop, isKilled )	
 	--remove from list
 	Asset_RemoveListItem( self, CombatAssetID.TROOP_LIST, troop )
 
@@ -1027,7 +1025,7 @@ function Combat:CheckConditions( obj, datas, type )
 		if match == true or score >= 100 then
 			--WriteCombatLog( MathUtil_ToString( conditions ) )
 			--if type ~= "ATTEND" and type ~= "REST" then InputUtil_Pause( "cond=" .. type, MathUtil_FindName( CombatSide, obj ) ) end
-			if type == "WITHDRAW" then--or type == "SURRENDER" then
+			if type == "WITHDRAW" or type == "SURRENDER" then
 				local content = " rs=" .. ( cond.reason or "" ) .. " side=" .. MathUtil_FindName( CombatSide, obj )-- .. " " .. self:ToString()
 				if typeof( obj ) == "table" or typeof( obj ) == "object" then
 				else
@@ -1039,7 +1037,7 @@ function Combat:CheckConditions( obj, datas, type )
 				content = content .. " prp=" .. self:GetStat( obj, CombatStatistic.PROP_RATIO )
 				content = content .. " scr=" .. score
 				--InputUtil_Pause( "reason=" .. content )
-				content = self:ToString() .. " r=" .. reason
+				content = self:ToString() .. " r=" .. reason .. " s=" .. score
 				Stat_Add( "Cond@" .. type, content, StatType.LIST )
 
 				Debug_Log( "with reason=" .. reason )
@@ -1467,6 +1465,7 @@ function Combat:UpdateResult()
 		return
 
 	elseif Asset_GetListSize( self, CombatAssetID.DEFENDER_LIST ) == 0 then
+		if self.id == 34 then InputUtil_Pause( "brillant", self:ToString() ) end
 		Asset_Set( self, CombatAssetID.RESULT, CombatResult.BRILLIANT_VICTORY )
 		Asset_Set( self, CombatAssetID.WINNER, CombatSide.ATTACKER )
 		return
@@ -1503,7 +1502,8 @@ function Combat:UpdateResult()
 			end
 			break
 		end
-	end	
+	end
+	
 	self:SetStat( CombatSide.ATTACKER, CombatStatistic.VP_RATIO, ratio )
 	self:SetStat( CombatSide.DEFENDER, CombatStatistic.VP_RATIO, -ratio )
 	Asset_Set( self, CombatAssetID.RESULT, result )
@@ -1913,11 +1913,11 @@ function Combat:DoAction( troop, action, target, params )
 	
 	elseif action == CombatAction.ATTACK then
 		self:AffectMorale( troop, -Random_GetInt_Sync( 3, 6 ) )
-		troop:Action()
+		troop:Fight()
 	
 	elseif action == CombatAction.DEFEND then
 		self:AffectMorale( troop, -Random_GetInt_Sync( 4, 5 ) )
-		troop:Action()
+		troop:Fight()
 
 	elseif action == CombatAction.KILL then		
 		local officer = Asset_Get( troop, TroopAssetID.OFFICER )

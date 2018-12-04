@@ -81,15 +81,6 @@ function Supply_CorpsCarryMaterial( corps )
 	return true
 end
 
-local function Supply_CityConsumeFood( city )
-	local consumeFood = city:GetConsumeFood() * g_elapsed
-	city:ConsumeFood( consumeFood )
-end
-
-local function Supply_CorpsConsumeFood( corps )
-	corps:ConsumeFood( corps:GetConsumeFood() )
-end
-
 --replenish the food from city
 local function Supply_CorpsReplenish( corps )
 	local encampment = Asset_Get( corps, CorpsAssetID.ENCAMPMENT )
@@ -123,12 +114,19 @@ local function Supply_CorpsReplenish( corps )
 	Asset_Set( encampment, CityAssetID.MATERIAL, hasMat - needMat )
 end
 
+local function Supply_UpdateCorps()
+	Entity_Foreach( EntityType.CORPS, function ( corps )
+		corps:PaySalary()
+		Supply_CorpsReplenish( corps )
+		corps:ConsumeFood( corps:GetConsumeFood() )
+	end)
+end
 
-local function Supply_UpdateCorps( corps )
-	corps:PaySalary()
-
-	Supply_CorpsReplenish( corps )
-	Supply_CorpsConsumeFood( corps )
+local function Supply_UpdateCity()
+	Entity_Foreach( EntityType.CITY, function ( city )		
+		local consumeFood = city:GetConsumeFood() * g_elapsed
+		city:ConsumeFood( consumeFood )
+	end )
 end
 
 --------------------------------------------------------------
@@ -145,9 +143,6 @@ end
 function SupplySystem:Update()
 	local day = g_Time:GetDay()
 	
-	Entity_Foreach( EntityType.CORPS, Supply_UpdateCorps )
-
-	if day % 30 == 1 then		
-		Entity_Foreach( EntityType.CITY, Supply_CityConsumeFood )
-	end
+	Supply_UpdateCorps()
+	Supply_UpdateCity()
 end

@@ -82,6 +82,8 @@ TaskStatus =
 	MOVING     = 3,
 	--means task is working, should wait for finish
 	WORKING    = 4,
+
+	END        = 5,
 }
 
 TaskResult = 
@@ -89,4 +91,9 @@ TaskResult =
 	UNKNOWN    = 0,
 	SUCCESS    = 1,
 	FAILED     = 2,
+}
+
+CommandType = 
+{
+	MOVE_TO_CITY = 1,
 }

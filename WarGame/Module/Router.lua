@@ -77,7 +77,9 @@ function Route_FindPathByPlot( plot1, plot2 )
 	
 	--do we have the path cache?
 	local pathCache = _p2pPaths[id1] or _p2pPaths[id2]
-	if pathCache then return pathCache end
+	if pathCache then
+		return pathCache
+	end
 
 	function InsertPath( route, start, target, path )
 		if not path then path = {} end
@@ -138,7 +140,7 @@ function Route_FindPathByPlot( plot1, plot2 )
 
 	--return plot if given plot is a city node
 	--return plot & route if given plot is a route node
-	function FindPortPlot( plot )
+	function FindPortPlot( plot )		
 		if not _plotRoutes[plot] then return end
 		if #_plotRoutes[plot] > 1 then return plot end
 		local route = _plotRoutes[plot][1]
@@ -150,7 +152,7 @@ function Route_FindPathByPlot( plot1, plot2 )
 	local destPlot, destRoute = FindPortPlot( plot1 )
 
 	if not startPlot or not destPlot then
-		print( "plot has no route" )
+		error( "plot has no route" )
 		return
 	end
 
@@ -160,6 +162,7 @@ function Route_FindPathByPlot( plot1, plot2 )
 	table.insert( openList, startNode )
 	closeList[startPlot] = startNode
 
+	--print( startPlot:ToString(), destPlot:ToString(), startRoute, destRoute )
 	--print( "start find", plot1:ToString(), plot2:ToString(), startRoute )
 
 	local findNode
@@ -167,15 +170,18 @@ function Route_FindPathByPlot( plot1, plot2 )
 		local curNode = openList[1]
 		table.remove( openList, 1 )
 
-		--print( "check node=" .. curNode.plot.id, curNode.route )
+		--print( "check node=" .. curNode.plot:ToString(), "route=" .. ( destRoute and destRoute:ToString() or "" ) )--.id, curNode.route )
 
-		if ( destRoute and destRoute == curNode.route ) or curNode.plot == destPlot then
+		if ( destRoute and destRoute == curNode.route ) 
+			or curNode.plot == destPlot
+			or ( curNode.route and curNode.route:ContainsPlot( destPlot ) ) then
 			findNode = curNode
 			break
 		end
 
 		local needSort = false
 		local routes = _plotRoutes[curNode.plot]
+		--print( "plot=" .. curNode.plot:ToString(), "route=", routes )
 		for _, route in ipairs( routes ) do
 			--if route ~= curNode.route then
 				local dis  = Asset_Get( route, RouteAssetID.DISTANCE )
@@ -191,7 +197,7 @@ function Route_FindPathByPlot( plot1, plot2 )
 					closeList[nextPlot] = nextNode
 					table.insert( openList, nextNode )
 					needSort = true
-					--print( "open route=" .. route:ToString() )--, "parent=" .. NodeToString( nextNode.parent ) )
+					--print( "open route=" .. route:ToString(), nextNode.plot:ToString() )--, "parent=" .. NodeToString( nextNode.parent ) )
 				else
 					if nextNode.ev > ev then
 						nextNode.parent = curNode
@@ -319,7 +325,7 @@ function Route_Make()
 					--route list for each plot
 					if not _plotRoutes[plot] then _plotRoutes[plot] = {} end
 					table.insert( _plotRoutes[plot], route )
-					--print( "insert", plot:ToString() )
+					--print( "insert", plot, plot:ToString(), route:ToString(), #_plotRoutes[plot] )
 				end
 				Asset_CopyList( route, RouteAssetID.NODES, plotPath )
 				Asset_Set( route, RouteAssetID.DISTANCE, distance )

@@ -408,10 +408,14 @@ function Chara_LevelUp( chara )
 	local attrib = Entity_GetAssetAttrib( chara, CharaAssetID.LEVEL )
 	if lv >= attrib.max then
 		--InputUtil_Pause( chara:ToString(), "lv out of range", lv, attrib.max )
-		return
+		return false
 	end
 
-	chara:LevelUp()
+	if chara:LevelUp() then
+		if Chara_LearnSkill( chara ) == false then
+			Chara_GainTrait( chara )
+		end
+	end
 end
 
 function Chara_GainTrait( chara )	
@@ -530,9 +534,6 @@ function CharaSystem:Update()
 	Entity_Foreach( EntityType.CHARA, function ( chara )
 		if day % 10 == 0 then
 			Chara_LevelUp( chara )
-			if Chara_LearnSkill( chara ) == false then
-				Chara_GainTrait( chara )
-			end
 		end
 
 		if day == 1 then

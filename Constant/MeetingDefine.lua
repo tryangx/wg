@@ -80,30 +80,34 @@ MeetingTopic =
 	--Should be the first top ic index, just as same as the first one below
 	MEETING_LOOP          = 10,
 
-	CAPITAL               = 10,
+	COMMAND               = 10,
+
+	CAPITAL               = 11,
 
 	--harass, attack
-	STRATEGY              = 11,
+	STRATEGY              = 12,
 
 	--hire, encourage
-	HR                    = 12,
+	HR                    = 13,
 
 	--research
-	TECHNICIAN            = 13,
+	TECHNICIAN            = 14,
 
 	--declare war, sign pact
-	DIPLOMATIC            = 14,
+	DIPLOMATIC            = 15,
 
 	--agriculture, commerce, production
-	OFFICIAL              = 15,
+	OFFICIAL              = 16,
 
 	--establish corps, reinforce corps
-	COMMANDER             = 16,	
+	COMMANDER             = 17,	
 
 	--operation
-	STAFF                 = 17,
+	STAFF                 = 18,
 
 	--Always should be the last topic + 1
-	MEETING_END           = 18,
+	MEETING_END           = 19,
 	---------------------------------
 }
+
+----------------------------------------

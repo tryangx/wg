@@ -95,6 +95,14 @@ function Move:ToString( type )
 		content = content .. " pas=" .. self:GetPassDay()
 	end
 
+	if Asset_Get( self, MoveAssetID.STATUS ) == MoveStatus.SUSPEND then
+		local actor = Asset_Get( self, MoveAssetID.ACTOR )
+		local role = Asset_Get( self, MoveAssetID.ROLE )	
+		if role == MoveRole.CORPS and actor:GetStatus( CorpsStatus.IN_COMBAT ) then
+			content = content .. " combat=" .. actor:GetStatus( CorpsStatus.IN_COMBAT )
+		end
+	end
+
 	return content
 end
 
@@ -149,6 +157,10 @@ function Move:Start()
 	local role = Asset_Get( self, MoveAssetID.ROLE )	
 	if role == MoveRole.CORPS then
 		actor:SetStatus( CorpsStatus.OUTSIDE, true )
+		if actor:GetStatus( CorpsStatus.IN_COMBAT ) then
+			error( "why")
+		end
+
 	elseif role == MoveRole.CHARA then
 		actor:SetStatus( CharaStatus.OUTSIDE, true )
 	end

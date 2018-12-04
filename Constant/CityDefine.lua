@@ -96,14 +96,18 @@ CityStatus =
 	SAFETY             = 42,
 	BUDGET_DANGER      = 50,
 
+	--determine what plot to expand in the next time
 	EXPAND_PLOT        = 60,
+	--flag to measure whether expand ended, use this to optimize
 	EXPAND_END         = 61,
 
 	-----------------------------------
 	--sabotage success or something else will trigger this for at least 3 mons
 	MOBILE_MERCHANT    = 101,
-	--Measure the price to buy/sell food
+	--measure the price to buy/sell food
 	PRICE              = 102,
+	--measure how many food stored in the peasant's house
+	FOOD_VALID         = 103,
 
 	FLOOD              = 110,
 	LOCUSTS_PLAGUE     = 111,

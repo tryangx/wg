@@ -52,10 +52,7 @@ function Test_CharaLevelUp()
 	for i = 1, 19 do
 		--print( "i=" .. i )
 		Entity_Foreach( EntityType.CHARA, function ( chara )		
-			Chara_LevelUp( chara )
-			if Chara_LearnSkill( chara ) == false then
-				Chara_GainTrait( chara )
-			end
+			Chara_LevelUp( chara )			
 			--if i == 19 then print( chara:ToString("GROWTH") ) end
 		end)
 	end

@@ -172,8 +172,8 @@ local function Move_CheckEncounter( move )
 			Message_Post( MessageType.MOVE_IS_BLOCKED, { plot = plot, actor = actor } )	
 		end
 
-		Debug_Log( actor:ToString(), "move suspend" )
 		move:Suspend()
+		Debug_Log( move:ToString(), "move suspend" )
 
 		return true
 	end
@@ -227,18 +227,11 @@ end
 
 local function Move_MoveToNext( move )
 	--reset step-counter
-	local dur = Asset_Get( move, MoveAssetID.DURATION )
-	Asset_Reduce( move, MoveAssetID.PROGRESS, dur )
+	Asset_Reduce( move, MoveAssetID.PROGRESS, Asset_Get( move, MoveAssetID.DURATION ) )
 	Asset_Set( move, MoveAssetID.DURATION, 0 )
 
-	--check encounter in the new plot
-	local nextplot = Asset_Get( move, MoveAssetID.NEXT_PLOT )	
-	if Move_CheckEncounter( move ) == true then
-		Move_Debug( move, "encounter in" .. nextplot:ToString() )
-		return false
-	end
-
 	--actor moved
+	local nextplot = Asset_Get( move, MoveAssetID.NEXT_PLOT )	
 	Asset_Set( move, MoveAssetID.CUR_PLOT, nextplot )
 
 	--find next plot
@@ -255,6 +248,7 @@ local function Move_MoveToNext( move )
 	--is route finished?
 	if not routeplot then return false end
 
+	--ready to move
 	Asset_Set( move, MoveAssetID.NEXT_PLOT, routeplot )	
 	if nextplot then
 		--InputUtil_Pause( "addroad", Asset_Get( nextplot, PlotAssetID.ROAD ) )
@@ -288,7 +282,7 @@ local function Move_Reach( move )
 	local role = Asset_Get( move, MoveAssetID.ROLE )
 	if role == MoveRole.CORPS then
 		--InputUtil_Pause( Asset_Get( move, MoveAssetID.ACTOR ).name, "reach", Asset_Get( move, MoveAssetID.TO_CITY ).name )
-		Stat_Add( "Corps@Move", g_Time:CalcDiffDayByDates( Asset_Get( move, MoveAssetID.END_TIME ), Asset_Get( move, MoveAssetID.BEGIN_TIME ) ), StatType.ACCUMULATION )
+		--Stat_Add( "Corps@Move", g_Time:CalcDiffDayByDates( Asset_Get( move, MoveAssetID.END_TIME ), Asset_Get( move, MoveAssetID.BEGIN_TIME ) ), StatType.ACCUMULATION )
 		Asset_Set( actor, CorpsAssetID.LOCATION, dest )
 		home = Asset_Get( actor, CorpsAssetID.ENCAMPMENT )
 	
@@ -313,6 +307,12 @@ local function Move_DoAction( move )
 	if Asset_Get( move, MoveAssetID.STATUS ) ~= MoveStatus.MOVING then
 		Move_Debug( move, "not moving" )
 		return
+	end
+
+	local nextplot = Asset_Get( move, MoveAssetID.NEXT_PLOT )	
+	if Move_CheckEncounter( move ) == true then
+		Move_Debug( move, "encounter in" .. nextplot:ToString() )
+		return false
 	end
 
 	if Move_MoveToNext( move ) == true then
@@ -434,7 +434,7 @@ function MoveSystem:MoveC2C( actor, fromCity, toCity, type )
 		end
 	end
 	
-	local to   = Asset_Get( toCity, CityAssetID.CENTER_PLOT )		
+	local to   = Asset_Get( toCity, CityAssetID.CENTER_PLOT )
 	local from
 
 	local move = self._actors[actor]
@@ -458,7 +458,7 @@ function MoveSystem:MoveC2C( actor, fromCity, toCity, type )
 		if from == to then
 			Move_Reach( move )
 		else
-			DBG_Error( "no path from=" .. from:ToString() .. " to=" .. to:ToString() )
+			DBG_Error( "no path from=" .. from:ToString() .. " to=" .. to:ToString(), path )
 		end
 		return
 	end	
@@ -470,10 +470,11 @@ function MoveSystem:MoveC2C( actor, fromCity, toCity, type )
 	Asset_Set( move, MoveAssetID.PATH, path )
 
 	move:Start()
+
 	self._actors[actor] = move
 
 	Move_Debug( move, "moving" )
-	Stat_Add( "Move@Start", actor:ToString() .. " move from=" .. fromCity.name .. " to " .. toCity.name, StatType.LIST )	
+	--Stat_Add( "Move@Start", actor:ToString() .. " move from=" .. fromCity.name .. " to " .. toCity.name, StatType.LIST )	
 	--Debug_Log( actor:ToString( "LOCATION" ) .. " try to move from=" .. fromCity:ToString() .. " to " .. toCity:ToString() )
 
 	Move_MoveToNext( move )

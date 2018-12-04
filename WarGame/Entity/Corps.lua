@@ -105,7 +105,7 @@ function Corps:ToString( type )
 
 	local loc = Asset_Get( self, CorpsAssetID.LOCATION )
 	local enc = Asset_Get( self, CorpsAssetID.LOCATION )
-	content = content .. " @=" .. ( loc and loc:ToString() or "--" ) .."/" .. ( enc and enc:ToString() or "--" )
+	content = content .. " @" .. ( loc and loc:ToString() or "--" ) .."/" .. ( enc and enc:ToString() or "--" )
 
 	if type == "ALL" then
 		content = content .. " maxtrp=" .. Corps_GetTroopNumber( self )
@@ -256,8 +256,21 @@ function Corps:GetTask()
 	return Asset_GetDictItem( self, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK )	
 end
 
-function Corps:SetTask( task )
+function Corps:SetTask( task )	
+	local cur = self:GetTask()
+	if cur and not task then
+		Debug_Log( self:ToString(), "release task=" .. cur:ToString() )
+	end
+
+	if task then
+		Debug_Log( self:ToString(), "recv task=" .. task:ToString() )
+	end
+
 	Asset_SetDictItem( self, CorpsAssetID.STATUSES, CorpsStatus.IN_TASK, task )
+
+	Asset_Foreach( self, CorpsAssetID.OFFICER_LIST, function ( chara )
+		chara:SetTask( task )
+	end)
 end
 
 function Corps:IsAtHome()
@@ -294,7 +307,7 @@ function Corps:AddTroop( troop )
 
 	--add officer into list
 	local officer = Asset_Get( troop, TroopAssetID.OFFICER )
-	Asset_AppendList( self, CorpsAssetID.OFFICER_LIST, officer )
+	self:AddOfficer( officer )
 end
 
 function Corps:RemoveTroop( troop )
@@ -321,7 +334,7 @@ function Corps:RemoveTroop( troop )
 		function AssignToTroop( troop )
 			local officer = Asset_Get( troop, TroopAssetID.OFFICER )
 			if officer then
-				Asset_Set( troop, TroopAssetID.OFFICER_LIST, leader )
+				Asset_Set( troop, TroopAssetID.OFFICER, leader )
 				InputUtil_Pause( "set leader=" .. leader:ToString() .. " to empty-troop=" .. troop:ToString() )
 				return true
 			end
@@ -358,12 +371,19 @@ function Corps:LoseOfficer( officer )
 		--print( self:ToString() .. "lose leader=" .. chara.name, Asset_Get( self, CorpsAssetID.LEADER ) )
 	end
 	Asset_RemoveListItem( self, CorpsAssetID.OFFICER_LIST, officer )
-
+	officer:LeadCorps()
 	Debug_Log( officer:ToString(), "leave corps=" .. self:ToString() )
 end
 
 function Corps:AddOfficer( officer )
+	if not officer then return end
+	--sanity checker
+	if Asset_Get( officer, CharaAssetID.CORPS ) and Asset_Get( officer, CharaAssetID.CORPS ) ~= self then
+		error( officer:ToString("CORPS") .. " " .. self:ToString() )
+	end
 	Asset_AppendList( self, CorpsAssetID.OFFICER_LIST, officer )
+	officer:LeadCorps( self )
+	Debug_Log( self:ToString(), "add officer=", officer:ToString() )
 end
 
 function Corps:HasOfficer( officer )
@@ -400,9 +420,17 @@ end
 ---------------------------------------------
 
 function Corps:Update( ... )
+	--sanity checker
+	--a officer should belong to this corps
+	Asset_Foreach( self, CorpsAssetID.OFFICER_LIST, function ( chara )
+		if Asset_Get( chara, CharaAssetID.CORPS ) ~= self then
+			error( chara.id .. " " .. chara:ToString( "CORPS" ) .. " " .. self.name )
+		end
+	end)
+
 	local soldier, maxSoldier = self:GetSoldier()
 	--print( self:ToString(), maxSoldier, soldier )
-	self:SetStatus( CorpsStatus.UNDERSTAFFED, ( maxSoldier - soldier ) * 100 / maxSoldier )	
+	self:SetStatus( CorpsStatus.UNDERSTAFFED, math.max( 0, ( maxSoldier - soldier ) * 100 / maxSoldier )	)
 
 	--find new leader
 	local leader = Asset_Get( self, CorpsAssetID.LEADER )
@@ -432,6 +460,10 @@ end
 
 --about task
 function Corps:Todo()
+	if self:GetStatus( CorpsStatus.IN_COMBAT ) then
+		return
+	end
+
 	local task = self:GetTask()
 	if task then
 		Task_Update( task )
@@ -509,6 +541,11 @@ function Corps:Recalculate( ... )
 	end )
 end
 
+function Corps:EnterCombat( id )
+	self:SetStatus( CorpsStatus.IN_COMBAT, id )
+	--print( corps:ToString(), "join combat, move suspend", combat.id )
+end
+
 function Corps:LeaveCombat()
 	local id = self:GetStatus( CorpsStatus.IN_COMBAT )
 	self:SetStatus( CorpsStatus.IN_COMBAT )
@@ -518,4 +555,25 @@ function Corps:LeaveCombat()
 		if troop:LevelUp() then hasLevelup = true end
 	end)
 	if hasLevelup then self:Recalculate() end
+end
+
+-------------------------------------------
+
+function Corps:SoldierFled( ratio )
+	local removeList = {}
+	Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function ( troop )
+		local soldier     = Asset_Get( troop, TroopAssetID.SOLDIER )
+		local maxSoldier  = Asset_Get( troop, TroopAssetID.MAX_SOLDIER )
+		local fledSoldier = math.ceil( soldier * ratio )
+		local leftSoldier = soldier - fledSoldier
+		Asset_Set( troop, TroopAssetID.SOLDIER, leftSoldier )
+		if leftSoldier <= 0 then
+			table.insert( removeList, troop )
+		end
+		--print( self:ToString(), troop:ToString(), "fled soldier=" .. fledSoldier, soldier )
+	end )
+
+	for _, troop in ipairs( removeList ) do
+		self:RemoveTroop( troop )
+	end
 end

@@ -45,15 +45,9 @@ function City_GetVacancyJobs( city )
 		end
 	end
 	if Asset_GetListSize( city, CityAssetID.OFFICER_LIST ) > totalnum then
-		print( city.name, "has too much jobs", totalnum, Asset_GetListSize( city, CityAssetID.OFFICER_LIST ), #list )
-	end
-	if nil and city.id == 3 then
-		for _, job in pairs( list ) do
-			print( _, MathUtil_FindName( CityJob, job ) )
-		end
+		print( city.name, "has too much jobs", "tot=" .. totalnum, "ofi=" .. Asset_GetListSize( city, CityAssetID.OFFICER_LIST ), #list )
 		InputUtil_Pause( city:ToString(), "vacancy jobs" )
 	end
-	--default commander
 	return list
 end
 
@@ -243,7 +237,7 @@ end
 function City_Harvest( city )
 	if city:GetStatus( CityStatus.IN_SIEGE ) then
 		--no food, should food will reserved by the farmer?
-		--print( city:ToString(), "insige, cann't harvest")
+		--print( city:ToString(), "insige, can't harvest")
 		return
 	end
 
@@ -621,7 +615,11 @@ function City_Event( city )
 	--diss > security
 	Event_Trigger( city, EventType.CITY_EVENT )
 
-	Event_Trigger( city, EventType.DLG_EVENT )	
+	Event_Trigger( city, EventType.DLG_EVENT )
+
+	if city:GetStatus( CityStatus.STARVATION ) then
+		city:SoldierFled()
+	end
 end
 
 --------------------------------------
@@ -1076,10 +1074,5 @@ function CitySystem:Update()
 		end
 
 		city:Update()
-
-		City_IsBudgetSafe( city )
-	end )	
-	if month == 1 and day == 1 then
-		--InputUtil_Pause( g_Time:ToString() )
-	end
+	end )
 end

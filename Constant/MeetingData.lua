@@ -127,7 +127,6 @@ DefaultTaskSteps =
 	HIRE_CHARA      = { "EXECUTE", "FINISH", "REPLY" },
 	PROMOTE_CHARA   = { "FINISH", "REPLY" },
 	DISPATCH_CHARA  = { "PREPARE", "EXECUTE", "FINISH", },
-	CALL_CHARA      = { "PREPARE", "EXECUTE", "FINISH", },
 
 	RECONNOITRE     = { "EXECUTE", "FINISH", "REPLY" },
 	SABOTAGE        = { "EXECUTE", "FINISH", "REPLY" },

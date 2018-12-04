@@ -556,25 +556,30 @@ CombatPurposeParam =
 
 		SURRENDER = 
 		{
-			{ reason = "sr_despair",  is_surrounded = 1, prop_below = 25 },			
-			{ reason = "sr_guard",    is_guard = 1, casualty_above = 20, mor_below = 60, score = 100 },
+			{ reason = "sr_despair",  is_surrounded = 1, prop_below = 25 },	
+			{ reason = "sr_guard",    is_guard = 1, casualty_above = 30, mor_below = 30, org_below = 30, score = 100 },
+			{ reason = "sr_guard",    is_guard = 1, casualty_above = 30, mor_below = 30, org_below = 30, score = 100 },
 		},
 		WITHDRAW = 
 		{
 			{ reason = "protect_capital", is_capital = 1, score = -100 },
 			{ reason = "wd_hascombat", ctimes_above = 1, prerequsite = 1 },
 			{ reason = "wd_combatday", days_above = 30, prerequsite = 1 },
+			
 			{ reason = "wd_casualty1", casualty_above = 10, score = 15 },
 			{ reason = "wd_casualty2", casualty_above = 20, score = 20 },
 			{ reason = "wd_casualty3", casualty_above = 35, score = 30 },
 			{ reason = "wd_casualty3", casualty_above = 50, score = 50 },
 			{ reason = "wd_casualty3", casualty_above = 80, score = 70 },
-			{ reason = "wd_chaos1",    org_below = 50, score = 10 },
-			{ reason = "wd_chaos2",    org_below = 20, score = 10 },
-			{ reason = "wd_downcast1", mor_below = 60, score = 15 },
-			{ reason = "wd_downcast2", mor_below = 40, score = 15 },
+			
+			{ reason = "wd_chaos1",    org_below = 30, score = 10 },
+			
+			{ reason = "wd_downcast1", mor_below = 50, score = 10 },
+			{ reason = "wd_downcast2", mor_below = 30, score = 15 },
+			
 			{ reason = "wd_nofood1",  food_below = 20, is_atk = 1,   score = 80 },
 			{ reason = "wd_nofood2",  food_below = 30, is_field = 1, score = 60 },
+			
 			{ reason = "wd_danger1",   prop_below = 35, score = 10 },
 			{ reason = "wd_danger2",   prop_below = 25, score = 10 },
 			{ reason = "wd_danger3",   prop_below = 20, score = 20 },			
@@ -617,8 +622,7 @@ CombatPurposeParam =
 			{ reason = "wd_casualty3", casualty_above = 35, score = 30 },
 			{ reason = "wd_casualty3", casualty_above = 50, score = 50 },
 			{ reason = "wd_casualty3", casualty_above = 80, score = 70 },
-			{ reason = "wd_chaos1",    org_below = 50, score = 10 },
-			{ reason = "wd_chaos2",    org_below = 20, score = 10 },
+			{ reason = "wd_chaos1",    org_below = 30, score = 10 },
 			{ reason = "wd_downcast1", mor_below = 60, score = 15 },
 			{ reason = "wd_downcast2", mor_below = 40, score = 15 },
 			{ reason = "wd_nofood1",   food_below = 20, is_atk = 1,   score = 80 },
@@ -666,8 +670,7 @@ CombatPurposeParam =
 			{ reason = "wd_casualty3", casualty_above = 35, score = 30 },
 			{ reason = "wd_casualty3", casualty_above = 50, score = 50 },
 			{ reason = "wd_casualty3", casualty_above = 80, score = 70 },
-			{ reason = "wd_chaos1",    org_below = 50, score = 10 },
-			{ reason = "wd_chaos2",    org_below = 20, score = 10 },
+			{ reason = "wd_chaos1",    org_below = 30, score = 10 },
 			{ reason = "wd_downcast1", mor_below = 60, score = 15 },
 			{ reason = "wd_downcast2", mor_below = 40, score = 15 },
 			{ reason = "wd_nofood1",  food_below = 20, is_atk = 1,   score = 80 },

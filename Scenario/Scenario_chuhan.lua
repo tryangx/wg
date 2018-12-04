@@ -220,13 +220,11 @@ CHUHAN_CityData =
 	--3  --4--  5
 	-- \       /
 	--  6 --- 7
-	--[[
 	[1] = 
 	{
 		name = "XianYan",
 		coordinate = { x = 12, y = 6 },
-		--adjacents = { 2, 3 },
-		adjacents = { 3 },
+		adjacents = { 2, 3 },		
 		level = 14,
 
 		defenses = { 15000, 10000, 15000 },
@@ -236,26 +234,24 @@ CHUHAN_CityData =
 	{
 		name = "LinZi",
 		coordinate = { x = 24, y = 6 },
-		--adjacents = { 1, 5 },
-		adjacents = { 5 },
+		adjacents = { 1, 5 },
 		level = 14,
 
 		defenses = { 15000, 10000, 15000 },
 		constrs  = { 4000, },
 	},
-	]]
 	[3] = 
 	{
 		name = "GuanZhong",
 		coordinate = { x = 6, y = 12 },
-		--adjacents = { 1, 4, 6 },
-		adjacents = { 4 },
+		adjacents = { 1, 4, 6 },
 		level = 12,		
 		charas = { 100, 101, 102, 103, 104, 110 },
 
 		defenses = { 15000, 10000, 15000 },
 		constrs  = { 4000, },
 	},
+
 	[4] = 
 	{
 		name = "PengChen",
@@ -270,21 +266,18 @@ CHUHAN_CityData =
 	{
 		name = "KuaiJi",
 		coordinate = { x = 30, y = 12 },
-		--adjacents = { 2, 4, 7 },
-		adjacents = { 4 },
+		adjacents = { 2, 4, 7 },
 		level = 12,
 
 		charas = { 200, 201, 202, 203 },
 		defenses = { 15000, 10000, 15000 },
 		constrs  = { 4000, },
 	},
-	--[[
 	[6] = 
 	{
 		name = "JinZhou",
 		coordinate = { x = 12, y = 18 },
-		--adjacents = { 3, 7 },
-		adjacents = { 3 },
+		adjacents = { 3, 7 },
 		level = 12,
 
 		defenses = { 15000, 10000, 15000 },
@@ -294,14 +287,12 @@ CHUHAN_CityData =
 	{
 		name = "JiuJiang",
 		coordinate = { x = 24, y = 18 },
-		--adjacents = { 5, 6 },
-		adjacents = { 5 },
+		adjacents = { 5, 6 },
 		level = 10,
 
 		defenses = { 15000, 10000, 15000 },
 		constrs  = { 4000, },
 	},
-	]]
 }
 
 CHUHAN_GroupData =
@@ -410,6 +401,14 @@ CHUHAN_CorpsTemplate =
 --]]
 CHUHAN_EventData = 
 {
+	[100] = 
+	{
+		type    = "CITY_EVENT",
+		target  = "CITY",
+		name    = "starvation_soldier_fled",
+		trigger = {},
+		effect  = {  },
+	},
 	--[[
 	[100] = 
 	{

@@ -4,9 +4,9 @@ function Warfare_GetComat( plot )
 	return combat
 end
 
-local function Warfare_JoinCombat( combat, corps, side )
-	--print( corps:ToString(), "join combat, move suspend", combat.id )
+local function Warfare_JoinCombat( combat, corps, side )	
 	Move_Suspend( corps )
+	corps:EnterCombat( combat.id )	
 	combat:AddCorps( corps, side )
 end
 
@@ -219,9 +219,10 @@ function Warfare_UpdateCombat( combat )
 		end )
 		local oldGuard = city:GetPopu( CityPopu.GUARD )
 		city:SetPopu( CityPopu.GUARD, guard )
-		local oldReserves = city:GetPopu( CityPopu.GUARD )
+		
+		local oldReserves = city:GetPopu( CityPopu.RESERVES )
 		city:SetPopu( CityPopu.RESERVES, reserves )
-		--if reserves > 0 then InputUtil_Pause( "set guard, reserves", city.name, guard, oldGuard, reserves, oldReserves ) end
+
 		Stat_Add( "Guard@Lose", oldGuard - guard, StatType.ACCUMULATION )
 		Stat_Add( "Reserve@Lose", oldReserves - reserves, StatType.ACCUMULATION )
 
@@ -231,7 +232,7 @@ function Warfare_UpdateCombat( combat )
 		if winner == CombatSide.ATTACKER  then
 			local group = combat:GetGroup( winner )
 			if group then
-				print( "occupy", city:ToString(), group:ToString() )
+				print( "occupy", city:ToString(), group:ToString(), g_Time:ToString() )
 				Stat_Add( "City@Occupy", city:ToString() .. " occupied by " .. ( group and group:ToString() or "" ) .. " " .. g_Time:CreateCurrentDateDesc(), StatType.LIST )
 				Debug_Log( city:ToString() .. " occupied by " .. ( group and group:ToString() or "" ), g_Time:CreateCurrentDateDesc() )
 				group:OccupyCity( city )
@@ -379,7 +380,7 @@ local function Warfare_OnCombatEnded( msg )
 		--city:TrackData( true )
 	end
 
-	--print( "combat=" .. combat.id, "end", g_Time:ToString() )
+	print( "combat end=" .. combat:ToString(), g_Time:ToString() )
 
 	Stat_Add( "CombatDur@" .. combat.id, Asset_Get( combat, CombatAssetID.DAY ), StatType.VALUE )
 

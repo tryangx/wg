@@ -1,4 +1,3 @@
-
 StatType = 
 {
 	--DEST is just description, no else

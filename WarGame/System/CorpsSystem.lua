@@ -376,7 +376,7 @@ local function Corps_EstablishTroop( city, corps, numberOfReqTroop, soldierPerTr
 			return false
 		end
 		if City_HasTroopBudget( city, troopTable, soldierPerTroop ) ~= true then
-			InputUtil_Pause( "budget checker failed" )
+			print( city:ToString("ASSET"), "budget checker failed" )
 			return false
 		end
 
@@ -629,9 +629,11 @@ function Corps_Regroup( corps, list )
 			Asset_Foreach( otherCorps, CorpsAssetID.OFFICER_LIST, function ( officer )
 				--we'll move officer from troop to staff
 			end)
+
+			otherCorps:SetTask()
+
 			Asset_Clear( otherCorps, CorpsAssetID.TROOP_LIST )
 			Asset_Clear( otherCorps, CorpsAssetID.OFFICER_LIST )
-			otherCorps:SetTask()
 
 			Corps_Dismiss( otherCorps )
 		end
@@ -664,12 +666,17 @@ end
 
 function CorpsSystem:Update()
 	Entity_Foreach( EntityType.CORPS, function( corps )
-		corps:Update()
-
+		if corps:GetStatus( CorpsStatus.DISMISSED ) then return end
+		
+		corps:Update()		
 		corps:Todo()
 
+		if corps:GetStatus( CorpsStatus.DISMISSED ) then return end
 		--sanity checker
 		local encampment = Asset_Get( corps, CorpsAssetID.ENCAMPMENT )
+		if not encampment or not corps then
+			print( encampment and encampment:ToString() or "nil", corps and corps:ToString("ALL") or "nil" )
+		end
 		if Asset_Get( encampment, CityAssetID.GROUP ) ~= Asset_Get( corps, CorpsAssetID.GROUP ) then
 			DBG_Error( "why here?", corps:ToString("ALL"), encampment:ToString() )
 		end

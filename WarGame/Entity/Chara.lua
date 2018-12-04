@@ -281,15 +281,16 @@ function Chara:GetTask()
 end
 
 function Chara:SetTask( task )	
-	if task and self:GetTask() then error( "already in task" .. self:ToString("TASK") ) end
-
 	if task then
-		Debug_Log( self:ToString(), "recv taks=" .. task:ToString() )
+		Debug_Log( self:ToString(), "recv task=" .. task:ToString() )
 	elseif self:GetTask() then
-		Debug_Log( self:ToString(), "oldtask=" .. self:GetTask():ToString() )
+		Debug_Log( self:ToString(), "release task=" .. self:GetTask():ToString() )
 	end
-
+	
 	Asset_SetDictItem( self, CharaAssetID.STATUSES, CharaStatus.IN_TASK, task )
+
+	local cur = self:GetTask()
+	if cur and not task then Debug_Log( self:ToString(), "release task=" .. cur:ToString() ) end
 end
 
 function Chara:GetTrait( traitType )
@@ -581,12 +582,23 @@ function Chara:Captured()
 	if corps then
 		corps:LoseOfficer( self )
 	end
+
+	--release task
+	Task_Terminate( self:GetTask(), self )
 end
 
 --decide what to do with task
 function Chara:Todo()
+	local corps = Asset_Get( self, CharaAssetID.CORPS )
+	if corps and corps:GetStatus( CorpsStatus.IN_COMBAT ) then
+		return
+	end
+
 	local task = self:GetTask()
 	if task then
+		if Asset_Get( task, TaskAssetID.STATUS ) == TaskStatus.END then
+			print( self.name, Asset_Get( task, TaskAssetID.ACTOR ).name )
+		end
 		Task_Update( task )
 		return
 	end
@@ -596,7 +608,7 @@ function Chara:Todo()
 		if not Move_IsMoving( self ) then
 			local home = Asset_Get( self, CharaAssetID.HOME )
 			if home then
-				InputUtil_Pause( self:ToString(), "go back home=", home )
+				--print( self:ToString(), "go back home=", home:ToString() )
 				Move_Chara( self, home )
 			end
 		end

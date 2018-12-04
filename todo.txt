@@ -108,9 +108,18 @@ when proposer is mayor should find the fit actor for the task
 
 disaster event
 
+
+
 ------------------------------------------------
 
 [Concept]
+
+Task
+    
+
+Command
+    CallChara -> Move
+    Occupy -> 
 
 Influence & Reputation
     Influence 
@@ -180,4 +189,10 @@ Short Goal
 
 char died, but he charge multi task
 
-same seed, divergence
+
+------------------------------------------------
+
+[Ref]
+管子·轻重甲》说：“一农之事，终岁耕百亩，百亩之收，不过二十锺。”这是说亩产粟0.2
+锺，1锺等于10釜，1釜也就是1石。因此，0.2锺也就是亩产粟2石
+汉代，亩产四石，一百二十市斤为一石。稻谷的亩产量即为480斤。

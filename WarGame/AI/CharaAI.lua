@@ -46,7 +46,7 @@ local function PassProposal()
 end
 
 local function CheckProposer( params )
-	local actor = _proposer--_registers["ACTOR"] or _actor
+	local actor = _proposer
 
 	--check the action point
 	local datas = Scenario_GetData( "TASK_ACTION_DATA" )
@@ -83,13 +83,19 @@ local function CostActorAP( actor, type )
 end
 
 local function SubmitProposal( params )
+	local proptype = params and params.type
+
+	if _registers["PROPOSAL"] then
+		proptype = _registers["PROPOSAL"]
+	end
+
 	--check actor
 	if _registers["ACTOR"] then
 		_actor = _registers["ACTOR"]
 	end
 
 	local proposal = Entity_New( EntityType.PROPOSAL )
-	Asset_Set( proposal, ProposalAssetID.TYPE,        ProposalType[params.type] )
+	Asset_Set( proposal, ProposalAssetID.TYPE,        ProposalType[proptype] )
 	Asset_Set( proposal, ProposalAssetID.PROPOSER,    _proposer )	
 	Asset_Set( proposal, ProposalAssetID.LOCATION,    _city )
 	Asset_Set( proposal, ProposalAssetID.DESTINATION, _city )
@@ -100,109 +106,109 @@ local function SubmitProposal( params )
 		DBG_Error( _actor:ToString(), "already has task" )
 	end
 	
-	if params.type == "ATTACK_CITY" then		
+	if proptype == "ATTACK_CITY" then		
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "corps_list", _registers["ATTACK_CORPS"] )
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
 		Debug_Log( "attack", _registers["TARGET_CITY"]:ToString() )
 	
-	elseif params.type == "HARASS_CITY" then
+	elseif proptype == "HARASS_CITY" then
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
 	
-	elseif params.type == "INTERCEPT" then
+	elseif proptype == "INTERCEPT" then
 		local enemyCorps = _registers["TARGET_CORPS"]
 		local city = Asset_Get( enemyCorps, CorpsAssetID.LOCATION )
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, city )
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "TARGET_CORPS", enemyCorps )
 	
-	elseif params.type == "DISPATCH_CORPS" then
+	elseif proptype == "DISPATCH_CORPS" then
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "corps", _registers["CORPS"] )
 
-	elseif params.type == "ESTABLISH_CORPS" then
+	elseif proptype == "ESTABLISH_CORPS" then
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.ESTABLISH_CORPS )
 
-	elseif params.type == "LEAD_CORPS" then
+	elseif proptype == "LEAD_CORPS" then
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "leader", _registers["LEADER"] )
 
-	elseif params.type == "DISMISS_CORPS"
-		or params.type == "TRAIN_CORPS"
-		or params.type == "UPGRADE_CORPS"
+	elseif proptype == "DISMISS_CORPS"
+		or proptype == "TRAIN_CORPS"
+		or proptype == "UPGRADE_CORPS"
 		then
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "corps", _registers["CORPS"] )
 
-	elseif params.type == "REGROUP_CORPS" then
+	elseif proptype == "REGROUP_CORPS" then
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "corps_list", _registers["CORPS_LIST"] )		
 
-	elseif params.type == "REINFORCE_CORPS"
-		or params.type == "ENROLL_CORPS" then
+	elseif proptype == "REINFORCE_CORPS"
+		or proptype == "ENROLL_CORPS" then
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "corps", _registers["CORPS"] )
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.COMMANDER_TASK )
 	
-	elseif params.type == "RECRUIT"
-		or params.type == "CONSCRIPT" 
-		or params.type == "HIRE_GUARD" then
+	elseif proptype == "RECRUIT"
+		or proptype == "CONSCRIPT" 
+		or proptype == "HIRE_GUARD" then
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.COMMANDER_TASK )
 
-	elseif params.type == "PROMOTE_CHARA" then
+	elseif proptype == "PROMOTE_CHARA" then
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "title", _registers["TITLE"] )
 	
-	elseif params.type == "HIRE_CHARA" then
+	elseif proptype == "HIRE_CHARA" then
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.HR_TASK )
 	
-	elseif params.type == "DISPATCH_CHARA" then
+	elseif proptype == "DISPATCH_CHARA" then
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
 	
-	elseif params.type == "CALL_CHARA" then		
+	elseif proptype == "CALL_CHARA" then		
 		Asset_Set( proposal, ProposalAssetID.LOCATION, _registers["TARGET_CITY"] )
 	
-	elseif params.type == "MOVE_CAPITAL" then
+	elseif proptype == "MOVE_CAPITAL" then
 		Asset_Set( proposal, ProposalAssetID.LOCATION, _registers["TARGET_CITY"] )
 	
-	elseif params.type == "DEV_AGRICULTURE" or params.type == "DEV_COMMERCE" or params.type == "DEV_PRODUCTION" 
-		or params.type == "LEVY_TAX"
-		or params.type == "BUY_FOOD"
-		or params.type == "SELL_FOOD"
+	elseif proptype == "DEV_AGRICULTURE" or proptype == "DEV_COMMERCE" or proptype == "DEV_PRODUCTION" 
+		or proptype == "LEVY_TAX"
+		or proptype == "BUY_FOOD"
+		or proptype == "SELL_FOOD"
 		then
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.OFFICIAL_TASK )
 	
-	elseif params.type == "BUILD_CITY"
+	elseif proptype == "BUILD_CITY"
 		then
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "construction", _registers["CONSTRUCTION"] )
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.BUILD_CITY )
 
-	elseif params.type == "TRANSPORT" then
+	elseif proptype == "TRANSPORT" then
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.TRANSPORT )
 
-	elseif params.type == "RECONNOITRE" 
-		or params.type == "SABOTAGE"
-		or params.type == "DESTROY_DEF"
+	elseif proptype == "RECONNOITRE" 
+		or proptype == "SABOTAGE"
+		or proptype == "DESTROY_DEF"
 		then
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
 
-	elseif params.type == "ASSASSINATE" then
+	elseif proptype == "ASSASSINATE" then
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, _registers["TARGET_CITY"] )
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "chara", _registers["TARGET_CHARA"] )
 
-	elseif params.type == "RESEARCH" then
+	elseif proptype == "RESEARCH" then
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "tech", _registers["TARGET_TECH"] )
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.RESEARCH )
 
-	elseif params.type == "IMPROVE_RELATION"	
-		or params.type == "DECLARE_WAR"
+	elseif proptype == "IMPROVE_RELATION"	
+		or proptype == "DECLARE_WAR"
 		then
 		local oppGroup = _registers["TARGET_GROUP"]
 		local capital  = Asset_Get( oppGroup, GroupAssetID.CAPITAL )
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, capital )
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "group", oppGroup )
-		if params.type == "IMPROVE_RELATION" then
+		if proptype == "IMPROVE_RELATION" then
 			Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.IMPROVE_RELATION )
-		elseif params.type == "DECLARE_WAR" then
+		elseif proptype == "DECLARE_WAR" then
 			Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.DECLARE_WAR )
 		end		
 
-	elseif params.type == "SIGN_PACT" then
+	elseif proptype == "SIGN_PACT" then
 		local oppGroup = _registers["TARGET_GROUP"]
 		local capital  = Asset_Get( oppGroup, GroupAssetID.CAPITAL )
 		Asset_Set( proposal, ProposalAssetID.DESTINATION, capital )
@@ -211,23 +217,23 @@ local function SubmitProposal( params )
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "group", oppGroup )
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "plan", TaskType.DIPLOMATIC_TASK )
 
-	elseif params.type == "SET_GOAL" then
+	elseif proptype == "SET_GOAL" then
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "goalType", _registers["GOALTYPE"] )
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "goalData", _registers["GOALDATA"] )
 
-	elseif params.type == "INSTRUCT_CITY" then
+	elseif proptype == "INSTRUCT_CITY" then
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "instructCityList", _registers["INSTRUCT_CITY_LIST"] )		
 
-	elseif params.type == "IMPROVE_GRADE" then
+	elseif proptype == "IMPROVE_GRADE" then
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "grade", _registers["grade"] )	
 		InputUtil_Pause("improve grade")
 
-	elseif params.type == "TRAIN_CORPS" then
+	elseif proptype == "TRAIN_CORPS" then
 
-	elseif params.type == "" then
+	elseif proptype == "" then
 	end
 
-	CostActorAP( _proposer, params.type )
+	CostActorAP( _proposer, proptype )
 
 	DBG_Watch( "Debug_Meeting", "submit proposal=" .. proposal:ToString() )
 
@@ -490,7 +496,7 @@ local function CanReinforceCorps()
 		if corps:IsAtHome() == false then return false end
 		if corps:IsBusy() == true then return false end
 		local understaffed = math.floor( corps:GetStatus( CorpsStatus.UNDERSTAFFED ) ) or 0
-		if understaffed == 0 then return false end
+		if understaffed <= 0 then return false end
 		--print( "staff", corps:ToString(), understaffed )
 		totalnum = totalnum + understaffed
 		table.insert( corpsList, { num = understaffed, corps = corps } )
@@ -507,9 +513,7 @@ local function CanReinforceCorps()
 		prob = prob - data.num
 	end
 
-	if not findCorps then	
-		DBG_Error( "why here" )
-	end
+	if not findCorps then DBG_Error( "why here", totalnum, prob ) end
 
 	_registers["CORPS"] = findCorps
 	_registers["ACTOR"] = findCorps
@@ -682,7 +686,9 @@ local function CheckEnemyCity( adjaCity, city, params )
 	end
 
 	--target city has debuff
-	if adjaCity:GetStatus( CityStatus.STARVATION ) then score = score + 50 end
+	if adjaCity:GetStatus( CityStatus.STARVATION ) then
+		score = score + 50
+	end
 
 	--check intel
 	local citySoldier = Intel_Get( adjaCity, city, CityIntelType.DEFENDER )
@@ -760,11 +766,11 @@ local function CanHarassCity()
 	local number = #cities
 	if number == 0 then return false end
 
-	local destcity = cities[Random_GetInt_Sync( 1, number )]
+	local destCity = cities[Random_GetInt_Sync( 1, number )]
 	_registers["ACTOR"] = corps
-	_registers["TARGET_CITY"] = destcity
+	_registers["TARGET_CITY"] = destCity
 
-	Debug_Log( corps:ToString(), "[harass]", destcity.name )
+	Debug_Log( corps:ToString(), "[harass]", destCity.name )
 
 	return true
 end
@@ -792,15 +798,15 @@ local function CanAttackCity()
 	end
 
 	local corps = list[Random_GetInt_Sync( 1, #list )]
-	local destcity = cities[Random_GetInt_Sync( 1, number )]
+	local destCity = cities[Random_GetInt_Sync( 1, number )]
 
-	Debug_Log( "CombatCompare", corps:ToString( "MILITARY" ), destcity:ToString( "MILITARY" ) )
+	Debug_Log( "CombatCompare", corps:ToString( "MILITARY" ), destCity:ToString( "MILITARY" ) )
 
 	_registers["ACTOR"] = corps
-	_registers["TARGET_CITY"] = destcity
+	_registers["TARGET_CITY"] = destCity
 	_registers["ATTACK_CORPS"] = list
 
-	--InputUtil_Pause( "attack", destcity.name, #list, corps:ToString("MILITARY"),soldier )
+	--InputUtil_Pause( "attack", destCity.name, #list, corps:ToString("MILITARY"),soldier )
 
 	return true
 end
@@ -820,24 +826,24 @@ local function CanExpedition()
 		return false
 	end
 
-	local destcity = goal.city
-	if not _city:IsEnemeyCity( destcity ) then
+	local destCity = goal.city
+	if not _city:IsEnemeyCity( destCity ) then
 		return false
 	end
 
 	local corps = list[Random_GetInt_Sync( 1, #list )]
 
-	if not CheckEnemyCity( destcity, _city, { goal = goal, scores = canAttackScores, corps = corps } ) then
+	if not CheckEnemyCity( destCity, _city, { goal = goal, scores = canAttackScores, corps = corps } ) then
 		return false
 	end	
 
-	Debug_Log( "CombatCompare", corps:ToString( "MILITARY" ), destcity:ToString( "MILITARY" ) )--, "enemy=" .. Intel_Get( destcity, _city, CityIntelType.DEFENDER ) )
+	Debug_Log( "CombatCompare", corps:ToString( "MILITARY" ), destCity:ToString( "MILITARY" ) )--, "enemy=" .. Intel_Get( destCity, _city, CityIntelType.DEFENDER ) )
 
 	_registers["ACTOR"] = corps
-	_registers["TARGET_CITY"] = destcity
+	_registers["TARGET_CITY"] = destCity
 	_registers["ATTACK_CORPS"] = list
 
-	Debug_Log( "expedition", destcity.name, #list, corps:ToString("MILITARY"),soldier )
+	Debug_Log( "expedition", destCity.name, #list, corps:ToString("MILITARY"),soldier )
 
 	return true
 end
@@ -851,11 +857,11 @@ local function CanIntercept()
 	end
 
 	local target = Asset_Get( _meeting, MeetingAssetID.TARGET )
-	local destcity = Asset_Get( target, CorpsAssetID.LOCATION )
+	local destCity = Asset_Get( target, CorpsAssetID.LOCATION )
 	local corps = list[Random_GetInt_Sync( 1, #list )]
 
 	--check food
-	if Supply_HasEnoughFoodForCorps( _city, destcity, corps ) == false then
+	if Supply_HasEnoughFoodForCorps( _city, destCity, corps ) == false then
 		return false
 	end
 
@@ -865,11 +871,11 @@ local function CanIntercept()
 	end
 
 	--print( target:ToString() )
-	--InputUtil_Pause( "intercept", _city:ToString(), destcity.name )
+	--InputUtil_Pause( "intercept", _city:ToString(), destCity.name )
 
 	_registers["ACTOR"]  = corps
 	_registers["TARGET_CORPS"] = target
-	_registers["TARGET_CITY"]  = destcity	
+	_registers["TARGET_CITY"]  = destCity	
 
 	return true
 end
@@ -967,11 +973,6 @@ local function NeedMoreReserves()
 		--Debug_Log( _city:ToString( "STATUS" ) )
 		Debug_Log( g_Time:ToString(), _city.name, "failed reserve " .. item.score .. "->" .. score, "needsol=" .. reserves .. "/" .. needSoldier )
 		return false
-	end
-
-	--starve check
-	if _city:GetStatus( CityStatus.STARVATION ) then
-		--InputUtil_Pause( _city.name, "is starvation" )		
 	end
 
 	Debug_Log( g_Time:ToString(), _city.name, "need reserve score=" .. score )
@@ -1317,7 +1318,7 @@ local function CanTransport()
 
 	--has enough corvee to do this job
 	if _city:GetPopu( CityPopu.CORVEE ) < Scenario_GetData( "TROOP_PARAMS" ).MIN_TROOP_SOLDIER then		
-		--print( "not enough corvee")
+		print( "not enough corvee")
 		return false
 	end
 
@@ -1382,7 +1383,9 @@ local function CanDispatchChara()
 	--only disptch chara from capital( for extension, we can dispatch chara from vassal's capital )
 	if _city:IsCapital() == false then return false end
 
-	local charaList = _city:FindNonOfficerFreeCharas()
+	local charaList = _city:FindNonOfficerFreeCharas( nil, function ( chara )
+		if Asset_Get( chara, CharaAssetID.CORPS ) then return false end
+	end)
 	if #charaList == 0 then return false end
 
 	local cityList = _group:GetVacancyCityList( _city )
@@ -1397,6 +1400,7 @@ local function CanDispatchChara()
 
 	if Asset_Get( chara, CharaAssetID.LOCATION ) == city then DBG_Error( "why here" ) end
 
+	if Asset_Get( chara, CharaAssetID.CORPS ) then error( "why") end
 	--InputUtil_Pause( "dispatch", _city:ToString( "OFFICER"), chara.name )
 
 	return true
@@ -1476,26 +1480,32 @@ local function CanCharaBack2Capital()
 	return true
 end
 
-local function CanCallChara()
+function CanCallChara()
 	local destCity = _city
 
 	--only call chara to capital
-	if destCity:IsCapital() == false then return false end
+	if destCity:IsCapital() == false then
+		return false
+	end
 
+	--check
 	local numOfChara = Asset_GetListSize( _city, CityAssetID.CHARA_LIST )
 	if numOfChara > Chara_GetReqNumOfOfficer( _city ) then
-	--if numOfChara > _city:GetNumOfOfficerSlot() + _city:GetNumOfOfficerSlot() then
-		--has enough chara
 		return false
 	end
 
 	--find city which can dispatch chara to the capital
-	local charaList = {}	
+	local charaList = {}
 	Asset_Foreach( _group, GroupAssetID.CITY_LIST, function ( city )
 		if city == destCity then return end
 		local num = Asset_GetListSize( city, CityAssetID.OFFICER_LIST )
 		if num > city:GetNumOfOfficerSlot() then
-			charaList = city:FindNonOfficerFreeCharas( charaList )
+			charaList = city:FindNonOfficerFreeCharas( charaList, function ( chara )
+				--no cmd
+				if Cmd_Query( chara ) then return false end
+				--no corps
+				if Asset_Get( chara, CharaAssetID.CORPS ) then return false end
+			end )
 		end
 	end)
 
@@ -1504,12 +1514,14 @@ local function CanCallChara()
 	end
 
 	local chara = Random_GetListItem( charaList )
-	local city = Asset_Get( chara, CharaAssetID.HOME )
-
+	
 	--sanity check
-	if Asset_Get( chara, CharaAssetID.LOCATION ) == city then DBG_Error( "why here" ) end
+	if Asset_Get( chara, CharaAssetID.LOCATION ) == destCity then
+		--for _, chara in ipairs( charaList ) do print( chara.name, Asset_Get( chara, CharaAssetID.LOCATION ):ToString() ) end
+		DBG_Error( "why here", city:ToString() )
+	end
 
-	_registers["TARGET_CITY"] = city
+	_registers["TARGET_CITY"] = destCity
 	_registers["ACTOR"]       = chara
 
 	return true
@@ -1704,9 +1716,11 @@ local function CanAssassinate()
 		--if spy.grade < CitySpyParams.REQ_GRADE then return end
 		Asset_Foreach( spy.city, CityAssetID.CHARA_LIST, function ( chara )
 			local lv = Asset_Get( chara, CharaAssetID.LEVEL )
-			if curLv > lv then
-				table.insert( list, { city = spy.city, target = chara } )
-			end
+			--level
+			if curLv <= lv then return end
+			--nojob
+			if spy.city:GetCharaJob( chara ) ~= CityJob.NONE then return end			
+			table.insert( list, { city = spy.city, target = chara } )
 		end)
 	end )
 	if #list == 0 then return false end
@@ -2361,7 +2375,7 @@ local _SubmitHRProposal =
 						{ type = "FILTER", condition = CanCallChara },
 						{ type = "ACTION", action = SubmitProposal, params = { type = "CALL_CHARA" } },
 					},
-				},	
+				},
 				{ type = "SEQUENCE", children = 
 					{
 						{ type = "FILTER", condition = CheckProposer, params = { type = "DISPATCH_CHARA" } },
@@ -2638,6 +2652,40 @@ local _GoalProposal =
 	},
 }
 
+local function CheckCommand()
+	if not _city:IsCharaOfficer( CityJob.EXECUTIVE, _proposer ) then return false end
+
+	local findChara = Asset_FindItem( _city, CityAssetID.CHARA_LIST, function ( chara )
+		if chara:IsBusy() then return end
+
+		local cmd = Cmd_Query( chara )
+		if not cmd then return end
+
+		if cmd.type == "MOVE_TO_CITY" then
+			if Asset_Get( chara, CharaAssetID.CORPS ) then return end
+			if not CheckProposer( { type = "DISPATCH_CHARA" } ) then return end
+			_registers["TARGET_CITY"] = cmd.city
+			_registers["ACTOR"]       = chara
+			_registers["PROPOSAL"]    = "DISPATCH_CHARA"
+			--print("execute cmd", g_Time:ToString(), chara:ToString("LOCATION"), cmd.city:ToString(), cmd.type )
+			return true
+		
+		--elseif cmd.type == "" then
+		end
+	end )
+	return findChara ~= nil
+end
+
+local _CommandProposal =
+{
+	type = "SEQUENCE", children = 
+	{
+		{ type = "FILTER", condition = IsTopic, params = { topic = "COMMAND" } },
+		{ type = "FILTER", condition = CheckCommand },
+		{ type = "ACTION", action = SubmitProposal },
+	},
+}
+
 local _PriorityProposals = 
 {
 	type = "SELECTOR", children = 
@@ -2772,9 +2820,10 @@ local _MeetingProposal =
 	{
 		_QualificationChecker,
 		_UnderAttackProposal,
-		_GoalProposal,
+		--_GoalProposal,
 		_CapitalProposal,
 
+		_CommandProposal,
 		--_PriorityProposals,
 
 		--Test

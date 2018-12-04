@@ -1,13 +1,7 @@
 ----------------------------------------------
 -- City population structure
 --
--- Feature:
 --
--- Abbreviate
---
--- AGRI * 100 -> POPULATION
--- AGRI * 65  -> FARMER
--- FARMER * 2 -> FOOD 
 --
 
 CityParams = 
@@ -250,13 +244,13 @@ DefaultCityJobParams =
 {
 	SEQUENCE = 
 	{
-		--first line
+		--minimum+5
 		{ job = "COMMANDER" },
 		{ job = "HR" },
 		{ job = "OFFICIAL" },
 		{ job = "STAFF" },
 		
-		--capital
+		--capital+5
 		{ job = "DIPLOMATIC", capital = 1 },
 		{ job = "COMMANDER",  capital = 1 },
 		{ job = "HR",         capital = 1 },
@@ -274,10 +268,10 @@ DefaultCityJobParams =
 		--construction
 		{ job = "DIPLOMATIC", capital = 1, has_constr_eff = "DIPLOMAT_SLOT",   },
 		{ job = "TECHNICIAN", capital = 1, has_constr_eff = "TECHNICIAN_SLOT", },
-		{ job = "HR",         capital = 1, has_constr_eff = "HR_SLOT",         },
-		{ job = "OFFICIAL",   capital = 1, has_constr_eff = "OFFICIAL_SLOT",   },
-		{ job = "STAFF",      capital = 1, has_constr_eff = "STAFF_SLOT",      },
-		{ job = "COMMANDER",  capital = 1, has_constr_eff = "COMMANDER_SLOT",  },
+		{ job = "HR",         has_constr_eff = "HR_SLOT",         },
+		{ job = "OFFICIAL",   has_constr_eff = "OFFICIAL_SLOT",   },
+		{ job = "STAFF",      has_constr_eff = "STAFF_SLOT",      },
+		{ job = "COMMANDER",  has_constr_eff = "COMMANDER_SLOT",  },
 
 		--[[
 		--battlefront

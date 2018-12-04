@@ -27,6 +27,17 @@ local function Proposal_Execute( proposal )
 			City_Instruct( item.city, item.type )
 		end
 		return
+
+	elseif type == ProposalType.CALL_CHARA then
+		local actor = Asset_Get( proposal, ProposalAssetID.ACTOR )		
+		local dest  = Asset_Get( proposal, ProposalAssetID.LOCATION )
+		local loc   = Asset_Get( actor, CharaAssetID.LOCATION )
+		local group = Asset_Get( actor, CharaAssetID.GROUP )
+		local dur   = Move_CalcIntelTransDuration( group, loc, dest )
+		Cmd_MoveToCity( actor, dest, { dur = dur } )
+		--print( "add cmd", actor:ToString(), loc:ToString(), dest:ToString() )
+		return
+
 	end
 
 	--print( "issue", proposal:ToString() )
