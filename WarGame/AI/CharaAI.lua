@@ -222,11 +222,17 @@ local function SubmitProposal( params )
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "goalData", _registers["GOALDATA"] )
 
 	elseif proptype == "INSTRUCT_CITY" then
+		for _, item in pairs( _registers["INSTRUCT_CITY_LIST"] ) do
+			if not item.city then
+				for _, item1 in pairs( _registers["INSTRUCT_CITY_LIST"] ) do
+					print( item1.city:ToString() )
+				end
+			end
+		end
 		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "instructCityList", _registers["INSTRUCT_CITY_LIST"] )		
 
 	elseif proptype == "IMPROVE_GRADE" then
-		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "grade", _registers["grade"] )	
-		InputUtil_Pause("improve grade")
+		Asset_SetDictItem( proposal, ProposalAssetID.PARAMS, "grade", _registers["grade"] )
 
 	elseif proptype == "TRAIN_CORPS" then
 
@@ -254,7 +260,7 @@ local function CheckDate( params )
 		if params.month ~= g_Time:GetMonth() then return false end
 	end
 	if params.day then
-		if params.day ~= g_Time:GetMonth() then return false end
+		if params.day ~= g_Time:GetDay() then return false end
 	end
 	return true
 end
@@ -299,12 +305,13 @@ end
 local function HasGroupGoal( params )
 	if not _group then return false end
 	local goalData = _group:GetGoal( GroupGoalType[params.goal] )	
+	if not goalData then return false end
 	if params.excludeCity then
-		return goalData ~= nil
+		if goalData.city == _city then return false end
 	end
 	--print( params.goal, _group:ToString( "GOAL" ), goalData, goalData.city )
-	if not goalData then return false end
-	return not goalData.city or goalData.city == city
+	local ret = goalData.city ~= nil or goalData.city == city
+	return ret
 end
 
 local function QueryJob( topic )
@@ -697,7 +704,8 @@ local function CheckEnemyCity( adjaCity, city, params )
 		return false
 	end
 	if citySoldier == 0 then
-		error( adjaCity.name, "no soldier")
+		print( adjaCity:ToString("MILITARY"), "no soldier")
+		return true
 	end
 
 	--skill bonus
@@ -782,11 +790,9 @@ local function CanAttackCity()
 		local numofcorps = Asset_GetListSize( _city, CityAssetID.CORPS_LIST )
 		--Debug_Log( _city:ToString("CORPS") )
 		--Debug_Log( _city.name, "has corps=" .. numofcorps )		
-		if _city.id == 4 and Asset_Get( _city, CityAssetID.GROUP ).id == 2 then Debug_Log( "can attack", _city:ToString(), g_Time:ToString() ) end
+		--print( "can attack", _city:ToString(), g_Time:ToString() )
 		return false
 	end
-
-	Debug_Log( "canattack self=", _city:ToString("MILITARY"), "SOL="..max_soldier.."/"..tot_soldier, "corps_num=" .. #list )
 
 	local goal = _group:GetGoal( GroupGoalType.OCCUPY_CITY )
 	local cities = FindEnemyCityList( _city, { soldier = tot_soldier, goal = goal, scores = enemyCityScores, corpsList = list } )
@@ -796,6 +802,8 @@ local function CanAttackCity()
 		--print( "no enemy city" )
 		return false
 	end
+
+	Debug_Log( "canattack self=", _city:ToString("MILITARY"), "SOL="..max_soldier.."/"..tot_soldier, "corps_num=" .. #list )
 
 	local corps = list[Random_GetInt_Sync( 1, #list )]
 	local destCity = cities[Random_GetInt_Sync( 1, number )]
@@ -1088,7 +1096,7 @@ local function CanEnhanceMilitaryBase()
 
 	--print( _city:ToString("STATUS"), _city:ToString("CORPS") )
 	--print( destCity:ToString("STATUS"), destCity:ToString("CORPS") )
-	InputUtil_Pause( "dispatch", corps:ToString(), "to=" .. destCity:ToString(), "from=" .. _city.name .. "+" .. numOfCorps )
+	--InputUtil_Pause( "dispatch", corps:ToString(), "to=" .. destCity:ToString(), "from=" .. _city.name )
 end
 
 local function CanReinforceAdvancedBase()
@@ -1318,22 +1326,32 @@ local function CanTransport()
 
 	--has enough corvee to do this job
 	if _city:GetPopu( CityPopu.CORVEE ) < Scenario_GetData( "TROOP_PARAMS" ).MIN_TROOP_SOLDIER then		
-		print( "not enough corvee")
+		print( _city.name, "not enough corvee")
 		return false
 	end
 
 	--has enough food/moeny for self
 	if _city:GetStatus( CityStatus.BUDGET_DANGER ) then
-		--print( "budget danger")
+		print( _city:ToString("ASSET"), "budget danger")
 		return false
 	end
+
+	if not _city:GetStatus( CityStatus.PRODUCTION_BASE ) then		
+		--print( _city.name, "no production")
+		return false
+	end
+
+	--print( "2 trans" )
 
 	--find advanced base
 	local cityList = {}
 	Asset_Foreach( _group, GroupAssetID.CITY_LIST, function ( city )
-		if _city ~= city and city:GetStatus( CityStatus.ADVANCED_BASE ) then
-			table.insert( cityList, city )
+		if _city == city then return end
+		if not city:GetStatus( CityStatus.ADVANCED_BASE ) 
+			and city:GetStatus( CityStatus.BATTLEFRONT ) then
+			return
 		end
+		table.insert( cityList, city )
 	end )
 
 	if #cityList <= 0 then
@@ -1383,10 +1401,10 @@ local function CanDispatchChara()
 	--only disptch chara from capital( for extension, we can dispatch chara from vassal's capital )
 	if _city:IsCapital() == false then return false end
 
-	local charaList = _city:FindNonOfficerFreeCharas( nil, function ( chara )
-		if Asset_Get( chara, CharaAssetID.CORPS ) then return false end
-	end)
+	local charaList = _city:FindNonOfficerFreeCharas()
 	if #charaList == 0 then return false end
+
+	--print( _city.name, "check disp chara", g_Time:ToString(), "city=" .. Asset_GetListSize( _group, GroupAssetID.CITY_LIST ) )
 
 	local cityList = _group:GetVacancyCityList( _city )
 	if #cityList == 0 then	return false end
@@ -1401,7 +1419,7 @@ local function CanDispatchChara()
 	if Asset_Get( chara, CharaAssetID.LOCATION ) == city then DBG_Error( "why here" ) end
 
 	if Asset_Get( chara, CharaAssetID.CORPS ) then error( "why") end
-	--InputUtil_Pause( "dispatch", _city:ToString( "OFFICER"), chara.name )
+	--if city.id == 2 then InputUtil_Pause( "dispatch2city", _city:ToString("CHARAS"), city:ToString("CHARAS"), chara.name ) end
 
 	return true
 end
@@ -1650,6 +1668,8 @@ local function CanSabotage()
 	
 	if goal then
 		destCity = goal.city
+		if destCity == _city then return false end
+
 	else
 		local list = {}
 		Asset_Foreach( _city, CityAssetID.SPY_LIST, function( spy )
@@ -1676,6 +1696,8 @@ local function CanDestoryDefensive()
 	
 	if goal then
 		destCity = goal.city
+		if destCity == _city then return false end	
+
 	else
 		local list = {}
 		Asset_Foreach( _city, CityAssetID.SPY_LIST, function( spy )
@@ -1779,7 +1801,7 @@ local function DetermineEnhanceGoal( ... )
 
 		else
 			table.insert( baseList, { city = city, type = nil } )
-		end
+		end		
 	end)
 
 	_registers["INSTRUCT_CITY_LIST"] = baseList
@@ -1832,7 +1854,7 @@ local function DetermineOccupyGoal( ... )
 		table.insert( cityList, adjaCity )
 		return false
 	end )
-	if not advanceBase then
+	if not advanceBase and #cityList > 0 then
 		advanceBase = Random_GetListItem( cityList )
 		table.insert( baseList, { city = advanceBase, type = CityStatus.ADVANCED_BASE } )
 	end
@@ -1841,9 +1863,7 @@ local function DetermineOccupyGoal( ... )
 	--basically, battlefront is none, safety is production, frontier is military
 	cityList = {}
 	Asset_Foreach( _group, GroupAssetID.CITY_LIST, function ( city )
-		if city == goalData.city then
-			return
-		end
+		if city == goalData.city then return end
 
 		if city:GetStatus( CityStatus.SAFETY ) then
 			table.insert( baseList, { city = city, type = CityStatus.PRODUCTION_BASE } )
@@ -1865,8 +1885,6 @@ local function DetermineOccupyGoal( ... )
 end
 
 local function CanImproveRelation()
-	if 1 then return false end
-
 	if _actor:IsBusy() then return false end
 
 	--1. self isn't at war
@@ -2279,9 +2297,8 @@ local _BuildDefensiveProposal =
 local _TransportProposal = 
 {
 	type = "SEQUENCE", children = 
-	{
+	{		
 		{ type = "FILTER", condition = CheckProposer, params = { type = "TRANSPORT" } },
-		{ type = "FILTER", condition = HasCityStatus, params = { status = "PRODUCTION_BASE" } },
 		{ type = "FILTER", condition = CanTransport },
 		{ type = "ACTION", action = SubmitProposal, params = { type = "TRANSPORT" } },
 	},
@@ -2807,7 +2824,7 @@ local _CapitalProposal =
 	type = "SEQUENCE", children = 
 	{
 		{ type = "FILTER", condition = IsTopic, params = { topic = "CAPITAL" } },
-		{ type = "FILTER", condition = CheckDate, params = { day="1" } },
+		--{ type = "FILTER", condition = CheckDate, params = { day="1" } },		
 		_InstructProposal,
 		_GroupGradePropsal,
 	}
@@ -2820,7 +2837,7 @@ local _MeetingProposal =
 	{
 		_QualificationChecker,
 		_UnderAttackProposal,
-		--_GoalProposal,
+		_GoalProposal,
 		_CapitalProposal,
 
 		_CommandProposal,
@@ -2893,6 +2910,7 @@ function CharaAI_SubmitMeetingProposal( chara, meeting )
 	if Init( { chara = chara, meeting = meeting } ) then
 		Stat_Add( "CharaAI@Run_Times", nil, StatType.TIMES )
 		--DBG_Watch( "Debug_Meeting", chara.name .. " try proposal, topic=" .. MathUtil_FindName( MeetingTopic, _topic ) )
+		Log_Write( "charaai", chara.name .. " is thinking proposal" .. " " .. g_Time:ToString() )
 		return _behavior:Run( _meetingProposal )
 	end
 	Log_Write( "meeting", "    chara=" .. chara.name .. " cann't submit proposal" )

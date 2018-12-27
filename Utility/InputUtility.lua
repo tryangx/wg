@@ -26,7 +26,7 @@ function InputUtil_Wait( content, key )
 	print( "@please input key=" .. key )
 	while input ~= key do
 		input = InputUtil_ReceiveInput()
-	end	
+	end
 end
 
 --options = { { content, key } }

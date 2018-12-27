@@ -624,6 +624,8 @@ function Corps_Regroup( corps, list )
 	for _, otherCorps in ipairs( list ) do
 		if otherCorps ~= corps then
 			Asset_Foreach( otherCorps, CorpsAssetID.TROOP_LIST, function ( troop )
+				local leader = Asset_Get( troop, TroopAssetID.OFFICER )
+				if leader then Asset_Set( leader, CharaAssetID.CORPS ) end				
 				corps:AddTroop( troop )
 			end )			
 			Asset_Foreach( otherCorps, CorpsAssetID.OFFICER_LIST, function ( officer )

@@ -6,6 +6,7 @@
 
 CityParams = 
 {
+	--determine how many time to 
 	ISOLATE_DURATION_MODULUS = 10,
 }
 
@@ -13,11 +14,27 @@ DefaultCitySupply =
 {
 	------------------------------
 	--Agriculture
+	------------------------------
+	--measure 1 AGRICULTURE equals to how many field, shouldn't change in a game.
+	FARM_PER_AGRI    = 1000,
+	--!!!measure 1 FARMER can farming how many farm per time( year ), this value in the game should be increased by tech, policy or sth. else.
+	FARM_PER_FARMER  = 10,
+	------------------------------
 
-	--measure 1 argiculture can supply how many population
-	AGRI_SUPPLY_POPU = 100,
+	------------------------------
+	-- Food relative
+	--   We think 1 unit equals to 500 grams
+	------------------------------
+	--!!!measure 1 FARM can output how many food per time( year ), this value in the game should be increase by tech of sth. else.
+	FOOD_OUTPUT_PER_FARM = 300,
+	--measure how many food a man eat per day.
+	FOOD_CONSUME_PER_POPU = 3,
+	------------------------------
 
 	--measure how many food we can buy by 1 unit money
+	MERCHANT_PER_COMM = 100,
+
+	--
 	FOOD_PER_MONEY   = 30,
 }
 
@@ -245,6 +262,7 @@ DefaultCityJobParams =
 	SEQUENCE = 
 	{
 		--minimum+5
+		{ job = "EXECUTIVE" },
 		{ job = "COMMANDER" },
 		{ job = "HR" },
 		{ job = "OFFICIAL" },
@@ -257,22 +275,22 @@ DefaultCityJobParams =
 		{ job = "OFFICIAL",   capital = 1 },
 		{ job = "STAFF",      capital = 1 },
 		
-		--level
-		{ job = "COMMANDER",  level = 6 },
-		{ job = "OFFICIAL",   level = 7 },
-		{ job = "STAFF",      level = 8 },
-		{ job = "HR",         level = 9 },			
+		--level		
+		{ job = "OFFICIAL",   level = 10 },
+		{ job = "COMMANDER",  level = 10 },
+		{ job = "HR",         level = 11, max = 2 },
+		{ job = "STAFF",      level = 12, max = 2 },		
 		{ job = "DIPLOMATIC", level = 10, capital = 1 },
-		{ job = "TECHNICIAN", level = 10, capital = 1 },
+		{ job = "TECHNICIAN", level = 10, capital = 1 },		
 				
 		--construction
 		{ job = "DIPLOMATIC", capital = 1, has_constr_eff = "DIPLOMAT_SLOT",   },
 		{ job = "TECHNICIAN", capital = 1, has_constr_eff = "TECHNICIAN_SLOT", },
-		{ job = "HR",         has_constr_eff = "HR_SLOT",         },
-		{ job = "OFFICIAL",   has_constr_eff = "OFFICIAL_SLOT",   },
-		{ job = "STAFF",      has_constr_eff = "STAFF_SLOT",      },
+		{ job = "HR",         has_constr_eff = "HR_SLOT",        max = 2 },		
+		{ job = "STAFF",      has_constr_eff = "STAFF_SLOT",     max = 2 },		
 		{ job = "COMMANDER",  has_constr_eff = "COMMANDER_SLOT",  },
-
+		{ job = "OFFICIAL",   has_constr_eff = "OFFICIAL_SLOT",   },
+		
 		--[[
 		--battlefront
 		{ job = "COMMANDER", has_status = "BATTLEFRONT" },

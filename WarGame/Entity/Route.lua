@@ -99,3 +99,7 @@ function Route:FindPort( start )
 	local from = Asset_Get( self, RouteAssetID.FROM_PLOT )
 	return start == from and Asset_Get( self, RouteAssetID.TO_PLOT ) or from
 end
+
+function Route:Update( )
+	-- body
+end

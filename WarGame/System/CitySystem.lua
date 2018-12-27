@@ -41,11 +41,19 @@ function City_GetVacancyJobs( city )
 				--print( "has job", officer.name, MathUtil_FindName( CityJob, job ), jobs[job] )
 			else
 				table.insert( list, job )
+				--print( city.name, job, item.job )
 			end
 		end
 	end
 	if Asset_GetListSize( city, CityAssetID.OFFICER_LIST ) > totalnum then
-		print( city.name, "has too much jobs", "tot=" .. totalnum, "ofi=" .. Asset_GetListSize( city, CityAssetID.OFFICER_LIST ), #list )
+		for _, job in ipairs( list ) do
+			print( "job=" .. MathUtil_FindName( CityJob, job ) )
+		end
+		for job, num in pairs( jobs ) do
+			print( "exstjob=" .. MathUtil_FindName( CityJob, job ), num )
+		end
+		print( city:ToString( "OFFICER" ) )
+		print( city.name, "has too much jobs", "tot=" .. totalnum, "ofi=" .. Asset_GetListSize( city, CityAssetID.OFFICER_LIST ), "size=" .. #list )
 		InputUtil_Pause( city:ToString(), "vacancy jobs" )
 	end
 	return list
@@ -217,6 +225,32 @@ end
 
 function City_GetFoodIncome( city )
 	local income = 0
+	local supplyParams = City_GetPopuParams( city ).POPU_SUPPLY
+	local agri         = Asset_Get( city, CityAssetID.AGRICULTURE )	
+	local hasFarms        = agri * supplyParams.FARM_PER_AGRI
+	--should use current value( affect by techs or sth. else )
+	local farmer       = city:GetPopu( CityPopu.FARMER )
+	local farmPerFarmer = supplyParams.FARM_PER_FARMER
+	local farms        = math.min( hasFarms, farmer * farmPerFarmer )
+	--should use current value( affect by techs or sth. else )
+	local foodPerFarm  = supplyParams.FOOD_OUTPUT_PER_FARM
+	local foodOutput   = farms * foodPerFarm
+
+	--print( city:ToString("POPULATION") )
+	--print( "farms=" .. farms, "farmers=" .. farmer, "food=" .. foodPerFarm )
+
+	local modifier     = Random_GetInt_Sync( 80, 120 )
+	local taxRate      = 0.1
+	local income       = foodOutput * modifier * taxRate * 0.01
+
+	--[[
+	print( city:ToString("DEVELOP") )
+	print( city:ToString("POPULATION") )
+	print( "agri=" .. agri, "farmer=" .. farmer, "farms=" .. farms .. "/" .. hasFarms, "foodperfarm=" .. foodPerFarm )
+	InputUtil_Pause( "income=" .. income, "supply=" .. income / ( supplyParams.FOOD_CONSUME_PER_POPU * DAY_IN_YEAR ) )
+	--]]
+	--[[
+	local income = 0
 	local popustparams = City_GetPopuParams( city )	
 	local agri         = Asset_Get( city, CityAssetID.AGRICULTURE )	
 	for type, _ in pairs( CityPopu ) do
@@ -229,7 +263,8 @@ function City_GetFoodIncome( city )
 	--simply random from 40~80
 	--we should seperate the modifier into Water, Plough, Disease etc
 	local modifier = Random_GetInt_Sync( 20, 60 ) * 0.01
-	income = math.ceil( income * modifier )
+	income = math.ceil( income * modifier )	
+	]]
 	return income
 end
 
@@ -493,7 +528,7 @@ function City_CheckFlag( city )
 
 	--set default flag
 	city:SetStatus( CityStatus.OLD_CAPITAL, city:IsCapital() or nil )
-	city:SetStatus( CityStatus.SAFETY )
+	city:SetStatus( CityStatus.SAFETY, true )
 	city:SetStatus( CityStatus.BATTLEFRONT )
 	city:SetStatus( CityStatus.FRONTIER )
 	city:SetStatus( CityStatus.BUDGET_DANGER, not City_IsBudgetSafe( city ) )
@@ -999,6 +1034,9 @@ end
 
 function City_Instruct( city, baseType )
 	if baseType then
+		if baseType == CityStatus.PRODUCTION_BASE then
+			--InputUtil_Pause( city.name, "instruct", baseType )
+		end
 		city:SetStatus( baseType, true )
 		Debug_Log( "instruct city=" .. city.name, " -->" .. MathUtil_FindName( CityStatus, baseType ) )
 	else

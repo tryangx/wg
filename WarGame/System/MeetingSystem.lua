@@ -9,16 +9,15 @@ local function Proposal_Execute( proposal )
 		local goalData = Asset_GetDictItem( proposal, ProposalAssetID.PARAMS, "goalData" )
 		--print( "goal", MathUtil_FindName( GroupGoalType, goalType ), goalType )
 		group:AddGoal( goalType, goalData )
-		
-		return
 
 	elseif type == ProposalType.MOVE_CAPITAL then
 		local actor = Asset_Get( proposal, ProposalAssetID.ACTOR )
 		local group = Asset_Get( actor, CharaAssetID.GROUP )
 		group:MoveCapital( Asset_Get( proposal, ProposalAssetID.LOCATION ) )
-		return
 
 	elseif type == ProposalType.IMPROVE_GRADE then
+		local actor = Asset_Get( proposal, ProposalAssetID.ACTOR )
+		local group = Asset_Get( actor, CharaAssetID.GROUP )
 		group:ImproveGrade( Asset_GetDictItem( proposal, ProposalAssetID.PARAMS, "grade" ) )
 
 	elseif type == ProposalType.INSTRUCT_CITY then
@@ -26,7 +25,6 @@ local function Proposal_Execute( proposal )
 		for _, item in ipairs( list ) do
 			City_Instruct( item.city, item.type )
 		end
-		return
 
 	elseif type == ProposalType.CALL_CHARA then
 		local actor = Asset_Get( proposal, ProposalAssetID.ACTOR )		
@@ -36,17 +34,16 @@ local function Proposal_Execute( proposal )
 		local dur   = Move_CalcIntelTransDuration( group, loc, dest )
 		Cmd_MoveToCity( actor, dest, { dur = dur } )
 		--print( "add cmd", actor:ToString(), loc:ToString(), dest:ToString() )
-		return
 
-	end
+	else
+		--print( "issue", proposal:ToString() )
 
-	--print( "issue", proposal:ToString() )
-
-	--issue task include initializing actortype, issue task to every subordinates
-	local task = Task_IssueByProposal( proposal )
-	--Log_Write( "meeting", "			issue proposal=" .. proposal:ToString() )
-	if task then
-		Log_Write( "meeting", "  task=" .. task:ToString() )
+		--issue task include initializing actortype, issue task to every subordinates
+		local task = Task_IssueByProposal( proposal )
+		--Log_Write( "meeting", "			issue proposal=" .. proposal:ToString() )
+		if task then
+			Log_Write( "meeting", "  task=" .. task:ToString() )
+		end
 	end
 
 	--remove proposal

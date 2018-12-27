@@ -134,11 +134,18 @@ GroupGovernment =
 
 GroupStatus = 
 {
+	-----------------------------------
+	-- flag
+	
+
+	-----------------------------------
+	-- extension attributes
+
 	--Determine by what group did
 	--1. Occupy City
 	--2. Win/Lose the importatnt field-combat
 	--3. Finish the goal
-	REPUTATION     = 1,
+	REPUTATION     = 1000,
 }
 
 GroupGrade = 

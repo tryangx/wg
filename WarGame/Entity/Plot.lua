@@ -75,8 +75,12 @@ function Plot:__init( ... )
 	Entity_Init( self, EntityType.PLOT, PlotAssetAttrib )
 end
 
-function Plot:ToString()
-	return self.id .. "(" .. Asset_Get( self, PlotAssetID.X ) .. "," .. Asset_Get( self, PlotAssetID.Y ) .. ")"
+function Plot:ToString( type )	
+	local content = self.id .. "(" .. Asset_Get( self, PlotAssetID.X ) .. "," .. Asset_Get( self, PlotAssetID.Y ) .. ")"
+	if type == "ROAD" then
+		content = content .. "road=" .. Asset_Get( self, PlotAssetID.ROAD )
+	end
+	return content
 end
 
 function Plot:InitName()
@@ -138,18 +142,15 @@ function Plot:InitGrowth( params )
 	--3rd, determine the population of each career in the population struction depends on the development indexs
 	local city         = Asset_Get( self, PlotAssetID.CITY )
 	local supplyParams = City_GetPopuParams( city ).POPU_SUPPLY
-	local agr          = Asset_Get( self, PlotAssetID.AGRICULTURE )	
-	local supplyPopu   = agr * supplyParams.AGRI_SUPPLY_POPU
+	local agri         = Asset_Get( self, PlotAssetID.AGRICULTURE )	
+	local farms        = agri * supplyParams.FARM_PER_AGRI
+	local foodOutput   = farms * supplyParams.FOOD_OUTPUT_PER_FARM
+	local foodConsume  = DAY_IN_YEAR * supplyParams.FOOD_CONSUME_PER_POPU
+	local farmers      = farms / supplyParams.FARM_PER_FARMER
+	local supplyPopu   = math.floor( foodOutput / foodConsume )
 	local popu         = math.ceil( supplyPopu * Random_GetInt_Sync( 60, 120 ) * 0.01 )
 	Asset_Set( self, PlotAssetID.POPULATION, popu )
-	--InputUtil_Pause( "agr=" .. agr, " supply=" .. supplyPopu, " popu=" .. popu )
-
-	--[[
-	print( "agr=" .. Asset_Get( self, PlotAssetID.AGRICULTURE ) )
-	print( "prd=" .. Asset_Get( self, PlotAssetID.PRODUCTION ) )
-	print( "com=" .. Asset_Get( self, PlotAssetID.COMMERCE ) )		
-	InputUtil_Pause( "agr=" .. agr, "plotpopu="..popu )
-	--]]
+	--InputUtil_Pause( "agr=" .. agri, "farm=" .. farms, "food=" .. foodOutput, "supply=" .. supplyPopu, "popu=" .. popu, "farmers=" .. farmers )
 end
 
 function Plot:Update()	

@@ -102,6 +102,8 @@ CityStatus =
 	EXPAND_END         = 61,
 
 	-----------------------------------
+	-- 
+	
 	--sabotage success or something else will trigger this for at least 3 mons
 	MOBILE_MERCHANT    = 101,
 	--measure the price to buy/sell food

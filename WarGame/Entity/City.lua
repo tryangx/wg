@@ -175,6 +175,10 @@ function City:ToString( type )
 			content = content .. constr.name .. ","
 		end)		
 	end
+	if type == "CHARAS" then
+		content = content .. " chars=" .. Asset_GetListSize( self, CityAssetID.CHARA_LIST )
+		content = content .. " ofi=" .. Asset_GetListSize( self, CityAssetID.OFFICER_LIST )
+	end
 	if type == "OFFICER" then
 		content = content .. " chars=" .. Asset_GetListSize( self, CityAssetID.CHARA_LIST )
 		content = content .. " ofi=" .. Asset_GetListSize( self, CityAssetID.OFFICER_LIST )
@@ -1589,11 +1593,16 @@ function City:SoldierFled()
 	if soldier < supportSoldier then return end
 
 	local fledRatio = ( ( soldier - supportSoldier ) * 0.5 ) / soldier
-
+	local fledSoldier = 0
 	Asset_Foreach( self, CityAssetID.CORPS_LIST, function ( corps )
 		if not corps:IsAtHome() then return end
-		corps:SoldierFled( fledRatio )
+		fledSoldier = fledSoldier + corps:SoldierFled( fledRatio )
 	end )
 
+	Stat_Add( "SoldierFled@" .. self.name, fledSoldier, StatType.VALUE )
 	--InputUtil_Pause( self:ToString("ASSET"), "soldier fled", fledRatio, supportSoldier, soldier, maxSoldier )
+end
+
+function City:Revolt()
+	
 end

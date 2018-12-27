@@ -348,11 +348,12 @@ function Group:GetVacancyCityList( excludeCity )
 	local list = {}
 	Asset_Foreach( self, GroupAssetID.CITY_LIST, function ( city )
 		if city == excludeCity then return end
-		local limit
-		local has = Asset_GetListSize( city, CityAssetID.CHARA_LIST )
-		limit = Chara_GetReqNumOfOfficer( city )
+		local limit = Chara_GetReqNumOfOfficer( city )
+		local has = Asset_GetListSize( city, CityAssetID.CHARA_LIST )				
 		if has >= limit then
-			--print( "not vac req", has .. "/" .. limit )
+			if has == 0 then
+				print( "not vac req", has .. "/" .. limit )
+			end
 			return
 		end
 		table.insert( list, city )
@@ -575,7 +576,7 @@ function Group:AddGoal( goalType, goalData )
 	--InputUtil_Pause( "add goal", MathUtil_FindName( GroupGoalType, goalType ), goalType, goalData )
 	Asset_SetDictItem( self, GroupAssetID.GOAL_LIST, goalType, goalData )
 
-	Stat_Add( "SetGoal@" .. self.name, g_Time:ToString() .. " " .. MathUtil_FindName( GroupGoalType, goalType ) .. " city=" .. String_ToStr( goalData.city, "name" ), StatType.LIST )
+	Stat_Add( "GoalSet@" .. self.name, g_Time:ToString() .. " " .. MathUtil_FindName( GroupGoalType, goalType ) .. " city=" .. String_ToStr( goalData.city, "name" ), StatType.LIST )
 end
 
 function Group:AchieveGoal()

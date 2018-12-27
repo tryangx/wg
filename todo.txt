@@ -114,6 +114,10 @@ disaster event
 
 [Concept]
 
+
+City Limitation
+    Depend on leader&group's influence
+
 Task
     
 

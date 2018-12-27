@@ -322,7 +322,7 @@ function Corps:RemoveTroop( troop )
 			local officer = Asset_Get( troop, TroopAssetID.OFFICER )
 			if not officer then
 				Asset_Set( troop, TroopAssetID.OFFICER, leader )
-				InputUtil_Pause( "set leader=" .. leader:ToString() .. " to empty-troop=" .. troop:ToString() )
+				Debug_Log( "set leader=" .. leader:ToString() .. " to empty-troop=" .. troop:ToString() )
 				return true
 			end
 		end
@@ -335,7 +335,7 @@ function Corps:RemoveTroop( troop )
 			local officer = Asset_Get( troop, TroopAssetID.OFFICER )
 			if officer then
 				Asset_Set( troop, TroopAssetID.OFFICER, leader )
-				InputUtil_Pause( "set leader=" .. leader:ToString() .. " to empty-troop=" .. troop:ToString() )
+				Debug_Log( "set leader=" .. leader:ToString() .. " to empty-troop=" .. troop:ToString() )
 				return true
 			end
 		end
@@ -357,8 +357,8 @@ function Corps:AssignLeader( leader )
 	end
 
 	leader:LeadCorps( self )
-
 	Asset_Set( self, CorpsAssetID.LEADER, leader )
+
 	self:AddOfficer( leader )
 
 	self:Recalculate()
@@ -560,12 +560,15 @@ end
 -------------------------------------------
 
 function Corps:SoldierFled( ratio )
+	local fledSoldier = 0
+
 	local removeList = {}
 	Asset_Foreach( self, CorpsAssetID.TROOP_LIST, function ( troop )
 		local soldier     = Asset_Get( troop, TroopAssetID.SOLDIER )
 		local maxSoldier  = Asset_Get( troop, TroopAssetID.MAX_SOLDIER )
 		local fledSoldier = math.ceil( soldier * ratio )
 		local leftSoldier = soldier - fledSoldier
+		fledSoldier = fledSoldier + fledSoldier
 		Asset_Set( troop, TroopAssetID.SOLDIER, leftSoldier )
 		if leftSoldier <= 0 then
 			table.insert( removeList, troop )
@@ -576,4 +579,6 @@ function Corps:SoldierFled( ratio )
 	for _, troop in ipairs( removeList ) do
 		self:RemoveTroop( troop )
 	end
+
+	return fledSoldier
 end

@@ -286,7 +286,7 @@ function Chara:SetTask( task )
 	elseif self:GetTask() then
 		Debug_Log( self:ToString(), "release task=" .. self:GetTask():ToString() )
 	end
-	
+
 	Asset_SetDictItem( self, CharaAssetID.STATUSES, CharaStatus.IN_TASK, task )
 
 	local cur = self:GetTask()
@@ -596,9 +596,6 @@ function Chara:Todo()
 
 	local task = self:GetTask()
 	if task then
-		if Asset_Get( task, TaskAssetID.STATUS ) == TaskStatus.END then
-			print( self.name, Asset_Get( task, TaskAssetID.ACTOR ).name )
-		end
 		Task_Update( task )
 		return
 	end

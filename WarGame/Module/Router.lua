@@ -152,7 +152,8 @@ function Route_FindPathByPlot( plot1, plot2 )
 	local destPlot, destRoute = FindPortPlot( plot1 )
 
 	if not startPlot or not destPlot then
-		error( "plot has no route" )
+		InputUtil_Pause( plot1:ToString("ROAD"), plot2:ToString("ROAD") )
+		--error( "plot has no route" )
 		return
 	end
 

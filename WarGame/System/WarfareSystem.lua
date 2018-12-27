@@ -380,7 +380,7 @@ local function Warfare_OnCombatEnded( msg )
 		--city:TrackData( true )
 	end
 
-	print( "combat end=" .. combat:ToString(), g_Time:ToString() )
+	--print( "combat end=" .. combat:ToString(), g_Time:ToString() )
 
 	Stat_Add( "CombatDur@" .. combat.id, Asset_Get( combat, CombatAssetID.DAY ), StatType.VALUE )
 
@@ -434,6 +434,7 @@ local function Warfare_OnFieldCombatTrigger( msg )
 	if combat then
 		Message_Post( MessageType.COMBAT_TRIGGERRED_NOTIFY, { combat = combat, atk = atk, def = def } )
 		Stat_Add( "Combat@Field", 1, StatType.TIMES )
+		--print( g_Time:ToString(), "fieldcombat=" .. combat:ToString() )
 	else
 		DBG_Error( "why here" )
 		Message_Post( MessageType.COMBAT_UNTRIGGER_NOTIFY, { corps = atk } )
@@ -442,11 +443,27 @@ end
 
 local function Warfare_OnSiegeCombatTrigger( msg )
 	local atk   = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "atk" )
-	local city  = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "city" )
+	local city  = Asset_GetDictItem( msg, MessageAssetID.PARAMS, "city" )	
+	local plot = Asset_Get( city, CityAssetID.CENTER_PLOT )
+	local combat = System_Get( SystemType.WARFARE_SYS ):GetCombatByPlot( plot )
+	if combat then
+		--corps from A maybe interrupted a siege combat between B and C
+		if combat:GetGroup( CombatSide.ATTACKER ) ~= Asset_Get( atk, CorpsAssetID.GROUP ) then
+			local defList = MathUtil_ShallowCopy( Asset_GetList( combat, CombatAssetID.ATK_CORPS_LIST ) )
+			Message_Post( MessageType.COMBAT_INTERRUPTED, { combat = combat } )
+						
+			--trigger a new field combat
+			--  todo: should corps in siege city will attend the field combat?
+			--InputUtil_Pause( "trigger new combat" )			
+			Message_Post( MessageType.FIELD_COMBAT_TRIGGER, { plot = plot, atk = actor, defList = defList } )
+			return
+		end
+	end		
 	local combat = Warefare_SiegeCombatOccur( city, atk )
 	if combat then
 		Message_Post( MessageType.COMBAT_TRIGGERRED_NOTIFY, { combat = combat, atk = atk } )
 		Stat_Add( "Combat@Siege", 1, StatType.TIMES )
+		--print( g_Time:ToString(), "siegecombat=" .. combat:ToString() )
 	else
 		Debug_Log( atk:ToString(), "no need to attack", city:ToString() )
 		Message_Post( MessageType.COMBAT_UNTRIGGER_NOTIFY, { corps = atk, city = city } )

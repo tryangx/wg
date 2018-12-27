@@ -257,10 +257,11 @@ function Combat:ToString( type )
 		content = content .. " df_corps=" .. Asset_GetListSize( self, CombatAssetID.DEF_CORPS_LIST ) .. "=" .. self:GetGroupName( CombatSide.DEFENDER )
 	end
 	if type == "DEBUG_CORPS" or type == "ALL" or type == "RESULT" then		
-		content = content .. " corps="
+		content = content .. " atcorps="
 		Asset_Foreach( self, CombatAssetID.ATK_CORPS_LIST, function( corps )
 			content = content .. corps:ToString( "MILITARY" ) .. ","
 		end )
+		content = content .. " dfcorps="
 		Asset_Foreach( self, CombatAssetID.DEF_CORPS_LIST, function ( corps )
 			content = content .. corps:ToString( "MILITARY" ) .. ","
 		end )
@@ -374,8 +375,15 @@ end
 function Combat:AddCorps( corps, side )
 	--sanity checker
 	if not side then DBG_Error( "why here") end
-	if self:GetGroup( side ) and self:GetGroup( side ) ~= Asset_Get( corps, CorpsAssetID.GROUP ) then DBG_Error( "why not the same group" ) end
-		local combatid = corps:GetStatus( CorpsStatus.IN_COMBAT )
+	if self:GetGroup( side ) and self:GetGroup( side ) ~= Asset_Get( corps, CorpsAssetID.GROUP ) then
+		print( self:ToString("DEBUG_CORPS") )
+		print( corps:ToString("TASK") )
+		print( MathUtil_FindName( CombatSide, side ) )
+		print( Asset_Get( self, CombatAssetID.CITY ):ToString() )
+		DBG_Error( "why not the same group" )
+	end
+	
+	local combatid = corps:GetStatus( CorpsStatus.IN_COMBAT )
 	if combatid and combatid ~= self.id then
 		Entity_ToString( EntityType.COMBAT, "ALL" )
 		DBG_Error( "corps cann't join two combat", corps:ToString("STATUS"), "combat=" .. corps:GetStatus( CorpsStatus.IN_COMBAT ) .."/".. self.id )
@@ -650,7 +658,7 @@ function Combat:DumpStatistic()
 end
 
 function Combat:GetStat( obj, statid )
-	if not obj then return end
+	if not obj then return 0 end
 	local key = statid
 	if not self._stat then return 0 end
 	if not self._stat[obj] then return 0 end

@@ -1094,7 +1094,7 @@ local function Task_End( task )
 	Asset_Set( task, TaskAssetID.STATUS, TaskStatus.END )
 	
 	local type = Asset_Get( task, TaskAssetID.TYPE )
-	Stat_Add( "TaskEnd@" .. MathUtil_FindName( TaskType, type ), 1, StatType.VALUE )
+	Stat_Add( "TaskEnd@" .. MathUtil_FindName( TaskType, type ), 1, StatType.ACCUMULATION )
 	Log_Write( "task",  task:ToString() .. "end task" )
 	
 	--Log_Write( "meeting", g_Time:ToString() .. task:ToString() .. " end" )
@@ -1655,7 +1655,7 @@ function TaskSystem:Start()
 	_movingTask  = MathUtil_ConvertKeyToID( TaskType, _movingTask )
 
 	for name, type in pairs( TaskType ) do
-		Stat_Add( "TaskEnd@" .. name, 0, StatType.VALUE )
+		Stat_Add( "TaskEnd@" .. name, 0, StatType.ACCUMULATION )
 	end	
 end
 
@@ -1665,7 +1665,7 @@ function TaskSystem:Update()
 	Entity_Foreach( EntityType.TASK, function ( t )
 		local actor = Asset_Get( t, TaskAssetID.ACTOR )
 		if not actor:GetTask() then
-			print( t:ToString() )
+			print( t:ToString(), actor:ToString() )
 			DBG_Error( actor:ToString(), actor.id, "should has task" )
 		end
 		--[[
@@ -1680,6 +1680,7 @@ function TaskSystem:Update()
 
 	--Debug_Log( "Task Running=" .. Entity_Number( EntityType.TASK ) )	
 	if 1 then return end
+	
 	Entity_Foreach( EntityType.TASK, function( task )
 		local ret = false
 		while ret == false do
